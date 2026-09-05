@@ -1,0 +1,23 @@
+---
+title: Heaps & Priority Queues
+description: Heap ধারণা, array-ইমপ্লিমেন্টেশন, bubble up/down, MinHeap ক্লাস আর heap দিয়ে দক্ষ Priority Queue, সব একসাথে।
+---
+
+আগের section-এ Tree শিখেছ; এবার tree-ভিত্তিক একটা বিশেষ কাঠামো **Heap**, যা সবসময় সবচেয়ে বড়/ছোট উপাদান O(1)-এ দেয় ও O(log n)-এ যোগ/বাদ করে। এটাই **Priority Queue**-র ইঞ্জিন, আর Dijkstra (section 13), heap sort (section 09), "top-K" সমস্যার ভিত্তি।
+
+**Section Roadmap:** ধারণা, array-তে heap, insert (bubble up), extract (bubble down), MinHeap ক্লাস, Priority Queue ও প্রয়োগ।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Heap কী](./what-is-heap): Min-Heap ও Max-Heap-এর নিয়ম
+2. [Array-তে Heap](./heap-as-array): pointer ছাড়াই index গণিতে tree
+3. [Insert (Bubble Up)](./heap-insert-bubble-up): নতুন মান যোগ করে উপরে ভাসানো
+4. [Extract Min (Bubble Down)](./heap-extract-min): root বের করে নিচে ডোবানো
+5. [MinHeap ক্লাস](./minheap-class): পুনর্ব্যবহারযোগ্য সম্পূর্ণ heap
+6. [Priority Queue ও প্রয়োগ](./priority-queue-applications): Top-K, Dijkstra, heap sort
+
+## সারাংশ
+
+Heap অর্থাৎ complete binary tree, parent-child নিয়মে; min/max সবসময় root-এ (O(1))। array দিয়েই বানানো যায় (2i+1, 2i+2)। insert অর্থাৎ bubble up, extract অর্থাৎ bubble down, দুটোই O(log n)। Priority Queue-র ইঞ্জিন; Top-K, Dijkstra, heap sort-এ ব্যবহৃত।
+
+**পরবর্তী:** Graph Data Structures (শীঘ্রই আসছে)।

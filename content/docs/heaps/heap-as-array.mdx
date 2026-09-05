@@ -1,0 +1,58 @@
+---
+title: "Array-তে Heap: index গণিত"
+description: complete binary tree তাই pointer লাগে না; সাধারণ array-তেই parent-child সম্পর্ক।
+---
+
+## কী শিখব
+
+- কেন heap array দিয়ে বানানো হয়
+
+## ধারণা
+
+Complete binary tree হওয়ায় heap-এ pointer লাগে না, একটা সাধারণ **array**-ই যথেষ্ট! index দিয়েই parent-child সম্পর্ক বের হয়:
+
+- index `i`-এর **বাঁ সন্তান:** `2i + 1`
+- index `i`-এর **ডান সন্তান:** `2i + 2`
+- index `i`-এর **parent:** `Math.floor((i - 1) / 2)`
+
+```
+array:  [1, 3, 6, 5, 9]
+index:   0  1  2  3  4
+tree:        1(0)
+            /     \
+         3(1)     6(2)
+         /  \
+      5(3)  9(4)
+```
+
+## কোড উদাহরণ
+
+```js
+const heap = [1, 3, 6, 5, 9];
+const i = 1;                       // মান 3
+console.log(heap[2 * i + 1]);      // বাঁ সন্তান: 5
+console.log(heap[2 * i + 2]);      // ডান সন্তান: 9
+console.log(heap[Math.floor((i - 1) / 2)]); // parent: 1
+```
+
+## কোড ব্রেকডাউন
+
+- array-তে থাকায় memory ধারাবাহিক ও cache-friendly।
+- index গণিত দিয়ে tree navigation, pointer-এর দরকার নেই।
+
+## Complexity
+
+- parent/child বের করা: O(1), শুধু index গণিত।
+
+## Animation Spec
+
+> **Animation Spec: Array-Tree Sync**
+>
+> - **দৃশ্য:** উপরে tree, নিচে array; একটা index hover করলে দুই জায়গাতেই highlight, সাথে সন্তান/parent সূত্র দেখানো।
+> - **ইনপুট:** index নির্বাচন।
+> - **ধাপ:** সূত্র প্রয়োগ করে সন্তান/parent সেল চিহ্নিত হয়।
+> - **লক্ষ্য:** array-heap দ্বৈততা।
+
+## অনুশীলন
+
+- index 3-এর parent ও সন্তান সূত্র দিয়ে বের করো।

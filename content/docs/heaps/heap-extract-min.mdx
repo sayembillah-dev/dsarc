@@ -1,0 +1,62 @@
+---
+title: "Extract Min: Bubble Down (Heapify Down)"
+description: root বের করে শেষ উপাদানকে তুলে ছোট সন্তানের সাথে swap করে নিচে নামানো।
+---
+
+## কী শিখব
+
+- সবচেয়ে ছোট (root) বের করা ও নিয়ম রক্ষা
+
+## ধারণা
+
+Root (min) বের করি; শেষ উপাদানকে root-এ বসাই; তারপর যতক্ষণ কোনো সন্তান তার চেয়ে ছোট, ততক্ষণ ছোট সন্তানের সাথে swap করে নিচে নামাই (**bubble down**)।
+
+## কোড উদাহরণ
+
+```js
+function extractMin(heap) {
+  if (heap.length === 0) return undefined;
+  const min = heap[0];
+  const last = heap.pop();
+  if (heap.length > 0) {
+    heap[0] = last;                 // শেষটা root-এ
+    let i = 0;
+    const n = heap.length;
+    while (true) {
+      let smallest = i;
+      const l = 2 * i + 1, r = 2 * i + 2;
+      if (l < n && heap[l] < heap[smallest]) smallest = l;
+      if (r < n && heap[r] < heap[smallest]) smallest = r;
+      if (smallest === i) break;    // নিয়ম ঠিক, থামি
+      [heap[i], heap[smallest]] = [heap[smallest], heap[i]]; // swap down
+      i = smallest;
+    }
+  }
+  return min;
+}
+const h2 = [1, 2, 6, 5, 9, 3];
+console.log(extractMin(h2)); // 1 (min)
+console.log(h2);             // পুনর্গঠিত heap
+```
+
+## কোড ব্রেকডাউন
+
+- root সরানোর পর শেষটাকে root-এ তুলে **ছোট সন্তানের** সাথে swap করে নিচে নামানো।
+- দুই সন্তানের মধ্যে ছোটটা বাছা জরুরি (min-heap নিয়ম রক্ষা)।
+
+## Complexity
+
+- O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Bubble Down**
+>
+> - **দৃশ্য:** root বের হয় (সবুজ, উঠে যায়); শেষ node root-এ বসে নিচে নামতে থাকে।
+> - **ইনপুট:** extract বাটন।
+> - **ধাপ:** প্রতি স্তরে দুই সন্তানের ছোটটার সাথে তুলনা/swap; জায়গা পেলে থামে।
+> - **লক্ষ্য:** extract মানে "root নাও, শেষটা তোলো, নিচে ডুবাও"।
+
+## অনুশীলন
+
+- extractMin পরপর ডাকলে কী sorted ক্রমে বের হয়? (এটাই heap sort-এর মূল)

@@ -1,0 +1,92 @@
+---
+title: "Priority Queue ও প্রয়োগ: Top-K, Dijkstra"
+description: heap দিয়ে insert/extract O(log n)-এ দক্ষ priority queue; Top-K সহ ক্লাসিক ব্যবহার।
+---
+
+## কী শিখব
+
+- heap দিয়ে দক্ষ priority queue ও বাস্তব প্রয়োগ
+
+## ধারণা
+
+Priority Queue মানে "সবচেয়ে গুরুত্বপূর্ণ আগে বের হয়", আর heap দিয়ে insert/extract O(log n)। section 06-এর sort-ভিত্তিক (O(n log n)) version-এর চেয়ে অনেক দক্ষ।
+
+**ক্লাসিক প্রয়োগ:**
+
+- **Top-K:** সবচেয়ে বড়/ছোট K উপাদান (size-K min-heap দিয়ে O(n log K))
+- **Dijkstra** (section 13): সবচেয়ে কাছের node আগে
+- **Heap sort** (section 09)
+- **Median maintenance** (two heaps, section 16)
+
+## কোড উদাহরণ
+
+```js
+// MinHeap helper (আগের পাতার ক্লাসটিই)
+class MinHeap {
+  constructor() { this.data = []; }
+  size() { return this.data.length; }
+  push(value) {
+    this.data.push(value);
+    let i = this.data.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (this.data[p] <= this.data[i]) break;
+      [this.data[p], this.data[i]] = [this.data[i], this.data[p]];
+      i = p;
+    }
+  }
+  pop() {
+    if (this.data.length === 0) return undefined;
+    const top = this.data[0];
+    const last = this.data.pop();
+    if (this.data.length) {
+      this.data[0] = last;
+      let i = 0;
+      const m = this.data.length;
+      while (true) {
+        let s = i;
+        const l = 2 * i + 1, r = 2 * i + 2;
+        if (l < m && this.data[l] < this.data[s]) s = l;
+        if (r < m && this.data[r] < this.data[s]) s = r;
+        if (s === i) break;
+        [this.data[i], this.data[s]] = [this.data[s], this.data[i]];
+        i = s;
+      }
+    }
+    return top;
+  }
+}
+
+// array থেকে সবচেয়ে বড় k সংখ্যা: size-k min-heap
+function topK(nums, k) {
+  const heap = new MinHeap();
+  for (const num of nums) {
+    heap.push(num);
+    if (heap.size() > k) heap.pop();  // ছোটটা ফেলে দিই, বড় k থাকে
+  }
+  return heap.data.sort((a, b) => b - a); // বড় থেকে ছোট
+}
+console.log(topK([3, 1, 5, 12, 2, 11], 3)); // [12, 11, 5]
+```
+
+## কোড ব্রেকডাউন
+
+- min-heap-এ সবসময় সবচেয়ে বড় k রাখি; size k ছাড়ালে root (সবচেয়ে ছোট) ফেলে দিই।
+- পুরো sort (O(n log n)) না করে O(n log k), k ছোট হলে বিশাল সাশ্রয়।
+
+## Complexity
+
+- Top-K: O(n log k)।
+
+## Animation Spec
+
+> **Animation Spec: Top-K Filter**
+>
+> - **দৃশ্য:** ইনপুট স্ট্রিম বাঁয়ে; ডানে size-k heap।
+> - **ইনপুট:** সংখ্যা তালিকা, k।
+> - **ধাপ:** প্রতিটা সংখ্যা heap-এ ঢোকে; size k ছাড়ালে সবচেয়ে ছোটটা বেরিয়ে যায়; শেষে k বড় থাকে।
+> - **লক্ষ্য:** কেন heap top-K সমস্যায় দক্ষ।
+
+## অনুশীলন
+
+- Top-K smallest বের করতে max-heap কীভাবে ব্যবহার করবে ভাবো।

@@ -1,0 +1,4 @@
+{
+  "title": "Heaps & Priority Queues",
+  "pages": ["index", "what-is-heap", "heap-as-array", "heap-insert-bubble-up", "heap-extract-min", "minheap-class", "priority-queue-applications"]
+}

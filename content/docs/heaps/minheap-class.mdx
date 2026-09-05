@@ -1,0 +1,80 @@
+---
+title: "MinHeap ক্লাস: সম্পূর্ণ ইমপ্লিমেন্টেশন"
+description: bubble up/down লজিক এক ক্লাসে; push/pop O(log n), peek O(1)।
+---
+
+## কী শিখব
+
+- পুনর্ব্যবহারযোগ্য heap class
+
+## ধারণা
+
+আগের দুই পাতার insert আর extractMin লজিক একটা class-এ গুছিয়ে নিলেই পুনর্ব্যবহারযোগ্য **MinHeap**। ভেতরে থাকে একটা array, আর `push`, `pop`, `peek` মেথড।
+
+## কোড উদাহরণ
+
+```js
+class MinHeap {
+  constructor() { this.data = []; }
+  size()  { return this.data.length; }
+  peek()  { return this.data[0]; }          // min, O(1)
+
+  push(value) {
+    this.data.push(value);
+    let i = this.data.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;               // parent (fast /2)
+      if (this.data[p] <= this.data[i]) break;
+      [this.data[p], this.data[i]] = [this.data[i], this.data[p]];
+      i = p;
+    }
+  }
+
+  pop() {
+    const n = this.data.length;
+    if (n === 0) return undefined;
+    const top = this.data[0];
+    const last = this.data.pop();
+    if (this.data.length) {
+      this.data[0] = last;
+      let i = 0, m = this.data.length;
+      while (true) {
+        let s = i, l = 2*i+1, r = 2*i+2;
+        if (l < m && this.data[l] < this.data[s]) s = l;
+        if (r < m && this.data[r] < this.data[s]) s = r;
+        if (s === i) break;
+        [this.data[i], this.data[s]] = [this.data[s], this.data[i]];
+        i = s;
+      }
+    }
+    return top;
+  }
+}
+
+const mh = new MinHeap();
+[5, 3, 8, 1, 2].forEach(v => mh.push(v));
+console.log(mh.pop(), mh.pop(), mh.pop()); // 1 2 3
+```
+
+## কোড ব্রেকডাউন
+
+- `push` মানে insert (bubble up), `pop` মানে extract-min (bubble down)।
+- `(i-1) >> 1` হলো `Math.floor((i-1)/2)`-এর দ্রুত রূপ।
+- Max-heap চাইলে সব তুলনায় `<` কে `>` করলেই হয়।
+
+## Complexity
+
+- push/pop: O(log n), peek: O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Full Heap Ops**
+>
+> - **দৃশ্য:** array+tree সিঙ্ক; push/pop বাটন।
+> - **ইনপুট:** মান; heap type।
+> - **ধাপ:** push হলে bubble up, pop হলে bubble down; প্রতিটা swap গোনা হয়।
+> - **লক্ষ্য:** সম্পূর্ণ heap lifecycle।
+
+## অনুশীলন
+
+- এই class-কে MaxHeap-এ রূপান্তর করো।

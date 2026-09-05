@@ -1,0 +1,52 @@
+---
+title: "Heap Insert: Bubble Up (Sift Up)"
+description: নতুন মান শেষে বসে parent-এর সাথে swap করে উপরে ওঠে, O(log n)-এ নিয়ম রক্ষা।
+---
+
+## কী শিখব
+
+- নতুন মান heap-এ যোগ ও নিয়ম রক্ষা
+
+## ধারণা
+
+নতুন মান array-এর শেষে বসাই; তারপর যতক্ষণ parent-এর চেয়ে ছোট (min-heap), ততক্ষণ parent-এর সাথে swap করে উপরে তুলি (**bubble up**)। উচ্চতা log n বলে সর্বোচ্চ log n swap।
+
+## কোড উদাহরণ
+
+```js
+function insert(heap, value) {
+  heap.push(value);                 // শেষে বসাই
+  let i = heap.length - 1;
+  while (i > 0) {
+    const parent = Math.floor((i - 1) / 2);
+    if (heap[parent] <= heap[i]) break; // নিয়ম ঠিক, থামি
+    [heap[parent], heap[i]] = [heap[i], heap[parent]]; // swap up
+    i = parent;
+  }
+}
+const h = [1, 3, 6, 5, 9];
+insert(h, 2);
+console.log(h); // 2 উপরে উঠে সঠিক জায়গায় বসবে, যেমন [1,2,6,5,9,3]
+```
+
+## কোড ব্রেকডাউন
+
+- শেষে যোগ করলে নিয়ম ভাঙতে পারে, তাই parent-এর সাথে তুলনা করে উপরে তোলা।
+- ঠিক জায়গায় পৌঁছালে (parent মানটির চেয়ে ছোট/সমান) থামে।
+
+## Complexity
+
+- O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Bubble Up**
+>
+> - **দৃশ্য:** tree/array; নতুন node শেষে যোগ, তারপর parent-এর সাথে তুলনা করে উপরে উঠতে থাকে।
+> - **ইনপুট:** যোগ করার মান।
+> - **ধাপ:** প্রতিটা তুলনা হলুদ, swap লাল; সঠিক জায়গায় সবুজ।
+> - **লক্ষ্য:** insert মানে "শেষে বসাও, তারপর উপরে ভাসো"।
+
+## অনুশীলন
+
+- খালি heap-এ 5,3,8,1 পরপর insert করে array অবস্থা লেখো।
