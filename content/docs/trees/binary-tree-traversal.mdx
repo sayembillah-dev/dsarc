@@ -1,0 +1,154 @@
+---
+title: "Binary Tree Traversal: Pre, In, Post, তিন রকম ঘোরা"
+description: "DFS-এর তিন ক্রম, পার্থক্য একটাই: root-কে কখন পড়ছ। এক গাছে তিনটার dry run, recursion-এর call stack দিয়ে হাতে trace, আর কোন ক্রম কোন কাজে।"
+---
+
+## কী শিখব
+
+- Traversal মানে কী, আর তিনটা DFS ক্রমের একটাই পার্থক্য
+- একই গাছে pre, in, post: তিনটা dry run, পাশাপাশি
+- Recursion-এর call stack দিয়ে in-order হাতে trace করা
+- কোন ক্রম কোন কাজে লাগে, কেন
+- Complexity আর iterative রূপের দিকে প্রথম পা
+
+## ধারণা
+
+Tree-র সব node একবার করে ঘুরে আসার নাম **traversal**। Linear কাঠামোয় ঘোরার রাস্তা একটাই, কিন্তু গাছে শাখা আছে, তাই প্রশ্ন জাগে: **root-কে কখন পড়বে?** এই এক প্রশ্নের তিনটা উত্তরেই তিন ক্রম:
+
+- **Pre-order:** Root → Left → Right। নিজে আগে।
+- **In-order:** Left → Root → Right। নিজে মাঝে।
+- **Post-order:** Left → Right → Root। নিজে শেষে।
+
+[Recursion Intro](./../recursion/recursion-intro.mdx)-এ দেখেছিলে, কাজটা call-এর আগে না পরে সেটাই ক্রম ঠিক করে। এখানে হুবহু সেটাই: `visit(node)` লাইনটা কোথায় বসল, তিন জায়গার তিনটাই একেক ক্রম। তিনটা algorithm মুখস্থ নয়, একটা কঙ্কালের তিন রূপ।
+
+## পরীক্ষার গাছ
+
+```text
+        1
+       / \
+      2   3
+     / \
+    4   5
+```
+
+## Dry run: তিন ক্রম পাশাপাশি
+
+ছোট subtree-এ নিয়মটা আগে পাকা করো: ধরো কোনো node X, তার বামে L, ডানে R:
+
+- pre: **X**, L..., R...
+- in: L..., **X**, R...
+- post: L..., R..., **X**
+
+এবার পুরো গাছে, প্রতি node-এ একই নিয়ম:
+
+| ক্রম | ফল | কীভাবে এল |
+|------|-----|-----------|
+| Pre | `1, 2, 4, 5, 3` | 1 আগে; তারপর 2-এর ডল (2, 4, 5); শেষে 3 |
+| In | `4, 2, 5, 1, 3` | 1-এর বাম ডল আগে (4, 2, 5), তারপর 1, তারপর ডান ডল (3) |
+| Post | `4, 5, 2, 3, 1` | 1-এর দুই ডল আগে (4, 5, 2), (3), শেষে 1 |
+
+লক্ষ করো, প্রতিটা ক্রমে subtree-গুলো এক টুকরো থাকে: 2-এর ডল (4, 5 সহ) সবসময় পাশাপাশি। পার্থক্য শুধু node নিজে কোথায় বসল।
+
+## কোড: এক কঙ্কাল, তিন রূপ
+
+```js
+function preOrder(node, out = []) {
+  if (!node) return out;
+  out.push(node.value);     // root: আগে
+  preOrder(node.left, out);
+  preOrder(node.right, out);
+  return out;
+}
+
+function inOrder(node, out = []) {
+  if (!node) return out;
+  inOrder(node.left, out);
+  out.push(node.value);     // root: মাঝে
+  inOrder(node.right, out);
+  return out;
+}
+
+function postOrder(node, out = []) {
+  if (!node) return out;
+  postOrder(node.left, out);
+  postOrder(node.right, out);
+  out.push(node.value);     // root: শেষে
+  return out;
+}
+```
+
+তিনটার কোড হুবহু এক, শুধু `push`-এর জায়গা বদলায়। এটাই বলেছিলাম, তিন algorithm না, একটার তিন রূপ।
+
+## Call stack দিয়ে হাতে trace: in-order
+
+[Call Stack](../recursion/call-stack.mdx) মনে রেখো। `inOrder(1)` চলছে, প্রতিটা call-এর পর কী হচ্ছে:
+
+| ধাপ | ঘটনা | output এ পর্যন্ত |
+|-----|------|-------------------|
+| 1 | inOrder(1) → বামে যাও: inOrder(2) | `[]` |
+| 2 | inOrder(2) → বামে: inOrder(4) | `[]` |
+| 3 | inOrder(4) → বামে null, ফিরে; **push 4**; ডানে null | `[4]` |
+| 4 | ফিরে inOrder(2)-এ: **push 2**; ডানে inOrder(5) | `[4, 2]` |
+| 5 | inOrder(5): বাম-ডান null, **push 5** | `[4, 2, 5]` |
+| 6 | ফিরে inOrder(1)-এ: **push 1**; ডানে inOrder(3) | `[4, 2, 5, 1]` |
+| 7 | inOrder(3): **push 3** | `[4, 2, 5, 1, 3]` |
+
+চেনা কথা: প্রতি call নিজের জায়গায় ফিরে আসে, আর push হয় **বাম ডল শেষ হওয়ার পর**, ডান ডলের আগে। Recursion-এর call stack নিজেই গভীরতা মনে রাখে, আলাদা stack লাগে না।
+
+## কোন ক্রম কোন কাজে
+
+- **Pre-order:** গাছ **কপি** করা, কারণ root আগে পেলে নতুন গাছে বসানো যায়; prefix expression লেখা।
+- **In-order:** [BST](./binary-search-tree.mdx)-তে এটা **sorted ক্রম** দেয়। এক লাইনে BST-র পরিচয়পত্র।
+- **Post-order:** গাছ **মুছে ফেলা** (child-গুলো আগে মোছো, তারপর নিজে), subtree-র হিসাব (আগে নিচের ফল, তারপর নিজের)।
+
+## Complexity
+
+| দিক | খরচ | কেন |
+|-----|------|-----|
+| Time | O(n) | প্রতি node-এ ঠিক একবার push, ঠিক দুইবার child-ডাক (null-ও মিলিয়ে) |
+| Space | O(h) | call stack-এর গভীরতা = গাছের height; ভারসাম্যপূর্ণ হলে log n, হেলানো হলে n |
+
+Space-টা গুরুত্বপূর্ণ: "recursion ফ্রি" না, গাছ হেলানো হলে stack-এ O(n) frame জমে। সেই হিসাব [Recursion vs Iteration](../recursion/recursion-vs-iteration.mdx)-এ গিয়েছিল।
+
+## সাধারণ ভুল আর edge case
+
+**১. তিন ক্রমের নাম মুখস্থ, জায়গা বোঝা না।**
+"Pre মানে আগে" মুখস্থ রাখলে নতুন গাছে গুলিয়ে ফেলো। সূত্র মনে রাখো: **root কোথায়**, নাম সেখান থেকেই এসেছে।
+
+**২. Base case ভুলে null-এ crash।**
+`if (!node) return` ছাড়া `node.value` পড়তে গিয়ে TypeError। প্রতি recursive call-এর আগে null হতে পারে, এই চেকই দারোয়ান।
+
+**৩. `out` পাস না করা।**
+`inOrder(node.left)` লিখে `out` না দিলে ভেতরের call নতুন array বানায়, ফল হারায়। [Memoization](../recursion/memoization.mdx)-এর cache-এর মতোই নিঃশব্দ ভুল: চলে, কিন্তু ফল আসে না।
+
+**৪. In-order সবসময় sorted ভাবা।**
+শুধু BST-তে। সাধারণ binary tree-তে in-order মানে কিছুই না, উপরের গাছেই দেখো: 4, 2, 5, 1, 3 sorted না। এই গুলানোটা interview-এ ক্লাসিক ফাঁদ।
+
+**৫. Iterative লিখতে গিয়ে ডান-বাম উল্টানো।**
+Explicit stack দিয়ে pre-order লিখলে **ডান আগে push**, তাহলে বাম আগে বের হয় (LIFO)। উল্টো push করলে ক্রম উল্টে যায়, আর টেরও পাবে না। পুরো রূপ [BFS/DFS on Tree](./bfs-dfs-on-tree.mdx)-এ।
+
+## Animation Spec
+
+> **Animation Spec: DFS Order Player**
+>
+> - **দৃশ্য:** একই গাছ তিনবার পাশাপাশি (pre/in/post); প্রতিটায় visit-এর সিরিয়াল ফুটে ওঠে; নিচে call stack-এর ছোট জানালা।
+> - **ইনপুট:** গাছ নির্মাণ (ছোট প্রিসেট); speed।
+> - **ধাপ:** একটা আলোকে node থেকে node-এ ঘোরে; কোন মুহূর্তে node output-এ পড়ল, তিন প্যানেলে সেই মুহূর্ত পাশাপাশি তুলনীয়।
+> - **নিয়ন্ত্রণ:** step, play, reset; তিনটার একসাথে play।
+> - **লক্ষ্য:** এক গাছ, এক কঙ্কাল, শুধু push-এর জায়গা বদলে তিন ফল: চোখে দেখা।
+
+## অনুশীলন
+
+- **সহজ ১:** এই গাছে তিন ক্রম লিখো: root 7, বামে 3 (বামে 1, ডানে 5), ডানে 9। আগে অনুমান করো, তারপর নিয়ম বসিয়ে মিলাও।
+- **সহজ ২:** উপরের পরীক্ষার গাছে post-order হাতে trace করো, call stack টেবিল বানিয়ে, আমার in-order-এর মতো করে।
+- **মাঝারি ১:** একটা function লেখো `countNodes(root)`, post-order ভাবনায়। (হিন্ট: নিজের সংখ্যা = বাম subtree + ডান subtree + 1। কোন ক্রমে হিসাব হচ্ছে, খেয়াল করো।)
+- **মাঝারি ২:** `sumTree(root)`: সব node-এর মানের যোগফল। কোন ক্রম সবচেয়ে স্বাভাবিক, কেন?
+- **কঠিন:** Pre-order আর in-order দেওয়া থাকলে গাছ পুনর্গঠন করা যায় (LeetCode 105)। কীভাবে, ভাবো: pre-এর প্রথম উপাদান সবসময় কে? in-এ সেটার বামে-ডানে কী থাকে? (হিন্টের উত্তর: root; আর in-order-এ root-এর বামে বাম subtree পুরোটা। Recursion দুই ভাগে চলে যায়।)
+
+## সারসংক্ষেপ
+
+- তিন DFS ক্রম, পার্থক্য একটাই: root কখন পড়া হচ্ছে, আগে (pre), মাঝে (in), শেষে (post)।
+- একটাই কঙ্কাল, শুধু `push`-এর জায়গা বদলায়; তিন algorithm মুখস্থের দরকার নেই।
+- Recursion-এর call stack-ই গভীরতা মনে রাখে; space O(h), হেলানো গাছে O(n)।
+- Pre কপিতে, in BST-তে sorted, post মোছা বা হিসাবে: কাজ দেখে ক্রম।
+- In-order সবসময় sorted নয়, শুধু BST-তে: ক্লাসিক ফাঁদ।

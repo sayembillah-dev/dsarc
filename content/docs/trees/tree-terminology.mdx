@@ -1,0 +1,141 @@
+---
+title: "Tree পরিভাষা: root থেকে height পর্যন্ত"
+description: ফোল্ডারের মতো শ্রেণিবদ্ধ কাঠামো। root, leaf, height, depth, subtree, edge-এর হিসাব, সব এক গাছে গেঁথে চেনা, গোনার নিয়মসহ।
+---
+
+## কী শিখব
+
+- Tree আসলে কী: শ্রেণিবদ্ধ, cycle-মুক্ত, একটাই root
+- root, parent, child, leaf, edge, height, depth, subtree, সব একটা গাছে বসে চেনা
+- Height আর depth-এর পার্থক্য, যেখানে সবাই গুলায়
+- গোনার দুটো নিয়ম যা পরে বারবার কাজে লাগে
+- Binary tree-এর node কোডে লেখা
+
+## ধারণা
+
+তোমার ফোনের ফোল্ডারের কথা ভাবো। একটা ফোল্ডারের ভিতরে আবার ফোল্ডার, তার ভিতরে ফাইল। উপর থেকে নিচে, একটা শ্রেণিবদ্ধ বিন্যাস। কোম্পানির অর্গানogramও এমন: CEO, তার নিচে ম্যানেজার, তাদের নিচে কর্মী। **Tree** হুবহু এমনই কাঠামো, শুধু আঁকা হয় উল্টো গাছের মতো: **root** উপরে, **leaf** নিচে।
+
+দুটো শর্ত ছাড়া tree হয় না: এক, **কোনো cycle নেই** (কেউ নিজের পূর্বপুরুষের সন্তান হতে পারে না); দুই, সব node **সংযুক্ত**। n-টা node-এর tree-তে edge থাকে ঠিক **n - 1** টা, কারণ root ছাড়া প্রত্যেকের ঠিক একটা করে parent আছে। এই ছোট্ট গোনাটা পরে অনেক যুক্তিতে ফিরে আসবে।
+
+## একটা গাছে সব পরিভাষা
+
+```text
+            A                 ← root (depth 0)
+          /   \
+         B     C              ← depth 1
+        / \     \
+       D   E     F            ← depth 2
+      /       \
+     G         H              ← leaf-গুলো: G, E, H (depth 3)
+```
+
+এই একটা গাছ ধরে সব সংজ্ঞা বসাই:
+
+| পরিভাষা | মানে | এই গাছে |
+|----------|------|----------|
+| Root | সবার উপরের node, যার parent নেই | A |
+| Parent / Child | সরাসরি উপরে / নিচে | B-এর child D, E |
+| Sibling | একই parent-এর child | D আর E |
+| Leaf | যার child নেই | G, E... না, E-এর child নেই, আর H | 
+| Edge | দুই node-এর সংযোগ | মোট ৭টা (8 node - 1) |
+| Depth (node-এর) | root থেকে কত edge নিচে | G-এর depth 3 |
+| Height (tree-এর) | root থেকে সবচেয়ে গভীর leaf-এর দূরত্ব | 3 |
+| Height (node-এর) | ওই node থেকে নিচে leaf পর্যন্ত | B-এর height 2 |
+| Subtree | একটা node + তার নিচের সবাই | B, D, E, G মিলে B-এর subtree |
+| Ancestor / Descendant | উপরের সারি / নিচের সারি | G-এর ancestor: D, B, A |
+
+## Height বনাম depth: যেখানে সবাই গুলায়
+
+দুটোই "কত নিচে" মাপে, কিন্তু দিক উল্টো:
+
+- **Depth** মাপে **উপর থেকে**: root-এর depth 0, নিচে নামলে বাড়ে। প্রশ্ন: "তুমি কত নিচে?"
+- **Height** মাপে **নিচে থেকে**: leaf-এর height 0, উপরে উঠলে বাড়ে। প্রশ্ন: "তোমার নিচে আর কতটুকু?"
+
+পুরো tree-এর height মানে root-এর height, যা সবচেয়ে গভীর leaf-এর depth-এর সমান। এই গাছে দুটোই 3। ছোট্ট টেকনিক্যাল পয়েন্ট: কেউ কেউ edge না গুনে node গোনে, তখন সংখ্যা এক বাড়ে। কোনো লেখা পড়লে আগে দেখে নেবে কোন রেওয়াজে লেখা; আমরা edge গুনছি।
+
+## Binary tree: প্রতি node-এ সর্বোচ্চ দুই child
+
+DSA-এর সবচেয়ে চেনা রূপ হলো **binary tree**, প্রতি node-এর সর্বোচ্চ দুই child: `left` আর `right`। ফোল্ডার-গাছে child-এর সংখ্যার সীমা নেই, binary tree-তে আছে, আর এই সীমাটাই পরে [BST](./binary-search-tree.mdx)-এর নিয়ম আর heap-এর গণিত সম্ভব করে।
+
+## কোড: node বানানো
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;    // বাম child, না থাকলে null
+    this.right = null;   // ডান child
+  }
+}
+
+// উপরের গাছের B অংশটা বানাই:
+const b = new TreeNode("B");
+b.left = new TreeNode("D");
+b.right = new TreeNode("E");
+b.left.left = new TreeNode("G");
+
+console.log(b.value);            // "B"
+console.log(b.left.value);       // "D"
+console.log(b.left.left.value);  // "G"
+console.log(b.right.left);       // null: E-এর বাম child নেই
+```
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `this.left = null` : child না থাকার চিহ্ন `null`। খালি রেখা আর `null` দেওয়া এক কথা, কিন্তু পরে traversal-এ `if (!node) return` এই `null` ধরেই থামে।
+2. `b.left = new TreeNode("D")` : লিংক বানানো মানে reference বসানো। [Linked List](../linked-lists/singly-linked-list.mdx)-এর `next`-এর মতোই, শুধু এখানে দুই দিক।
+3. `b.left.left` : চেইন করে গভীরে যাওয়া। এই ডট-চেইনই path, আর path-এর দৈর্ঘ্যই depth।
+
+## Complexity আর গোনার নিয়ম
+
+| প্রশ্ন | উত্তর | কেন |
+|--------|-------|-----|
+| n node-এ কত edge? | n - 1 | root ছাড়া সবার ঠিক এক parent |
+| Complete binary tree-তে max node, height h হলে | 2ʰ⁺¹ - 1 | প্রতি স্তরে দ্বিগুণ |
+| ওলটাটা: n node-এ minimum height | ⌊log₂n⌋ | গাছ যত ভরা, তত চাপা |
+| Node বানাতে | O(1) | তিনটা field বসানো |
+
+তৃতীয় সারিটা ভালো করে দেখো: **ভরা binary tree-র height log n মাত্র**। এই এক সত্যের উপর দাঁড়িয়ে আছে BST-এর O(log n) খোঁজা, heap-এর O(log n) insert, সব। গাছ ভরা রাখতে পারলেই জাদু, হেলে গেলে সব শেষ, সেই গল্প [AVL](./avl-tree.mdx)-এ।
+
+## সাধারণ ভুল আর edge case
+
+**১. Height আর depth গুলিয়ে ফেলা।**
+দুটোর প্রশ্নই উল্টো। মনে রাখার কায়দা: depth-এর d মানে **দূরে নিচে** (root থেকে), height মানে **নিচে আর কত**। Interview-এর প্রথম মিনিটেই গুলিয়ে ফেললে পরের সব হিসাব এক সরে যায়।
+
+**২. এক node-এর tree-এর height নিয়ে দ্বিধা।**
+Root-ই leaf, height 0 (edge গোনা হলে)। "Height 1" বলে ফেলা মানে অর্ধেক হিসাব এক সরে যাওয়া। শূন্য-node-এর tree-এর height -1 ধরা হয় কোথাও কোথাও, এই ভিত্তিতেই recursion-এর base case লেখা হয়।
+
+**৩. Leaf চেনার ভুল।**
+Leaf মানে childless, গভীরতম না। উপরের গাছে E-এর depth 2, তবু সে leaf। শুধু নিচের সারির দিকে তাকালে মিস হবে।
+
+**৪. Cycle থাকা গ্রাফকে tree ভাবা।**
+A → B → C → A হলে সেটা tree না, graph। Tree-র গ্যারান্টি (n-1 edge, একই পথ) সব ভেঙে যায়। এই পার্থক্য [Graph](../graphs/graph-terminology.mdx)-এ গিয়ে কাজে লাগবে।
+
+**৫. `null` child চেক না করে ডট চাপানো।**
+`b.right.left.value` লিখলে TypeError, কারণ `b.right.left` হলো null। প্রতি ডট-এর আগে ভাবো: এখানে null হতে পারে কিনা। Tree-র অর্ধেক bug এই এক জায়গা থেকে।
+
+## Animation Spec
+
+> **Animation Spec: Tree Anatomy**
+>
+> - **দৃশ্য:** একটা পূর্ণাঙ্গ tree; পাশে পরিভাষার কার্ডগুলো (root, leaf, height, depth, subtree, edge count)।
+> - **ইনপুট:** node নির্বাচন; পরিভাষা নির্বাচন।
+> - **ধাপ:** node নির্বাচনে তার depth-এর পথ নীলে, subtree সবুজে, ancestors কমলায় জ্বলে; height নির্বাচনে নিচের দিকের দীর্ঘতম পথ দেখা যায়; পাশে live edge/node কাউন্টার।
+> - **নিয়ন্ত্রণ:** reset; edge বনাম node গোনার টগল।
+> - **লক্ষ্য:** পরিভাষা আর গোনার নিয়ম একই গাছে গেঁথে যাওয়া।
+
+## অনুশীলন
+
+- **সহজ ১:** উপরের গাছে F-এর depth, height, ancestors আর subtree-এর node-সংখ্যা লিখো।
+- **সহজ ২:** ১৫টা node-এর complete binary tree-এর height কত? ২⁴ - 1 হিসাব দেখে মিলাও।
+- **মাঝারি ১:** প্রমাণ করো (কথায়): কেন tree-তে দুই node-এর মাঝে ঠিক একটাই পথ থাকে। (হিন্ট: দুটো পথ থাকলে cycle বানে, আর cycle মানে tree না।)
+- **মাঝারি ২:** নিজে হাতে একটা ternary tree node লেখো (তিনটা child), তারপর ভাবো: array দিয়ে child রাখলে কী সুবিধা-অসুবিধা? General tree-তে সেটাই রেওয়াজ, কেন?
+- **কঠিন:** একটা function লেখো `treeHeight(root)` recursion দিয়ে। (হিন্ট: base case null-এ -1 বা 0; recursive case: `1 + max(height(left), height(right))`। দুই রেওয়াজে উত্তর এক সরে যায়, কোনটা বেছে নিলে আর কেন?)
+
+## সারসংক্ষেপ
+
+- Tree = শ্রেণিবদ্ধ, cycle-মুক্ত, এক root; n node মানে n-1 edge।
+- Depth উপর থেকে, height নিচে থেকে; tree-এর height = root-এর height।
+- Leaf মানে childless, গভীরতম না; sibling, subtree, ancestor: এক গাছে সব চেনা।
+- ভরা binary tree-র height log n: এই এক সত্যেই পরের সব O(log n) জাদু।
+- `null` চেক ছাড়া ডট চাপাবে না: tree-র অর্ধেক crash এখান থেকেই।
