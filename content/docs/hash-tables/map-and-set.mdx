@@ -1,61 +1,308 @@
 ---
 title: "Map আর Set: বাস্তবে যেটা ব্যবহার করবে"
-description: JavaScript-এর built-in Map আর Set-এর দক্ষ ব্যবহার, frequency counting, duplicate সরানো, আর iteration-এর কায়দা।
+description: নিজে hash table না বানিয়ে JavaScript-এর Map আর Set-ই কেন, পুরো API-এর ভ্রমণ, Map বনাম object-এর সিদ্ধান্ত ছক, আর কাজে লাগা রেসিপি।
 ---
 
 ## কী শিখব
 
-- built-in `Map` আর `Set`-এর দক্ষ ব্যবহার
+- বাস্তব কোডে নিজের hash table নয়, built-in Map আর Set-ই কেন ব্যবহার করবে
+- Map-এর পুরো API: set/get/has/delete/size/clear, আর iteration-এর কায়দা
+- key হিসেবে যেকোনো টাইপ, এমনকি object আর function
+- Set দিয়ে এক লাইনে dedupe, আর union/intersection/difference হাতে বানানো
+- Map নাকি plain object: কখন কোনটা, সিদ্ধান্তের ছক
+- WeakMap/WeakSet কবে লাগে, কেন iterable নয়
 
 ## ধারণা
 
-সত্যি কথা বলতে, বাস্তব কোডে নিজে hash table কেউ বানায় না। JavaScript নিজেই দিয়ে দিয়েছে দুটো দারুণ জিনিস, `Map` আর `Set`।
+আগের পাতায় নিজে হাতে hash table বানিয়েছ, bucket-গুছে collision সামলেছ। সত্যি কথা বলতে, বাস্তব কোডে ওটা ship করার দিন প্রায় আসবেই না। JavaScript নিজেই ভেতরে hash table চালিয়ে তোমার হাতে দুটো তৈরি প্যাকেট দিয়ে দিয়েছে: **Map** আর **Set**।
 
-- **Map**: key-value জোড়া রাখে। key যেকোনো টাইপেরই হতে পারে, আর ঢোকানোর ক্রমটাও বজায় থাকে।
-- **Set**: শুধু ইউনিক মান রাখে। কোনো মান আছে কিনা, সেটা চেক করা একদম দ্রুত।
+ভেতরে তাহলে কী ঘুরছে? তোমারই শেখা জিনিস: hash, bucket, collision handling, resize। সব [আগের পাতার](./collision-handling.mdx) গল্প। তাহলে এই পাতায় কী শেখা বাকি? মালিকের ম্যানুয়াল: কোন বোতামে কী হয়, কোথায় লুকিয়ে আছে অদ্ভুত আচরণ, আর পুরোনো plain object (`{}`)-এর বদলে Map কখন টানবে, কখন টানবে না।
 
-<Callout type="info" title="object না Map?">
-object দিয়েও (`{}`) কাজ চালানো যায়। তবে DSA-তে `Map`/`Set` অনেক বেশি নিরাপদ আর দ্রুত, বিশেষ করে ডেটা বেশি হলে।
-</Callout>
+এক লাইনে দুটোর পরিচয়:
 
-## কোড উদাহরণ
+- **Map:** key-value জোড়া রাখে। key যেকোনো টাইপের হতে পারে, আর ঢোকানোর ক্রম বজায় থাকে।
+- **Set:** শুধু ইউনিক মান রাখে। "এই জিনিসটা আছে কিনা" জিজ্ঞেস করা একদম দ্রুত।
+
+## ধাপে ধাপে: একই data, দুই প্যানেল
+
+পার্থক্যটা বাক্যে নয়, হাতে দেখি। একই চারটা জোড়া আগে plain object-এ, তারপর Map-এ ঢোকাই: "10" → "x", তারপর "2" → "y", তারপর "b" → "z", শেষে একটা object `{ id: 1 }` → "w"।
+
+| ধাপ | ঢুকল | object-এর ভেতরে | Map-এর ভেতরে |
+|-----|------|------------------|---------------|
+| 1 | "10" → "x" | { 10: "x" } | Map { "10" => "x" } |
+| 2 | "2" → "y" | { 2: "y", 10: "x" } | Map { "10" => "x", "2" => "y" } |
+| 3 | "b" → "z" | { 2: "y", 10: "x", b: "z" } | Map { "10", "2", "b" }, ক্রম অটল |
+| 4 | { id: 1 } → "w" | শেষে বসল "[object Object]" | আসল object-টাই key হয়ে বসল |
+
+দুটো অদ্ভুত কাণ্ড চোখে পড়ল?
+
+১. object-এ "2" সামনে চলে এসেছে, "10" পিছনে। integer-সদৃশ key-গুলো object-এ আগে ছোট থেকে বড় সাজে, ঢোকানোর ক্রম বলে কিছু নেই। Map-এ ক্রম অটল।
+২. object key দিলে plain object সেটাকে string বানিয়ে ফেলল, আর সব object-এর string রূপ একটাই: "[object Object]"। Map-এ object-টাই তার পরিচয় নিয়ে key হয়ে বসল।
+
+এই ছোট্ট নমুনাই পুরো পাতার সার। এবার API-গুলো ঘুরে দেখি।
+
+## কোড: Map-এর ভ্রমণ
 
 ```js
-// Map
-const freq = new Map();
-for (const ch of "banana") {
-  freq.set(ch, (freq.get(ch) || 0) + 1); // অক্ষর গণনা
+const m = new Map();
+
+m.set("name", "DSA পাঠ");    // string key
+m.set(42, "উত্তর");          // number key
+m.set(true, "হ্যাঁ");         // boolean key
+
+console.log(m.get(42));       // "উত্তর"
+console.log(m.has("name"));   // true
+console.log(m.size);          // 3
+
+m.delete(true);
+console.log(m.has(true));     // false
+
+for (const [key, value] of m) {
+  console.log(key, "=>", value);
 }
-console.log(freq); // Map { 'b'=>1, 'a'=>3, 'n'=>2 }
+// ঢোকানোর ক্রমেই বের হবে: আগে name, তারপর 42
 
-// Set
-const unique = new Set([1, 2, 2, 3, 3, 3]);
-console.log([...unique]);      // [1, 2, 3]
-console.log(unique.has(2));    // true, O(1)
+for (const k of m.keys()) console.log(k);
+for (const v of m.values()) console.log(v);
 
-// iterate
-for (const [key, count] of freq) console.log(key, count);
+m.clear();                    // পুরোটা ফেলে দাও
+console.log(m.size);          // 0
 ```
 
-## কোড ব্রেকডাউন
+key-এর টাইপ নিয়ে কোনো ভড়কে যাওয়া নেই। object, array, এমনকি function-ও key হতে পারে:
 
-- `map.get(k) || 0` মানে কী? মান না থাকলে 0 ধরে নেওয়া। গণনা শুরু করার জন্য এটা খুব চেনা কৌশল।
-- `Set` দিয়ে duplicate সরানো যায় মাত্র এক লাইনে: `[...new Set(arr)]`।
-- `Map`/`Set`-এর `get`, `set`, `has`, `add`, সবই গড়ে O(1)।
+```js
+const domLike = { id: "btn-1" };
+const meta = new Map();
+
+meta.set(domLike, { clicks: 0 });
+console.log(meta.get(domLike));          // { clicks: 0 }
+console.log(meta.get({ id: "btn-1" }));  // undefined! এটা অন্য object
+```
+
+শেষ লাইনটা গুরুত্বপূর্ণ: object key মানে **reference-এর পরিচয়**। একই দেখতে আরেকটা object দিলে Map সেটাকে চেনে না।
+
+## কোড: Set-এর ভ্রমণ
+
+```js
+const s = new Set();
+s.add(10);
+s.add(20);
+s.add(10);                 // দ্বিতীয়বার গেলই না
+console.log(s.size);       // 2
+console.log(s.has(20));    // true
+s.delete(10);
+
+// এক লাইনে dedupe:
+const nums = [3, 1, 3, 2, 1];
+console.log([...new Set(nums)]);   // [3, 1, 2], প্রথম দেখার ক্রম অক্ষত
+```
+
+Set দিয়ে গণিতের সেই চেনা অপারেশনগুলো হাতে বানানোও সহজ:
+
+```js
+const a = new Set([1, 2, 3, 4]);
+const b = new Set([3, 4, 5, 6]);
+
+const union = new Set([...a, ...b]);                        // {1, 2, 3, 4, 5, 6}
+const intersection = new Set([...a].filter(x => b.has(x))); // {3, 4}
+const difference = new Set([...a].filter(x => !b.has(x)));  // {1, 2}
+```
+
+কায়দাটা খেয়াল করো: একটার উপাদান ঘুরে আরেকটার Set-এ `has` করছি, আর `has` চলে O(1)-এ। এই ছোট্ট কৌশল interview-র অজস্র সমস্যায় ফিরে ফিরে আসে (দেখো [Hash Patterns](./hash-patterns.mdx))।
+
+## Map না plain object: সিদ্ধান্তের ছক
+
+| বিষয় | Map | plain object ({}) |
+|-------|-----|-------------------|
+| key-এর টাইপ | যা খুশি: number, object, function | string আর symbol; বাকিরা string-এ বদলে যায় |
+| ক্রমের গ্যারান্টি | ঢোকানোর ক্রম | integer-সদৃশ key আগে ছোট থেকে বড়, তারপর বাকিরা |
+| size | `.size`, সঙ্গে সঙ্গে | নিজে গুনতে হয় (`Object.keys().length`) |
+| আগে থেকেই ভরা | নেই, একদম খালি শুরু | `__proto__`, `toString`-দের ছায়া থেকেই যায় |
+| JSON.stringify | সোজা হয় না, আগে convert লাগে | সোজাসুজি চলে |
+| বারবার add/remove | দ্রুত, এর জন্যই বানানো | তুলনামূলক ধীর |
+| কখন টানবে | গণনা, cache, lookup table | নির্দিষ্ট গঠনের রেকর্ড, JSON payload |
+
+object-এর সেই ছায়াটা একটু কাছ থেকে দেখা দরকার:
+
+```js
+const obj = {};
+console.log(obj["__proto__"]);     // key দিইনি, তবু Object.prototype ফেরত!
+console.log("toString" in obj);    // true, অথচ তুমি দাওনি
+
+const map2 = new Map();
+map2.set("__proto__", 1);
+console.log(map2.get("__proto__")); // 1, কোনো নাটক নেই
+```
+
+সহজ কথায়: `obj[key]` দিয়ে user-দেওয়া key জমাতে গেলে কেউ "__proto__" পাঠিয়ে গোটা প্রোগ্রাম গুলিয়ে দিতে পারে। Map এই ট্র্যাপে পা দেয় না।
+
+## WeakMap আর WeakSet: সংক্ষিপ্ত খবর
+
+WeakMap-এ key (object-ই হতে হয়) দুর্বল করে ধরা থাকে। মানে: বাইরে কারো কাছে সেই object-এর আর reference না থাকলে garbage collector object-টা ফেলে দেবে, সাথে Map-এর entry-টাও নিজে থেকে মুছে যাবে। Memory leak-এর ভয় নেই। বিনিময়ে iterate করা যায় না, size নেই। ব্যবহার: object-কে না বদলে তার সাথে metadata জুড়ে দেওয়া।
+
+```js
+const cache = new WeakMap();
+
+function heavyWork(obj) { return { total: obj.items.length }; }
+
+function process(obj) {
+  if (!cache.has(obj)) cache.set(obj, heavyWork(obj));
+  return cache.get(obj);
+}
+
+const doc = { items: [1, 2, 3] };
+console.log(process(doc));   // { total: 3 }
+// doc বাইরে ফেলে দিলে cache-এর entry-টাও নিজে নিজে মুছে যাবে
+```
+
+## ভ্যারিয়েন্ট ১: frequency counter
+
+DSA-তে সবচেয়ে বেশি লাগা ছবি এটা। প্রতিটা জিনিস কয়বার এসেছে:
+
+```js
+function charFreq(text) {
+  const freq = new Map();
+  for (const ch of text) {
+    freq.set(ch, (freq.get(ch) || 0) + 1);
+  }
+  return freq;
+}
+
+console.log(charFreq("banana"));
+// Map { 'b' => 1, 'a' => 3, 'n' => 2 }
+```
+
+`freq.get(ch) || 0` এই লাইনটা মুখস্থ নয়, বোঝো: key না থাকলে get দেয় undefined, আর `undefined || 0` মানে 0। প্রথম দেখায় গণনা শুরু 0 থেকে। এই এক লাইনে কত সমস্যা মারা যায়, তা [Hash Patterns](./hash-patterns.mdx)-এ দেখবে।
+
+## ভ্যারিয়েন্ট ২: groupBy
+
+একই গোত্রের জিনিস এক ঝাঁকে:
+
+```js
+function groupBy(arr, keyFn) {
+  const groups = new Map();
+  for (const item of arr) {
+    const k = keyFn(item);
+    if (!groups.has(k)) groups.set(k, []);  // এই গোত্রে এটাই প্রথম
+    groups.get(k).push(item);
+  }
+  return groups;
+}
+
+const words = ["apple", "ant", "banana", "bat", "cat"];
+console.log(groupBy(words, w => w[0]));
+// Map { 'a' => ['apple', 'ant'], 'b' => ['banana', 'bat'], 'c' => ['cat'] }
+```
+
+## ভ্যারিয়েন্ট ৩: memo cache
+
+আগে বের করা উত্তর জমিয়ে রাখো, একই হিসাব দ্বিতীয়বার নয়:
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+  return function (n) {
+    if (cache.has(n)) return cache.get(n);  // জমানো উত্তর, সঙ্গে সঙ্গে
+    const result = fn(n);
+    cache.set(n, result);
+    return result;
+  };
+}
+
+let calls = 0;
+const slow = (n) => { calls++; return n * 10; };
+const fast = memoize(slow);
+
+console.log(fast(5));   // 50, হিসাব হয়েছে
+console.log(fast(5));   // 50, এবার cache থেকে
+console.log(calls);     // 1
+```
+
+recursion-এর সাথে এই কায়দা মিললেই জন্মায় memoization, fibonacci-র দুঃখ শেষ হয়। পুরো গল্প [Memoization](../recursion/memoization.mdx)-এ।
+
+## কোড ব্রেকডাউন: groupBy, লাইনে লাইনে
+
+1. `const groups = new Map()` : ফলাফলটা Map-এ। key হবে গোত্রের নাম, value হবে সেই গোত্রের সদস্যদের array।
+2. `for (const item of arr)` : প্রতিটা উপাদান একবারই ঘোরা হচ্ছে, তাই পুরোটা O(n)।
+3. `const k = keyFn(item)` : গোত্র কী, সেটা তুমি দেওয়া ফাংশন ঠিক করে। এখানে শব্দের প্রথম অক্ষর।
+4. `if (!groups.has(k)) groups.set(k, [])` : এই গোত্রে প্রথম কেউ এলে আগে খালি array বসিয়ে দিতে হয়। নাহলে পরের লাইনে undefined-এ push করতে গিয়ে বিপদ।
+5. `groups.get(k).push(item)` : গোত্রের array-টা বের করে নতুন সদস্য ঢুকিয়ে দিলাম। Map থেকে array-টা reference হিসেবে এসেছে, তাই push সরাসরি কাজ করে।
 
 ## Complexity
 
-- get/set/has/add গড়ে O(1)।
+- Map আর Set-এর get/set/has/add/delete: **গড়ে O(1)**। কারণ ভেতরে তোমার শেখা hash table-ই ঘুরছে, collision আর resize-সহ। যুক্তিটা [আগের পাতায়](./collision-handling.mdx) গেঁথেছি।
+- iteration (`for..of`), spread (`[...set]`), `Object.fromEntries(map)`: সব O(n), প্রতিটা entry একবার করে ছোঁয়া লাগে।
+- union/intersection/difference: O(n + m)। ছোটটাকে ঘুরে বড়টার Set-এ has করা উচিত, তাহলে আরেকটু কমে।
+- Space: O(n), n-টা entry-র জায়গা লাগবেই।
+
+## সাধারণ ভুল আর edge case
+
+**১. plain object-এ object key দেওয়া।**
+
+```js
+const o = {};
+o[{ a: 1 }] = "x";
+o[{ b: 2 }] = "y";
+console.log(o);   // { '[object Object]': 'y' } : দুটোই একই key-তে, আগেরটা হারিয়ে গেল!
+```
+
+object সব key-কে string-এ বদলে ফেলে, আর সব object-এর string রূপ একটাই "[object Object]"। key object হলে Map ছাড়া পথ নেই।
+
+**২. Set object-কে value দেখে dedupe করবে বলে আশা করা।**
+
+```js
+const s2 = new Set([{ a: 1 }, { a: 1 }]);
+console.log(s2.size);   // 2! দুটো আলাদা object, তাই দুটোই থাকবে
+```
+
+Set মেলায় reference-এর পরিচয়, ভেতরের value নয়। number বা string-এ value-ই পরিচয়, কিন্তু object-এ নয়।
+
+**৩. integer-সদৃশ key-এ plain object-এর ক্রমে ভরসা করা।**
+
+```js
+const o2 = {};
+o2["10"] = "দশ";
+o2["2"] = "দুই";
+o2["x"] = "এক্স";
+console.log(Object.keys(o2));   // ['2', '10', 'x'] : ঢোকানোর ক্রম উধাও!
+```
+
+integer-সদৃশ key আগে ছোট থেকে বড় সাজে, তারপর বাকিরা। ক্রম দরকার হলে Map।
+
+**৪. object key বানানোর পরে সেটাকে বদলে ফেলা।**
+নিজের বানানো hash table-এ key-এর content বদলালে তার hash বদলে যায়, entry অন্য slot-এ পড়ে থেকে unreachable হয়ে যায়। সেই ভুলটা [Collision Handling](./collision-handling.mdx)-এ বিস্তারিত আছে। Map-এ reference দিয়ে ধরা থাকে, তাই lookup চলে, কিন্তু বদলে যাওয়া object দিয়ে তোমার নিজের logic-ই গুলিয়ে যায়। key বানানোর পর সেটা বদলো না, এটাই নিয়ম।
+
+**৫. Map-কে সোজা JSON.stringify করা।**
+
+```js
+console.log(JSON.stringify(new Map([["a", 1]])));   // "{}" : সব হারিয়ে গেল, নিঃশব্দে
+```
+
+আগে convert করো: `JSON.stringify(Object.fromEntries(map))` অথবা জোড়ার array চাইলে `JSON.stringify([...map])`।
 
 ## Animation Spec
 
-> **Animation Spec: Frequency Counter**
+> **Animation Spec: Object বনাম Map**
 >
-> - **দৃশ্য:** উপরে input string, নিচে Map entries (key থেকে count) বার সহ।
-> - **ইনপুট:** string।
-> - **ধাপ:** প্রতিটা অক্ষরে সংশ্লিষ্ট count-এর বার এক ধাপ বাড়বে।
-> - **লক্ষ্য:** frequency counting প্যাটার্নটা আত্মস্থ করা (interview-তে অতি প্রচলিত)।
+> - **দৃশ্য:** পাশাপাশি দুটো প্যানেল; বামে plain object, ডানে Map; একই data দুটোতেই একসাথে ঢোকে।
+> - **ইনপুট:** key-value জোড়ার তালিকা; key-এর টাইপ মিশিয়ে দেওয়া যায় (integer-সদৃশ string, সাধারণ string, object)।
+> - **ধাপ:** প্রতি insert-এ দুই পাশে entry বসে; integer-সদৃশ key দিলে object প্যানেলে জায়গা বদলে যায় (2 আগে, 10 পরে), Map-এ ক্রম অটল; object key দিলে object প্যানেলে entry-টা "[object Object]" হয়ে শুষ্ক নীরে বসে, Map-এ আসল object-টাই key হয়ে ঝুলছে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; key-এর টাইপ বাছাইয়ের বোতাম।
+> - **লক্ষ্য:** পার্থক্য বাক্যে নয়, চোখে: ক্রম আর key-এর টাইপ নিয়ে কে কীভাবে খেলে।
 
 ## অনুশীলন
 
-- একটা string-এ সবচেয়ে বেশি বার আসা অক্ষরটা বের করো।
+- **সহজ ১:** একটা array থেকে duplicate সরাও, প্রথম দেখার ক্রম অক্ষত রেখে। হিন্ট: `[...new Set(arr)]`-ই যথেষ্ট; ক্রম কেন অক্ষত থাকে, সেটা ব্যাখ্যা করতে পারাটা আসল।
+- **সহজ ২:** একটা বাক্যের প্রতিটা শব্দ কয়বার এসেছে, Map-এ গুনে দেখাও। হিন্ট: আগে lowercase করে split, তারপর `freq.set(w, (freq.get(w) || 0) + 1)`।
+- **মাঝারি ১:** Intersection of Two Arrays (LeetCode 349)। দুটো array-এর common উপাদান, duplicate ছাড়া। হিন্ট: একটার Set বানাও, আরেকটা ঘুরে has দেখো; উত্তরের Set আলাদা রাখো, নাহলে duplicate ঢুকে যাবে।
+- **মাঝারি ২:** Group Anagrams (LeetCode 49)-এর skeleton লিখো: শব্দের array দিলে anagram-গুলো এক গ্রুপে। হিন্ট: প্রতিটা শব্দের অক্ষর sort করলে anagram-দের key একই হয়ে যায়, বাকিটা groupBy। পুরো আলোচনা [Hash Patterns](./hash-patterns.mdx)-এ।
+- **কঠিন:** LRU Cache (LeetCode 146) বানাও Map দিয়ে, get আর put দুটোই O(1)। হিন্ট: Map-এর insertion order-ই তোমার recency তালিকা; get করলে key-টা delete করে আবার set করো (সবচেয়ে নতুন হয়ে গেল), আর ভরে গেলে `map.keys().next().value`-ই সবচেয়ে পুরোনো, সেটাকেই delete।
+
+## সারসংক্ষেপ
+
+- বাস্তবে hash table বানাবে না; Map আর Set ভেতরে সেই একই যন্ত্র চালায়, collision আর resize-সহ।
+- Map: যেকোনো টাইপের key, ঢোকানোর ক্রম বজায়, `.size` হাতের কাছে।
+- Set: ইউনিক মান, reference দিয়ে মেলে; dedupe এক লাইনে, union/intersection হাতে বানানো যায়।
+- plain object রাখো রেকর্ড আর JSON payload-এর জন্য; গণনা, cache, lookup-এ Map।
+- JSON.stringify-এ Map সোজা চলে না, আগে convert; আর object key বানানোর পর বদলো না।

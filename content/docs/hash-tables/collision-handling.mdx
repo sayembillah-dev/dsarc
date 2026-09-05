@@ -1,71 +1,315 @@
 ---
-title: "Collision: কারণ আর সমাধান"
-description: দুটো key একই index পেলে কী ঘটে, chaining আর open addressing কীভাবে বাঁচায়, সাথে load factor আর resize-এর ধারণা।
+title: "Collision Handling: দুটো key, একটা ঘর"
+description: collision কেন এড়ানো যায় না, chaining আর open addressing দুইভাবেই হাতে-কলমে, load factor দিয়ে resize, আর tombstone-এর সূক্ষ্ম দরকার।
 ---
 
 ## কী শিখব
 
-- দুটো key একই index পেলে কী হয়
+- collision কী, আর কেন এটা ভাগ্যে লেখাই থাকে (pigeonhole-এর হিসাব)
+- **chaining**: প্রতি slot-এ ছোট্ট একটা list, collision মানে সেই list-এ আরেকটা entry
+- **open addressing**: collision মানে probing করে পরের খালি slot খোঁজা
+- load factor কী, কেন সেটা 0.7 পার হলেই table double হয়ে rehash হয়
+- probing table-এ delete করতে গেলে tombstone কেন বাধ্যতামূলক
+- দুই পরিবারের তুলনা: memory, cache, deletion, clustering
 
 ## ধারণা
 
-ভাবো তো, দুটো ভিন্ন key যদি হিসাব করে একই index পেয়ে যায়? ঘটে, ঘটেই। এই ঘটনার নামই **collision**। সামলানোর পথ মূলত দুটো:
+ভাবো তো, একটা হোস্টেলে ঘর আছে ৭টা, আর boarder এসেছে ১০ জন। যত ইচ্ছে বুদ্ধি খাটাও, অন্তত একটা ঘরে দুজন পড়বেই। এটা কারো ব্যর্থতা নয়, এটা সংখ্যার হিসাব। [Hash function](./hash-function.mdx)-এর বেলায়ও একই কথা: সম্ভাব্য key প্রায় অসীম (সব সম্ভাব্য string ভাবো), কিন্তু table-এর slot সসীম। তাই দুটো key একই slot-এ পড়া বাধ্যতামূলক। এই ঘটনার নাম **collision**।
 
-1. **Chaining:** প্রতিটা bucket-এ একটা list রাখো। collision হলে নতুন entry সেই list-এ ঢুকে যাবে। (সবচেয়ে প্রচলিত)
-2. **Open Addressing:** collision হলে পরের খালি ঘরটা খুঁজে নাও (linear বা quadratic probing)।
+গুরুত্বপূর্ণ মানসিকতাটা হলো: লড়াইটা collision **এড়ানোর** নয়, collision **সামলানোর**। hash function ভালো হলে collision কমবে, কিন্তু শূন্য হবে না। তাই [hash table](./hash-table-intro.mdx)-এর নকশায় শুরু থেকেই ঠিক করে নিতে হয়: collision ঘটলে সেই মুহূর্তে কী হবে?
 
-## কোড উদাহরণ
+সমাধান মূলত দুই পরিবারের:
+
+1. **Chaining:** প্রতিটা slot-এ একটা ছোট list (bucket) রাখো। collision হলে নতুন entry সেই list-এর শেষে ঢুকে যাবে। এক slot-এ কতগুলোই entry থাকতে পারে।
+2. **Open addressing:** table-এ কোনো list নেই, এক slot-এ ঠিক একটাই entry। collision হলে নিয়ম মেনে পরের খালি slot-টা খুঁজে নাও। এই খোঁজার পদ্ধতির নাম **probing**।
+
+দুটোই হাতে-কলমে দেখব। আগে chaining।
+
+## ধাপে ধাপে: chaining-এর dry run
+
+Table-এর size ধরো 7। ধরে নিচ্ছি hash function হিসাব করে দিয়েছে (কীভাবে, তা [আগের পাতায়](./hash-function.mdx)):
+
+- "apple" → 3
+- "banana" → 5
+- "mango" → 3
+- "orange" → 0
+- "grape" → 5
+
+একে একে ঢুকাই, আর প্রতি ধাপে যে slot-এ বসছে তার chain-টা দেখি:
+
+| ধাপ | key | index | সেই slot-এর chain | কী ঘটল |
+|-----|-----|-------|-------------------|---------|
+| 1 | "apple" | 3 | [apple] | ঘর খালি, সোজা বসল |
+| 2 | "banana" | 5 | [banana] | এটাও খালি ছিল |
+| 3 | "mango" | 3 | [apple, mango] | collision! apple-এর পাশে দাঁড়াল |
+| 4 | "orange" | 0 | [orange] | খালি |
+| 5 | "grape" | 5 | [banana, grape] | আবার collision, banana-র সঙ্গী হলো |
+
+খেয়াল করো ধাপ ৩ আর ৫-এ। কেউ বাদ পড়ল না, কেউ কারো জায়গা কেড়ে নিল না। শুধু সেই slot-এর list লম্বা হলো।
+
+এবার `get("mango")` চালাও। ভেতরে কী ঘটে:
+
+1. hash("mango") → index 3
+2. slot 3-এর chain-এ গেল: [apple, mango]
+3. প্রথম entry-র key "apple", আমাদের key "mango"। মেলেনি, এগিয়ে যাও
+4. দ্বিতীয় entry-র key "mango"। মিলেছে! value ফেরত
+
+ব্যাপারটা হলো, collision হওয়া মানে খোঁজা বন্ধ নয়, মানে সেই slot-এ ছোট্ট একটা linear search। chain যত ছোট, খোঁজা তত দ্রুত।
+
+## ধাপে ধাপে: এবার open addressing
+
+একই key, একই index, কিন্তু এবার নিয়ম কড়া: এক slot-এ একজনই থাকবে। collision হলে পরের slot, সেটাও ভরা থাকলে তার পরেরটা। এই এক-এক-ঘর-এগিয়ে-যাওয়ার নাম **linear probing**।
+
+| ধাপ | key | হোম index | probe ক্রম | শেষে বসল |
+|-----|-----|-----------|------------|-----------|
+| 1 | "apple" | 3 | 3 | 3 |
+| 2 | "banana" | 5 | 5 | 5 |
+| 3 | "mango" | 3 | 3 (দখলে), 4 | 4 |
+| 4 | "orange" | 0 | 0 | 0 |
+| 5 | "grape" | 5 | 5 (দখলে), 6 | 6 |
+
+এবার `get("grape")` চালালে: hash → 5, কিন্তু 5 নম্বরে বসে আছে "banana"। তাহলে probe চালু: 6 নম্বরে "grape" পেয়ে গেল। মনে রাখো, open addressing-এ get-ও হুবহু সেই probe পথ ধরেই হাঁটে, যে পথ ধরে set বসেছিল।
+
+## কোড: chaining-ওয়ালা পুরো HashMap
+
+[আগের পাতার](./hash-function.mdx) polyHash-টা ছোট করে আবার লিখে নিচ্ছি, তারপর পুরো Map:
 
 ```js
-// chaining দৃষ্টান্ত: bucket[index] = [ [key,value], [key,value], ... ]
-// আগের পাতার simpleHash আবার ব্যবহার করছি
-function simpleHash(key, size) {
+function polyHash(str) {
   let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash + key.charCodeAt(i) * (i + 1)) % size;
+  const P = 31;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * P + str.charCodeAt(i)) | 0;  // 32-bit-এর ভেতরে রাখি
   }
-  return hash;
+  return Math.abs(hash);
 }
 
-const size = 4;
-const buckets = Array.from({ length: size }, () => []);
+class MyHashMap {
+  constructor(size = 4) {
+    this.buckets = Array.from({ length: size }, () => []);
+    this.size = 0;
+  }
 
-function put(key, value) {
-  const idx = simpleHash(key, size);
-  const bucket = buckets[idx];
-  const found = bucket.find(pair => pair[0] === key);
-  if (found) found[1] = value;      // থাকলে আপডেট
-  else bucket.push([key, value]);   // নাহলে যোগ (chain)
-}
-function get(key) {
-  const idx = simpleHash(key, size);
-  const found = buckets[idx].find(pair => pair[0] === key);
-  return found ? found[1] : undefined;
+  _index(key) {
+    return polyHash(key) % this.buckets.length;
+  }
+
+  set(key, value) {
+    const idx = this._index(key);
+    const bucket = this.buckets[idx];
+    for (const pair of bucket) {
+      if (pair[0] === key) {     // key আগে থেকেই আছে?
+        pair[1] = value;         // শুধু value বদলে দাও
+        return;
+      }
+    }
+    bucket.push([key, value]);   // নতুন entry, chain-এর শেষে
+    this.size++;
+    if (this.size / this.buckets.length > 0.7) this._resize();
+  }
+
+  get(key) {
+    const bucket = this.buckets[this._index(key)];
+    for (const pair of bucket) {
+      if (pair[0] === key) return pair[1];
+    }
+    return undefined;
+  }
+
+  remove(key) {
+    const bucket = this.buckets[this._index(key)];
+    for (let i = 0; i < bucket.length; i++) {
+      if (bucket[i][0] === key) {
+        bucket.splice(i, 1);     // chain থেকে কেটে ফেলো
+        this.size--;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  keys() {
+    const out = [];
+    for (const bucket of this.buckets) {
+      for (const pair of bucket) out.push(pair[0]);
+    }
+    return out;
+  }
+
+  _resize() {
+    const old = this.buckets;
+    this.buckets = Array.from({ length: old.length * 2 }, () => []);
+    this.size = 0;
+    console.log(`resize: table ${old.length} -> ${old.length * 2}`);
+    for (const bucket of old) {
+      for (const [k, v] of bucket) this.set(k, v);  // নতুন table-এ আবার বিলিয়ে দাও
+    }
+  }
 }
 
-put("a", 1); put("b", 2);
-console.log(get("a")); // 1
+const map = new MyHashMap();
+const words = ["apple", "banana", "mango", "orange", "grape", "lichi", "peyara", "kola"];
+words.forEach((w, i) => map.set(w, i + 1));
+
+console.log(map.get("mango"));    // 3
+console.log(map.keys());          // 8টা key, ক্রম যেমন খুশি
+map.remove("orange");
+console.log(map.get("orange"));   // undefined
+console.log(map.size);            // 7
 ```
 
-## কোড ব্রেকডাউন
+চালালে দেখবে `resize` দুইবার ঘটেছে: 4 থেকে 8, তারপর 8 থেকে 16। প্রতিবার সব entry ভেঙে নতুন table-এ ছড়িয়ে পড়েছে।
 
-- একই index-এ একাধিক key এলে সেই bucket-এর ছোট list-টাতেই খুঁজতে হয়।
-- collision কম রাখতে "load factor" (entry/size) চোখে রাখা হয়। নির্দিষ্ট সীমা পার হলেই table **resize** করা হয়।
-- collision বাড়তে থাকলে সব entry এক bucket-এ জমে গিয়ে O(n) হয়ে যেতে পারে। তাই ভালো hash function জরুরি।
+## ভ্যারিয়েন্ট ১: open addressing (linear probing)
 
-## Complexity
+এবার একই Map, কিন্তু bucket-এর list নেই। এক slot-এ এক entry, collision হলে এগিয়ে যাও:
 
-- গড়ে O(1)। খারাপ hash function হলে worst case O(n)।
+```js
+const EMPTY = Symbol("empty");
+const DELETED = Symbol("deleted");   // tombstone: এখানে কেউ ছিল, এখন নেই
+
+class ProbingMap {
+  constructor(size = 8) {
+    this.keys = new Array(size).fill(EMPTY);
+    this.values = new Array(size).fill(null);
+    this.size = 0;
+  }
+
+  _findSlot(key) {
+    let idx = polyHash(key) % this.keys.length;
+    while (true) {
+      if (this.keys[idx] === EMPTY) return { idx, found: false };
+      if (this.keys[idx] === key) return { idx, found: true };
+      idx = (idx + 1) % this.keys.length;  // DELETED পেলেও হেঁটে যাও
+    }
+  }
+
+  set(key, value) {
+    const { idx, found } = this._findSlot(key);
+    if (found) { this.values[idx] = value; return; }
+    this.keys[idx] = key;
+    this.values[idx] = value;
+    this.size++;                       // অনেক ভরে গেলে resize লাগে, সেটা তোমার অনুশীলন
+  }
+
+  get(key) {
+    const { idx, found } = this._findSlot(key);
+    return found ? this.values[idx] : undefined;
+  }
+}
+```
+
+**Tombstone-এর গল্পটা বুঝো।** ধরো remove করতে গিয়ে slot-টা পুরো EMPTY করে দিলে। উপরের dry run-এ "mango" বসেছিল 4 নম্বরে, কারণ 3 তখন দখলে ছিল। এখন "apple" delete করে 3 নম্বর EMPTY করলে `get("mango")` 3 নম্বরে এসে EMPTY দেখবে, আর থেমে বলে দেবে "নেই"! অথচ mango 4 নম্বরেই বসে আছে। probe chain মাঝপথে ভেঙে গেল।
+
+তাই delete-এ ঘর খালি করা যায় না, রেখে দিতে হয় একটা DELETED দাগ। নিয়ম সরল: **get সেই দাগ পেরিয়ে যায়, set চাইলে সেই দাগে বসে পড়তে পারে।** পুরো remove বানানোটা নিচের কঠিন অনুশীলনে রেখেছি।
+
+## ভ্যারিয়েন্ট ২: clustering কমানোর কায়দা
+
+linear probing-এর একটা গোপন রোগ আছে: **primary clustering**। ভরা ঘরগুলো জমে একটা লম্বা ব্লক হয়ে যায়, আর নতুন key সেই ব্লকের মাথায় পড়লে পুরো ব্লক হেঁটে পেরোতে হয়। কাটছাঁট দুটো প্রচলিত:
+
+```js
+function probe(home, i, capacity, key) {
+  // linear: প্রতিবার এক ঘর করে
+  const a = (home + i) % capacity;
+
+  // quadratic probing: লাফ বাড়তে থাকে, 1, 4, 9, 16 ...
+  const b = (home + i * i) % capacity;
+
+  // double hashing: লাফটাই key-ভেদে আলাদা
+  const step = 1 + (polyHash(key) % (capacity - 1));
+  const c = (home + i * step) % capacity;
+
+  return [a, b, c];
+}
+
+console.log(probe(3, 0, 7, "mango"));   // [3, 3, 3], প্রথম চেষ্টায় তিনটাই এক
+console.log(probe(3, 1, 7, "mango"));   // দ্বিতীয় চেষ্টায় পথ তিনটা আলাদা
+```
+
+quadratic-এ একই ব্লকে পড়েও লাফ আলাদা আলাদা, তাই জ্যাম জমে না। double hashing-এ তো লাফটাই প্রতি key-এর জন্য অন্য, clustering প্রায় গায়েব।
+
+## দুই পথের তুলনা
+
+| বিষয় | chaining | open addressing |
+|-------|----------|-----------------|
+| memory | bucket array + আলাদা list-গুলো, একটু বেশি | একটাই চ্যাপ্টা array, কম |
+| cache | list ঘোরাতে pointer-লাফ, cache-এর অসুবিধা | পাশাপাশি ঘর, cache-friendly |
+| delete | সহজ: chain থেকে কেটে ফেলো | tombstone ছাড়া চলেই না |
+| ভরে গেলে | chain লম্বা হয়, তবু চলতে থাকে | একদম জ্যাম, resize না করলে অচল |
+| clustering | ভয় নেই | আছে, বিশেষ করে linear probing-এ |
+
+## কোড ব্রেকডাউন: set আর resize, লাইনে লাইনে
+
+`set` থেকে শুরু করি, কোন লাইন কেন:
+
+1. `const idx = this._index(key)` : key থেকে আগে ঘর নির্ণয়। পুরো বাকি খেলা এই একটা ঘরের ভেতরে।
+2. `for (const pair of bucket)` : chain-টা শুরু থেকে শেষ ঘুরে দেখি।
+3. `if (pair[0] === key)` : আসল key মেলাচ্ছি, hash নয়! একই slot-এ ভিন্ন key থাকতেই পারে, তাই এই তুলনাটা জীবনরক্ষা।
+4. `pair[1] = value; return;` : পুরোনো key হলে নতুন entry বানাব না, value-টাই আপডেট। নাহলে একই key-এর দুটো entry জমে যেত।
+5. `bucket.push([key, value])` : না পেলে chain-এর শেষে নতুন জোড়া। key আর value দুটোই জমা রাখছি, এটা ভুলে গেলে নিচের ভুল নম্বর ১।
+6. `this.size++` : মোট entry-এর হিসাব, load factor বের করতে লাগবে।
+7. `if (this.size / this.buckets.length > 0.7) this._resize()` : table ভরার আগেই বড় করে দিই। এই লাইন না থাকলে chain চুপিচুপি লম্বা হয়ে O(n)-এর পথে যেত।
+
+এবার `_resize`:
+
+8. `const old = this.buckets` : পুরোনো table-টা আগে হাতে নাও, নাহলে নতুনটা বানাতে গিয়ে হারিয়ে যাবে।
+9. `Array.from({ length: old.length * 2 }, () => [])` : ঠিক দ্বিগুণ, প্রতিটা ঘরে ফাঁকা chain। কেন দ্বিগুণ, সেই হিসাব নিচে Complexity-তে।
+10. `this.size = 0` : গণনা শূন্য থেকে নতুন করে, কারণ এখন `set` দিয়েই সব ফেরত বসবে।
+11. `for (const [k, v] of bucket) this.set(k, v)` : পুরোনো প্রতিটা entry নতুন table-এ আবার hash হয়ে নতুন জায়গায় বসে। একে বলে **rehash**। মনে রাখো: capacity বদলেছে মানে `% capacity`-এর ফল বদলেছে, মানে আগের index-এর আর কোনো মূল্য নেই।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Average: get/set/remove সব O(1)।** যুক্তিটা হাতে গোনা যায়:
+
+- মোট n-টা entry, capacity c হলে গড় chain-এর দৈর্ঘ্য n / c। এই অনুপাতটাই **load factor**।
+- resize-এর নিয়মে load factor কখনো 0.7 পার হয় না, মানে গড় chain ১-এর আশেপাশেই থাকে।
+- তাই get মানে একটা hash হিসাব + ১-২টা comparison। n যতই বাড়ুক, এই সংখ্যা বাড়ে না। এটাই O(1)।
+
+**Worst case: O(n)।** কুৎসিত hash function সব key-কে একই slot-এ পাঠিয়ে দিলে একটাই chain, দৈর্ঘ্য n। তখন get মানে পুরো chain-এ linear search। ভালো hash function ([কীভাবে বানায়](./hash-function.mdx)) আর resize মিলে এই worst case-কে বিরল কাকতাল করে দেয়।
+
+**Rehash: একবারে O(n), কিন্তু amortized O(1)।** resize ঘটলে n-টা entry আবার বসে, সেটা সস্তা নয়। কিন্তু খেয়াল করো, table দ্বিগুণ হওয়ার পর পরের resize আসতে আসতে অন্তত আরও n/2-টা insert হবে। মানে সেই মহাঙ্গর খরচটা অনেকগুলো সস্তা insert-এর ওপর ভাগ হয়ে যায়। হুবহু এই যুক্তিতেই dynamic array-র push amortized O(1) হয়, দেখো [Array Operations](../arrays-strings/array-operations.mdx)।
+
+**Space: O(n + capacity)।** n-টা entry-র জায়গা, সাথে capacity-র খালি ঘরগুলো। load factor সীমাবদ্ধ থাকায় capacity-ও n-এর constant গুণিতক, তাই মোটকথা O(n)।
+
+## সাধারণ ভুল আর edge case
+
+**১. bucket-এ আসল key-টা জমা রাখাই ভুলে যাওয়া।**
+শুধু value রাখলে দুটো collided key-কে আলাদা করার কোনো উপায় থাকে না। `get("mango")` এসে chain-এর প্রথম entry-র value-টাই তুলে নিয়ে যাবে, অথচ সেটা "apple"-এর। তাই pair হিসেবে `[key, value]` রাখো, আর খোঁজার সময় `pair[0] === key` মেলাও। hash মিলেছে মানে key মিলেছে নয়!
+
+**২. resize-ই না করা (load factor উপেক্ষা)।**
+table না বাড়ালে entry বাড়ার সাথে সাথে chain লম্বা হতে থাকে। বাইরে থেকে মনে হবে সব ঠিকঠাক চলছে, অথচ ভেতরে get/set চুপিচুপি O(1) থেকে O(n)-এর দিকে এগোচ্ছে। নিয়ম সরল: load factor 0.7 পার হলেই দ্বিগুণ।
+
+**৩. probing table থেকে tombstone ছাড়া delete করা।**
+slot-টা সোজা খালি করে দিলে সেই ঘর দিয়ে যাওয়া সব probe chain মাঝপথে থেমে যায়। পরের key-গুলো table-এ বসে থেকেও "নেই" শোনাবে। delete মানে DELETED দাগ বসানো, ঘর ফাঁকা করা নয়।
+
+**৪. object-কে key বানিয়ে পরে সেটা বদলে ফেলা।**
+key-এর ভেতরটা বদলালে তার hash-ও বদলে যায়। পরে get করলে নতুন hash অন্য slot-এ খুঁজবে, আর পুরোনো entry পড়ে আছে আগের slot-এ। key table-এ থেকেও হারিয়ে গেল। এই জিন family-র ভুল [Map আর Set](./map-and-set.mdx)-এও ফিরে আসবে।
+
+**৫. linear probing-এ primary clustering অবজ্ঞা করা।**
+ভরা ঘরের ব্লক জমতে জমতে লম্বা হলে probe-এর হাঁটাও লম্বা হয়, average O(1) আর থাকে না। ক্ষতি বুঝতে পারলে quadratic probing বা double hashing-এ সরে যাও (ভ্যারিয়েন্ট ২)।
 
 ## Animation Spec
 
-> **Animation Spec: Collision & Chaining**
+> **Animation Spec: Collision, Chain আর Resize**
 >
-> - **দৃশ্য:** bucket array; একটা bucket-এ একাধিক entry chain হয়ে ঝুলছে।
-> - **ইনপুট:** এমন দুটো key, যাদের hash একই।
-> - **ধাপ:** দ্বিতীয় key-টা একই bucket-এ গিয়ে chain-এ যোগ হবে; get করলে chain ধরে খোঁজাটা দেখা যাবে।
-> - **লক্ষ্য:** collision আসলে বাস্তব, আর সেটা কীভাবে সামলানো হয়।
+> - **দৃশ্য:** নিচে slot-গুলোর সারি; collision হলে নতুন entry সেই slot থেকে ডানদিকে chain হয়ে বাড়ে; পাশে load factor-এর বার ক্রমশ ভরছে।
+> - **ইনপুট:** key-value জোড়ার ধারা; table-এর শুরুর size; চাইলে একটা ভুলানো hash function, যা সবাইকে একই slot-এ ঠেলে দেয়।
+> - **ধাপ:** key এলে আগে hash-রেখা নেমে তার slot-এ পড়ে; ঘর ভরা থাকলে chain-এর আড়ালে গিয়ে বসে; get চালালে chain বেয়ে একটা একটা key-এর তুলনা চোখে দেখা যায়; load factor 0.7 টপকালেই পুরো table দ্বিগুণ হয়ে সব entry নতুন করে ছড়িয়ে পড়ে, লম্বা chain-গুলো ভেঙে ছোট হয়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; chaining আর linear probing-এর টগল, যাতে একই input-এ দুই রকম ছবি তুলনা করা যায়।
+> - **লক্ষ্য:** collision স্বাভাবিক, লম্বা chain-ই আসল শত্রু, আর resize সেই লড়াইয়ের নিয়মিত ঔষধ।
 
 ## অনুশীলন
 
-- ইচ্ছা করে ছোট size দাও, collision ঘটাও, আর কী হচ্ছে দেখো।
+- **সহজ ১:** size 5-এর chaining table-এ হাতে হাতে trace করো। hash দিয়ে দেওয়া আছে: "a" → 2, "b" → 4, "c" → 2, "d" → 3, "e" → 4, "f" → 2। প্রতি insert-এর পর ৫টা slot-এর chain আঁকো। হিন্ট: 2 নম্বর slot-এ শেষে তিনটে entry-র chain দাঁড়াবে।
+- **সহজ ২:** উপরের `MyHashMap`-এর `set` দেওয়া আছে ধরে, `get` আর `remove` না দেখে নিজে লিখে ফেলো। হিন্ট: আগে `_index(key)`, তারপর chain ঘুরে `pair[0] === key` মেলাও; remove-এ `splice`।
+- **মাঝারি ১:** Design HashMap (LeetCode 705)। put/get/remove বানাও, chaining দিয়ে। হিন্ট: এই পাতার কোডই প্রায় উত্তর; integer key হওয়ায় hash হিসেবে `key % capacity`-ই চলে যায়।
+- **মাঝারি ২:** একটা probing table-এ size 11, 7টা ঘর ভরা, tombstone নেই। একটা অনুপস্থিত key খুঁজলে সবচেয়ে খারাপ ক্ষেত্রে কয়টা comparison হবে? হিন্ট: ভরা ঘরগুলো পাশাপাশি সাজাও; failed search তখনই থামে যখন EMPTY পায়।
+- **কঠিন:** `ProbingMap`-এ tombstone-সহ `remove()` আর `resize()` বানাও। হিন্ট: remove শুধু `keys[idx] = DELETED`; আর resize-এর সময় DELETED-গুলো ফেলে দাও, শুধু বাঁচা entry-গুলো rehash করো। নাহলে table আস্তে আস্তে দাগে ভরে জ্যামে যাবে।
+
+## সারসংক্ষেপ
+
+- collision বাধবই: সম্ভাব্য key অসীম, slot সসীম। লড়াইটা এড়ানোর নয়, সামলানোর।
+- chaining মানে প্রতি slot-এ ছোট list; বানাতে সহজ, delete নিষ্ঠুর নয়।
+- open addressing মানে এক ঘরে একজন আর probing; delete-এ tombstone বাধ্যতামূলক।
+- load factor 0.7 পার হলেই দ্বিগুণ + rehash; এই নিয়মেই average O(1) বেঁচে থাকে।
+- worst case O(n)-ই থেকে যায়, ভালো hash function আর resize সেটাকে বিরল কাকতাল করে দেয়।

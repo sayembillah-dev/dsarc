@@ -1,50 +1,223 @@
 ---
-title: "Hash Function: key থেকে index"
-description: key যে কীভাবে সংখ্যায় (index) বদলে যায়, ভালো hash function-এ কী কী গুণ লাগে, আর একটা সরল hash function নিজে লেখা।
+title: "Hash Function: key থেকে index-এর মেশিন"
+description: deterministic, uniform, fast, avalanche। ভালো hash function-এর চার গুণ, polynomial rolling hash-এর হাতে করা dry run, anagram ফাঁদ, আর JS-এর negative modulo।
 ---
 
 ## কী শিখব
 
-- key কীভাবে সংখ্যায় (index) বদলে যায়
+- ভালো hash function-এর চারটা গুণ: deterministic, uniform, fast, avalanche
+- sum-of-codes hash কেন anagram-এর সবাইকে একঘরে ফেলে
+- polynomial rolling hash কীভাবে অক্ষরের ক্রমকেও দাম দেয়
+- সংখ্যা আর pair (x, y)-এর জন্য hash বানানো
+- JS-এ negative modulo-র ফাঁদ আর তার escape
+- খারাপ hash মানে collision-এ ভরা table, মানে ধীর সবকিছু
 
 ## ধারণা
 
-Hash Table-এর পুরো কেল্লাফতে দাঁড়িয়ে আছে একটাই জিনিসের উপর, hash function। এটা key নেয়, ফেরত দেয় একটা সংখ্যা, সেই index। এখন ভাবো তো, ভালো hash function-এ কী কী লাগবে? তিনটা গুণ: (১) দ্রুত চলে, (২) একই key দিলে সবসময় একই ফল দেয়, (৩) মানগুলো সব জায়গায় সমান ছড়িয়ে দেয়, যাতে collision কম হয়।
+ভাবো তো, একটা হোটেলের রিসেপশনিস্ট যদি মুড দেখে রুম বরাদ্দ করে: তোমার ব্যাগ আজ রাখল ৩ নম্বরে, কাল খুঁজতে গেলে বলল ৯ নম্বরে। তোমার জিনিস আর ফিরত পাওয়াই গেল না। [আগের পাতার](./hash-table-intro.mdx) hash table-এও ঠিক এই ভূমিকায় আছে একটা ফাংশন: key আসলে কোন slot-এ রাখবে, সে-ই ঠিক করে। নাম তার **hash function**। পুরো structure-এর গতি আর কিসমত এই একটা ফাংশনের গুণের উপর ঝুলে আছে।
 
-## কোড উদাহরণ
+তাহলে ভালো hash function-এ চাই কী? চারটা গুণ:
+
+1. **Deterministic:** একই key দিলে প্রতিবার একই index। আজ "apple" গেল 0-এ, কাল গেল 5-এ, তাহলে জমানো জিনিস আর খুঁজেই পাবে না।
+2. **Uniform:** key-গুলোকে সব slot-এ সমান ছড়িয়ে দেয়। সবাইকে দুই একটা slot-এ গাদা করলে [collision](./collision-handling.mdx)-এর ভিড়ে table ধীর হয়ে যাবে।
+3. **Fast:** hash বের করতে যতক্ষণ, খোঁজাতেও ততক্ষণ। ভারী hash মানে O(1)-এর সার্থকতাই শেষ।
+4. **Avalanche:** key-এর ছোট্ট একটা বদল index-কে পুরো এলোমেলো করে দেয়। "cat" আর "car" যেন আশপাশের slot-এ জড়ো না হয়।
+
+আগের পাতার toy hash (সব char code-এর যোগফল) দিয়েই শুরু করি। Deterministic আর fast সে ঠিকই, কিন্তু বাকি দুটো গুণে ফেল করে। কেন, সেটাই এখন দেখা যাক।
+
+## ধাপে ধাপে: "cat"-এর যাত্রা
+
+সবচেয়ে পরিচিত ছোট hash হলো **polynomial rolling hash**। নিয়মটা: `h = 0` থেকে শুরু, প্রতিটা অক্ষরে `h = h × 31 + code`। শেষে `% m` (m = table size)।
+
+"cat" নিয়ে চালাই, m = 7। char code: c = 99, a = 97, t = 116।
+
+| ধাপ | অক্ষর | code | h = h × 31 + code |
+|-----|-------|------|-------------------|
+| শুরু | - | - | 0 |
+| ১ | c | 99 | 0 × 31 + 99 = **99** |
+| ২ | a | 97 | 99 × 31 + 97 = **3166** |
+| ৩ | t | 116 | 3166 × 31 + 116 = **98262** |
+| শেষ | % 7 | - | 98262 % 7 = **3** |
+
+"cat" গেল slot 3-এ। এবার একই তিন অক্ষর উল্টে-পাল্টে দেখি:
+
+| key | sumHash (code-এর যোগফল % 7) | polyHash (% 7) |
+|-----|------------------------------|----------------|
+| cat | 312 → 4 | 98262 → **3** |
+| act | 312 → 4 | 96402 → **5** |
+| tac | 312 → 4 | 114582 → **6** |
+
+খেয়াল করো মাঝের কলামটা: cat, act, tac তিনটারই যোগফল 312, তাই তিনজনেই slot 4-এ। যোগ করলে অক্ষরের **ক্রম** হারিয়ে যায়, anagram-রা সবাই একই দেখে। কিন্তু ×31 করায় প্রতি ধাপে আগের ফল জায়গা বদলায়, ফলে ক্রম বদলালেই ফল বদলে যায়। polyHash তিনজনকে তিনটা আলাদা slot-এ পাঠিয়ে দিল: 3, 5, 6। এটাই avalanche-এর ছোট্ট নমুনা।
+
+## কোড: দুটো hash, মুখোমুখি
 
 ```js
-function simpleHash(key, size) {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash + key.charCodeAt(i) * (i + 1)) % size; // অক্ষরের কোড যোগ
-  }
-  return hash;                       // 0 .. size-1 এর মধ্যে একটা index
+function sumHash(str, m) {
+  let sum = 0;
+  for (const ch of str) sum += ch.charCodeAt(0);
+  return sum % m;
 }
 
-console.log(simpleHash("Rahim", 10)); // যেমন 3
-console.log(simpleHash("Karim", 10)); // যেমন 7
+function polyHash(str, m) {
+  let h = 0;
+  for (const ch of str) {
+    h = h * 31 + ch.charCodeAt(0);   // আগের h-কে ধাক্কা দিয়ে নতুন code
+  }
+  return h % m;
+}
 ```
 
-## কোড ব্রেকডাউন
+এবার দুজনকে একই word list-এ লড়াই:
 
-- `charCodeAt(i)` দেয় প্রতিটা অক্ষরের সংখ্যা-কোড।
-- `* (i + 1)` দিয়ে অবস্থানভেদে ওজন দিচ্ছি, তাই "abc" আর "cba" আলাদা hash পায়।
-- `% size` ফলাফলটাকে array-এর সীমার ভেতরে আটকে রাখে।
+```js
+const words = ["apple", "cat", "act", "tac", "dog", "god"];
+const m = 7;
 
-## Complexity
+function collisionReport(words, m, hashFn) {
+  const buckets = new Map();
+  for (const w of words) {
+    const h = hashFn(w, m);
+    if (!buckets.has(h)) buckets.set(h, []);
+    buckets.get(h).push(w);
+  }
+  let collisions = 0;
+  for (const list of buckets.values()) {
+    collisions += list.length - 1;    // প্রথমটার পর প্রতিটাই collision
+  }
+  return { buckets, collisions };
+}
 
-- key-এর দৈর্ঘ্য k হলে O(k)। আর key সাধারণত ছোটই থাকে, তাই এটা প্রায় ধ্রুবকের মতো।
+const naive = collisionReport(words, m, sumHash);
+const poly = collisionReport(words, m, polyHash);
+
+console.log([...naive.buckets]);
+// [ [5, ['apple']], [4, ['cat','act','tac']], [6, ['dog','god']] ]
+console.log("sumHash collisions:", naive.collisions);   // 3
+
+console.log([...poly.buckets]);
+// [ [1, ['apple']], [3, ['cat']], [5, ['act']], [6, ['tac','dog']], [2, ['god']] ]
+console.log("polyHash collisions:", poly.collisions);   // 1
+```
+
+ফলাফল চোখে পড়ার মতো। sumHash সব anagram-কে একঘরে গাদা করেছে: cat, act, tac তিনজনে slot 4-এ, dog আর god slot 6-এ। polyHash anagram-দের ছড়িয়ে দিয়েছে। সব মিলে collision 3 বনাম 1। মনে রাখো, collision পুরো শূন্যে নামানো hash function-এর একার ক্ষমতায় হয় না, table-এর size-ও লাগে; polyHash এখানে শুধু ভালো ছড়িয়েছে।
+
+## ভ্যারিয়েন্ট ১: সংখ্যার জন্য, division method
+
+Key আগে থেকেই integer হলে সবচেয়ে সহজ hash: `h(k) = k % m`। কিন্তু m-এর পছন্দটা গুরুত্বপূর্ণ। ধরো key-গুলো 100, 200, 300:
+
+- m = 10 হলে সবাই slot 0-এ! কারণ `% 10` মানে শুধু শেষ digit, আর তিনটার শেষ digit-ই 0।
+- m = 7 হলে সুন্দর ছড়িয়ে যায়।
+
+```js
+const keys = [100, 200, 300, 400, 500];
+console.log(keys.map(k => k % 10)); // [0, 0, 0, 0, 0]  একঘরে সবাই!
+console.log(keys.map(k => k % 7));  // [2, 4, 6, 1, 3]  ছড়িয়ে গেল
+```
+
+নিয়মটা সহজ: m এমন নাও যাতে key-দের pattern-এর সাথে তার বড় common factor না থাকে। Prime সংখ্যা সাধারণত নিরাপদ পছন্দ, কারণ prime-এর সাথে input-এর pattern মিলে যাওয়ার সুযোগ কম।
+
+## ভ্যারিয়েন্ট ২: জোড়া (pair) বা coordinate-এর hash
+
+Grid-এর cell (x, y) বা coordinate-key লাগলে? একই ×31 কৌশল, এবার দুই ধাপে:
+
+```js
+function pairHash(x, y, m) {
+  return (x * 31 + y) % m;
+}
+
+console.log(pairHash(2, 5, 7)); // (2*31+5) = 67 → 4
+console.log(pairHash(5, 2, 7)); // (5*31+2) = 157 → 3, আলাদা!
+```
+
+(2, 5) আর (5, 2) আলাদা slot পেল, কারণ ক্রমের দাম আছে। তিনটা জিনিস হলে `(x * 31 + y) * 31 + z`। এই ছকেই বড় language-গুলো object-এর field মিলিয়ে hash বানায়।
+
+## ভ্যারিয়েন্ট ৩: বড় language-রা কী করে
+
+Java-র `String.hashCode()` হুবহু আমাদের polyHash, base 31। মজার ব্যাপার, সেখানে সংখ্যাটা 32-bit integer-এর বাইরে গেলে **overflow** হয়ে wrap around করে, আর সেটা একদম ঠিক আছে। কারণ hash-এর কাজ নিখুঁত অঙ্ক নয়, deterministic হওয়া। প্রতিবার একইভাবে wrap হলেই চলবে। JS-এ চাইলে 32-bit-এ আটকে রাখা যায় `| 0` দিয়ে:
+
+```js
+function javaStyleHash(str) {
+  let h = 0;
+  for (const ch of str) {
+    h = (h * 31 + ch.charCodeAt(0)) | 0;   // 32-bit-এ wrap
+  }
+  return h;
+}
+
+console.log(javaStyleHash("cat")); // 98262 (ছোট string-এ এখনো overflow হয়নি)
+```
+
+এই `h` বড় string-এ negative-ও হতে পারে (overflow-এ)। তার আগে নিচের ফাঁদটা দেখে নাও।
+
+## একটা ফাঁদ: negative modulo
+
+JS-এ `%` আসলে remainder, modulo নয়। `-7 % 10` দেয় `-7`, 3 নয়! Hash হিসাবের মাঝে কোনোভাবে negative সংখ্যা এলে (overflow, বা বিয়োগ-ওয়ালা key) index array-এর বাইরে চলে যাবে। পালাবার পথ:
+
+```js
+function mod(x, m) {
+  return ((x % m) + m) % m;    // negative-কেও 0..m-1-এ ফেরত আনে
+}
+
+console.log(-7 % 10);       // -7, বিপদ!
+console.log(mod(-7, 10));   // 3, ঠিক জায়গায়
+```
+
+নিয়ম মনে রাখো: hash বের করার পর, array-এ ঢোকার আগে, এই guard-টা দিয়েই যাবে।
+
+## কোড ব্রেকডাউন: polyHash, লাইনে লাইনে
+
+1. `function polyHash(str, m)` : দুটো জিনিস লাগে, key আর table size। m না জানলে index-এর সীমা ঠিক করা যায় না।
+2. `let h = 0` : জমার শুরু শূন্য থেকে। অন্য যেকোনো ধ্রুবকও চলত, শুধু প্রতিবার একই থাকতে হবে (deterministic)।
+3. `for (const ch of str)` : অক্ষরে অক্ষরে, বাম থেকে ডানে।
+4. `h = h * 31 + ch.charCodeAt(0)` : পুরো ফাংশনের প্রাণ এই লাইন। আগের `h`-কে 31 গুণ করে এক ঘর সরিয়ে দিচ্ছি, তারপর নতুন অক্ষরের code বসাচ্ছি। এই "সরিয়ে দেওয়ার" কারণেই অক্ষরের ক্রম ফলাফলে ধরা পড়ে।
+5. `return h % m` : শেষে সীমায় আনা। এই `%` না থাকলে h যেকোনো বিশাল সংখ্যা, array-এর index হিসেবে অকেজো।
+6. চাইলে `return ((h % m) + m) % m` : negative-এর সম্ভাবনা থাকলে এই guard।
+
+## Complexity: O(L), তাহলে O(1) কোথায়?
+
+**Time: O(L), key-এর দৈর্ঘ্য L।** প্রতি অক্ষরে একবার গুণ, একবার যোগ। "cat"-এর জন্য 3 ধাপ, 100-অক্ষরের key-তে 100 ধাপ। তাহলে hash table-এর O(1) গেল কোথায়? ব্যাপারটা হলো, বাস্তবে key-এর দৈর্ঘ্য একটা ছোট সীমার ভেতরে থাকে (নাম, ID, ছোট string), আর সেটা জমানো key-এর মোট সংখ্যা n-এর সাথে বাড়ে না। তাই hash হিসাবকে practical-এ ধ্রুবক সময়ের কাজ ধরা হয়। ছোট key-এর জগতে O(L) মানেই কার্যত O(1)।
+
+**Space: O(1)।** হিসাবের জন্য শুধু একটা `h` ভেরিয়েবল, key যত বড়ই হোক আর কিছু লাগে না।
+
+## সাধারণ ভুল আর edge case
+
+**১. Non-deterministic hash বানিয়ে ফেলা।**
+যেমন hash-এর ভেতরে `Math.random()` বা প্রতি রানে বদলে যাওয়া কোনো salt বসিয়ে দেওয়া। ফল: আজ যে slot-এ জমালে, কাল খুঁজতে গিয়ে অন্য slot-এ যাবে। Hash function-এর প্রথম শর্তই ভাঙা হলো: একই key, প্রতিবার একই index।
+
+**২. Sum-of-codes: anagram-রা সবাই একঘরে।**
+`sumHash("cat") === sumHash("act") === sumHash("tac")`, কারণ যোগে ক্রম হারিয়ে যায়। Word-heavy ডেটায় (অভিধান, tag) এমন hash মানে নির্দিষ্ট slot-এ পাহাড়। ক্রম ধরে রাখতে ×31-এর মতো কিছু চাই।
+
+**৩. Negative modulo-র guard ভুলে যাওয়া।**
+JS-এ `-7 % 10 === -7`। Hash হিসাবে কোনোভাবে negative এলে index array-এর বাইরে। Fix একটাই: `((x % m) + m) % m`।
+
+**৪. Table size power of two, আর hash দুর্বল।**
+m = 2^k হলে `h % m` হিসাব হয় h-এর শেষ k-টা bit দিয়ে। Hash function যদি নিচের bit-গুলোতে ভালো variety না দেয় (যেমন সব key 8-এর গুণিতক হলে m = 8-এ সবাই slot 0), পুরো table এক কোণে জমা হয়। তাই দুর্বল hash-এর সাথে power-of-two size বিপজ্জনক; prime size নিরাপদ, অথবা hash-এর ভেতরে bit-mixing লাগে।
+
+**৫. Hash-টাই এমন ভারী যে O(1)-ই আর থাকে না।**
+SHA-256-এর মতো cryptographic hash নিখুঁত ছড়ায় ঠিকই, কিন্তু প্রতিটা lookup-এ সেই ভারী অঙ্ক চালানো মানে প্রতি get/set ধীর। Hash table-এর জন্য চাই "যথেষ্ট ভালো" ছড়ানোর হালকা অঙ্ক, নিরাপত্তা-গ্রেডের দরকার নেই।
 
 ## Animation Spec
 
-> **Animation Spec: Hash Computation**
+> **Animation Spec: The ×31 Machine**
 >
-> - **দৃশ্য:** key-এর প্রতিটা অক্ষর থেকে charCode, তারপর চলমান যোগফল, শেষে % size।
-> - **ইনপুট:** key আর table size।
-> - **ধাপ:** অক্ষর ধরে ধরে হিসাবটা দেখা যাবে, শেষে final index-টা highlight হবে।
-> - **লক্ষ্য:** hash কোনো জাদু নয়, একটা নির্দিষ্ট গণনা। এটা বোঝা।
+> - **দৃশ্য:** বামে key-এর অক্ষরগুলো লাইনে দাঁড়িয়ে; মাঝে "×31 + code" মেশিন, চলমান h দেখা যায়; ডানে m-টা slot, শেষে `% m` হয়ে index ফলকে ওঠে।
+> - **ইনপুট:** string key আর table size m; base (31) বদলানো যায়।
+> - **ধাপ:** প্রতি অক্ষর মেশিনে ঢোকে, h বাড়তে দেখা যায়; শেষে index slot-এ গিয়ে বসে; "avalanche" টগল অন করে একটা অক্ষর বদলালে index কীভাবে একদম অন্য জায়গায় লাফায় তা দেখা যায়; পাশে sumHash-এর ফল তুলনার জন্য।
+> - **নিয়ন্ত্রণ:** speed, step, reset; sumHash বনাম polyHash toggle; anagram preset (cat/act/tac)।
+> - **লক্ষ্য:** hash কোনো জাদু নয়, একটা নির্দিষ্ট হালকা অঙ্ক; আর ক্রম ধরে রাখাই sum-এর উপর poly-এর জিত।
 
 ## অনুশীলন
 
-- size বদলে দেখো, একই key-এর index কীভাবে বদলে যায়।
+- **সহজ ১:** `sumHash` লিখে ১০টা নিজের পছন্দের word-এর উপর (m = 11) collision গুনো। হিন্ট: উপরের `collisionReport` ফাংশনটাই ফের ব্যবহার করো।
+- **সহজ ২:** একই word list-এ `polyHash` চালিয়ে sumHash-এর সাথে তুলনা করো। কার collision কম, কেন? হিন্ট: list-এ anagram জোড়া রাখো, যেমন "listen"/"silent"।
+- **মাঝারি ১:** `{x, y}` point-এর জন্য hash লেখো, যাতে (2, 5) আর (5, 2) আলাদা slot পায়। হিন্ট: `x * 31 + y` ছক, তারপর `% m`।
+- **মাঝারি ২:** এমন একটা string hash লেখো যা case-insensitive: "Apple" আর "apple" একই slot পাবে। হিন্ট: hash করার আগে key-টাকে normalize করো।
+- **কঠিন:** URL-এর জন্য hash design করো, যেখানে "example.com/a" আর "example.com/A" একই slot পাবে, কিন্তু "example.com/b" অন্য slot-এ। হিন্ট: আগে case normalize করো, তারপর polyHash; ভাবো host আর path আলাদা treat করা দরকার কিনা।
+
+## সারসংক্ষেপ
+
+- Hash function-এর চার গুণ: deterministic, uniform, fast, avalanche।
+- Sum-of-codes ক্রম হারিয়ে ফেলে, anagram-দের একঘরে ফেলে; ×31 ক্রমের দাম রাখে।
+- সংখ্যায় `k % m`, pair-এ `x * 31 + y`; m prime নিলে ছড়ানো ভালো।
+- JS-এ `%` remainder, negative সামলাতে `((x % m) + m) % m`।
+- Hash হিসাব O(L) হলেও ছোট key-তে ধ্রুবকের মতো; ভারী hash পুরো গতি শেষ করে।

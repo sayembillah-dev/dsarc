@@ -1,48 +1,274 @@
 ---
-title: "Hash Table: কী, আর কেন এত দ্রুত"
-description: key থেকে value-র দ্রুত ম্যাপিং, hash function দিয়ে সরাসরি index-এ পৌঁছে গড়ে O(1) access।
+title: "Hash Table: key দিয়েই সরাসরি পৌঁছে যাওয়া"
+description: array-এর O(1) index access-এর জাদু এবার নাম বা ID-র মতো key-তেও। একটা toy hash table বানিয়ে collision আর load factor-এর সাথে প্রথম চেনা।
 ---
 
 ## কী শিখব
 
-- key থেকে value-র দ্রুত ম্যাপিং কীভাবে কাজ করে
+- array-এর index access কেন O(1), আর hash table সেই জাদুকে যেকোনো key-তে বাড়ায় কীভাবে
+- hash function আসলে কী করে: key নেয়, index ফেরত দেয়
+- হাতে হাতে dry run: তিনটা fruit-এর নাম ১০ slot-এর array-তে কোথায় পড়ে
+- collision কী, কেন এটা পুরোপুরি এড়ানো যায় না, আর load factor কী
+- নিজে একটা ToyHash class বানানো, আর দেখা কোথায় সেটা ভেঙে যায়
+- average O(1) বলতে আসলে কী বোঝায়, আর worst case কখন O(n)
 
 ## ধারণা
 
-ধরো, ক্লাসে কেউ জিজ্ঞেস করলো, "Rahim-এর roll কত?" Array-তে খুঁজতে গেলে তোমার index লাগে, মানে সংখ্যা। কিন্তু আমরা তো নাম দিয়েই খুঁজতে চাই। ঠিক এখানেই আসে Hash Table। একটা **hash function** key-কে (এখানে "Rahim") একটা array-index-এ বদলে দেয়। তারপর তুমি সরাসরি সেই index-এ গিয়ে মানটা পেয়ে যাও। গড়ে **O(1)**।
+ধরো, হোস্টেলের দারোয়ানকে জিজ্ঞেস করলে, "Rahim কোন ঘরে থাকে?" খোঁজার দুইটা পথ আছে। এক, ১ নম্বর ঘর থেকে শুরু করে ঠকঠক করে প্রতিটা ঘরে খোঁজা। দুই, খাতায় লেখা আছে Rahim থাকে ২১৪-এ, সোজা ২১৪ নম্বর ঘরে হাজির। প্রথমটা O(n), দ্বিতীয়টা এক লাফে পৌঁছে যাওয়া।
 
-ব্যাপারটা আসলে চেনাই। অভিধানে শব্দ দিয়ে অর্থ খোঁজো, ফোনবুকে নাম দিয়ে নম্বর। এই যে নাম দিয়ে সোজা পৌঁছে যাওয়া, সেটাই Hash Table-এর কাজ।
+Array ঠিক এই দ্বিতীয় পথেই হাঁটে। `arr[5]` বললে computer ০, ১, ২ ঘুরে ঘুরে আসে না। মেমরিতে array-এর শুরুর address (base) জানা, প্রতিটা element-এর size-ও জানা। তাই একটা ছোট্ট অঙ্ক: **address = base + index × size**। এই অঙ্কের জন্যই index দিয়ে access O(1)। ([Array Basics](../arrays-strings/array-basics.mdx)-এ এটা নিয়ে আলাপ আছে।)
 
-## কোড উদাহরণ
+এখন প্রশ্ন হলো, Rahim-এর রোল খুঁজতে গেলে index তো সংখ্যা, নাম নয়। কিন্তু যদি নামটা থেকেই কোনোভাবে index বের করে ফেলা যায়? "Rahim" ঢোকালে একটা নির্দিষ্ট অঙ্ক চলবে, বেরিয়ে আসবে 5; তাহলে সোজা `table[5]`-এ গিয়ে মানটা পাওয়া যাবে। এই **key থেকে index বানানোর** কাজটাই করে **hash function**। আর hash function আর একটা array মিলে যে structure জন্ম নেয়, সেটাই **hash table**।
 
-```js
-const rollBook = new Map();
-rollBook.set("Rahim", 5);   // key থেকে value, O(1)
-rollBook.set("Karim", 8);
+সহজ কথায়, hash table = একটা array + একটা নিয়ম; নিয়মটা বলে দেয় কোন key কোন ঘরে থাকবে। নিয়মটা যত ভালো, খোঁজা তত দ্রুত। আর সেই নিয়মটাই পরের পাতার আসল বিষয়: [Hash Function](./hash-function.mdx)।
 
-console.log(rollBook.get("Rahim")); // 5, O(1)
-console.log(rollBook.has("Karim")); // true, O(1)
+## ধাপে ধাপে: তিনটা নাম, দশটা slot
+
+একটা ছোট্ট toy hash function ধরি: **key-এর সব অক্ষরের char code যোগ করো, তারপর % 10**। table-এর size ১০, মানে index হবে 0 থেকে 9।
+
+Key তিনটা: `"apple"`, `"banana"`, `"mango"`। দরকারি char code-গুলো: a = 97, b = 98, e = 101, g = 103, l = 108, m = 109, n = 110, o = 111, p = 112।
+
+| ধাপ | key | code-এর যোগফল | % 10 | slot |
+|-----|-----|---------------|------|------|
+| ১ | apple | 97+112+112+108+101 = 530 | 530 % 10 | **0** |
+| ২ | banana | 98+97+110+97+110+97 = 609 | 609 % 10 | **9** |
+| ৩ | mango | 109+97+110+103+111 = 530 | 530 % 10 | **0** |
+
+প্রথম দুটোর পরে table দাঁড়ায় এমন:
+
+```
+index:   0         1    2    3    4    5    6    7    8    9
+slot: ["apple"] [    ][    ][    ][    ][    ][    ][    ][    ] ["banana"]
 ```
 
-## কোড ব্রেকডাউন
+কিন্তু ধাপ ৩-এ দেখো। mango-এর যোগফলও 530, slot-ও 0। সেই ঘরে তো apple আগেই বসে আছে! দুটো key একই slot-এ এসে পড়লে যেটা হয়, তার নাম **collision**। আমাদের সাধাসিধে table চুপচাপ mango-কে apple-এর জায়গায় বসিয়ে দেবে:
 
-- `set(key, value)` মানে key দিয়ে মানটা জমা রাখা।
-- `get(key)` আগে key-এর hash বের করে, তারপর এক লাফে সেই জায়গায় পৌঁছে যায়।
-- সংখ্যা index নয়, যেকোনো key দিয়েই O(1) access। এটাই Hash Table-এর আসল শক্তি।
+```
+slot: ["mango"] [    ]  ...খালি...  [    ] ["banana"]
+         ↑
+      apple উধাও, কেউ জানালোও না
+```
 
-## Complexity
+ব্যাপারটা হলো, collision দুর্ঘটনা নয়, অবশ্যম্ভাবী। সম্ভাব্য key অসংখ্য, slot মাত্র ১০টা। যত ভালোই hash function হোক, যথেষ্ট key ঢোকালে কোনো না কোনো slot-এ দুজন গিয়ে পড়বেই। এই সমস্যা কীভাবে সামলায় (chaining, open addressing), সেটাই [Collision Handling](./collision-handling.mdx)-এর কাহিনি।
 
-- গড়ে O(1)। তবে collision বেশি হলে worst case O(n) পর্যন্ত যেতে পারে।
+সাথে আরেকটা পরিমাপ শিখে রাখো: **load factor**, মানে table কতটা ভরা। `load factor = ঢোকানো key-এর সংখ্যা / slot-এর সংখ্যা`। ১০ slot-এ ৩টা key মানে 0.3, এখনো আরামদায়ক। ১০ slot-এ ৫০টা key মানে 5.0, প্রতি slot-এ গড়ে ৫ জনের ভিড়, তখন collision এড়ানোর পথ নেই। ভালো hash table নিজেকে মোটামুটি 0.7-এর নিচে রাখতে ভালোবাসে।
+
+## কোড: একটা ছোট্ট ToyHash
+
+ইচ্ছাকৃতভাবে অসম্পূর্ণ একটা hash table। Collision-এর কোনো ব্যবস্থা নেই, শুধু hash করো আর বসে যাও:
+
+```js
+class ToyHash {
+  constructor(size = 10) {
+    this.size = size;
+    this.table = new Array(size);    // size-টা খালি slot
+  }
+
+  _hash(key) {                       // key → index
+    let sum = 0;
+    for (const ch of key) {
+      sum += ch.charCodeAt(0);       // প্রতি অক্ষরের code যোগ
+    }
+    return sum % this.size;          // array-এর সীমার ভেতরে আনা
+  }
+
+  set(key, value) {
+    const i = this._hash(key);
+    this.table[i] = value;           // যা ছিল তার উপরেই বসে গেল
+  }
+
+  get(key) {
+    const i = this._hash(key);
+    return this.table[i];
+  }
+}
+
+const t = new ToyHash();
+t.set("apple", 5);
+t.set("banana", 8);
+t.set("mango", 12);                  // mango-ও slot 0-এ!
+
+console.log(t.get("banana")); // 8, ঠিক আছে
+console.log(t.get("mango"));  // 12, ঠিক আছে
+console.log(t.get("apple"));  // 12 ?? apple তো 5 দিয়েছিলাম!
+```
+
+শেষ লাইনটাই এই পাতার মর্মকথা। `get("apple")`-এর 12 ফেরত দেওয়াটা bug নয়, design-এর সীমাবদ্ধতা। apple আর mango একই slot-এ পড়েছিল, mango এসে apple-কে ঢেকে দিয়েছে। আর আমরা slot-এ key জমাই নাই, তাই ভুল ধরার উপায়ও নেই। পরের ভ্যারিয়েন্টগুলোতে এই ফাঁক একটু একটু পূরণ করবো।
+
+## ভ্যারিয়েন্ট ১: সংখ্যা key
+
+Key আগে থেকেই সংখ্যা হলে (student ID, roll) hash আরও সরল: সরাসরি `% size`।
+
+```js
+class NumHash {
+  constructor(size = 10) {
+    this.size = size;
+    this.table = new Array(size);
+  }
+
+  _hash(key) {
+    return key % this.size;          // সংখ্যা হলে যোগফলের দরকারই নেই
+  }
+
+  set(key, value) { this.table[this._hash(key)] = value; }
+  get(key) { return this.table[this._hash(key)]; }
+}
+
+const ids = new NumHash();
+ids.set(214, "Rahim");   // 214 % 10 = 4
+ids.set(37, "Karim");    // 37 % 10 = 7
+ids.set(224, "Bully");   // 224 % 10 = 4, Rahim-এর ঘরেই!
+
+console.log(ids.get(37));   // "Karim"
+console.log(ids.get(214));  // "Bully" ?? Rahim কোথায় গেল!
+```
+
+রোগ একই, ওষুধ পরের পাতায়।
+
+## ভ্যারিয়েন্ট ২: key-টাও জমা রাখা
+
+প্রথম সংস্করণের সবচেয়ে লজ্জার ব্যাপার ছিল ভুল মান ফেরত দেওয়া। অন্তত slot-এ key-টাও রাখলে get আর চুপচাপ মিথ্যা বলবে না:
+
+```js
+class ToyHash2 {
+  constructor(size = 10) {
+    this.size = size;
+    this.table = new Array(size);
+  }
+
+  _hash(key) {
+    let sum = 0;
+    for (const ch of key) sum += ch.charCodeAt(0);
+    return sum % this.size;
+  }
+
+  set(key, value) {
+    const i = this._hash(key);
+    this.table[i] = [key, value];    // এবার জুটি হিসেবে
+  }
+
+  get(key) {
+    const i = this._hash(key);
+    const pair = this.table[i];
+    if (!pair) return undefined;                  // ঘরই খালি
+    return pair[0] === key ? pair[1] : undefined; // key মিলেছে তো?
+  }
+}
+
+const t2 = new ToyHash2();
+t2.set("apple", 5);
+t2.set("mango", 12);                 // আবারও apple-এর ঘরে
+console.log(t2.get("mango")); // 12
+console.log(t2.get("apple")); // undefined: অন্তত আর মিথ্যা নয়
+```
+
+খেয়াল করো, apple-এর data তখনই হারিয়ে গেছে; এখন শুধু ভুলটা **লুকোচ্ছে না**। আসল সমাধান মানে একই slot-এ দুজনকে রাখার বন্দোবস্ত, সেটা [Collision Handling](./collision-handling.mdx)-এ।
+
+## ভ্যারিয়েন্ট ৩: load factor হিসাব রাখা
+
+Table ভরে গেলে collision বাড়ে, এটা জানি। তাহলে নিজেই গুনে রাখি কতটা ভরা, সীমা পেরোলে সতর্ক করি:
+
+```js
+class ToyHash3 {
+  constructor(size = 10) {
+    this.size = size;
+    this.count = 0;
+    this.table = new Array(size);
+  }
+
+  _hash(key) {
+    let sum = 0;
+    for (const ch of key) sum += ch.charCodeAt(0);
+    return sum % this.size;
+  }
+
+  loadFactor() {
+    return this.count / this.size;
+  }
+
+  set(key, value) {
+    const i = this._hash(key);
+    if (this.table[i] === undefined) this.count++;  // নতুন slot ভরল
+    this.table[i] = value;
+    if (this.loadFactor() > 0.7) {
+      console.log(`সাবধান! load factor ${this.loadFactor().toFixed(1)}`);
+    }
+  }
+}
+
+const t3 = new ToyHash3(10);
+["a", "b", "c", "d", "e", "f", "g", "h"].forEach(k => t3.set(k, 1));
+// "h" ঢোকার সময় load factor 0.8, প্রথম warning এখানেই
+```
+
+আসল hash table-এ এই সীমা পেরোলে শুধু warning নয়, table-কেই দ্বিগুণ বড় করে সব key নতুন করে বসানো হয়। এই কাজের নাম **rehashing**।
+
+## কোড ব্রেকডাউন: মূল ToyHash, লাইনে লাইনে
+
+1. `constructor(size = 10)` : কিছু না দিলে ১০ slot-এর table। এই size-টাই পরে `%`-এ বসবে।
+2. `this.table = new Array(size)` : আসল জিনিস একটা সাধারণ array। Hash table-এর ভেতরে জাদু নেই, array-ই আছে।
+3. `_hash(key)` : নামের সামনের `_` মানে "ভেতরের কাজ, বাইরে থেকে ডেকো না", শুধু একটা রীতি।
+4. `let sum = 0` : এখানে key-এর সংখ্যা-রূপ জমা হবে।
+5. `for (const ch of key)` : string-এর প্রতিটা অক্ষর ধরে ধরে।
+6. `sum += ch.charCodeAt(0)` : প্রতি অক্ষরের Unicode code যোগ। "a" হলে 97, "b" হলে 98।
+7. `return sum % this.size` : যোগফল যেমনই হোক, `%` তাকে 0 থেকে size-1-এর ভেতরে আটকে দেয়। এই লাইন না থাকলে index array-এর বাইরে চলে যেত।
+8. `set`-এ `const i = this._hash(key)` : key আসামাত্র প্রথম কাজ, কোন ঘরে যাবে ঠিক করা।
+9. `this.table[i] = value` : তারপর কোনো প্রশ্ন ছাড়াই বসে যাওয়া। এই লাইনেই collision-এর ভুল লুকিয়ে আছে: আগের occupant-এর কোনো খোঁজ নেই।
+10. `get`-ও একই `_hash` ব্যবহার করে : key এক হলে index সবসময় এক, তাই জমানো জায়গায়ই খোঁজা যায়। এই "একই key, প্রতিবার একই index" গুণটাই সবচেয়ে জরুরি।
+
+## Complexity: "average O(1)" বলতে কী বোঝায়
+
+| অপারেশন | average | worst |
+|---------|---------|-------|
+| set     | O(1)    | O(n)  |
+| get     | O(1)    | O(n)  |
+| remove  | O(1)    | O(n)  |
+
+**Average O(1) কেন?** হাতে গোনো: hash function যদি key-গুলো m-টা slot-এ সমান ছড়ায়, আর table-এ n-টা key থাকে, প্রতি slot-এ গড়ে পড়ে n/m-টা key। Load factor সীমার ভেতরে রাখলে (যেমন 0.7-এর নিচে) এই n/m একটা ছোট ধ্রুবক। তখন কাজটা: একটা hash হিসাব + একটা slot-এ যাওয়া + সেই ছোট্ট ভিড়ে খোঁজা। Key দশগুণ হলেও কাজ দশগুণ হয় না, কারণ table-ও সেই অনুপাতে বড় করে দিই (rehash)। এটাই average O(1)।
+
+**Worst O(n) কখন?** ধরো hash function এমন মন্দ যে সব key একই slot-এ ফেলে, অথবা দুর্ভাগ্যবশত input-গুলো সব একঘরে চলে এলো। তখন সেই এক slot-এ n-টা key জমা, খোঁজা মানে লাইন ধরে সবাইকে দেখা, মানে O(n)। সুতরাং hash table-এর O(1) কোনো আইন নয়, দুটো শর্তের উপর নির্ভরশীল প্রতিশ্রুতি: **ভালো hash function** আর **থামা load factor**।
+
+**Space: O(n)।** n-টা key জমাতে table-এর size-ও n-এর সমানুপাতিক রাখতে হয়, নাহলে load factor ফেটে যায়। তাই মেমরিও O(n)।
+
+## সাধারণ ভুল আর edge case
+
+**১. O(1) গ্যারান্টি ভাবা।**
+Hash table-এর O(1) হলো average, গ্যারান্টি নয়। সব key একই slot-এ পড়লে worst case O(n)। Interview-তে "hash table সবসময় O(1)" বললেই ধরা পড়বে। আসল উত্তর: ভালো hash function আর load factor ঠিক থাকলে average O(1)।
+
+**২. Key-গুলো sorted থাকবে আশা করা।**
+Hash table-এ key-এর কোনো ক্রম নেই। "apple" আর "banana"-র মধ্যে কে আগে থাকবে, তা alphabet ঠিক করে না, hash ঠিক করে। Sorted ক্রমে key লাগলে সেটা BST-র ইলাকা, ওখানে in-order traversal-এ key-গুলো sorted-ই পাওয়া যায়। Hash table সেই সুবিধার বিনিময়ে গতি কেনে।
+
+**৩. Hash function-টাই ধীর করে দেওয়া।**
+Hash table-এর পুরো কারণই গতি। কিন্তু hash বের করতেই যদি অনেকক্ষণ লাগে (ধরো SHA-256-এর মতো ভারী কিছু চালালে), প্রতিটা get/set ধীর হয়ে যাবে। Hash function হতে হবে হালকা, যত কম অঙ্কে সম্ভব।
+
+**৪. ভেবে নেওয়া যেকোনো জিনিসই key হতে পারে।**
+Key হতে হলে তাকে hash করা যেতে হবে, আর সে যেন বদলায় না। Mutable key বিপদ: object-টাকে key বানানোর পর তার ভেতর বদলে দিলে hash-ও বদলে যাবে, নিজের জমানো জিনিস নিজেই আর খুঁজে পাবে না। এই জটিলতা নিয়ে আরও আছে [Collision Handling](./collision-handling.mdx)-এ।
+
+**৫. JS-এর plain object আর Map-কে এক ভাবা।**
+`{}` দিয়ে অনেক কাজ চলে ঠিকই, কিন্তু object-এর key সবসময় string-এ বদলে যায় (সংখ্যা 1 আর "1" এক হয়ে যায়), আর prototype থেকে অদ্ভুত key ঢুকে যেতে পারে। আসল key-value কাজে `Map` অনেক নিরাপদ। পার্থক্য বিস্তারিত [Map and Set](./map-and-set.mdx)-এ।
 
 ## Animation Spec
 
-> **Animation Spec: Key থেকে Bucket**
+> **Animation Spec: Key Drops Into Slots**
 >
-> - **দৃশ্য:** বাঁয়ে key, মাঝে "hash function" নামক মেশিন, ডানে bucket array।
-> - **ইনপুট:** key টাইপ করা।
-> - **ধাপ:** key মেশিনে ঢুকে একটা সংখ্যা (index) বের হবে, তীর গিয়ে সেই bucket-এ মান বসাবে।
-> - **লক্ষ্য:** hashing মানে আসলে key-কে index-এ রূপান্তর, এটা পরিষ্কার করা।
+> - **দৃশ্য:** বামে key-এর তালিকা, মাঝে "hash function" মেশিন, ডানে ১০টা slot-এর array; নিচে load factor-এর মিটার।
+> - **ইনপুট:** key (string বা সংখ্যা) আর value; table size বদলানো যায়।
+> - **ধাপ:** key মেশিনে ঢুকে char code-গুলো জমা হতে দেখা যায়, `% size` হলো, index বের হলো; তারপর key+value বল হয়ে গিয়ে সেই slot-এ পড়ে; দুটো key একই slot-এ পড়লে slot লাল ঝলকে ওঠে (collision flash) আর আগেরটা মুছে যায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "key-ও জমাও" টগল (ভ্যারিয়েন্ট ২); "size বদলাও" স্লাইডার, যাতে load factor-এর প্রভাব চোখে পড়ে।
+> - **লক্ষ্য:** hash table মানে key → index → array, আর collision মানে দুজনে একই ঘর।
 
 ## অনুশীলন
 
-- একটা Map বানাও, পাঁচটা দেশ আর তাদের রাজধানী রাখো, তারপর খুঁজে দেখো।
+- **সহজ ১:** হাতে হাতে trace করো: `"cat"`, `"dog"`, `"cow"`, `"ant"`, `"eel"` এই ৫টা key ToyHash-এর (sum % 10) কোন কোন slot-এ পড়বে? কোনো collision হলো তো? হিন্ট: প্রতিটা অক্ষরের char code যোগ করো, শেষে % 10।
+- **সহজ ২:** সংখ্যা key-এর জন্য `key % size` hash নিয়ে size 10-এর table-এ ঢুকাও: 12, 22, 34, 45, 52, 62। কয়টা collision, কোন slot-এ? হিন্ট: এখানে প্রতিটা key-এর শেষ digit-ই slot।
+- **মাঝারি ১:** size 10-এর table-এ ৫০টা key ঢোকালে table ধীর হবেই, কেন? দুই লাইনে যুক্তি লেখো। হিন্ট: কবুতর আর খোঁয়ার কথা ভাবো; প্রতি slot-এ গড়ে কতজন পড়ল?
+- **মাঝারি ২:** একটা array দেওয়া আছে, প্রথম যে element আবার এসেছে (first repeating) সেটা খুঁজো। যেমন `[2, 5, 1, 5, 2, 3]`-এ উত্তর 5। হিন্ট: বাম থেকে এগিয়ে একটা seen-set-এ দেখা সংখ্যা জমাতে থাকো; এই প্যাটার্ন নিয়ে পুরো পাতাই আছে [Hash Patterns](./hash-patterns.mdx)-এ।
+- **কঠিন:** ১০ লক্ষ student ID-এর জন্য একটা hash table design করতে হবে। Size কত নেবে আর কেন? হিন্ট: load factor 0.7-এর নিচে রাখতে চাও; আর size হিসেবে prime সংখ্যা নিলে ছড়ানো ভালো হয়, কারণটা [Hash Function](./hash-function.mdx)-এ পরিষ্কার হবে।
+
+## সারসংক্ষেপ
+
+- Array-এর O(1) আসে address-অঙ্ক থেকে; hash table সেই সুবিধা যেকোনো key-তে বাড়ায়।
+- Hash table = array + hash function; hash function-ই বলে দেয় key কোন slot-এ।
+- Collision অবশ্যম্ভাবী; সামলানোর পদ্ধতি পরের পাতায়।
+- Load factor বাড়লে collision বাড়ে; তাই বড় table আর rehashing।
+- Average O(1), worst O(n); পার্থক্যটা hash-এর গুণ আর load factor-এ।

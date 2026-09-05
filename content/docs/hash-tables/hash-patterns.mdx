@@ -1,56 +1,286 @@
 ---
-title: "Hash Patterns: Frequency, Seen-set, Complement"
-description: frequency counting, seen-set আর complement lookup প্যাটার্ন দিয়ে O(n²) সমস্যা O(n)-এ নামানো, Two Sum সহ।
+title: "Hash Patterns: O(n²) থেকে O(n)-এর পাঁচটা কায়দা"
+description: frequency map, seen-set, complement lookup, prefix sum আর canonical key; পাঁচটা interview প্যাটার্নের পুরো dry run, Two Sum থেকে Group Anagrams, সাথে সবচেয়ে দামি পাঁচটা ভুল।
 ---
 
 ## কী শিখব
 
-- interview-তে বারবার আসা hash প্যাটার্নগুলো
+- পাঁচটা জরুরি hash প্যাটার্ন চিনে নেওয়া: frequency map, seen-set, complement lookup, prefix sum + map, grouping
+- প্রতিটা প্যাটার্নে brute force কেন ধীর, আর hash কীভাবে O(n²) কে O(n) বানিয়ে দেয়
+- Two Sum-এর পুরো dry run: প্রতি ধাপে কী চেক হলো, map-এ কী জমল
+- subarray sum-এ {0: 1} seed না দিলে ঠিক কোন উত্তরটা মিস হয়, হাতে গুনে প্রমাণ
+- anagram-দের দলে ভাগ করার canonical key: sorted string বনাম 26-ঘরের count vector
+- কখন hash map লাগবেই না (sorted data দেখলে two pointer), সেটা চেনাও জরুরি
 
 ## ধারণা
 
-এখানেই আসল জিনিস। Hash Table দিয়ে অনেক O(n²) সমস্যা O(n)-এ নামিয়ে ফেলা যায়। interview-তে তিনটা প্যাটার্ন ঘুরেফিরে আসেই:
+ভাবো তো, একটা ভোটকেন্দ্রের সারাদিনের তালিকা হাতে পেয়েছো। প্রশ্ন এল একের পর এক: "কোনো নাম কি দুইবার এসেছে?" "কে কয়বার এসেছে?" "এমন দুটো ID আছে কিনা যাদের বয়সের যোগ ৫০?" প্রশ্নগুলো দেখতে আলাদা, কিন্তু উত্তরের পথ একটাই: একটা খাতা নাও, নাম এলেই পাশে দাগ দাও, আর উত্তর দেওয়ার সময় সেই খাতায় এক নজরে তাকাও। পুরো তালিকা আবার উল্টে খোঁজার দরকারই নেই।
 
-1. **Frequency counting** (আগের পাতায় দেখে এসেছি)
-2. **Seen-set** (এটা আগে দেখেছি কিনা)
-3. **Complement lookup** (Two Sum-এর সেই কায়দা)
+সেই খাতাটাই hash table। আগের পাতায় ([Hash Table-এর পরিচয়](./hash-table-intro.mdx)) দেখে এসেছি lookup কেন প্রায় O(1): [hash function](./hash-function.mdx) key-কে ঘরে ঘরে ছড়িয়ে দেয়, আর ধাক্কা লাগলে [collision handling](./collision-handling.mdx) সামলে নেয়। JavaScript-এ খাতাটার দুটো রূপ আছে, Map আর Set; কখন কোনটা, সেটা [Map ও Set](./map-and-set.mdx)-এ বিস্তারিত পাবে।
 
-## কোড উদাহরণ
+এই পাতায় সেই খাতা দিয়ে পাঁচটা প্যাটার্ন শিখব। interview-তে এগুলো ঘুরেফিরে আসেই। প্রতিটাকে এক লাইনে চিনে নাও:
+
+- **Frequency map:** "কে কয়বার এসেছে?" আগে গোনা, তারপর সেই গোনা দিয়ে উত্তর।
+- **Seen-set:** "এটা কি আগে দেখেছি?"
+- **Complement lookup:** "আমার সাথে মিলে target হয়, এমন কেউ কি আগে এসেছে?"
+- **Prefix sum + map:** "এই অবধি মোট কত? সেই মোট কি আগে এসেছিল?"
+- **Canonical key / grouping:** "এই জিনিসটা আসলে কোন দলের?"
+
+ব্যাপারটা হলো, পাঁচটার নিচে একটাই কথা শুয়ে আছে: লুপের ভেতরে বারবার খোঁজার কাজটা না করে, একটা খাতায় জমিয়ে রাখা। এই একটা চালই O(n²) কে O(n) বানায়।
+
+## প্যাটার্ন ১: Frequency Map (কে কয়বার এসেছে)
+
+সমস্যাটা ধরো: একটা string দেওয়া আছে, বের করতে হবে প্রথম যে character-টা মাত্র একবার এসেছে (LeetCode 387-এর মতো)। যেমন "aabbcddce"-এ উত্তর 'e'। সোজা উপায় কী? প্রতিটা character-এর জন্য পুরো string ঘুরে গুনে দেখা, দুটো nested loop, O(n²)। আরেকটা উপায় মাথায় আসতে পারে: string-টা sort করে ফেলা, তাহলে সমান অক্ষর পাশাপাশি চলে আসে, গোনা সহজ। কিন্তু sort-ই O(n log n) (হিসাবটা [Sorting Comparison](../sorting/sorting-comparison.mdx)-এ), আর তার চেয়ে বড় কথা, sort করতেই মূল ক্রমটা হারিয়ে গেল। "কে সবার আগে এসেছিল" এই প্রশ্নের উত্তর তখন আর নেই। যখনই order আর uniqueness দুটোই দরকার, sort হেরে যায়, hash জিতে।
+
+Hash-এর প্ল্যান দুই pass-এর: প্রথম pass-এ শুধু গোনা, দ্বিতীয় pass-এ ক্রম ধরে এগিয়ে প্রথম যার count 1, সেই উত্তর। দ্বিতীয় pass-টা আসলে আরেকটা সাধা [traversal](../arrays-strings/traversal.mdx), তাই মোট খরচ O(n) + O(n) = O(n)। হাতে হাতে চালাই। Pass 1-এ "aabbcddce" গুনে গুনে map-টা দাঁড়ায়: a→2, b→2, c→2, d→2, e→1। এবার pass 2, ক্রম ধরে:
+
+| ধাপ | i | char | count | থামছি? |
+|-----|---|------|-------|---------|
+| 1 | 0 | a | 2 | না |
+| 2 | 1 | a | 2 | না |
+| 3 | 2 | b | 2 | না |
+| 4 | 3 | b | 2 | না |
+| 5 | 4 | c | 2 | না |
+| 6 | 5 | d | 2 | না |
+| 7 | 6 | d | 2 | না |
+| 8 | 7 | c | 2 | না |
+| 9 | 8 | e | 1 | হ্যাঁ, 'e'-ই উত্তর |
+
+চারটা আলাদা character-ই দুইবার করে এসেছে, তারপর 'e'। প্রথম pass জানাল কারা unique, কিন্তু তাদের মধ্যে কে আগে, সেটা জানতে ক্রম ধরে দ্বিতীয় pass-ই লাগে।
 
 ```js
-// Two Sum, ক্লাসিক: target যোগফল দেয় এমন দুটো সংখ্যার index খুঁজি, O(n)
-function twoSum(nums, target) {
-  const seen = new Map();            // value থেকে index
-  for (let i = 0; i < nums.length; i++) {
-    const need = target - nums[i];   // যা দরকার
-    if (seen.has(need)) return [seen.get(need), i]; // আগে দেখেছি?
-    seen.set(nums[i], i);
+function firstUniqueChar(s) {
+  const count = new Map();             // char থেকে কয়বার এসেছে
+
+  for (const ch of s) {                // pass 1: শুধু গোনা
+    count.set(ch, (count.get(ch) || 0) + 1);
   }
-  return [];                         // পাওয়া যায়নি
+
+  for (let i = 0; i < s.length; i++) { // pass 2: ক্রম ধরে প্রথম unique
+    if (count.get(s[i]) === 1) return s[i];
+  }
+  return null;                         // সবাই repeat
 }
 
-console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]  (2+7=9)
+console.log(firstUniqueChar("aabbcddce")); // 'e'
+console.log(firstUniqueChar("aabb"));      // null
 ```
 
-## কোড ব্রেকডাউন
+একটা কথা: character যদি শুধুই lowercase হয়, 26-ঘরের একটা array দিয়েও এটা চলে (`count[ch.charCodeAt(0) - 97]++`)। ভাবতে অবাক লাগলেও সেটাও hash-ই, শুধু key-টা সরাসরি index হয়ে গেছে। প্যাটার্ন ৫-এ এই কায়দাটা আবার ফিরে আসবে।
 
-- naive উপায়টা কী হতো? nested loop, মানে O(n²)।
-- এখানে কী করছি? প্রতিটা সংখ্যার "প্রয়োজনীয় জোড়া" (complement) আগে দেখা গেছে কিনা, সেটা map-এ চেক করছি। তাই পুরো কাজ O(n)-এ শেষ।
-- একটা pass, একটা map। hash-এর শক্তির চেয়ে ভালো উদাহরণ কমই আছে।
+## প্যাটার্ন ২: Seen-set (এটা আগে দেখেছি কিনা)
 
-## Complexity
+সমস্যা: Contains Duplicate (LeetCode 217)। array-তে কোনো সংখ্যা কি একাধিকবার আছে? থাকলে true, না থাকলে false। Brute force: প্রতিটা সংখ্যাকে বাকি সবার সাথে তুলনা, O(n²); অথবা sort করে পাশাপাশি দুটো মিল কিনা দেখা, O(n log n)। Hash বলে অন্য কথা: ঘুরতে ঘুরতে প্রতিটা সংখ্যা set-এ ঢোকাও; ঢোকানোর আগে জিজ্ঞেস করো, "তোমাকে কি আগে দেখেছি?" উত্তর হ্যাঁ হলেই থেমে যাও। nums = [4, 2, 7, 2, 9]-এ dry run:
 
-- O(n) time, O(n) space।
+| ধাপ | x | set-এ আগে থেকে আছে? | set (ঢোকানোর পর) |
+|-----|---|----------------------|-------------------|
+| 1 | 4 | না | {4} |
+| 2 | 2 | না | {4, 2} |
+| 3 | 7 | না | {4, 2, 7} |
+| 4 | 2 | হ্যাঁ! true ফেরত | (আর ঢোকাইনি) |
+| - | 9 | দেখাই হলো না | early exit |
+
+খেয়াল করো, শেষ 9-টা আর দেখতেই হয়নি। যে মুহূর্তে hit পেলাম, কাজ শেষ। এই early exit-টা brute force-এ নেই, ওখানে সব জোড়া তুলনা করতেই হয়।
+
+```js
+function containsDuplicate(nums) {
+  const seen = new Set();
+  for (const x of nums) {
+    if (seen.has(x)) return true;   // আগেই দেখে ফেলেছি, থামো
+    seen.add(x);
+  }
+  return false;                     // কেউই repeat হয়নি
+}
+
+console.log(containsDuplicate([4, 2, 7, 2, 9])); // true
+console.log(containsDuplicate([4, 2, 7, 9]));    // false
+```
+
+## প্যাটার্ন ৩: Complement Lookup (আমার জোড়া কে আগে এসেছে)
+
+এবার আসল তারকা। Two Sum (LeetCode 1): nums array আর একটা target দেওয়া, এমন দুটো index ফেরত দাও যাদের সংখ্যা দুটোর যোগ target। Brute force দুটো nested loop: প্রতি জোড়া তুলে যোগ করে দেখো, O(n²) time, O(1) space; n = ১০⁵ হলে প্রায় ৫ × ১০⁹-টা তুলনা, চলবে না।
+
+এবার প্রশ্নটা একটু উল্টে দাও। সংখ্যাটা x হলে তার জোড়া কে? উত্তর: target - x। তাহলে আসল প্রশ্ন দাঁড়াল: "target - x কি আগে এসেছে?" এটা তো seen-set-এরই প্রশ্ন! শুধু এবার শুধু "দেখেছি" জানলে চলবে না, index-টাও লাগবে। তাই Set নয়, Map: key = সংখ্যা, value = index। nums = [2, 7, 11, 15], target = 9:
+
+| ধাপ | i | x | need = target - x | map-এ need আছে? | map (ঢোকানোর পর) |
+|-----|---|---|--------------------|------------------|-------------------|
+| 1 | 0 | 2 | 7 | না (খালি) | {2→0} |
+| 2 | 1 | 7 | 2 | হ্যাঁ, 2→0 | return [0, 1] |
+
+মাত্র দুই ধাপে শেষ। 11 আর 15-এ যাওয়াই লাগল না। উত্তর [0, 1], কারণ 2 + 7 = 9। আর ক্রমটা খেয়াল করো: আগে পুরনোটার index, তারপর এখনকারটা। complement আগে এসেছিল, তাই সে আগে বসে।
+
+```js
+function twoSum(nums, target) {
+  const seen = new Map();            // সংখ্যা থেকে তার index
+
+  for (let i = 0; i < nums.length; i++) {
+    const need = target - nums[i];   // এই সংখ্যার জোড়া কে?
+    if (seen.has(need)) {
+      return [seen.get(need), i];    // জোড়া আগেই এসে গেছিল
+    }
+    seen.set(nums[i], i);            // না পেলে নিজেকে জমিয়ে রাখো
+  }
+  return [];                         // এমন জোড়া-ই নেই
+}
+
+console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]
+console.log(twoSum([3, 2, 4], 6));      // [1, 2]
+console.log(twoSum([3, 3], 6));         // [0, 1]
+```
+
+আর এই প্যাটার্নের জন্যই মানুষ hashing-এ ভালোবেসে ফেলে। যে সমস্যার সহজ সমাধান O(n²), একটা map আর একটা pass সেটাকে O(n) বানিয়ে দিল। এমন পরিষ্কার জয় কম জায়গাতেই দেখা যায়। শুধু একটা কথা মাথায় রাখো: আগে চেক, তারপর জমা। ক্রম উল্টে দিলে কী বিপদ, নিচে ভুল ১-এ দেখবে।
+
+## প্যাটার্ন ৪: Prefix Sum + Hash Map (এই অবধি মোট কত)
+
+সমস্যা: Subarray Sum Equals K (LeetCode 560)। nums array আর k দেওয়া, কতগুলো contiguous subarray-এর যোগ ঠিক k? nums = [1, 2, 3], k = 3 হলে উত্তর 2: [1, 2] আর [3]। Brute force: সব subarray তুলে তুলে যোগ করা, O(n²)। কিন্তু একটা সূত্র লুকিয়ে আছে। prefix sum ধরো: P[j] = শুরু থেকে j পর্যন্ত যোগ। তাহলে (i..j] subarray-এর যোগ = P[j] - P[i]। সেটা k হওয়া মানে P[i] = P[j] - k। অর্থাৎ প্রতিটা prefix sum P-এর পাশে দাঁড়িয়ে জিজ্ঞেস করো: "P - k কি আগে কোনো prefix sum হয়ে এসেছে?" চেনা প্রশ্ন তো! শুধু এবার গোনাও রাখতে হবে, কারণ একই prefix sum বারবার আসতে পারে, আর প্রতিবারই আলাদা subarray।
+
+একটা জিনিস মাথায় গেঁথে নাও, এটাই এই সমস্যার প্রাণ: শুরু করার আগে map-এ {0: 1} বসিয়ে দিতে হবে। মানে "যোগ 0 এসেছে একবার"। নইলে index 0 থেকে শুরু হওয়া subarray-গুলো চিরকাল গোনার বাইরে থেকে যাবে। একটু পরেই প্রমাণটা দেখাব। nums = [1, 2, 3], k = 3, seed {0: 1} নিয়ে dry run:
+
+| ধাপ | i | x | P (চলমান যোগ) | P - k | map-এ আছে? | ans এখন | map (ঢোকানোর পর) |
+|-----|---|---|----------------|-------|-------------|---------|-------------------|
+| শুরু | - | - | 0 | - | - | 0 | {0:1} |
+| 1 | 0 | 1 | 1 | -2 | না | 0 | {0:1, 1:1} |
+| 2 | 1 | 2 | 3 | 0 | হ্যাঁ, 1 বার | 1 | {0:1, 1:1, 3:1} |
+| 3 | 2 | 3 | 6 | 3 | হ্যাঁ, 1 বার | 2 | {0:1, 1:1, 3:1, 6:1} |
+
+ধাপ 2-এ যেটা ধরা পড়ল, সেটা [1, 2]: চলমান যোগ 3 থেকে seed-এর 0 বাদ দিলে থাকে 3। ধাপ 3-এ ধরা পড়ল [3]: 6 থেকে 3 বাদ। মোট 2। এবার seed ছাড়া চালাও মনে মনে: ধাপ 2-এ P - k = 0, কিন্তু map-এ তখন শুধু {1:1}, 0 নেই, তাই [1, 2] মিস। ধাপ 3 ঠিকঠাক চলে, উত্তর আসে 1। ভুল, আর একদম নিঃশব্দে ভুল। এই জন্যই seed-টা।
+
+```js
+function subarraySum(nums, k) {
+  const count = new Map([[0, 1]]);   // seed: যোগ 0 একবার এসেছে
+  let prefix = 0;
+  let ans = 0;
+
+  for (const x of nums) {
+    prefix += x;                        // চলমান prefix sum
+    if (count.has(prefix - k)) {
+      ans += count.get(prefix - k);     // পুরনো prefix যতবার, subarray ততটা
+    }
+    count.set(prefix, (count.get(prefix) || 0) + 1);
+  }
+  return ans;
+}
+
+console.log(subarraySum([1, 2, 3], 3));  // 2
+console.log(subarraySum([1, 1, 1], 2));  // 2
+console.log(subarraySum([1, -1, 0], 0)); // 3
+```
+
+শেষ উদাহরণটা ইচ্ছে করে negative রাখা। negative সংখ্যা থাকলে sliding window-এর মতো প্যাটার্ন জ্যাম করে যায়, কিন্তু prefix sum + map তখনও ঠিকঠাক চলে। আর মনে রাখো, prefix sum নিজেই একটা বড় প্যাটার্ন, পরে [dynamic programming](../problem-solving/dynamic-programming.mdx)-এর কিছু সমস্যায় আবার দেখা হবে।
+
+## প্যাটার্ন ৫: Canonical Key / Grouping (এটা আসলে কোন দলের)
+
+সমস্যা: Group Anagrams (LeetCode 49)। একঝাঁক শব্দ দেওয়া, anagram-রা যারা একই অক্ষরের ভিন্ন সাজানো, তাদের দলে দলে ভাগ করো। ["eat","tea","tan","ate","nat","bat"] → [["eat","tea","ate"], ["tan","nat"], ["bat"]]। Brute force: প্রতি জোড়া শব্দ তুলে দেখা anagram কিনা, তারপর দল গঠন, O(n² · L)। Hash বলে অন্য কথা: anagram-দের জন্য এমন একটা key বানাও যেটা দলের সবার জন্য একই আসে। তাহলে key-ই দলের নাম, আর কারো সাথে কারো তুলনাই লাগবে না।
+
+কী হবে সেই key? দুটো উত্তর:
+
+- **Sorted string:** "eat", "tea", "ate" তিনজনকেই sort করলে "aet"। পড়তে সহজ, খরচ প্রতি শব্দে O(L log L)।
+- **26-ঘরের count vector:** প্রতি অক্ষর কয়বার, সেই তালিকা: "1#0#0#1#0#..."। খরচ O(L), কিন্তু চোখে পড়া কঠিন।
+
+Dry run, sorted key দিয়ে (কারো সাথে কারো তুলনা নয়, শুধু key বানিয়ে সঠিক ঘরে ঢোকাও):
+
+| ধাপ | শব্দ | key | map (key → দল) |
+|-----|------|-----|-----------------|
+| 1 | eat | aet | {aet: [eat]} |
+| 2 | tea | aet | {aet: [eat, tea]} |
+| 3 | tan | ant | {aet: [eat, tea], ant: [tan]} |
+| 4 | ate | aet | {aet: [eat, tea, ate], ant: [tan]} |
+| 5 | nat | ant | {..., ant: [tan, nat]} |
+| 6 | bat | abt | {..., abt: [bat]} |
+
+```js
+function groupAnagrams(words) {
+  const groups = new Map();                    // canonical key থেকে দল
+
+  for (const w of words) {
+    const key = w.split("").sort().join("");   // "eat", "tea", "ate" সবারই "aet"
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(w);
+  }
+  return [...groups.values()];
+}
+
+console.log(groupAnagrams(["eat", "tea", "tan", "ate", "nat", "bat"]));
+// [ [ 'eat', 'tea', 'ate' ], [ 'tan', 'nat' ], [ 'bat' ] ]
+```
+
+শব্দ লম্বা হলে count vector-ই জেতে:
+
+```js
+function anagramKey(w) {
+  const freq = new Array(26).fill(0);
+  for (const ch of w) {
+    freq[ch.charCodeAt(0) - 97]++;             // 'a'-র charCode 97
+  }
+  return freq.join("#");                       // "1#0#0#1#..." : separator বাধ্যতম
+}
+
+// groupAnagrams-এর ভেতরে শুধু key-এর লাইনটা বদলে anagramKey(w) দিলেই চলবে
+```
+
+ছোট শব্দে sorted key-ই যথেষ্ট, পড়তেও সহজ। separator-টা কেন বাধ্যতম, সেটা ভুল ৩-এ দেখবে। আর string-এর অক্ষর নিয়ে এই ধরনের খেলা আগে [Strings](../arrays-strings/strings.mdx)-এও করেছি।
+
+## কোড ব্রেকডাউন: twoSum, লাইনে লাইনে
+
+পাঁচটার মধ্যে সবচেয়ে শেখানো জিনিস complement lookup, তাই `twoSum`-কেই লাইনে লাইনে ছেঁড়ি:
+
+1. `const seen = new Map()` : Set নয় কেন? কারণ "দেখেছি" জানলে চলবে না, index-টাও ফেরত দিতে হবে। key = সংখ্যা, value = index।
+2. `for (let i = 0; i < nums.length; i++)` : একটাই pass। brute force-এর ভেতরের loop-টার কাজ এখন map করছে, O(1)-এ।
+3. `const need = target - nums[i]` : পুরো প্যাটার্নের প্রাণ এই লাইন। "আমার পাশে কে দাঁড়ালে target হবে?" এই প্রশ্নটার নামই complement।
+4. `if (seen.has(need))` : খোঁজার দাম O(1)। brute force-এ এই একই খোঁজ ছিল O(n), সেটাও প্রতিটা সংখ্যার জন্য।
+5. `return [seen.get(need), i]` : পুরনোটার index আগে, এখনকারটা পরে। complement আগে এসেছিল বলেই তো পেলাম।
+6. `seen.set(nums[i], i)` : পাইনি? তাহলে নিজেকে ভবিষ্যতের জন্য জমাও। কেউ পরে এসে তোমাকে complement হিসেবে খুঁজতে পারে। এই "ভবিষ্যতের জন্য জমানো"-টাই সব প্যাটার্নের মূল সুর।
+7. `return []` : loop শেষ, জোড়া নেই। LeetCode ঠিক একটা উত্তর থাকার গ্যারান্টি দেয়, তবু নিজের কোডে খালি case সামলে রাখা ভালো অভ্যাস।
+
+## Complexity: brute force বনাম hash
+
+| প্যাটার্ন | সমস্যা | Brute force | Hash (time) | Hash (space) |
+|-----------|--------|-------------|-------------|---------------|
+| Frequency map | প্রথম unique char | O(n²) nested scan, বা O(n log n) sort | O(n) | O(k), k = আলাদা char |
+| Seen-set | contains duplicate | O(n²), বা O(n log n) sort | O(n) | O(n) |
+| Complement lookup | Two Sum | O(n²) (space O(1)) | O(n) | O(n) |
+| Prefix sum + map | subarray sum = k | O(n²) সব subarray | O(n) | O(n) |
+| Canonical key | group anagrams | O(n² · L) প্রতি জোড়া তুলনা | O(n · L log L) sorted key, O(n · L) count vector | O(n · L) |
+
+## সাধারণ ভুল আর edge case
+
+**১. Two Sum-এ আগে জমিয়ে তারপর চেক করা।**
+ক্রমটা উল্টে দাও: আগে `seen.set(nums[i], i)`, তারপর `seen.has(need)`। nums = [3, 2, 4], target = 6 চালাও। i = 0-তে 3 ঢুকে গেল, need = 6 - 3 = 3, map-এ 3 আছে (নিজেই!), return [0, 0]। একই উপাদান দুইবার, সরাসরি ভুল। মজার ব্যাপার, nums = [3, 3], target = 6-এ এই ভুল কোডও সঠিক [0, 1]-ই দেয় (দ্বিতীয় 3-এর পালায় প্রথমটা সত্যিকারে map-এ ছিল), তাই bug-টা লুকিয়ে থাকে। [3, 2, 4]-ই তাকে ধরিয়ে দেয়। নিয়ম মুখস্থ: আগে চেক, পরে জমা।
+
+**২. Subarray sum-এ {0: 1} seed ভুলে যাওয়া।**
+ওপরের dry run-টাই প্রমাণ: seed ছাড়া ধাপ 2-এ P - k = 0, কিন্তু map-এ 0 নেই, তাই [1, 2] চিরকালের জন্য মিস। উত্তর আসে 1, সঠিক ছিল 2। index 0 থেকে শুরু হওয়া subarray-দের "আগের prefix" হলো 0, সেটা map-এ হাতে বসিয়ে দিতে হয়।
+
+**৩. Group anagrams-এ unstable key।**
+count vector-কে separator ছাড়া join করলে ধাক্কা: count (1, 11) আর (11, 1) দুটোই "111" হয়ে যায়। অর্থাৎ 1টা 'a' + 11টা 'b'-ওয়ালা শব্দ আর 11টা 'a' + 1টা 'b'-ওয়ালা শব্দ ভুল করে এক দলে মিশে যাবে। separator দিলেই "1#11" আর "11#1" আলাদা থাকে। sorted key-তে এই বিপদ নেই, তাই অনেকেই ওটাতেই থাকে।
+
+**৪. Data আগে থেকেই sorted, তবুও hash map টেনে আনা।**
+nums sorted হলে Two Sum-এ hash লাগবেই না: দুই প্রান্ত থেকে [two pointer](../problem-solving/two-pointer.mdx) চালাও, O(n) time আর O(1) space। এমনকি প্রতিটা x-এর complement [binary search](../searching/binary-search.mdx) দিয়েও খোঁজা যায়। hash-এর O(n) space-টা তখন নিছক নষ্ট। প্যাটার্ন মানে ঝাঁপিয়ে পড়া নয়, input দেখে বেছে নেওয়া।
+
+**৫. Set/Map-এ object key-র value-ভিত্তিক তুলনা আশা করা।**
+`new Set([[1, 2]]).has([1, 2])` দিলে false আসবে। JavaScript-এ object আর array-এর তুলনা হয় reference দিয়ে, ভেতরের মান দিয়ে নয়; দুটো আলাদা [1, 2] মেমরিতে আলাদা জিনিস। মান দিয়ে গ্রুপ করতে হলে key বানিয়ে নিতে হয়, যেমন "1,2" (ঠিক যেমন প্যাটার্ন ৫-এ করেছি)। বিস্তারিত [Map ও Set](./map-and-set.mdx)-এ।
 
 ## Animation Spec
 
-> **Animation Spec: Two Sum Lookup**
+> **Animation Spec: Hash Pattern Lab**
 >
-> - **দৃশ্য:** array; নিচে একটা map (value থেকে index); উপরে target।
-> - **ইনপুট:** array আর target।
-> - **ধাপ:** প্রতিটা সংখ্যায় complement হিসাব করে map-এ আছে কিনা চেক (হলুদ), পেলে দুই index সবুজ; না পেলে map-এ যোগ হবে।
-> - **লক্ষ্য:** complement-lookup প্যাটার্নটা আত্মস্থ করা।
+> - **দৃশ্য:** তিনটা lane পাশাপাশি। বামে input array বা string, pointer বাম থেকে ডানে sweep করছে, চলমান উপাদান হলুদ। ডানে hash table ধীরে ধীরে ভরছে, নতুন entry সবুজ ফ্ল্যাশ, hit হলে সোনালি। মাঝের lane-এ উত্তরটা পপ হয়ে ওঠে (যেমন [0, 1] বা true)।
+> - **ইনপুট:** পাঁচটা প্যাটার্নের টগল: frequency, seen-set, complement, prefix sum, grouping; প্রতিটার নিজস্ব preset input, চাইলে custom।
+> - **ধাপ:** প্রতি ধাপে তিনটা ঘটনা একসাথে: pointer সরল, need বা key হিসাব হলো, table-এ lookup (miss হলে নতুন entry ঢুকল, hit হলে entry জ্বলে উঠল)। prefix sum মোডে উপরে P আর P - k দুটোই ভাসে, আর seed {0: 1} শুরু থেকেই table-এ বসে থাকে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে দুটো "ভুলের" টগল: seed বন্ধ করা, আর complement-এ আগে জমানো। ভুলটা কেমন দেখায়, নিজের চোখে দেখার জন্য।
+> - **লক্ষ্য:** পাঁচটা প্যাটার্নের গভীরে একটাই চাল, loop-এর খোঁজ table-এ জমানো। সেটা চোখে নয়, হাতে ঢুকে যাওয়া।
 
 ## অনুশীলন
 
-- দুটো array-এর common উপাদানগুলো O(n)-এ বের করো (Set ব্যবহার করে)।
+- **সহজ ১:** Contains Duplicate (LeetCode 217)। হিন্ট: seen-set, একটা pass, hit পেলেই true।
+- **সহজ ২:** Valid Anagram (LeetCode 242)। হিন্ট: একটা string-এর frequency বাড়াও, আরেকটার কমাও; শেষে সব count শূন্য কিনা দেখো।
+- **মাঝারি ১:** Two Sum (LeetCode 1), এই পাতা না উল্টে নিজে লিখে ফেলো। হিন্ট: আগে চেক, পরে জমা।
+- **মাঝারি ২:** Longest Substring Without Repeating Characters (LeetCode 3) আর Top K Frequent Elements (LeetCode 347)। হিন্ট: প্রথমটায় [sliding window](../problem-solving/sliding-window.mdx) আর প্রতি char-এর last-seen index-এর map; দ্বিতীয়টায় আগে frequency map, তারপর n + 1 সাইজের bucket array, যেখানে index-টাই frequency।
+- **কঠিন:** Longest Consecutive Sequence (LeetCode 128)। হিন্ট: সব সংখ্যা আগে Set-এ ঢোকাও। তারপর শুধু সেই সংখ্যা থেকে গোনা শুরু করো যার predecessor (x - 1) Set-এ নেই। এই একটা শর্তই পুরো কাজ O(n)-এ রাখে; sort করলে O(n log n) হয়ে যাবে।
+
+## সারসংক্ষেপ
+
+- পাঁচটা প্যাটার্ন, একটাই কায়দা: loop-এর ভেতরে খোঁজার কাজ Map বা Set-এ জমিয়ে রাখা।
+- Frequency map গোনে, seen-set শুধু "দেখেছি কিনা" বলে, complement lookup জোড়া খোঁজে, prefix sum + map যোগফলের হিসাব রাখে, canonical key দল ভাগ করে।
+- Two Sum-এর নিয়ম: আগে চেক, পরে জমা। ক্রম উল্টালেই একই উপাদান দুইবার ঢুকে যায়।
+- Subarray sum-এর নিয়ম: {0: 1} seed ছাড়া index 0-এর subarray হারিয়ে যাবে।
+- Hash সময় বাঁচায়, জায়গা খায়। data sorted থাকলে অনেক সময় [two pointer](../problem-solving/two-pointer.mdx)-ই সেরা উত্তর।
