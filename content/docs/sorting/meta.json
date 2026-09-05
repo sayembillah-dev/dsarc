@@ -1,0 +1,4 @@
+{
+  "title": "Sorting Algorithms",
+  "pages": ["index", "why-sorting", "bubble-sort", "selection-sort", "insertion-sort", "merge-sort", "quick-sort", "heap-sort", "sorting-comparison"]
+}
