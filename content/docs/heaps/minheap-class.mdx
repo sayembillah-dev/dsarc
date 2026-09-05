@@ -1,0 +1,189 @@
+---
+title: "MinHeap ক্লাস: সম্পূর্ণ ইমপ্লিমেন্টেশন"
+description: Bubble up আর bubble down মিলিয়ে একটা পুরো reusable ক্লাস। Comparator দিয়ে min/max দুটোই, পুরো dry run, আর production-মানের ভাবনা।
+---
+
+## কী শিখব
+
+- একটা পুরো MinHeap class, যা আগের দুই পেজের কৌশল একসাথে গুছিয়ে
+- প্রতিটা method-এর ভেতরে কী ঘটে, লাইনে লাইনে
+- Comparator দিয়ে একটাই ক্লাসে min/max দুই রূপ
+- একটা ধারাবাহিক dry run: push আর pop মিলিয়ে
+- ভুলগুলো আর বাস্তবে কী কী যোগ করতে হয়
+
+## ধারণা
+
+[Insert](./heap-insert-bubble-up.mdx) আর [Extract](./heap-extract-min.mdx)-এ কৌশল দুটো আলাদা আলাদা শিখেছি। এবার একটা class-এ গুছিয়ে ফেলি, যাতে কাল থেকে যেকোনো সমস্যায় শুধু `push`, `pop`, `peek` ডাকলেই চলে। Class-এর মূল্য এখানেই: যান্ত্রিকতা ভেতরে লুকানো, বাইরে নীতি স্পষ্ট।
+
+মনে করিয়ে দিই, দুটো পর্বের অস্ত্র:
+
+- **push** = শেষে বসাও + bubble up (উপরে ভাসো)।
+- **pop** = root তোলো + শেষটা বসাও + bubble down (নিচে ডোবাও)।
+
+## কোড: পুরো MinHeap
+
+```js
+class MinHeap {
+  constructor() {
+    this.data = [];
+  }
+
+  size() { return this.data.length; }
+  peek() { return this.data[0]; }              // সর্বনিম্ন, O(1)
+  isEmpty() { return this.data.length === 0; }
+
+  push(value) {
+    this.data.push(value);
+    this._bubbleUp(this.data.length - 1);
+  }
+
+  pop() {
+    const n = this.data.length;
+    if (n === 0) return undefined;
+
+    const top = this.data[0];
+    const last = this.data.pop();
+
+    if (this.data.length > 0) {
+      this.data[0] = last;
+      this._bubbleDown(0);
+    }
+    return top;
+  }
+
+  _bubbleUp(i) {
+    while (i > 0) {
+      const p = (i - 1) >> 1;                  // parent: floor((i-1)/2)
+      if (this.data[p] <= this.data[i]) break; // নিয়ম মিলেছে
+      [this.data[p], this.data[i]] = [this.data[i], this.data[p]];
+      i = p;
+    }
+  }
+
+  _bubbleDown(i) {
+    const n = this.data.length;
+    while (true) {
+      let smallest = i;
+      const left = 2 * i + 1;
+      const right = 2 * i + 2;
+
+      if (left < n && this.data[left] < this.data[smallest]) smallest = left;
+      if (right < n && this.data[right] < this.data[smallest]) smallest = right;
+      if (smallest === i) break;
+
+      [this.data[i], this.data[smallest]] = [this.data[smallest], this.data[i]];
+      i = smallest;
+    }
+  }
+}
+
+const mh = new MinHeap();
+[5, 3, 8, 1, 2].forEach((v) => mh.push(v));
+console.log(mh.peek());                    // 1
+console.log(mh.pop(), mh.pop(), mh.pop()); // 1 2 3
+```
+
+## Dry run: push(5, 3, 8, 1, 2) এর পর
+
+| ধাপ | অপারেশন | ভেতরে | data |
+|-----|---------|-------|------|
+| 1 | push(5) | প্রথম, বসেই গেল | `[5]` |
+| 2 | push(3) | 3 < 5: swap | `[3, 5]` |
+| 3 | push(8) | 8 > 3: থামো | `[3, 5, 8]` |
+| 4 | push(1) | 1 < 3: swap, root-এ | `[1, 5, 8, 3]` |
+| 5 | push(2) | 2-এর parent 8 (index 2): 2 < 8, swap | `[1, 2, 8, 3, 5]` |
+
+তারপর তিনবার pop:
+
+| pop | root তুলল | শেষটা root-এ, bubble down | ফেরত | data (শেষে) |
+|-----|-----------|----------------------------|-------|--------------|
+| ১ | 1 | 5 উপরে, 2-এর সঙ্গে swap | 1 | `[2, 3, 8, 5]` |
+| ২ | 2 | 5 উপরে, 3-এর সঙ্গে swap | 2 | `[3, 5, 8]` |
+| ৩ | 3 | 8 উপরে, জায়গা পেল | 3 | `[5, 8]` |
+
+ফেরতের ক্রম `1, 2, 3`: sorted, হুবহু [Extract](./heap-extract-min.mdx)-এর সেই বীজ ফুটে উঠেছে।
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `(i - 1) >> 1` : bit-shift দিয়ে `Math.floor((i - 1) / 2)`-এর কাজ। ডান shift এক ঘর মানে ২ দিয়ে ভাগ। পুরনো C-ঘরানার কৌশল, পড়তে অবাক লাগলে `Math.floor` লিখেই চলো, স্পষ্টতা আগে।
+2. `_bubbleUp` / `_bubbleDown` আলাদা private method : একই যুক্তি push আর pop-এ দুবার লেখার দরকার ফেলে না। Underscore দিয়ে বোঝানো: বাইরে থেকে ডাকার না।
+3. `pop`-এ আগে `top` ধরে রাখা, তারপর `pop()` : ক্রম উল্টালে root হারিয়ে যায়। আগে ধরো, পরে সরাও।
+4. `if (this.data.length > 0)` : একটাই উপাদান থাকলে bubble down-এর কিছু নেই, [Extract](./heap-extract-min.mdx)-এর তিন নম্বর ভুলটা এখানেই বন্দী।
+5. `peek()` খালি হলে `undefined` দেয় : স্পষ্ট চুক্তি, ডাকার দিকে জানা দরকার।
+
+## Variant: comparator দিয়ে এক ক্লাস, দুই রূপ
+
+Min আর max-এর জন্য দুই class লেখা অপচয়। তুলনার চিহ্নটাই তো পার্থক্য, তাই সেটাকেই parameter বানাও:
+
+```js
+class Heap {
+  constructor(compare) {
+    this.data = [];
+    this.compare = compare; // (a, b) => a - b হলে min-heap
+  }
+  // ...বাকি সব একই, শুধু `this.data[p] <= this.data[i]`-এর জায়গায়
+  // `this.compare(this.data[p], this.data[i]) <= 0`
+}
+
+const minHeap = new Heap((a, b) => a - b);   // ছোট root-এ
+const maxHeap = new Heap((a, b) => b - a);   // বড় root-এ
+
+// বোনাস: object-এর heap
+const pq = new Heap((a, b) => a.priority - b.priority);
+pq.push({ task: "রিপোর্ট", priority: 2 });
+```
+
+এই এক চালাকিতে class-টা এখন যেকোনো নিয়মের priority queue, [Priority Queue](../stacks-queues/priority-queue.mdx)-এর সেই প্রতিশ্রুতি এবার পুরো হলো।
+
+## Complexity
+
+| অপারেশন | খরচ |
+|---------|------|
+| push | O(log n) |
+| pop | O(log n) |
+| peek | O(1) |
+| size / isEmpty | O(1) |
+| n-টা push (build) | O(n log n) এই পথে; heapify পদ্ধতিতে O(n) ([Heap Sort](../sorting/heap-sort.mdx)-এর build-পর্ব) |
+
+## সাধারণ ভুল আর edge case
+
+**১. `pop`-এ ক্রম উল্টানো: আগে সরানো, পরে ধরা।**
+`this.data.pop()` আগে ডেকে তারপর `this.data[0]` পড়লে ফেরত যায় ভুল মান। আগে root ধরো, তারপর শেষটা তোলো, তারপর বসাও।
+
+**২. Comparator-এ boolean ফেরানো।**
+`(a, b) => a < b` দিলে true/false যায়, 1/0 হয়ে ব্যাখ্যা হয়, ঋণাত্মক দিক হারায়। [Why Sorting](../sorting/why-sorting.mdx)-এর সেই একই ফাঁদ। সবসময় বিয়োগফল: `a - b`।
+
+**৩. Object-এর heap-এ প্রাণের মান আর priority গুলানো।**
+`pq.push({task, priority})` ঢুকিয়ে comparator ভুলে `a - b` রেখে দিলে object-এর বিয়োগ হয় NaN। Comparator সবসময় ওই ডেটার জন্য লেখো, আর টেস্টে দুটো object দিয়ে মিলাও।
+
+**৪. ভেতরের data হাতে বদলানো।**
+`mh.data[3] = 99` করলে heap-নিয়ম চুপচাপ ভাঙে, আর পরের pop-এ বিস্ফোরণ। ভেতরের array-কে private ধরো; বদলাতে হলে নতুন অপারেশন লেখো (যেমন decreaseKey, [Extract](./heap-extract-min.mdx)-এর অনুশীলন)।
+
+**৫. Heap থেকে "মাঝের মান" আশা করা।**
+Heap median দেয় না, k-তম দেয় না, শুধু চরমটা দেয়। Median লাগলে দুই heap-এর খেলা ([Two Heaps](../problem-solving/two-heaps.mdx)-এ আসবে), এক heap দিয়ে জোর করবে না।
+
+## Animation Spec
+
+> **Animation Spec: Full Heap Ops**
+>
+> - **দৃশ্য:** tree + array সিঙ্কে; push/pop/peek বাটন; min/max টগল (comparator-এর ছোট কোড-কার্ড সহ)।
+> - **ইনপুট:** মান; speed।
+> - **ধাপ:** push-এ bubble up, pop-এ bubble down, দুটোই আগের পেজের অ্যানিমেশনের জোড়া; পাশে অপারেশন লগ আর "ফেরত ক্রম" সারি, যেখানে sorted ফুটে ওঠে।
+> - **নিয়ন্ত্রণ:** step, play, reset; ধারাবাহিক random অপারেশন।
+> - **লক্ষ্য:** দুই কৌশল এক class-এ গেঁথে যাওয়া, আর comparator-এর এক লাইনে min/max বদলে যাওয়া, চোখে দেখা।
+
+## অনুশীলন
+
+- **সহজ ১:** `[9, 4, 7, 1, 6]` দিয়ে MinHeap ভরো, তারপর তিনবার pop। প্রতি ধাপে data লিখো, আমার টেবিলের মতো।
+- **সহজ ২:** Comparator-ভিত্তিক Heap দিয়ে max-heap বানাও, একই ডেটায়। pop-এর ক্রম এবার কেমন?
+- **মাঝারি ১:** `Heap` class-এ `isEmpty()` আর `size()` থাকলেও একটা `toArray()` বা iterator যোগ করো যা **sorted ক্রমে** ফল দেয়, heap নষ্ট না করে। (হিন্ট: copy নিয়ে pop করো, কারণ pop নিজেই sorted ক্রম দেয়।)
+- **মাঝারি ২:** বন্ধুকে বোঝাও: কেন `_bubbleUp` আর `_bubbleDown` আলাদা method, আর push/pop-এর ভেতরেই লেখা যেত না? (হিন্ট: build-heap চালাতে গেলে কোনটা আবার লাগবে, ভাবো।)
+- **কঠিন:** `buildHeap(array)` যোগ করো যা existing array-কে in-place heap-এ রূপান্তর করে O(n)-এ: শেষ parent থেকে পেছনে এসে প্রতি node-এ `_bubbleDown` চালাও। তারপর প্রমাণ-আঁচ করো কেন এটা n log n না: বেশিরভাগ node গাছের নিচে, ওদের ডোবানোর পথ ছোট।
+
+## সারসংক্ষেপ
+
+- পুরো MinHeap = push (bubble up) + pop (bubble down) + peek (root), গোছানো এক class-এ।
+- সব কঠিন কাজ দুই private method-এ, বাইরে তিনটা সরল চুক্তি।
+- Comparator parameter দিলে এক class-ই min/max/object-priority সব হয়।
+- pop-এর ক্রম: আগে root ধরো, পরে শেষটা সরাও, তারপর ডোবাও।
+- Heap চরম মানের কাঠামো; median/k-তম চাইলে আরও কৌশল লাগে, সেগুলো patterns-এ।
