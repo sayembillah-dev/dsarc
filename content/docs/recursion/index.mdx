@@ -1,22 +1,22 @@
 ---
 title: Recursion
-description: base case ও ছোট সমস্যায় নিজেকে ডাকার ধারণা, call stack, ক্লাসিক উদাহরণ, iteration-এর সাথে তুলনা এবং memoization, সব একসাথে।
+description: নিজেকে ডাকার এই ধারণাটা একদম গোড়া থেকে, base case, call stack, ক্লাসিক উদাহরণ, loop-এর সাথে তুলনা আর memoization, সব একসাথে।
 ---
 
-Recursion (পুনরাবৃত্ত, অর্থাৎ নিজেকে ডাকা) হলো এমন একটা ধারণা যা প্রথমে কঠিন লাগে, কিন্তু একবার বুঝলে Tree, Graph, Sorting, Dynamic Programming, সব সহজ হয়ে যায়। তাই এটা আগে শিখছি।
+ধরো, তোমাকে একটা বড় কাজ দিলে তুমি কী করো? কাজটা ছোট ছোট টুকরো করে নাও, প্রতিটা টুকরো আবার ছোট করো, যতক্ষণ না প্রতিটা এত ছোট হয় যে সরাসরি করে ফেলা যায়। Recursion-ও ঠিক এই খেলাটাই খেলে, function নিজের কাজটা নিজের কাছে ছোট করে ছোট করে পাঠাতে থাকে। শুনতে প্রথমে একটু জটিল লাগে, কিন্তু একবার ক্লিক করলে Tree, Graph, Sorting, Dynamic Programming, সব পানির মতো সহজ লাগবে। তাই এখান থেকেই শুরু করছি।
 
 **Section Roadmap:** ধারণা, Call Stack, ক্লাসিক উদাহরণ, Recursion vs Iteration, Memoization (intro)।
 
 ## এই Chapter-এ যা যা আছে
 
 1. [Recursion কী](./recursion-intro.mdx): একটা function নিজেকে ডাকা মানে কী, base case ও recursive case
-2. [Call Stack বোঝা](./call-stack.mdx): recursion মেমরিতে কীভাবে চলে, factorial দিয়ে stack বোঝা
-3. [ক্লাসিক Recursion উদাহরণ](./recursion-examples.mdx): sum, reverse, fibonacci, প্রচলিত recursion
-4. [Recursion vs Iteration](./recursion-vs-iteration.mdx): কখন recursion, কখন loop
-5. [Memoization](./memoization.mdx): আগে হিসাব করা ফলাফল জমিয়ে recursion দ্রুত করা, DP-র বীজ
+2. [Call Stack বোঝা](./call-stack.mdx): recursion মেমরিতে আসলে কীভাবে চলে, factorial দিয়ে stack-এর খেলা
+3. [ক্লাসিক Recursion উদাহরণ](./recursion-examples.mdx): sum, reverse, fibonacci, যেগুলো সব জায়গায় আসে
+4. [Recursion vs Iteration](./recursion-vs-iteration.mdx): কখন recursion নেব, কখন loop
+5. [Memoization](./memoization.mdx): আগে হিসাব করা ফলাফল জমিয়ে রেখে recursion দ্রুত করা, DP-র বীজ
 
 ## সারাংশ
 
-Recursion অর্থাৎ base case + ছোট সমস্যায় নিজেকে ডাকা; call stack-এর উপর চলে। ক্লাসিক: factorial, sum, reverse, fibonacci। Iteration কম memory নেয়; recursion tree/graph-এ পরিষ্কার। Memoization দিয়ে O(2ⁿ) থেকে O(n), DP-র সূচনা।
+সহজ কথায়, recursion মানে base case আর ছোট সমস্যায় নিজেকে ডাকা, আর পুরো জিনিসটা চলে call stack-এর উপর। ক্লাসিক উদাহরণ factorial, sum, reverse, fibonacci। Iteration কম memory নেয়, কিন্তু tree আর graph-এ recursion অনেক পরিষ্কার। আর memoization লাগালেই O(2ⁿ) থেকে নেমে আসে O(n), Dynamic Programming-এর যাত্রা সেখান থেকেই শুরু।
 
 **পরবর্তী:** [Sorting Algorithms](/docs/sorting)।

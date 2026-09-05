@@ -1,15 +1,17 @@
 ---
-title: "Call Stack: কীভাবে recursion চলে"
-description: recursion মেমরিতে কীভাবে চলে, call stack-এ frame জমা ও খালি হওয়া, factorial দিয়ে বোঝা।
+title: "Call Stack: recursion আসলে চলে কীভাবে"
+description: recursion মেমরিতে কীভাবে চলে, call stack-এ frame জমে আর খালি হয়, factorial দিয়ে পুরো খেলাটা বোঝা।
 ---
 
 ## কী শিখব
 
-- recursion মেমরিতে কীভাবে চলে
+- recursion মেমরিতে আসলে কীভাবে চলে
 
 ## ধারণা
 
-প্রতিবার function ডাকলে সেটা **call stack**-এ (একটা stack!) জমা হয়। base case-এ পৌঁছালে stack উপর থেকে একে একে খালি হয় (return)। এজন্য recursion আসলে stack-এর উপর দাঁড়িয়ে।
+ধরো, তুমি একটা কাজ করছিলে, এমন সময় ফোন এলো। কাজটা থামিয়ে ফোন ধরলে। কথা বলতে বলতে দরজায় কেউ এলো, ফোনটা hold করে দরজার কাজটা সারলে। তারপর ফিরে এসে ফোন শেষ করলে, সবশেষে আসল কাজে ফিরলে। খেয়াল করো, মাথার ভেতরে কাজগুলো একটা stack-এর মতো জমছিল, আর উপর থেকে একে একে খালি হচ্ছিল।
+
+Function call-ও ঠিক এমন। প্রতিবার function ডাকলে সেটা **call stack**-এ (সত্যিই একটা stack!) জমা হয়। Base case-এ পৌঁছালে stack উপর থেকে একে একে খালি হয় (return)। সহজ কথায়, recursion পুরোটাই এই call stack-এর উপর দাঁড়িয়ে।
 
 ## কোড উদাহরণ
 
@@ -32,9 +34,9 @@ factorial(4) = 4 * factorial(3)
 
 ## কোড ব্রেকডাউন
 
-- প্রতিটা call `n` মনে রেখে অপেক্ষায় থাকে যতক্ষণ ভেতরের call শেষ না হয়।
-- base case থেকে 1 return হয়, পিছাতে পিছাতে গুণ হয়।
-- খুব বেশি গভীর recursion মানে **stack overflow** (মেমরি শেষ)।
+- প্রতিটা call নিজের `n` মনে রেখে অপেক্ষা করে, যতক্ষণ না ভেতরের call শেষ হয়।
+- base case থেকে 1 return করে, তারপর পেছন থেকে একে একে গুণ হয়ে যায়।
+- recursion খুব গভীরে চলে গেলে **stack overflow**, মানে মেমরি শেষ।
 
 ## Complexity
 
@@ -51,4 +53,4 @@ factorial(4) = 4 * factorial(3)
 
 ## অনুশীলন
 
-- `factorial(5)`-এর সম্পূর্ণ stack ধাপ হাতে লেখো।
+- `factorial(5)`-এর পুরো stack ধাপটা হাতে লিখে ফেলো, কখন কী push হলো, কখন pop, সব।

@@ -1,6 +1,6 @@
 ---
 title: "Recursion vs Iteration: কখন কোনটা"
-description: কখন recursion, কখন loop, পাঠযোগ্যতা, memory ও ঝুঁকির তুলনা, একই factorial দুইভাবে।
+description: কখন recursion নেব, কখন loop, পাঠযোগ্যতা, memory আর ঝুঁকির তুলনা, একই factorial দুইভাবে লিখে।
 ---
 
 ## কী শিখব
@@ -9,7 +9,7 @@ description: কখন recursion, কখন loop, পাঠযোগ্যতা
 
 ## ধারণা
 
-যা recursion-এ করা যায়, তা প্রায়ই loop-এও করা যায়। পার্থক্য:
+যা কিছু recursion-এ করা যায়, তার প্রায় সবই loop-এও করা যায়। তাহলে প্রশ্ন হলো, কখন কোনটা নেব? ব্যাপারটা হলো এই:
 
 | দিক | Recursion | Iteration (loop) |
 |-----|-----------|------------------|
@@ -17,7 +17,7 @@ description: কখন recursion, কখন loop, পাঠযোগ্যতা
 | Memory | call stack (O(depth)) | সাধারণত O(1) |
 | ঝুঁকি | stack overflow | নেই |
 
-**নিয়ম:** সমস্যাটা স্বাভাবিকভাবে "ছোট একই সমস্যায়" ভাঙে (tree, divide-and-conquer) তাহলে recursion; সরল রৈখিক হলে loop।
+**নিয়মটা সহজ:** সমস্যাটা নিজে থেকেই "ছোট একই সমস্যায়" ভাঙে (যেমন tree বা divide-and-conquer) তাহলে recursion; সরল রৈখিক কাজ হলে loop।
 
 ## কোড উদাহরণ
 
@@ -37,8 +37,8 @@ console.log(factRec(5), factIter(5)); // 120 120
 
 ## কোড ব্রেকডাউন
 
-- দুটোই সঠিক; iteration-এ extra stack memory লাগে না।
-- Tree/Graph traversal recursion-এ অনেক পরিষ্কার, তাই সেখানে recursion পছন্দ।
+- দুটোই ঠিক, তফাত এই যে iteration-এ কোনো extra stack memory লাগে না।
+- কিন্তু Tree/Graph traversal recursion-এ এত পরিষ্কার যে সেখানে সবাই recursion-ই পছন্দ করে।
 
 ## Complexity
 
@@ -55,4 +55,4 @@ console.log(factRec(5), factIter(5)); // 120 120
 
 ## অনুশীলন
 
-- section 8.3-এর `sum`-কে loop দিয়ে লেখো।
+- section 8.3-এর `sum`-টাকে এবার loop দিয়ে লিখে দেখো।
