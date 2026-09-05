@@ -1,62 +1,161 @@
 ---
 title: "Heap Sort: heap দিয়ে সাজানো"
-description: max-heap বানিয়ে বারবার root শেষে সরানো; নিশ্চিত O(n log n), in-place।
+description: Max-heap বানিয়ে বারবার root তুলে শেষে সরানো। Array-তে heap-এর index গণিত, heapify-এর dry run, আর নিশ্চিত O(n log n) কেন।
 ---
 
 ## কী শিখব
 
-- heap দিয়ে সাজানো: O(n log n), in-place
+- Heap কীভাবে array-তে বসে: parent/child-এর index গণিত
+- Heapify কী করে: একটা node-কে নিচে ডুবিয়ে heap ঠিক করা
+- Heap sort-এর দুই পর্ব: heap বানানো, তারপর বারবার root তোলা
+- কেন সব কেসে O(n log n), তবু কেন unstable
+- Merge আর quick-এর পাশে heap sort-এর জায়গা কোথায়
 
 ## ধারণা
 
-টুর্নামেন্টের ব্র্যাকেটটা ভাবো: প্রতিটা ম্যাচের জয়ী উপরে ওঠে, চ্যাম্পিয়ন থাকে একদম উপরে। Heap Sort-এও প্রথমে array-টাকে এমন একটা **max-heap**-এ রূপ দিই, যেখানে সবচেয়ে বড় উপাদানটা সবার উপরে থাকে। এরপর বারবার উপরের (মানে সবচেয়ে বড়) উপাদানটা তুলে শেষে সরিয়ে দিই, আর বাকি heap-টা ঠিক করে নিই। এই ঠিক-করার কাজটার নাম **heapify**। heap নিয়ে বিস্তারিত থাকছে section 12-এ।
+টুর্নামেন্টের ব্র্যাকেট ভাবো: প্রতি ম্যাচের জয়ী উপরে ওঠে, চ্যাম্পিয়ন থাকে শীর্ষে। Max-heap হলো এমনই একটা কাঠামো: **প্রতিটা parent তার child-দের চেয়ে বড় বা সমান**, তাই সবচেয়ে বড়টা সবসময় একদম উপরে (root, index 0)।
 
-## কোড উদাহরণ
+Heap Sort-এর রূপনগরী দুই পর্বের:
+
+1. **Build heap:** এলোমেলো array-টাকে max-heap-এ রূপ দাও।
+2. **Extract:** root (সবচেয়ে বড়) তুলে শেষের ফাঁকা ঘরে বসাও, heap এক ঘর ছোট করো, আবার ঠিক করো। শেষ পর্যন্ত করলে পেছন থেকে sorted array ফুটে ওঠে।
+
+Heap নিয়ে পুরো বিস্তারিত [Heaps](../heaps/what-is-heap.mdx) section-এ; এখানে শুধু sort-এর জন্য যতটুকু দরকার।
+
+## Array-তে heap: index-এর গণিত
+
+Heap কল্পনা করি গাছ হিসেবে, রাখি array-তে, level ধরে বসিয়ে:
+
+```text
+index:   0     1     2     3     4
+value: [ 10 ,  5 ,  8 ,  1 ,  2 ]
+গাছ:        10
+          /    \
+         5      8
+        / \
+       1   2
+```
+
+Parent `i`-এর দুই child: **`2i + 1` আর `2i + 2`**। উল্টোদিকে, child `i`-এর parent: **`Math.floor((i - 1) / 2)`**। এই দুই সূত্রই পুরো heap জগতের চাবি, মুখস্থ নয়, ছবি দেখে বের করা যায়।
+
+## Dry run: `[4, 10, 3, 5, 1]`
+
+**পর্ব ১, heap বানানো।** শেষ parent (index 1, মান 10) থেকে শুরু, পেছনে এগোই:
+
+| ধাপ | heapify(root) | কী হলো | array |
+|-----|----------------|---------|-------|
+| 1 | index 1 (10) | child 5, 1 দুটোই ছোট, কিছু নেই | `[4, 10, 3, 5, 1]` |
+| 2 | index 0 (4) | child-দের মধ্যে বড় 10, swap; নিচে গিয়ে দেখে 5, 1 ছোট | `[10, 4, 3, 5, 1]` → `[10, 5, 3, 4, 1]` |
+
+Heap তৈরি: root-এ 10, সব parent child-এর চেয়ে বড়।
+
+**পর্ব ২, extract।** প্রতি ধাপে root ↔ শেষ swap, heap সীমা এক ঘর কমে:
+
+| ধাপ | swap | heapify | ফল (পেছনে sorted বাড়ছে) |
+|-----|------|---------|---------------------------|
+| 1 | 10 ↔ 1 | 1 ডুবে 5-এর নিচে | `[5, 4, 3, 1, \| 10]` |
+| 2 | 5 ↔ 1 | 1 ডুবে | `[4, 1, 3, \| 5, 10]` |
+| 3 | 4 ↔ 3 | 3 থাকে | `[3, 1, \| 4, 5, 10]` |
+| 4 | 3 ↔ 1 | - | `[1, \| 3, 4, 5, 10]` |
+
+শেষ: `[1, 3, 4, 5, 10]`। প্রতি extract-এ সর্বোচ্চটা পেছনে চূড়ান্ত হয়ে যায়, ঠিক [Selection Sort](./selection-sort.mdx)-এর মতো, শুধু সর্বোচ্চ খোঁজা O(n) না, heap-এর কল্যাণে O(log n)।
+
+## কোড: নিজে বানাও heapSort
 
 ```js
-function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
-
 function heapSort(arr) {
   const n = arr.length;
-  // ১) max-heap বানাই (শেষ parent থেকে শুরু)
-  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) heapify(arr, n, i);
-  // ২) একে একে বড়টা শেষে সরাই
-  for (let end = n - 1; end > 0; end--) {
-    swap(arr, 0, end);           // সবচেয়ে বড় (root) শেষে
-    heapify(arr, end, 0);        // ছোট-হওয়া heap ঠিক করি
+
+  // পর্ব ১: max-heap বানাও (শেষ parent থেকে গোড়া পর্যন্ত)
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    heapify(arr, n, i);
   }
+
+  // পর্ব ২: বারবার root শেষে সরাও
+  for (let end = n - 1; end > 0; end--) {
+    [arr[0], arr[end]] = [arr[end], arr[0]];  // সর্বোচ্চ চূড়ান্ত ঘরে
+    heapify(arr, end, 0);                     // ছোট হওয়া heap ঠিক করো
+  }
+
   return arr;
 }
 
 function heapify(arr, size, root) {
   let largest = root;
-  const left = 2 * root + 1, right = 2 * root + 2;
+  const left = 2 * root + 1;
+  const right = 2 * root + 2;
+
   if (left < size && arr[left] > arr[largest]) largest = left;
   if (right < size && arr[right] > arr[largest]) largest = right;
-  if (largest !== root) { swap(arr, root, largest); heapify(arr, size, largest); }
+
+  if (largest !== root) {
+    [arr[root], arr[largest]] = [arr[largest], arr[root]];
+    heapify(arr, size, largest);              // নিচে ডুবতে থাকো
+  }
 }
-console.log(heapSort([4, 10, 3, 5, 1])); // [1,3,4,5,10]
+
+console.log(heapSort([4, 10, 3, 5, 1])); // [1, 3, 4, 5, 10]
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: heapify, লাইনে লাইনে
 
-- heap-কে array-তে রাখলে parent `i`-এর চাইল্ড থাকে `2i+1` আর `2i+2`-এ।
-- `heapify` root-টাকে তার চাইল্ডদের সাথে তুলনা করে, বড়টাকে উপরে তুলে আনে।
-- বারবার root (max)-টাকে শেষে সরালে sorted অংশ পেছন থেকে বাড়তে থাকে।
+1. `let largest = root` : ধরে নিলাম parent-ই বড়, child-দের চ্যালেঞ্জ দেখব।
+2. `left < size && ...` : দুই শর্তের ক্রম জরুরি। আগে সীমা (`size` মানে heap-এর সীমা, sorted অংশ বাইরে), তারপর তুলনা।
+3. দুই child-ই চ্যালেঞ্জ করে : তিনজনের মধ্যে সর্বোচ্চ `largest`-এ জমে।
+4. `if (largest !== root)` : চ্যালেঞ্জ হেরে গেলে swap, আর নতুন জায়গায় আবার heapify, কারণ নিচে গিয়ে নতুন child পেতে পারে। এই recursion-ই "ডুবে যাওয়া"।
+5. পর্ব ২-এ `heapify(arr, end, 0)` : `end` হিসেবে size পাস, মানে sorted অংশ heap-এর বাইরে। এই সীমা না দিলে heapify চূড়ান্ত ঘরগুলোও নাড়িয়ে দেবে।
 
 ## Complexity
 
-- সব ক্ষেত্রে O(n log n); space O(1); unstable।
+| দিক | খরচ | কেন |
+|-----|------|-----|
+| Build heap | O(n) | নিচের স্তরগুলোতে heapify সস্তা, মোট হিসাব অর্ধেকের কাছাকাছি (প্রমাণ চট, মনে রাখো) |
+| Extract n বার | O(n log n) | প্রতি heapify সর্বোচ্চ গাছের উচ্চতা log n ধাপ |
+| মোট | **O(n log n)**, সব কেসে | ডেটার গঠনে কিছু বদলায় না |
+| Space | O(1) | সব কাজ মূল array-তেই, in-place |
+| Stable | না | লাফ দিয়ে swap, সমানদের ক্রম নষ্ট হয় |
+
+তাহলে অবস্থান পরিষ্কার: [Merge Sort](./merge-sort.mdx)-এর মতো নিশ্চিত O(n log n), কিন্তু merge-এর মতো O(n) জায়গা খায় না; [Quick Sort](./quick-sort.mdx)-এর মতো in-place, কিন্তু quick-এর মতো O(n²)-এ পড়ে যাওয়ার ভয় নেই। দুটোর মাঝের বীমা পলিসি heap sort। দাম? সাধারণত quick-এর চেয়ে একটু ধীর (cache-এর কারণে), আর unstable।
+
+## সাধারণ ভুল আর edge case
+
+**১. Index গণিতে off-by-one।**
+Child-কে `2i` লেখা (ভুল), `2i + 1` ঠিক, কারণ index 0 থেকে। Parent বের করতে `i / 2` না, `Math.floor((i - 1) / 2)`। একটা সূত্র ভুল মানে গাছই অন্য গ্রহে।
+
+**২. Heapify-এ recursion না করা।**
+Swap-এর পর থেমে গেলে নিচে ভাঙা heap-ই থেকে যায়। Swap মানে আবার ডাক, যতক্ষণ না leaf বা জায়গা মতো।
+
+**৩. Extract-এ সীমা ভুলে যাওয়া।**
+`heapify(arr, n, 0)` সবসময় পুরো n দিয়ে ডাকলে sorted অংশও নড়ে, ফল নষ্ট। প্রতি ধাপে size এক কমে: `end`।
+
+**৪. Build heap গোড়া থেকে শুরু করা।**
+Heapify শেষ parent থেকে পেছনে চলে, কারণ leaf-দের heapify অর্থহীন (child-ই নেই)। গোড়া থেকে শুরু করলে কাজ হয়, কিন্তু সঠিক heap দাঁড়ায় না, উপরের ভাঙা নিচে সরে না।
+
+**৫. Min-heap বনাম max-heap গুলানো।**
+Ascending sort লাগে max-heap (বড়টা শেষে যায়), descending লাগে min-heap। `>` থেকে `<` বদলালেই পুরো কাঠামো উল্টে যায়, তুলনার দিক আগে ঠিক করো।
 
 ## Animation Spec
 
-> **Animation Spec: Heapify & Extract**
+> **Animation Spec: Heapify and Extract**
 >
-> - **দৃশ্য:** উপরে গাছ (heap), নিচে array, দুটো সিঙ্কে চলবে।
-> - **ইনপুট:** array, speed।
-> - **ধাপ:** build-heap পর্বে node-গুলো উপরে উঠবে; extract পর্বে root শেষে যাবে, heapify পুনর্গঠন করবে।
-> - **লক্ষ্য:** array-heap দ্বৈততা আর heapify-র কাজ বোঝা।
+> - **দৃশ্য:** উপরে গাছ, নিচে array, দুটো সিঙ্কে; parent-child রেখা টানা; নিচে দুই পর্বের ব্যানার।
+> - **ইনপুট:** array; speed; পর্ব ১/২ আলাদা দেখার টগল।
+> - **ধাপ:** পর্ব ১-এ node-গুলো ডুবে ডুবে heap-এর ছাদে ওঠে; পর্ব ২-এ root লাফিয়ে পেছনের চূড়ান্ত ঘরে (সবুজ), বাকি গাছ কেঁপে ঠিক হয়।
+> - **নিয়ন্ত্রণ:** step, play, reset; index-গণিত দেখা/লুকানো।
+> - **লক্ষ্য:** "গাছ ভাবো, array-তে রাখো" দ্বৈততা, আর প্রতি extract-এ একজন চূড়ান্ত, দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- ভাবো তো, min-heap দিয়ে বড় থেকে ছোট sort করতে চাইলে কী কী বদলাতে হবে?
+- **সহজ ১:** `[3, 9, 2, 1, 4, 5]`-এ পর্ব ১ (build heap) হাতে করো: শেষ parent কোনটা, কে কোথায় ডুবল।
+- **সহজ ২:** heap `[50, 30, 40, 10, 20]` থেকে একবার extract করো হাতে: swap, heapify, নতুন heap লিখো।
+- **মাঝারি ১:** Min-heap দিয়ে descending sort লেখো। কোন কোন লাইন বদলালে, তালিকা করো।
+- **মাঝারি ২:** বন্ধুকে বোঝাও: heap sort কেন "দুই দুনিয়ার বীমা", merge আর quick-এর এক একটা দুর্বলতা কীভাবে ঢেকে দেয়।
+- **কঠিন:** k-তম বড় উপাদান heap দিয়ে বের করো, পুরো sort ছাড়া। (হিন্ট: max-heap বানাও, k বার extract। খরচ O(n + k log n), k ছোট হলে sort-এর চেয়ে সস্তা। [Kth Element](../problem-solving/kth-element.mdx)-এ আরও কৌশল আছে।)
+
+## সারসংক্ষেপ
+
+- Heap sort দুই পর্বের: max-heap বানাও, তারপর n-বার root তুলে পেছনে চূড়ান্ত করো।
+- Array-তে heap: parent `i`-এর child `2i+1`, `2i+2`; এই সূত্রেই সব।
+- Heapify মানে node-কে ডুবিয়ে heap-নিয়ম ফেরানো, সর্বোচ্চ log n ধাপ।
+- সব কেসে O(n log n), in-place, কিন্তু unstable।
+- Merge-এর নিশ্চয়তা আর quick-এর in-place, দুটোর মাঝামাঝি বীমা পলিসি।

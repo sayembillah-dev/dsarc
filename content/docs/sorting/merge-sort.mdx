@@ -1,58 +1,158 @@
 ---
 title: "Merge Sort: ভাগ করো, সাজাও, মেলাও"
-description: divide and conquer দিয়ে নিশ্চিত O(n log n), stable, বড় ডেটায় নির্ভরযোগ্য।
+description: Divide and conquer-এর পোস্টারবয়: অর্ধেক ভাগ, recursion, তারপর দুই pointer-এ মেলানো। পুরো dry run আর O(n log n)-এর নিখুঁত derivation।
 ---
 
 ## কী শিখব
 
-- ভাগ করো, সাজাও, মেলাও: O(n log n)
+- Divide and conquer প্যাটার্নটা আসলে কী, merge sort দিয়ে প্রথম সাক্ষাৎ
+- দুটো sorted array মেলানোর দুই-pointer কৌশল, পুরো dry run
+- কেন ভাগ হয় log n স্তর আর প্রতি স্তরে O(n) কাজ, নিজে derivation
+- কেন merge sort stable আর নিশ্চিত O(n log n), আর দাম কোথায় (O(n) space)
+- Recursion-এর উপর একটা পরিপক্ব নজর
 
 ## ধারণা
 
-বড় কাজ দেখলে ভয় পেলে কী করো? ভেঙে ফেলো ছোট ছোট টুকরোয়। Merge Sort ঠিক এই বুদ্ধিতেই চলে। Array-টাকে বারবার অর্ধেক করে ভাগ করি, যতক্ষণ না প্রতিটা টুকরোয় মাত্র একটা উপাদান থাকে। আর একটা উপাদান মানেই তো sorted! এরপর টুকরোগুলোকে **merge** করে করে সাজিয়ে আবার জোড়া লাগাই। ব্যাপারটা হলো recursion-এর একদম সুন্দর প্রয়োগ, আর বড় ডেটায় খুবই নির্ভরযোগ্য।
+বড় কাজ দেখলে ভয় পেলে কী করো? ভেঙে ফেলো ছোট ছোট টুকরোয়। Merge Sort এই বুদ্ধিতেই চলে, তিন ধাপে:
 
-## কোড উদাহরণ
+1. **Divide:** array-টাকে মাঝ থেকে অর্ধেক করো, যতক্ষণ না একটা উপাদান থাকে। একটা উপাদান মানেই sorted।
+2. **Conquer:** ছোট টুকরোগুলো recursively sort হতে দাও।
+3. **Merge:** দুটো sorted টুকরো মিলিয়ে বড় sorted টুকরো বানাও।
+
+[Recursion](../recursion/recursion-intro.mdx) শেষ করে এসে থাকলে এটা তোমার প্রথম "আসল" recursive algorithm, যেখানে recursion শুধু সাজসজ্জা না, প্রাণ।
+
+## Dry run: ভাগের গাছ
+
+`[5, 2, 9, 1]` নিচে নামা:
+
+```text
+        [5, 2, 9, 1]
+       /            \
+   [5, 2]          [9, 1]
+   /    \          /    \
+ [5]    [2]      [9]    [1]
+```
+
+চারটা এক-উপাদানের টুকরো, সবাই নিজে নিজে sorted। এবার ফিরে আসার পথে মেলানো (ঠিক যেমন [Call Stack](../recursion/call-stack.mdx)-এ দেখেছিলে, কাজ ফিরে আসার পথে):
+
+```text
+ [5] + [2] → [2, 5]        [9] + [1] → [1, 9]
+       [2, 5] + [1, 9] → [1, 2, 5, 9]
+```
+
+## Dry run: merge-এর ভেতরে
+
+শেষ merge-টা খুলে দেখি, `[2, 5]` আর `[1, 9]`, দুই pointer i আর j:
+
+| ধাপ | left[i] | right[j] | ছোটটা result-এ | result |
+|-----|---------|----------|----------------|--------|
+| 1 | 2 | 1 | 1 | `[1]` |
+| 2 | 2 | 9 | 2 | `[1, 2]` |
+| 3 | 5 | 9 | 5 | `[1, 2, 5]` |
+| 4 | left শেষ | - | right-এর বাকিটা জুড়ে | `[1, 2, 5, 9]` |
+
+প্রতি ধাপে দুই সারির **সামনের** দুজন তুলনা, ছোটটা result-এ। বাকিদের ঘোরার দরকার নেই, কারণ দুই সারিই sorted, সামনেরটাই সেই সারির সেরা। এজন্যই merge মাত্র O(n): প্রতিটা উপাদান result-এ ঠিক একবার ঢোকে।
+
+## কোড: নিজে বানাও mergeSort
 
 ```js
 function mergeSort(arr) {
-  if (arr.length <= 1) return arr;                 // base: একটা অর্থাৎ sorted
+  if (arr.length <= 1) return arr;               // base: একটা মানেই sorted
+
   const mid = Math.floor(arr.length / 2);
-  const left  = mergeSort(arr.slice(0, mid));      // বাঁ অর্ধেক sort
-  const right = mergeSort(arr.slice(mid));         // ডান অর্ধেক sort
-  return merge(left, right);                       // দুটো sorted জোড়া
+  const left = mergeSort(arr.slice(0, mid));     // বাম অর্ধেক sort
+  const right = mergeSort(arr.slice(mid));       // ডান অর্ধেক sort
+
+  return merge(left, right);                     // দুই sorted মেলাও
 }
 
 function merge(left, right) {
   const result = [];
-  let i = 0, j = 0;
+  let i = 0;
+  let j = 0;
+
   while (i < left.length && j < right.length) {
-    if (left[i] <= right[j]) result.push(left[i++]); // ছোটটা আগে
-    else result.push(right[j++]);
+    if (left[i] <= right[j]) {
+      result.push(left[i]);
+      i++;
+    } else {
+      result.push(right[j]);
+      j++;
+    }
   }
-  return result.concat(left.slice(i)).concat(right.slice(j)); // বাকি জুড়ে দাও
+
+  // একটা শেষ হলে অন্যটার বাকি সব জুড়ে দাও (ওটা sorted-ই)
+  return result.concat(left.slice(i)).concat(right.slice(j));
 }
-console.log(mergeSort([5, 2, 9, 1, 7])); // [1,2,5,7,9]
+
+console.log(mergeSort([5, 2, 9, 1, 7])); // [1, 2, 5, 7, 9]
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: লাইনে লাইনে
 
-- **Divide:** মাঝ থেকে দুই ভাগ, দুই পাশকেই recursively sort করা।
-- **Conquer/merge:** দুটো sorted array-কে দুই pointer দিয়ে O(n)-এ মেলানো যায়।
-- ভাগ হয় log n স্তর, আর প্রতি স্তরে merge-এর খরচ O(n), তাই মোট O(n log n)।
+1. `if (arr.length <= 1) return arr` : base case। এক বা শূন্য উপাদান মানেই sorted, ভাগের গাছ এখানেই থামে। [Recursion](../recursion/recursion-intro.mdx)-এর সেই নিয়ম: আগে থামার জায়গা।
+2. `arr.slice(0, mid)` আর `arr.slice(mid)` : দুই অর্ধেক, কোনো overlap নেই, কোনো ঘর বাদও নেই। `slice` নতুন array দেয়, মূলটা অক্ষত থাকে।
+3. `mergeSort(left)` আর `mergeSort(right)` : দুই ডানা। ফিরে আসার পর left আর right **দুটোই sorted**, এই প্রতিশ্রুতির উপরেই merge দাঁড়িয়ে।
+4. `while (i < left.length && j < right.length)` : দুই সারিতেই কেউ থাকতে তুলনা চলে।
+5. `left[i] <= right[j]` : সমান হলে **left আগে** নেওয়া হয়। এই ছোট পছন্দেই stability বাঁচে: সমান মানে আগের অংশের উপাদান আগে যায়, ক্রম অক্ষত।
+6. শেষে `concat` দুই লাইনে : যে সারিতে উপাদান পড়ে থাকে, সেটা sorted-ই, তাই সরাসরি জোড়া। একটা সারি অবশ্যই শেষ, অন্যটা খালি, দুটোই লিখলে দুই কেস একসাথে সেরে যায়।
 
-## Complexity
+## Complexity: O(n log n) কেন, নিজে প্রমাণ করি
 
-- সব ক্ষেত্রে O(n log n); space O(n); stable।
+দুটো প্রশ্নের উত্তর মিলিয়ে দাও:
+
+- **কত স্তরে ভাগ হয়?** প্রতি স্তরে array অর্ধেক হয়: n → n/2 → n/4 → ... → 1। অর্ধেক হতে হতে 1-এ পৌঁছাতে log₂n ধাপ। মানে গাছে **log n স্তর**।
+- **প্রতি স্তরে মোট কত কাজ?** সেই স্তরের সব টুকরো মিলিয়ে ঠিক n-টা উপাদান, আর merge-এ প্রতিটা একবার result-এ ঢোকে, মোট **O(n) প্রতি স্তরে**।
+
+দুটো গুণ করো: log n স্তর × O(n) প্রতি স্তর = **O(n log n)**। আর এটা সব কেসে একই, কারণ ভাগ-মেলানো ডেটার গঠন দেখে বদলায় না। এজন্যই merge sort-এর worst case-ও O(n log n), যেখানে [Quick Sort](./quick-sort.mdx)-এর worst case O(n²)।
+
+| দিক | খরচ |
+|-----|------|
+| Time (সব কেসে) | O(n log n) |
+| Space | O(n), merge-এর result-গুলোর জন্য |
+| Stable | হ্যাঁ (সমানে left আগে) |
+
+Space-এর O(n)-টা হলো এর আসল দাম। প্রতি merge-এ নতুন result array লাগে। [Quick Sort](./quick-sort.mdx) এই দিকে এগিয়ে, জায়গা প্রায় নেয় না।
+
+## সাধারণ ভুল আর edge case
+
+**১. Merge-এ বাকি উপাদান ভুলে যাওয়া।**
+While শেষে একটা সারিতে উপাদান পড়ে থাকে। `concat` দুই লাইন বাদ দিলে বড় মানগুলো হারিয়ে যায়, ফল ছোট আসে। যেমন `[1, 9] + [2]` মেলালে 9 বাদ পড়লে ফল `[1, 2]`।
+
+**২. `<=` না দিয়ে `<` দেওয়া, stability নষ্ট।**
+সমান হলে right আগে নিলে সমানদের ক্রম উল্টে যায়। Record-এর তালিকায় (নাম+grade) এই পার্থক্য ভুল ফল বানায়। সমানে left আগে: এক চিহ্নের শৃঙ্খলা।
+
+**৩. ভাবা যে merge sort in-place।**
+না। প্রতি merge-এ নতুন array। In-place merge লেখা সম্ভব কিন্তু এত জটিল যে কেউ করে না। Space কঠোর জায়গায় (embedded, বিশাল ডেটা) [Heap Sort](./heap-sort.mdx) দিকে যাও।
+
+**৪. ছোট টুকরোতেও পুরো recursion চালিয়ে যাওয়া।**
+টুকরো যখন ১০-২০টার, recursion-এর frame খরচে insertion sort-কে হারায়। বাস্তব implementation-গুলো (TimSort সহ) ছোট টুকরোয় [Insertion Sort](./insertion-sort.mdx)-এ সয়িচ করে। Hybrid ভাবনাটা জেনে রাখো।
+
+**৫. `slice`-এর খরচ অস্বীকার করা।**
+প্রতি ভাগে `slice` নতুন array বানায়, মানে কপি। সূক্ষ্ম performance-এ index (lo, hi) পাস করে একই array-তে কাজ করা যায়। শেখার সময় `slice` পরিষ্কার, বাস্তবে index version জেনে রাখো।
 
 ## Animation Spec
 
-> **Animation Spec: Divide & Merge Tree**
+> **Animation Spec: Divide and Merge Tree**
 >
-> - **দৃশ্য:** array উপরে; নিচে নামতে নামতে ভাগ হয়ে ছোট ছোট টুকরো; তারপর নিচ থেকে উপরে merge।
-> - **ইনপুট:** array, speed।
-> - **ধাপ:** ভাগের সময় টুকরোগুলো আলাদা হবে; merge-এ দুই টুকরো তুলনা করে sorted হয়ে উপরে উঠবে।
-> - **লক্ষ্য:** divide-and-conquer আর O(n log n)-এর স্তরগুলো অনুভব করা।
+> - **দৃশ্য:** উপরে পুরো array; নিচে নামতে নামতে টুকরো ছোট হয়; ফিরে আসায় টুকরোগুলো জোড়ায় জোড়ায় মিশে সবুজ sorted সারি হয়ে ওঠে; ডানে স্তর কাউন্টার (level 0, 1, 2...)।
+> - **ইনপুট:** array; speed; merge-এর ভেতরের দুই pointer-এর zoom দৃশ্য।
+> - **ধাপ:** ভাগের পর্বে সবুজ আলো নিচে নামে; merge-এর পর্বে দুই সারির সামনেরদের তুলনা, ছোটটা উপরের ফলে বসে।
+> - **নিয়ন্ত্রণ:** step, play, reset; "শুধু merge দেখাও" ফোকাস মোড।
+> - **লক্ষ্য:** log n স্তর আর প্রতি স্তরে n কাজ, গুণফলটা গাছের আকৃতিতেই দেখা যাক।
 
 ## অনুশীলন
 
-- `merge` function-টা আলাদা করে নাও, তারপর দুটো sorted array মেলানোর চেষ্টা করো।
+- **সহজ ১:** `[8, 3, 7, 1, 5]`-এর ভাগের গাছ আঁকো, তারপর মেলানোর ক্রম লিখো। কত স্তর?
+- **সহজ ২:** `[1, 4]` আর `[2, 3]` merge করো হাতে, প্রতি ধাপে দুই pointer আর result লিখো।
+- **মাঝারি ১:** Merge sort দিয়ে descending sort লেখো। কোন এক জায়গা বদলালে? (হিন্ট: merge-এর তুলনা।)
+- **মাঝারি ২:** বন্ধুকে বোঝাও: কেন merge sort-এর worst case আর best case একই, অথচ bubble sort-এর না? উত্তরে "ডেটার গঠন" কথাটা থাকা চাই।
+- **কঠিন:** Inversion count লেখো: একটা array-তে কতজোড়া `(i, j)` আছে যেখানে `i < j` কিন্তু `arr[i] > arr[j]`। (হিন্ট: merge-এর সময় right-এর উপাদান আগে নিলে left-এর **বাকি সবাই** তার সঙ্গে inversion বানায়। Merge sort-এর ওপর মাত্র দুই লাইনের কাজ, খরচ O(n log n)। LeetCode-এর Hard পর্যায়ের ক্লাসিক।)
+
+## সারসংক্ষেপ
+
+- Merge sort = divide (অর্ধেক ভাগ) + conquer (recursion) + merge (দুই pointer-এ মেলানো)।
+- দুই sorted সারি মেলাতে সামনের দুজন তুলনা, ছোটটা আগে: merge O(n)।
+- log n স্তর × প্রতি স্তরে O(n) = নিশ্চিত O(n log n), সব কেসে।
+- Stable (সমানে left আগে), কিন্তু দাম O(n) বাড়তি জায়গা।
+- Recursion-এর প্রথম পরিণত প্রয়োগ: এটা পাকা হলে quick sort আর tree-রাজ্য সহজ।

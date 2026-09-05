@@ -1,68 +1,131 @@
 ---
 title: "Quick Sort: pivot বেছে ভাগ করা"
-description: pivot-এর চেয়ে ছোট বাঁয়ে, বড় ডানে সাজিয়ে recursion; গড়ে সবচেয়ে দ্রুত, in-place।
+description: Pivot-এর ছোটরা বামে, বড়রা ডানে, তারপর দুই পাশে recursion। Lomuto partition-এর পুরো dry run, worst case কেন আর random pivot কীভাবে বাঁচায়।
 ---
 
 ## কী শিখব
 
-- pivot বেছে ভাগ করা, গড়ে বাস্তবে দ্রুততম
+- Quick sort-এর কৌশল: pivot-কে চূড়ান্ত জায়গায় বসানো, তারপর দুই পাশে recursion
+- Lomuto partition-এর পুরো dry run, দুই pointer কী করে
+- Merge sort থেকে মৌলিক পার্থক্য: কাজ কখন হয়, ভাগের সময় না মেলানোর সময়
+- Worst case O(n²) কেন, আর random pivot কীভাবে সেটা প্রায় মুছে দেয়
+- কেন বাস্তবে quick sort-ই সবচেয়ে বেশি চলে
 
 ## ধারণা
 
-ভাবো তো, একদল বাচ্চাকে উচ্চতা অনুযায়ী দুই দলে ভাগ করতে হবে। তুমি যে কাউকে ধরে বললে, "এর চেয়ে খাটোরা বাঁয়ে দাঁড়াও, লম্বারা ডানে।" এই যে মাপকাঠি হিসেবে একজনকে ধরলে, সেই হলো **pivot**।
+ভাবো তো, একদল বাচ্চাকে উচ্চতায় দুই দলে ভাগ করতে হবে। তুমি যে কাউকে ধরে বললে, "এর চেয়ে খাটোরা বাঁয়ে, লম্বারা ডানে।" এই মাপকাঠিটার নাম **pivot**। ভাগ শেষে pivot নিজেই নিজের চূড়ান্ত জায়গায় দাঁড়িয়ে গেল: বামে সব ছোট, ডানে সব বড়। এবার দুই দলকে আলাদা আলাদা একই খেলায় সাজাও।
 
-Quick Sort-ও ঠিক এটাই করে। একটা **pivot** বেছে নেয়, তারপর pivot-এর চেয়ে ছোট সব উপাদানকে বাঁয়ে, বড় সবকে ডানে সাজায়। এই কাজটার নাম **partition**। এরপর বাঁ আর ডান অংশে recursively একই কাজ চলে। গড়ে O(n log n), আর in-place।
+Quick Sort এই খেলাটাই। ভাগ করার কাজটার নাম **partition**। [Merge Sort](./merge-sort.mdx)-এর সঙ্গে মৌলিক পার্থক্যটা আগেই ধরো:
 
-## কোড উদাহরণ
+- **Merge sort:** ভাগ ফটকায় (মাঝ থেকে চেরা), আসল কাজ **মেলানোর সময়**।
+- **Quick sort:** আসল কাজ **ভাগের সময়ই** (partition), মেলানোর কিছুই নেই, দুই পাশ নিজে নিজে sorted হলেই পুরোটা sorted।
 
-এই version-টা in-place, partition-এ Lomuto পদ্ধতি:
+## Dry run: Lomuto partition
+
+Array: `[8, 3, 1, 7, 0, 10, 2]`। Pivot ধরি শেষ উপাদান, **2**। দুই pointer: `j` ঘুরে বেড়ায়, `i` হলো "ছোটদের এলাকা"র শেষ সীমা। নিয়ম: `arr[j] < pivot` হলে i এগিয়ে দুজনকে swap, ছোটদের এলাকা এক ঘর বাড়ে।
+
+| ধাপ | j | arr[j] | < 2? | swap | array-এর অবস্থা | i |
+|-----|---|--------|------|------|------------------|---|
+| শুরু | - | - | - | - | `[8, 3, 1, 7, 0, 10, 2]` | -1 |
+| 1 | 0 | 8 | না | - | অপরিবর্তিত | -1 |
+| 2 | 1 | 3 | না | - | অপরিবর্তিত | -1 |
+| 3 | 2 | 1 | হ্যাঁ | arr[0]↔arr[2] | `[1, 3, 8, 7, 0, 10, 2]` | 0 |
+| 4 | 3 | 7 | না | - | অপরিবর্তিত | 0 |
+| 5 | 4 | 0 | হ্যাঁ | arr[1]↔arr[4] | `[1, 0, 8, 7, 3, 10, 2]` | 1 |
+| 6 | 5 | 10 | না | - | অপরিবর্তিত | 1 |
+| শেষ | - | - | - | arr[2]↔arr[6] (pivot) | `[1, 0, 2, 7, 3, 10, 8]` | pivot index 2 |
+
+পর্দার পেছনে যা ঘটল: ছোটদের এলাকা `[1, 0]` বামে জড়ো হলো, শেষে pivot (2) মাঝে বসে গেল। এখন 2-এর বামে সব ছোট, ডানে সব বড়, **2-এর জায়গা চূড়ান্ত**। এবার বাম `[1, 0]` আর ডান `[7, 3, 10, 8]`-এ recursion। লক্ষ করো, pivot আর কোনো recursion-এ যায় না, সে বসে গেছে।
+
+## কোড: নিজে বানাও quickSort
 
 ```js
-function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
-
 function quickSort(arr, low = 0, high = arr.length - 1) {
-  if (low < high) {
-    const p = partition(arr, low, high);  // pivot সঠিক জায়গায়
-    quickSort(arr, low, p - 1);           // বাঁ অংশ
-    quickSort(arr, p + 1, high);          // ডান অংশ
+  if (low < high) {                          // base: এক বা শূন্য উপাদান
+    const p = partition(arr, low, high);     // pivot চূড়ান্ত জায়গায়
+    quickSort(arr, low, p - 1);              // বাম অংশ
+    quickSort(arr, p + 1, high);             // ডান অংশ
   }
   return arr;
 }
 
 function partition(arr, low, high) {
-  const pivot = arr[high];       // শেষটাকে pivot ধরি
-  let i = low - 1;               // ছোট অংশের সীমানা
+  const pivot = arr[high];                   // শেষ উপাদানই pivot
+  let i = low - 1;                           // ছোটদের এলাকার শেষ সীমা
+
   for (let j = low; j < high; j++) {
-    if (arr[j] < pivot) { i++; swap(arr, i, j); } // ছোট হলে বাঁয়ে আনি
+    if (arr[j] < pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];   // ছোটটা এলাকায় ঢুকল
+    }
   }
-  swap(arr, i + 1, high);        // pivot-কে মাঝে বসাই
-  return i + 1;                  // pivot-এর চূড়ান্ত index
+
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]]; // pivot মাঝে
+  return i + 1;                              // pivot-এর চূড়ান্ত index
 }
-console.log(quickSort([8, 3, 1, 7, 0, 10, 2])); // [0,1,2,3,7,8,10]
+
+console.log(quickSort([8, 3, 1, 7, 0, 10, 2])); // [0, 1, 2, 3, 7, 8, 10]
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: partition, লাইনে লাইনে
 
-- `partition` pivot-কে তার চূড়ান্ত জায়গায় বসিয়ে দেয়: বাঁয়ে ছোট, ডানে বড়।
-- এরপর দুই পাশে recursion চলে।
+1. `const pivot = arr[high]` : সরলতার জন্য শেষ উপাদান। এই পছন্দেরই দাম পরে দেখবে (worst case)।
+2. `let i = low - 1` : শুরুতে ছোটদের এলাকা খালি, তাই তার শেষ সীমা low-এর এক ঘর বামে। এই `low - 1`-টা ভুললে পুরো হিসাব এক ঘর সরে যায়।
+3. `if (arr[j] < pivot)` : strictly ছোট। সমানদের এই এলাকায় তোলা হয় না, তারা ডান পাশে থেকে যায়।
+4. `i++; swap(arr[i], arr[j])` : আগে এলাকা এক ঘর বাড়ল, তারপর নতুন ছোট সদস্য সেখানে ঢুকল। ক্রম উল্টালে i এখনও পুরনো জায়গা দেখায়, ভুল ঘরে swap।
+5. শেষে `swap(arr[i + 1], arr[high])` : ছোটদের এলাকার ঠিক পরের ঘরে pivot বসল। `i + 1`-ই তার চূড়ান্ত ঠিকানা, সেটাই ফেরত যায়।
 
-<Callout type="warn" title="pivot বাজে হলে worst case">
-pivot যদি বাজে হয় (যেমন already-sorted array-তে শেষ উপাদানটা), তাহলে **worst case O(n²)** হয়ে যায়। সমাধান সহজ: random pivot নিলে এই বিপদ প্রায় আর থাকে না।
-</Callout>
+## Complexity: দুই ভাগ্যের গল্প
 
-## Complexity
+| কেস | Time | কেন |
+|-----|------|-----|
+| Best/Average | O(n log n) | pivot প্রায় মাঝে ভাগ করে, log n স্তর × O(n) partition |
+| Worst (প্রতিবার সবচেয়ে ছোট/বড় pivot) | O(n²) | ভাগ হয় 1 আর n-1-এ, স্তর হয় n টা |
+| Space | O(log n) | recursion stack (গড় গভীরতা); ডেটা in-place |
 
-- avg/best O(n log n); worst O(n²); space O(log n); unstable।
+Worst case-টা বুঝি। ধরো array ইতিমধ্যে sorted, `[1, 2, 3, 4, 5]`, আর pivot সবসময় শেষটা, 5। Partition-এ সবাই তার বামে, ভাগ হয় 4 আর 0-এ। পরের ধাপে আবার একই। মানে গাছ হয় একদম হেলানো লাঠি, n স্তর, প্রতি স্তরে O(n) partition, মোট **O(n²)**। [Merge Sort](./merge-sort.mdx)-এর সুন্দর গাছ এখানে হয়ে গেল দুর্ভাগ্যের সিঁড়ি।
+
+রক্ষার উপায় সহজ আর সুন্দর: **pivot এলোমেলো নাও**। `arr[random(low..high)]` কে শেষ ঘরে swap করে তারপর আগের মতো partition। এলোমেলো বেছে নিলে worst case-এর সম্ভাবনা নগণ্য হয়ে যায়, গড়ে O(n log n) প্রায় নিশ্চিত। আরেক চালাকি median-of-three: প্রথম-মাঝ-শেষের মধ্যবর্তীটা pivot। বাস্তবে quick sort গড়ে সবচেয়ে দ্রুত, কারণ in-place (cache-বান্ধব) আর ভেতরের loop-টা খুব ছোট। তাই বেশিরভাগ ভাষার নিজস্ব sort-এর ভিত্তি এই family-র।
+
+## সাধারণ ভুল আর edge case
+
+**১. Pivot-কে recursion-এ টেনে নেওয়া।**
+`quickSort(arr, low, p)` লিখলে pivot আবার ভাগে ঢুকে যায়, অনন্ত recursion বা ভুল ফল। Pivot বসে গেছে: ডাকো `p - 1` আর `p + 1` পর্যন্ত।
+
+**২. Base case ভুলে যাওয়া।**
+`if (low < high)` না থাকলে খালি/এক-উপাদানের অংশেও partition ঢোকে, index সীমা ছাড়িয়ে যায়। এক উপাদান মানেই sorted।
+
+**৩. `i` শুরু `low`-তে করা।**
+`i = low` দিলে প্রথম swap-ই ভুল ঘরে, ছোটদের এলাকা এক ঘর এগিয়ে শুরু হয়। শুরু `low - 1`, কারণ এলাকা তখনও খালি।
+
+**৪. Sorted input-এ নিয়মিত pivot, তারপর worst case-এ অবাক হওয়া।**
+উপরের গল্পটাই। Sorted বা near-sorted ডেটায় শেষ-উপাদান-pivot বিপজ্জনক। random pivot এক লাইনের রক্ষা।
+
+**৫. Stability আশা করা।**
+Partition-এ swap লাফ দিয়ে ঘটে, সমানদের ক্রম নষ্ট হয়: quick sort unstable। Stability লাগলে [Merge Sort](./merge-sort.mdx), অথবা record-এর সঙ্গে মূল index জুড়ে দাও।
 
 ## Animation Spec
 
 > **Animation Spec: Pivot Partition**
 >
-> - **দৃশ্য:** bar; pivot আলাদা রঙে; দুটো pointer (i, j) হাঁটে; ছোটগুলো বাঁয়ে জড়ো হতে থাকে।
-> - **ইনপুট:** array, pivot কৌশল (last / random)।
-> - **ধাপ:** partition-এ swap দেখা যাবে; pivot মাঝে বসবে; পরে দুই পাশে recursion।
-> - **লক্ষ্য:** partition-এর যুক্তি, আর কেন pivot-এর পছন্দ এত গুরুত্বপূর্ণ।
+> - **দৃশ্য:** bar-এর সারি; pivot বেগুনি; ছোটদের এলাকা সবুজ সীমানায়; i আর j দুই রঙের তীর; পাশে recursion tree-র ছোট মানচিত্র।
+> - **ইনপুট:** array; pivot কৌশল (শেষ / random / median-of-three); speed।
+> - **ধাপ:** j এগিয়ে গেলে ছোট bar-গুলো সবুজ এলাকায় ভিড়ে আসে; শেষে pivot লাফিয়ে মাঝে বসে, স্থির সবুজ হয়; তারপর দুই পাশে recursion-এর আলো বিভক্ত হয়। Sorted input-এ লাঠিগাছ vs random-এ ভারসাম্যপূর্ণ গাছ, পাশাপাশি দেখা যায়।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** কাজ ভাগের সময়ই, মেলানো কিছু নেই; আর pivot-এর ভাগ্যেই গাছের ভাগ্য।
 
 ## অনুশীলন
 
-- random pivot যোগ করে দেখো, already-sorted array-তেও worst case এড়ানো যায় কিনা।
+- **সহজ ১:** `[4, 9, 2, 6, 3]`-এ Lomuto partition (pivot = শেষ) হাতে চালাও: প্রতি ধাপে i, j আর array লিখো।
+- **সহজ ২:** বন্ধুকে বোঝাও: merge sort আর quick sort-এর "কাজ কখন হয়" পার্থক্যটা, এক চিত্রে।
+- **মাঝারি ১:** Random pivot যোগ করো: `partition` শুরুতে `arr[random]`-কে `arr[high]`-এর সঙ্গে swap। তারপর sorted array-তে দুই version-এর recursion গভীরতা মাপো (counter দিয়ে)।
+- **মাঝারি ২:** Quickselect লেখার ভাবনা: পুরো sort না করে k-তম ছোট উপাদান। (হিন্ট: partition-এর পর pivot-এর index p আসলে তার rank। k < p হলে শুধু বামে, নইলে শুধু ডানে ডাকো। গড়ে O(n), পুরো sort-এর অর্ধেকও না। [Kth Element](../problem-solving/kth-element.mdx)-এ পুরো গল্প।)
+- **কঠিন:** Dutch national flag (তিন রঙের sort): array-তে শুধু 0, 1, 2 আছে, এক pass-এ sort করো। (হিন্ট: তিনটা pointer: low, mid, high। mid ঘোরে; 0 পেলে low-এর সঙ্গে swap, 2 পেলে high-এর সঙ্গে, 1 পেলে শুধু এগোয়। Partition-এরই তিন-ভাগের রূপ, LeetCode 75।)
+
+## সারসংক্ষেপ
+
+- Quick sort: partition-এ pivot চূড়ান্ত জায়গায়, তারপর দুই পাশে recursion। মেলানোর ধাপ নেই।
+- Lomuto-তে j ঘোরে, i ছোটদের সীমা; ছোট পেলে i এগিয়ে swap; শেষে pivot মাঝে।
+- গড়ে O(n log n), in-place, cache-বান্ধব, তাই বাস্তবে সবচেয়ে জনপ্রিয়।
+- Worst case O(n²), সবচেয়ে ছোট/বড় pivot বারবার এলে; random pivot দিয়ে প্রায় নিশ্চিতভাবে এড়ানো যায়।
+- Unstable; stability লাগলে merge sort-এ ফিরে যাও।
