@@ -1,0 +1,74 @@
+---
+title: "Circular Linked List: বৃত্তাকার তালিকা"
+description: শেষ node আবার head-কে দেখায় এমন circular linked list, এর append ও নিরাপদ traversal।
+---
+
+## কী শিখব
+
+- শেষ node আবার প্রথমকে দেখায়, এমন বৃত্তাকার তালিকা
+
+## ধারণা
+
+সাধারণ list-এ শেষ node-এর next = null। Circular-এ শেষ node-এর next = **head** (প্রথম)। ফলে অবিরাম ঘোরা যায়; round-robin scheduling, buffer ইত্যাদিতে কাজে লাগে।
+
+```
+[10] -> [20] -> [30] --.
+ ^                     |
+ '---------------------'
+```
+
+## কোড উদাহরণ
+
+```js
+class Node {
+  constructor(value) { this.value = value; this.next = null; }
+}
+
+class CircularList {
+  constructor() { this.head = null; }
+
+  append(value) {
+    const node = new Node(value);
+    if (!this.head) { this.head = node; node.next = node; return; } // নিজেকেই দেখায়
+    let c = this.head;
+    while (c.next !== this.head) c = c.next; // শেষ node খুঁজি
+    c.next = node;
+    node.next = this.head;                    // বৃত্ত সম্পূর্ণ
+  }
+
+  // এক পাক ঘুরে ছাপাই (শর্ত না দিলে infinite loop!)
+  printOnce() {
+    if (!this.head) return;
+    let c = this.head, out = [];
+    do { out.push(c.value); c = c.next; } while (c !== this.head);
+    console.log(out.join(" -> ") + " -> (back to head)");
+  }
+}
+
+const cll = new CircularList();
+cll.append(10); cll.append(20); cll.append(30);
+cll.printOnce(); // 10 -> 20 -> 30 -> (back to head)
+```
+
+## কোড ব্রেকডাউন
+
+- একটামাত্র node হলে সে নিজেকেই next হিসেবে দেখায়।
+- traversal-এ শর্ত `c !== this.head`, নাহলে infinite loop।
+- `do...while` ব্যবহার করলাম যাতে প্রথম node অন্তত একবার ছাপে।
+
+## Complexity
+
+- append O(n), traversal O(n)।
+
+## Animation Spec
+
+> **Animation Spec: The Loop**
+>
+> - **দৃশ্য:** node গুলো বৃত্তে সাজানো; শেষ থেকে head-এ তীর।
+> - **ইনপুট:** কতবার ঘুরবে (rounds)।
+> - **ধাপ:** একটা pointer বৃত্ত ধরে ঘুরবে; head পেরোলে "round complete" গোনা হবে।
+> - **লক্ষ্য:** circularity ও কেন থামার শর্ত দরকার।
+
+## অনুশীলন
+
+- circular list-এ node সংখ্যা গোনার মেথড লেখো।

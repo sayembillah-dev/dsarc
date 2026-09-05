@@ -1,0 +1,75 @@
+---
+title: "Doubly Linked List: দুমুখী তালিকা"
+description: prev ও next, দুই pointer-ই থাকা node-এর তালিকা, যাতে দুই দিকে চলা ও দ্রুত delete করা যায়।
+---
+
+## কী শিখব
+
+- সামনে ও পেছনে, দুই দিকে চলা যায় এমন তালিকা
+
+## ধারণা
+
+প্রতিটা node-এ `next`-এর পাশাপাশি `prev` (আগের node-এর তীর) থাকে। ফলে দুই দিকে যাওয়া যায়, আর কোনো node পেলে তাকে O(1)-এ মুছে ফেলা যায় (আগেরটা `prev` দিয়ে জানা)।
+
+```
+null <- [10] <-> [20] <-> [30] -> null
+```
+
+## কোড উদাহরণ
+
+```js
+class DNode {
+  constructor(value) { this.value = value; this.prev = null; this.next = null; }
+}
+
+class DoublyLinkedList {
+  constructor() { this.head = null; this.tail = null; }
+
+  append(value) {                 // শেষে যোগ, এখন O(1)! (tail আছে)
+    const node = new DNode(value);
+    if (!this.head) { this.head = this.tail = node; return; }
+    node.prev = this.tail;        // নতুন node-এর prev = পুরনো tail
+    this.tail.next = node;        // পুরনো tail-এর next = নতুন node
+    this.tail = node;             // tail আপডেট
+  }
+
+  printForward() {
+    let c = this.head, out = [];
+    while (c) { out.push(c.value); c = c.next; }
+    console.log(out.join(" <-> "));
+  }
+  printBackward() {
+    let c = this.tail, out = [];
+    while (c) { out.push(c.value); c = c.prev; }
+    console.log(out.join(" <-> "));
+  }
+}
+
+const dll = new DoublyLinkedList();
+dll.append(10); dll.append(20); dll.append(30);
+dll.printForward();  // 10 <-> 20 <-> 30
+dll.printBackward(); // 30 <-> 20 <-> 10
+```
+
+## কোড ব্রেকডাউন
+
+- `tail` রাখায় append হলো O(1)।
+- `prev` থাকায় পেছনে হাঁটা যায় ও দ্রুত delete করা যায়।
+- খরচ: প্রতিটা node-এ অতিরিক্ত একটা pointer (বেশি memory)।
+
+## Complexity
+
+- append ও prepend O(1); search O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Two-way Chain**
+>
+> - **দৃশ্য:** node শৃঙ্খল, প্রতিটার মাঝে দুমুখী তীর (prev/next)।
+> - **ইনপুট:** direction toggle (forward/backward)।
+> - **ধাপ:** নির্বাচিত দিকে pointer হাঁটবে; delete দেখালে দুই দিকের তীরই পুনঃসংযোগ হবে।
+> - **লক্ষ্য:** doubly-র দ্বিমুখীতা ও দ্রুত delete।
+
+## অনুশীলন
+
+- Doubly list-এ `prepend` মেথড লেখো।

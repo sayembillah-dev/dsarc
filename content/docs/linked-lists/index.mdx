@@ -1,0 +1,23 @@
+---
+title: Linked Lists
+description: pointer দিয়ে জোড়া node-এর শৃঙ্খল linked list, এর অপারেশনের complexity, singly, doubly ও circular ভ্যারিয়েন্ট এবং array-এর সাথে তুলনা, সব একসাথে।
+---
+
+Array-তে শুরুতে insert/delete O(n)। Linked List এই সমস্যার সমাধান দেয়। এটা pointer-ভিত্তিক চিন্তার প্রথম ধাপ, যা পরে Tree ও Graph-এ কাজে লাগবে।
+
+**Section Roadmap:** ধারণা, Node, Singly Linked List, অপারেশন, Doubly Linked List, Circular Linked List, Array vs Linked List।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Linked List কী](./what-is-linked-list): pointer দিয়ে জোড়া লাগানো node-এর ধারণা
+2. [Singly Linked List](./singly-linked-list): একটা কাজের singly linked list class বানানো
+3. [Node মুছে ফেলা (Deletion)](./deletion): pointer ঘুরিয়ে node বাদ দেওয়া
+4. [Doubly Linked List](./doubly-linked-list): সামনে ও পেছনে, দুই দিকেই চলা যায় এমন তালিকা
+5. [Circular Linked List](./circular-linked-list): শেষ node আবার প্রথমকে দেখায়, এমন বৃত্তাকার তালিকা
+6. [Array vs Linked List](./array-vs-linked-list): সঠিক কাঠামো বাছাই
+
+## সারাংশ
+
+Linked list অর্থাৎ data ও next pointer-এর node-দের শৃঙ্খল; prepend O(1), access O(n)। Doubly অর্থাৎ দুমুখী তালিকা, tail থাকায় append O(1)। Circular অর্থাৎ শেষ node থেকে head-এ ফেরা বৃত্ত। কাঠামো বাছাই নির্ভর করে access বনাম insert প্যাটার্নের উপর।
+
+**পরবর্তী:** Stacks & Queues (শীঘ্রই আসছে)।

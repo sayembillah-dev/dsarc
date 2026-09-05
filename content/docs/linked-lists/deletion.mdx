@@ -1,0 +1,93 @@
+---
+title: "Node মুছে ফেলা: Deletion"
+description: আগের node-এর next pointer ঘুরিয়ে linked list থেকে node বাদ দেওয়া।
+---
+
+## কী শিখব
+
+- pointer ঘুরিয়ে node বাদ দেওয়া
+
+## ধারণা
+
+কোনো node মুছতে হলে তার **আগের** node-এর `next`-কে **পরের** node-এ জোড়া দিতে হয়। মাঝের node "বাইপাস" হয়ে যায়, তাই আর শৃঙ্খলে থাকে না।
+
+```
+মুছি 20:  [10|•] -> [20|•] -> [30]
+পরে:      [10|•] ----------> [30]
+```
+
+## কোড উদাহরণ
+
+```js
+class Node {
+  constructor(value) { this.value = value; this.next = null; }
+}
+
+class LinkedList {
+  constructor() { this.head = null; this.size = 0; }
+
+  append(value) {
+    const node = new Node(value);
+    if (!this.head) { this.head = node; this.size++; return; }
+    let current = this.head;
+    while (current.next) current = current.next;
+    current.next = node;
+    this.size++;
+  }
+
+  // value ধারণকারী প্রথম node মুছে ফেলা
+  remove(value) {
+    if (!this.head) return;
+    if (this.head.value === value) {        // head-ই মুছতে হলে
+      this.head = this.head.next;
+      this.size--; return;
+    }
+    let current = this.head;
+    while (current.next && current.next.value !== value) {
+      current = current.next;               // আগের node খুঁজি
+    }
+    if (current.next) {                      // পেলে বাইপাস করি
+      current.next = current.next.next;
+      this.size--;
+    }
+  }
+
+  print() {
+    const parts = [];
+    let current = this.head;
+    while (current) { parts.push(current.value); current = current.next; }
+    console.log(parts.join(" -> ") + " -> null");
+  }
+}
+
+const list = new LinkedList();
+list.append(10); list.append(20); list.append(30);
+list.print();     // 10 -> 20 -> 30 -> null
+list.remove(20);  // মাঝের node বাইপাস
+list.print();     // 10 -> 30 -> null
+list.remove(10);  // head মুছলে
+list.print();     // 30 -> null
+```
+
+## কোড ব্রেকডাউন
+
+- head মুছলে: `head = head.next`।
+- মাঝেরটা মুছলে: আগের node-এর `next` = মুছে-ফেলা node-এর `next`।
+- বাদ পড়া node-এর reference আর কেউ রাখে না, তাই garbage collector মুছে দেয়।
+
+## Complexity
+
+- খুঁজে বের করা O(n), pointer বদল O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Node Deletion Bypass**
+>
+> - **দৃশ্য:** শৃঙ্খল; মুছতে চাওয়া node লাল।
+> - **ইনপুট:** মুছতে চাওয়া value।
+> - **ধাপ:** আগের node খুঁজে তার তীর বাঁকিয়ে পরের node-এ যাবে; লাল node ধূসর হয়ে "উধাও" হবে।
+> - **লক্ষ্য:** deletion অর্থাৎ pointer rewiring।
+
+## অনুশীলন
+
+- একটা মান তালিকায় না থাকলে remove কী করবে, টেস্ট করো।

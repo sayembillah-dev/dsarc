@@ -1,0 +1,64 @@
+---
+title: "Linked List কী: node ও pointer-এর ধারণা"
+description: Linked list-এর গঠন, node কী, এবং pointer দিয়ে node জোড়া লাগানোর মূল ধারণা।
+---
+
+## কী শিখব
+
+- pointer দিয়ে জোড়া লাগানো node-এর ধারণা
+
+## ধারণা
+
+Linked List হলো node-এর একটা শৃঙ্খল। প্রতিটা **node** দুটো জিনিস রাখে: (১) **data**, (২) পরের node-এর **reference (next)**। মেমরিতে node গুলো ছড়িয়ে থাকতে পারে, শুধু "next" pointer দিয়ে জোড়া।
+
+```
+[10|•] -> [20|•] -> [30|null]
+ head
+```
+
+**সুবিধা:** শুরুতে insert/delete O(1)। **অসুবিধা:** index দিয়ে সরাসরি access নেই (খুঁজতে হয়, O(n))।
+
+## কোড উদাহরণ
+
+```js
+class Node {
+  constructor(value) {
+    this.value = value;   // ডেটা
+    this.next = null;     // পরের node-এর দিকে তীর
+  }
+}
+
+// হাতে জোড়া লাগাই: 10 -> 20 -> 30
+const a = new Node(10);
+const b = new Node(20);
+const c = new Node(30);
+a.next = b;
+b.next = c;
+
+console.log(a.value);           // 10
+console.log(a.next.value);      // 20
+console.log(a.next.next.value); // 30
+```
+
+## কোড ব্রেকডাউন
+
+- `Node` অর্থাৎ data + next।
+- `a.next = b` মানে a থেকে b-তে তীর টানা।
+- শেষ node-এর `next` হয় `null` (শৃঙ্খলের শেষ)।
+
+## Complexity
+
+- শুরুতে insert/delete O(1); index দিয়ে সরাসরি access O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Nodes & Pointers**
+>
+> - **দৃশ্য:** ভাসমান node box; প্রতিটার data ও next-তীর।
+> - **ইনপুট:** node যোগ; একটা `next` তীর টেনে অন্য node-এ জোড়া।
+> - **ধাপ:** তীর জুড়লে শৃঙ্খল তৈরি হবে; head থেকে শুরু করে তীর ধরে "ট্রাভার্স" আলোকিত হবে।
+> - **লক্ষ্য:** pointer অর্থাৎ "পরেরটার ঠিকানা", এই মূল ধারণা।
+
+## অনুশীলন
+
+- হাতে ৪টা node জোড়া লাগিয়ে ৩য় node-এর value ছাপাও।
