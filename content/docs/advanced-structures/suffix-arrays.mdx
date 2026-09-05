@@ -1,0 +1,220 @@
+---
+title: "Suffix Array: সব suffix-এর সাজানো সূচিপত্র"
+description: বিশাল টেক্সটে বারবার pattern খোঁজার কৌশল; সব suffix বর্ণানুক্রমে সাজিয়ে শুধু index রাখো, তারপর binary search। পুরো dry run, LCP ভ্যারিয়েন্ট, complexity-এর হিসাব, আর সাধারণ ভুলগুলো।
+---
+
+## কী শিখব
+
+- suffix array আসলে কী: সব suffix সাজিয়ে শুধু শুরুর index-গুলো রাখা
+- কেন সাজানো suffix-এ binary search চালানো যায়
+- হাতে হাতে পুরো dry run: "banana"-র ৬টা suffix, sort, তারপর "ana" খোঁজা
+- pattern-এর সব occurrence বের করা, একটা মিল পেলেই থেমে না যাওয়া
+- তিনটা ভ্যারিয়েন্ট: LCP ধারণা, suffix tree-র সাথে তুলনা, দ্রুত construction-এর আইডিয়া
+- naive build O(n^2 log n) কেন, আর practice-এ কোনটা কোথায় লাগে
+
+## ধারণা
+
+ধরো তোমার হাতে একটা হাজার পাতার বই, আর তোমাকে খুঁজতে হবে একটা নির্দিষ্ট বাক্য কোথায় কোথায় আছে। প্রতিবার প্রথম পাতা থেকে পড়া শুরু করলে তো চলবে না। বদলে তুমি একবার খাটিয়ে বইয়ের প্রতিটা জায়গার একটা সূচিপত্র বানিয়ে রাখো; পরের বার থেকে খোঁজা হবে মুহূর্তে। string-এর জগতে সেই সূচিপত্রটার নাম **suffix array**।
+
+কৌশলটা দুই ধাপের:
+
+1. string-এর **প্রতিটা suffix** (প্রতিটা index থেকে শেষ পর্যন্ত) লিখে ফেলো
+2. ওগুলোকে **বর্ণানুক্রমে sort** করে রাখো, সাথে প্রতিটার মূল index
+
+বিশ্বাসটা এখানে: sort করার পর একই শুরুর suffix-গুলো **পাশাপাশি** চলে আসে। যেমন "ana" দিয়ে শুরু হওয়া সব suffix এক জায়গায় জড়ো হবে। আর sorted জিনিসে খোঁজা মানেই [binary search](../searching/binary-search.mdx)। পুরো টেক্সট আর ঘাঁটতে হচ্ছে না, শুধু সাজানো সূচিপত্রে অর্ধেক অর্ধেক কেটে যাও।
+
+prefix দিয়ে খোঁজার গাছ-ভিত্তিক ভাই হলো [Trie](./trie.mdx): সেখানে শব্দগুলো অক্ষর ধরে গাছে বসে। suffix array-তে গাছ নেই, শুধু একটা সাজানো লিস্ট, তাই memory কম, কোড সরল, অথচ কাজের পরিসর চমৎকার।
+
+## ধাপে ধাপে: একটা পুরো dry run
+
+আমাদের string: **"banana"**, দৈর্ঘ্য ৬। প্রথম ধাপ, প্রতিটা index থেকে suffix লেখা:
+
+| index | suffix |
+|-------|--------|
+| 0 | banana |
+| 1 | anana |
+| 2 | nana |
+| 3 | ana |
+| 4 | na |
+| 5 | a |
+
+দ্বিতীয় ধাপ, এদের বর্ণানুক্রমে সাজানো (a < b < n, আর ছোটটা আগে):
+
+| sorted ক্রম | suffix | মূল index |
+|-------------|--------|-----------|
+| 1 | a | 5 |
+| 2 | ana | 3 |
+| 3 | anana | 1 |
+| 4 | banana | 0 |
+| 5 | na | 4 |
+| 6 | nana | 2 |
+
+মূল index-গুলোই suffix array: **SA = [5, 3, 1, 0, 4, 2]**। খেয়াল করো, "a", "ana", "anana" পাশাপাশি বসে গেছে, কারণ সবার শুরুটা একই। এই জড়ো হয়ে বসাটাই পরের সব জাদুর ভিত্তি।
+
+এবার খোঁজা। pattern: **"ana"** (দৈর্ঘ্য m = 3)। SA sorted, তাই binary search। প্রতিবার মাঝের suffix-এর **প্রথম ৩টা অক্ষর** নিয়ে pattern-এর সাথে তুলনা:
+
+| ধাপ | lo | hi | mid | SA[mid] | প্রথম ৩ অক্ষর | "ana"-র সাথে তুলনা | সিদ্ধান্ত |
+|-----|----|----|-----|---------|----------------|---------------------|----------|
+| 1 | 0 | 5 | 2 | 1 | ana | সমান | মিলল! index 1 |
+
+একটা মিল পেয়েই থেমে গেলে ভুল হবে। sorted লিস্টে বাকি মিলগুলো ঠিক পাশেই বসে আছে। বামে-ডানে চেপে দেখো:
+
+- বামে SA[1] = 3, প্রথম ৩ অক্ষর "ana", মিলল: index 3
+- আরও বামে SA[0] = 5, "a" মাত্র, মিলল না
+- ডানে SA[3] = 0, "ban", মিলল না
+
+তাহলে "ana" আছে index **1 আর 3**-এ, মোট ২ বার। মিলগুলো sorted লিস্টে পাশাপাশি ছিল বলেই এত সস্তায় পেয়ে গেলাম।
+
+## কোড: পুরো implementation
+
+```js
+function buildSuffixArray(s) {
+  const suffixes = [];
+  for (let i = 0; i < s.length; i++) {
+    suffixes.push({ index: i, text: s.slice(i) }); // i থেকে শেষ পর্যন্ত
+  }
+  suffixes.sort((a, b) => (a.text < b.text ? -1 : a.text > b.text ? 1 : 0));
+  return suffixes.map((x) => x.index);
+}
+
+function searchPattern(s, sa, pattern) {
+  const m = pattern.length;
+  const piece = (i) => s.slice(sa[i], sa[i] + m); // SA[i] suffix-এর প্রথম m অক্ষর
+
+  let lo = 0, hi = sa.length - 1, mid = -1;
+  while (lo <= hi) {                     // যেকোনো একটা মিল খোঁজো
+    mid = (lo + hi) >> 1;
+    if (piece(mid) === pattern) break;
+    if (piece(mid) < pattern) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  if (lo > hi) return [];                // একটাও মিলল না
+
+  const matches = [];
+  let left = mid;
+  while (left >= 0 && piece(left) === pattern) left--;   // বাম প্রান্ত
+  for (let i = left + 1; i < sa.length && piece(i) === pattern; i++) {
+    matches.push(sa[i]);                 // পাশাপাশি সব মিল তোলো
+  }
+  return matches.sort((a, b) => a - b);
+}
+
+const s = "banana";
+const sa = buildSuffixArray(s);
+console.log(sa);                            // [5, 3, 1, 0, 4, 2]
+console.log(searchPattern(s, sa, "ana"));   // [1, 3]
+console.log(searchPattern(s, sa, "nan"));   // [2]
+console.log(searchPattern(s, sa, "a"));     // [1, 3, 5]
+console.log(searchPattern(s, sa, "xyz"));   // []
+```
+
+সৎভাবে বলে রাখি: এই `buildSuffixArray` হলো **শেখার version**। সব suffix-কে আসল string হিসেবে বানিয়ে sort করছে, বড় ইনপুটে এটা ধীর আর memory-খোর। নিচে complexity আর ভ্যারিয়েন্টে দেখাবো বাস্তবে কীভাবে দ্রুত করা যায়। কিন্তু ধারণাটা, সাজাও তারপর binary search, ঠিক এইটাই।
+
+## ভ্যারিয়েন্ট ১: LCP, পাশাপাশি suffix-এর গোপন সম্পর্ক
+
+sorted লিস্টে পাশাপাশি দুটো suffix-এর শুরুটা মিলে যাওয়ার সম্ভাবনা সবচেয়ে বেশি। প্রতি জোড়ার **longest common prefix (LCP)** মাপলেই বেরিয়ে আসে মজার জিনিস, যেমন পুরো string-এর সবচেয়ে লম্বা **বারবার আসা অংশ**:
+
+```js
+function longestRepeatedSubstring(s) {
+  const sa = buildSuffixArray(s);
+  let best = "";
+  for (let i = 1; i < sa.length; i++) {
+    let a = sa[i - 1], b = sa[i], len = 0;
+    while (s[a + len] !== undefined && s[a + len] === s[b + len]) len++;
+    if (len > best.length) best = s.slice(a, a + len);
+  }
+  return best;
+}
+
+console.log(longestRepeatedSubstring("banana")); // "ana"
+```
+
+কেন কাজ করে? যেকোনো repeated substring আসলে দুটো suffix-এর common prefix, আর sort-এর পর দূরবর্তী suffix-এর common prefix কখনোই পাশের জোড়ারটার চেয়ে বড় হতে পারে না। তাই শুধু পাশাপাশি জোড়া মাপলেই সবচেয়ে বড়টা পাওয়া যায়। "banana"-তে জোড়া (ana, anana)-এর LCP হলো "ana", সেটাই তোমার উত্তর।
+
+## ভ্যারিয়েন্ট ২: suffix tree বনাম suffix array
+
+একই পরিবারের আরেক ভাই হলো suffix tree: সব suffix-কে একটা compressed trie-তে ঢোকানো। তুলনা করে দেখি:
+
+| বিষয় | Suffix Array | Suffix Tree |
+|-------|--------------|-------------|
+| Memory | কম (শুধু index-এর array) | অনেক বেশি (node আর edge) |
+| pattern খোঁজা | O(m log n) | O(m) |
+| বানানো | সরল, sort করলেই হলো | জটিল (Ukkonen-এর algorithm) |
+| কোডের দৈর্ঘ্য | ছোট, শিখে ফেলা যায় | লম্বা, ভুল হওয়া সহজ |
+| কখন | বেশিরভাগ বাস্তব কাজ | যখন প্রতি query-তে O(m) দরকারই দরকার |
+
+তাই বাস্তব জগতে, search engine থেকে bioinformatics, প্রায় সব জায়গায় suffix array-ই জিতে। পর্যাপ্ত দ্রুত, অথচ মানুষের লেখার মতো সরল।
+
+## ভ্যারিয়েন্ট ৩: দ্রুত construction-এর আইডিয়া (rank doubling)
+
+naive sort O(n^2 log n), কারণ প্রতি তুলনায় লম্বা suffix পুরো পড়তে হয়। বাস্তব algorithm-গুলো একটা চমৎকার কৌশল খেলে: আগে প্রতি suffix-কে শুধু **প্রথম ১টা অক্ষর** দেখে rank দাও, তারপর সেই rank জোড়া ব্যবহার করে **প্রথম ২টা** দেখে rank, তারপর ৪টা, ৮টা। প্রতি রাউন্ডে দৈর্ঘ্য দ্বিগুণ হয়, তাই মোট log n রাউন্ড, প্রতি রাউন্ডে একটা sort। মোট **O(n log^2 n)**, আর একটু যত্নে O(n log n)। গভীরে যাওয়া এই পাঠের স্কোপের বাইরে, কিন্তু নামটা মনে রাখো: **doubling technique**। কোটি অক্ষরের জিনোম সিকোয়েন্স নিয়ে কাজ করতে গেলে এটাই তোমাকে বাঁচাবে।
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `suffixes.push({ index: i, text: s.slice(i) })` : প্রতিটা i থেকে শেষ পর্যন্ত অংশ নিয়ে রাখা, সাথে মূল index। slice নিজে O(n), তাই এই লুপটাই build-এর একটা বড় খরচ।
+2. `suffixes.sort((a, b) => ...)` : বর্ণানুক্রমে sort। comparator-এ তিনমুখী ফেরত (-1, 0, 1), শুধু `<` দিয়ে boolean ফেরালে JS ঠিকমতো সাজাতে পারে না।
+3. `.map((x) => x.index)` : sort হয়ে গেলে টেক্সট ফেলে শুধু index রাখো। এই array-টাই SA।
+4. `const piece = (i) => s.slice(sa[i], sa[i] + m)` : সবচেয়ে গুরুত্বপূর্ণ helper। পুরো suffix নয়, শুধু প্রথম m অক্ষরের সাথে তুলনা। নাহলে "anana"-র সাথে "ana" কখনোই মিলবে না।
+5. `while (lo <= hi)` : রীতিমতো binary search। খুঁজছি **যেকোনো একটা** মিল।
+6. `if (piece(mid) < pattern) lo = mid + 1` : suffix-এর টুকরা ছোট, মানে pattern ডানদিকে। বড় হলে বামে। [Binary search](../searching/binary-search.mdx)-এর একদম পরিচিত দুই শাখা।
+7. `if (lo > hi) return []` : লুপ শেষ হলে কোনো মিল-ই নেই। খালি array ফেরাও, false নয়, যাতে caller সবসময় একই টাইপ পায়।
+8. বামে সরার `while` লুপ : মিলগুলো পাশাপাশি থাকে, তাই mid থেকে বামে চাপতে থাকো যতক্ষণ মিল আছে।
+9. ডানদিকের `for` লুপ : বাম প্রান্ত থেকে ডানে ঘুরে সব মিলের index তোলো।
+10. `matches.sort((a, b) => a - b)` : index-গুলো ছোট থেকে বড় করে সাজিয়ে ফেরাও। number-এর sort-এ comparator না দিলে JS string হিসেবে সাজিয়ে [10, 2] জাতীয় বিপর্যয় বানায়, সাবধান।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+ধরো string-এর দৈর্ঘ্য n, pattern-এর দৈর্ঘ্য m।
+
+**Build (naive): O(n^2 log n)।** ভেঙে দেখি:
+
+- n টা suffix বানাতে প্রতিটা slice O(n), মোট O(n^2)।
+- sort-এ O(n log n) বার তুলনা। কিন্তু প্রতি তুলনা দুটো string-এর, খারাপ অবস্থায় O(n) অক্ষর পড়তে হয় (ভাবো "aaaa...a" জাতীয় ইনপুট)। তাই তুলনার মোট খরচ O(n * n log n) = O(n^2 log n)।
+- দুটো মিলে build O(n^2 log n)। শেখার জন্য চলবে, লাখ অক্ষরে চলবে না।
+
+**Search: O(m log n)।** binary search O(log n) ধাপ, প্রতি ধাপে m অক্ষরের তুলনা O(m)। গুনে দাও। আর মিলগুলো তুলতে খরচ O(k), যেখানে k = মিলের সংখ্যা, যেটা যেভাবেই আউটপুটে লাগবেই।
+
+**Space: naive-এ O(n^2)**, কারণ সব suffix-এর টেক্সট জমা আছে। শুধু index রেখে তুলনার সময় slice করলে O(n)-এ নামানো যায়। উন্নত construction O(n log n) বা তারও কম, ভ্যারিয়েন্ট ৩-এ সুরটা দেখেছ।
+
+## সাধারণ ভুল আর edge case
+
+**১. suffix মানে শুধু শেষের টুকরোটা ভাবা।**
+suffix হলো **প্রতিটা** index থেকে শেষ পর্যন্ত, n টার নিচে একটাও কম নয়। index 0 থেকে শুরু ভুলে গেলে string-এর প্রথমে থাকা pattern কখনোই পাবে না।
+
+**২. পুরো suffix-এর সাথে তুলনা, pattern-এর দৈর্ঘ্যের টুকরোর সাথে নয়।**
+"anana"-র সাথে "ana" কখনো সমান হবে না, তাই সরাসরি তুললে মিল মিস হবে। চাবিকাঠি: `s.slice(start, start + m)`। pattern-টা suffix-এর prefix হলেই মিল।
+
+**৩. একটা মিল পেয়ে লুপ থেকে বেরিয়ে যাওয়া।**
+binary search যেকোনো একটা মিল দেয়, কিন্তু sorted লিস্টে বাকিগুলো ঠিক পাশে। "ana" দুই জায়গায় আছে, একটা পেয়ে থামলে অর্ধেক উত্তর। মিলের **পুরো ব্লকটা** তুলতে হবে।
+
+**৪. number-এর array default sort করা।**
+মিলের index-গুলো ফেরতের আগে `matches.sort()` লিখে দিলে JS সেগুলোকে string বানিয়ে সাজায়, 10 আসে 2-এর আগে। সবসময় `sort((a, b) => a - b)`।
+
+**৫. খালি pattern আর pattern > text edge case।**
+খালি pattern-এ m = 0, তখন `piece` সবসময় "" ফেরায়, সব মিলে যায়, যেটা হয়তো তুমি চাও না। আর pattern টেক্সটের চেয়ে লম্বা হলে slice ছোট হয়ে আসে, তুলনা আজগুবি হয়। শুরুতেই গার্ড দাও: `if (m === 0 || m > s.length) return []`।
+
+## Animation Spec
+
+> **Animation Spec: Sorted Suffixes**
+>
+> - **দৃশ্য:** বামে মূল string, index সহ; ডানে suffix-দের লিস্ট; নিচে pattern ইনপুট।
+> - **ইনপুট:** string আর pattern; প্রিসেট হিসেবে "banana", "mississippi"।
+> - **ধাপ:** suffix-গুলো একে একে জন্মায়, তারপর বুদবুদের মতো ভেসে বর্ণানুক্রমে বসে যায়, মূল index ট্যাগ সাথে থাকে; search-এর সময় lo-hi জানালা সরু হয়, মাঝের suffix হলুদ হয়, তুলনার অক্ষরগুলো একে একে সবুজ বা লাল; মিলের ব্লকটা শেষে একসাথে জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "পুরো suffix তুলনা" টগল, ভুল নম্বর ২টা বাস্তবে দেখানোর জন্য।
+> - **লক্ষ্য:** sort করলে একই শুরুর suffix জড়ো হয়, আর sorted মানেই binary search।
+
+## অনুশীলন
+
+- **সহজ ১:** Find the Index of the First Occurrence in a String (LeetCode 28)। হিন্ট: আগে সাধারণ window সরিয়ে করে ফেলো; তারপর ভাবো, একই কাজ suffix array আর binary search-এ করলে কী পাও।
+- **সহজ ২:** Repeated Substring Pattern (LeetCode 459)। হিন্ট: একটা চমৎকার কৌশল আছে, s+s বানিয়ে প্রথম আর শেষ অক্ষর বাদ দাও, তার মধ্যে s আছে কিনা দেখো। substring খোঁজার চর্চা হিসেবে দারুণ।
+- **মাঝারি ১:** Repeated String Match (LeetCode 686)। হিন্ট: a-কে কতবার repeat করলে b ধরতে পারবে? সর্বোচ্চ ceil(len(b) / len(a)) + 1 বার। তারপর খোঁজাটা এই পাতার searchPattern দিয়েই দাও।
+- **মাঝারি ২:** Last Substring in Lexicographical Order (LeetCode 1163)। হিন্ট: উত্তরটা কোনো না কোনো **suffix**-ই হবে, কেন ভেবে দেখো। তারপর সাজানো suffix-দের সবচেয়ে শেষটার দিকে তাকাও।
+- **কঠিন:** Longest Duplicate Substring (LeetCode 1044)। হিন্ট: ভ্যারিয়েন্ট ১-এর LCP আইডিয়াটাই সরাসরি লাগে, SA বানিয়ে পাশাপাশি জোড়ার common prefix মাপো। আরেক পথ: দৈর্ঘ্যের ওপর binary search আর rolling hash, সেই গল্প [Hash Function](../hash-tables/hash-function.mdx)-এ।
+
+## সারসংক্ষেপ
+
+- Suffix array = সব suffix বর্ণানুক্রমে সাজিয়ে মূল index-এর লিস্ট রাখা।
+- sorted লিস্টে একই শুরুর suffix পাশাপাশি বসে, তাই pattern খোঁজা চলে binary search-এ, O(m log n)।
+- মিলের পুরো ব্লকটা তোলা বাধ্যতামূলক, একটা পেয়ে থামলে ভুল।
+- পাশাপাশি suffix-এর LCP দিয়েই longest repeated substring জাতীয় প্রশ্নের উত্তর।
+- naive build O(n^2 log n) শেখার জন্য; বাস্তবে rank doubling-এ O(n log n)।

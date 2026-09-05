@@ -1,0 +1,316 @@
+---
+title: "Trie (Prefix Tree): autocomplete-এর ভেতরের গাছ"
+description: ফোনের autocomplete কীভাবে কাজ করে; অক্ষর ধরে অক্ষর নামা এক গাছ, যেখানে insert, search, startsWith সব O(L)-এ। পুরো dry run, তিনটা ভ্যারিয়েন্ট, complexity-এর হিসাব, আর সবচেয়ে বেশি হওয়া ভুলগুলো।
+---
+
+## কী শিখব
+
+- Trie কীভাবে একই prefix-এর শব্দগুলোকে একই পথ শেয়ার করায়
+- insert, search, startsWith: তিনটাই শুধু শব্দের দৈর্ঘ্যের উপর, শব্দের সংখ্যার উপর নয়
+- হাতে হাতে পুরো dry run: চারটা শব্দ ঢোকানো, তারপর তিন রকমের খোঁজ
+- autocomplete: prefix-এর নিচের subtree থেকে সব শব্দ তুলে আনা
+- তিনটা ভ্যারিয়েন্ট: word search-এ pruning, ref-count দিয়ে delete, children রাখার দুই পদ্ধতি
+
+## ধারণা
+
+ভাবো তো, ফোনে তুমি শুধু "ban" টাইপ করেছ, অমনি banana, band, bandana ভেসে উঠল। লক্ষ লক্ষ শব্দের ভিড়ে এত দ্রুত মিলাল কীভাবে? প্রতিটা শব্দকে কি আলাদা আলাদা তুলনা করল? তাহলে তো যুগ পেরিয়ে যেত। ভেতরে যে কাঠামোটা কাজ করে, তার নাম **Trie** (উচ্চারণ "try", retrieval শব্দ থেকে এসেছে)।
+
+আইডিয়াটা সোজা: শব্দগুলোকে লিস্টে না রেখে একটা **গাছে** রাখো, যেখানে প্রতিটা node-এর বাচ্চারা একটা করে অক্ষর ধারণ করে। root থেকে নিচে নামতে নামতে অক্ষরগুলো জোড়া লাগে, আর কোনো node-এ পৌঁছালে সেখান পর্যন্তর পথটাই একটা prefix। একই prefix-এর শব্দগুলো পথটা **শেয়ার** করে নেয়। তাই "ca" একবারই রাখা আছে, তার নিচে ঝুলছে cat, car, card, care সবাই।
+
+প্রতিটা node-এ থাকে ঠিক দুটো জিনিস:
+
+1. **children**: অক্ষর থেকে পরের node-এর ম্যাপ (কোন অক্ষরে কোন বাচ্চা)
+2. **isEnd**: এই node-এ কি কোনো শব্দ **শেষ** হয়? true/false
+
+isEnd-টা ছোট্ট পতাকা, কিন্তু ওজন অনেক। ধরো trie-তে "car" আছে, আর তুমি খুঁজলে "ca"। পথটা তো আছেই, c থেকে a-তে যাওয়া যায়। কিন্তু "ca" কি সত্যিই শব্দ, নাকি শুধু "car"-এর অংশ? isEnd-ই এই উত্তর দেয়।
+
+খোঁজার সময় লাগে শুধু শব্দের দৈর্ঘ্যের সমান ধাপ, অর্থাৎ O(L)। কোটি শব্দ থাকলেও "banana" খুঁজতে ৬টাই ধাপ। এই গ্যারান্টিই trie-কে autocomplete, spell checker, IP routing-এ অপরিহার্য করে তোলে। আর শেষের দিক দিয়ে মিলাতে চাইলে (টেক্সটে "ana" কোথায় কোথায় আছে), সেই কাঠামো হলো [Suffix Array](./suffix-arrays.mdx)।
+
+## ধাপে ধাপে: একটা পুরো dry run
+
+কোডে যাওয়ার আগে হাতে হাতে গাছটা গেঁথে দেখি। চারটা শব্দ ঢোকাবো একে একে: "cat", "car", "card", "care"।
+
+প্রথমে "cat" ঢোকালে root থেকে c-a-t পথ বানে, t-তে isEnd বসে। তারপর "car": c আর a তো আগেই আছে, নতুন করে বানাতে হবে না, শুধু a-এর নিচে r যোগ হবে:
+
+```text
+(root)
+  |
+  c
+  |
+  a          <- এই "ca" পথটা এখন দুই শব্দের শেয়ার
+ / \
+t*   r*      <- t = "cat", r = "car"
+```
+
+শেষ দুটো "card" আর "care": দুটোই c-a-r পর্যন্ত পুরো শেয়ার, r-এর নিচে একবার d, আরেকবার e:
+
+```text
+(root)
+  |
+  c
+  |
+  a
+ / \
+t*   r*
+    / \
+   d*  e*   <- d = "card", e = "care"
+```
+
+চারটা শব্দে মোট ১৩টা অক্ষর, কিন্তু গাছে node লেগেছে মাত্র ৭টা (root বাদে)। শেয়ারের কারণেই এই সাশ্রয়। ধাপগুলো টেবিলে:
+
+| ধাপ | insert | নতুন node লাগল | শেয়ার হলো | isEnd বসল |
+|-----|--------|----------------|-----------|-----------|
+| 1 | cat | c, a, t | কিছুই না | t |
+| 2 | car | শুধু r | c, a | r |
+| 3 | card | শুধু d | c, a, r | d |
+| 4 | care | শুধু e | c, a, r | e |
+
+এবার খোঁজের পালা। তিন রকম query দেখি: পুরো শব্দ, শুধু prefix, আর নেই এমন শব্দ। নিয়ম একটাই: অক্ষর ধরে নিচে নামো, পথ না পেলে থামো।
+
+| query | হাঁটার পথ | শেষ node পেলাম? | সেখানে isEnd? | ফলাফল |
+|-------|-----------|----------------|---------------|--------|
+| "car" | c, a, r | হ্যাঁ | হ্যাঁ | শব্দ আছে, true |
+| "ca" | c, a | হ্যাঁ | না | শুধু prefix, শব্দ নয়, false |
+| "cap" | c, a, তারপর p? | না, a-এর নিচে p নেই | প্রশ্নই ওঠে না | false |
+
+তিনটা query-তেই কাজ শেষ হয়েছে সর্বোচ্চ ৩ ধাপে। trie-তে যত শব্দই থাকুক, সেটা মাথায় আসেই নি।
+
+## কোড: পুরো implementation
+
+```js
+class TrieNode {
+  constructor() {
+    this.children = new Map(); // অক্ষর -> পরের TrieNode
+    this.isEnd = false;        // এখানে কি কোনো শব্দ শেষ?
+  }
+}
+
+class Trie {
+  constructor() { this.root = new TrieNode(); }
+  insert(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node.children.has(ch)) {
+        node.children.set(ch, new TrieNode()); // পথ নেই, বানাও
+      }
+      node = node.children.get(ch);            // এক ধাপ নামো
+    }
+    node.isEnd = true;                         // শব্দ শেষের দাগ
+  }
+  search(word) {
+    const node = this._walk(word);
+    return node !== null && node.isEnd;        // পথ + শেষ দাগ, দুটোই চাই
+  }
+  startsWith(prefix) {
+    return this._walk(prefix) !== null;        // শুধু পথ থাকলেই চলবে
+  }
+  autocomplete(prefix) {
+    const start = this._walk(prefix);
+    if (start === null) return [];             // prefix-ই নেই
+    const words = [];
+    this._collect(start, prefix, words);       // নিচের সব শব্দ তোলো
+    return words;
+  }
+  _walk(str) {                                 // str ধরে নেমে শেষ node ফেরত
+    let node = this.root;
+    for (const ch of str) {
+      if (!node.children.has(ch)) return null; // পথ ভাঙল, থামো
+      node = node.children.get(ch);
+    }
+    return node;
+  }
+  _collect(node, path, words) {                // DFS দিয়ে শব্দ সংগ্রহ
+    if (node.isEnd) words.push(path);
+    for (const [ch, child] of node.children) {
+      this._collect(child, path + ch, words);
+    }
+  }
+}
+
+const trie = new Trie();
+for (const w of ["cat", "car", "card", "care", "dog", "dove"]) trie.insert(w);
+console.log(trie.search("car"));       // true
+console.log(trie.search("ca"));        // false, শুধু prefix
+console.log(trie.startsWith("ca"));    // true
+console.log(trie.startsWith("cap"));   // false
+console.log(trie.autocomplete("car")); // ['car', 'card', 'care']
+console.log(trie.autocomplete("ca"));  // ['cat', 'car', 'card', 'care']
+console.log(trie.autocomplete("xyz")); // []
+```
+
+`_walk` আলাদা রাখার কারণটা খেয়াল করো: search আর startsWith-এর পার্থক্য শুধু শেষের চেকটায়। হাঁটার যুক্তি এক জায়গায় থাকলে ভুল ঠিক করাও এক জায়গায় হয়।
+
+## ভ্যারিয়েন্ট ১: board-এ শব্দ খোঁজা (Word Search II-এর সূত্র)
+
+ধরো একটা অক্ষরের board আর একটা শব্দের অভিধান দেওয়া আছে। board-এ কোন কোন শব্দ গঢ়া যায়? প্রতি cell থেকে DFS চালালে সম্ভাব্য পথ হয় লক্ষ লক্ষ। trie এখানে **pruning**-এর কাজে আসে: বানানো prefix-টা trie-তে না থাকলেই সেই পথ আর বাড়াবো না।
+
+```js
+function findWords(board, words) {
+  const root = new TrieNode();
+  for (const w of words) {                 // অভিধান trie-তে
+    let node = root;
+    for (const ch of w) {
+      if (!node.children.has(ch)) node.children.set(ch, new TrieNode());
+      node = node.children.get(ch);
+    }
+    node.isEnd = true;
+  }
+  const found = new Set();
+  function dfs(r, c, node, path) {
+    const ch = board[r] && board[r][c];
+    if (ch === undefined || ch === "#") return; // বাইরে বা আগে ব্যবহৃত
+    const next = node.children.get(ch);
+    if (!next) return;                     // prefix-ই নেই, prune!
+    path += ch;
+    if (next.isEnd) found.add(path);       // একটা শব্দ পেলাম
+    board[r][c] = "#";                     // এক cell এক পথে একবারই
+    dfs(r + 1, c, next, path);
+    dfs(r - 1, c, next, path);
+    dfs(r, c + 1, next, path);
+    dfs(r, c - 1, next, path);
+    board[r][c] = ch;                      // ফেরার পথে দাগ তুলে দাও
+  }
+  for (let r = 0; r < board.length; r++)
+    for (let c = 0; c < board[0].length; c++) dfs(r, c, root, "");
+  return [...found];
+}
+
+const board = [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]];
+console.log(findWords(board, ["oath", "pea", "eat", "rain"])); // ['oath', 'eat']
+```
+
+খারাপ পথে এক ধাপও বাড়তি যাওয়া হয় না, এই ছাঁটাই-ই আসল জাদু। আর এই দাগ দেওয়া-তোলার ছন্দটা [backtracking](../problem-solving/backtracking.mdx)-এরই পরিচিত ছন্দ।
+
+## ভ্যারিয়েন্ট ২: delete, ref-count দিয়ে
+
+শব্দ মুছতে গিয়ে বেশিরভাগ ভুল হয়। "card" মুছব বলে c-a-r-d পথের সব node ধ্বংস করে দিলে "car" আর "cat"-ও উধাও! সমাধান: প্রতি node-এ একটা **count** রাখো, ওই node দিয়ে কতগুলো শব্দ গেছে। delete-এ উল্টো পথে count কমাও, ০ হলে তবেই node কাটো।
+
+```js
+class CountNode {
+  constructor() { this.children = new Map(); this.isEnd = false; this.count = 0; }
+}
+
+class CountTrie {
+  constructor() { this.root = new CountNode(); }
+  insert(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node.children.has(ch)) node.children.set(ch, new CountNode());
+      node = node.children.get(ch);
+      node.count++;                     // দিয়ে যাওয়া প্রতি শব্দের হিসাব
+    }
+    node.isEnd = true;
+  }
+  search(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node.children.has(ch)) return false;
+      node = node.children.get(ch);
+    }
+    return node.isEnd;
+  }
+  erase(word) {
+    let node = this.root;
+    const stack = [];
+    for (const ch of word) {
+      if (!node.children.has(ch)) return; // শব্দটাই নেই
+      stack.push([node, ch]);
+      node = node.children.get(ch);
+    }
+    if (!node.isEnd) return;              // prefix আছে, শব্দ নেই
+    node.isEnd = false;
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const [parent, ch] = stack[i];
+      const child = parent.children.get(ch);
+      child.count--;
+      if (child.count === 0) parent.children.delete(ch); // কেউ ব্যবহার করে না
+      else break;                                        // শেয়ারড, থামো
+    }
+  }
+}
+
+const ct = new CountTrie();
+ct.insert("cat"); ct.insert("car"); ct.insert("card");
+ct.erase("card");
+console.log(ct.search("card")); // false
+console.log(ct.search("car"));  // true, শেয়ারড prefix বেঁচে গেছে
+console.log(ct.search("cat"));  // true
+```
+
+## ভ্যারিয়েন্ট ৩: children রাখবে Map-এ, না ২৬-স্লটের array-তে?
+
+অক্ষর সেট ছোট আর নির্দিষ্ট হলে (ধরো শুধু a-z) অনেকে প্রতি node-এ ২৬ ঘরের array রাখে। তুলনা:
+
+| বিষয় | Map / object | ২৬-স্লটের fixed array |
+|-------|--------------|------------------------|
+| Memory | যতগুলো child আছে ঠিক ততগুলো entry | প্রতি node-এ ২৬টা ঘর, খালি থাকলেও |
+| এক ধাপ নামা | hash lookup, প্রায় O(1) | সরাসরি index, সবচেয়ে দ্রুত |
+| Alphabet | যেকোনো অক্ষর, এমনকি বাংলাও | fixed ছোট set ছাড়া অযোগ্য |
+| বাচ্চাদের ঘোরা | insertion order-এ | alphabet order নিজে থেকেই |
+| কখন | সাধারণ কাজ, অজানা alphabet | contest code, a-z নিশ্চিত, গতি চাই |
+
+ইউনিকোড নিয়ে কাজ হলে Map ছাড়া উপায় নেই; শুধু a-z হলে array-র সরলতা ভালো। hash lookup কেন প্রায় O(1), সেই গল্প [Hash Function](../hash-tables/hash-function.mdx)-এ।
+
+## কোড ব্রেকডাউন: মূল Trie, লাইনে লাইনে
+
+1. `this.children = new Map()` : অক্ষর থেকে বাচ্চার ম্যাপ। কেন plain object নয়, সেটা নিচের ভুলগুলোর একটায় পরিষ্কার হবে।
+2. `this.isEnd = false` : জন্মে কোনো node-ই শব্দের শেষ নয়; শব্দ ঢোকানোর সময় শেষ node-এ পতাকা তোলা হয়।
+3. `insert`-এ `for (const ch of word)` : শব্দকে অক্ষরে ভাঙো, প্রতি অক্ষর এক ধাপ নামা।
+4. `if (!node.children.has(ch)) ... set(...)` : পথ না থাকলে node বানাও; থাকলে কিছুই করো না, পুরোনোটাই শেয়ার হবে। এটাই prefix সাশ্রয়ের মেকানিজম।
+5. `node = node.children.get(ch)` : নিচে নামো, lookup প্রায় O(1)-এ।
+6. `node.isEnd = true` : লুপ শেষে যে node-এ দাঁড়িয়েছ, সেটাই শব্দের শেষ। এই দাগ ছাড়া "ca" আর "car" আলাদা করাই যেত না।
+7. `search`-এ `node !== null && node.isEnd` : পথ আছে কিন্তু শব্দ শেষ হয় নি, তাহলে সেটা prefix। `startsWith`-এ শুধু প্রথম শর্তই চাই।
+8. `_collect`-এ আগে `if (node.isEnd) words.push(path)` : node নিজেই শব্দ হতে পারে, যেমন "car", যার নিচে "card" ঝুলছে। আগে নিজেকে রাখো, তারপর বাচ্চাদের ঘোরো। এই DFS-ই [tree traversal](../trees/binary-tree-traversal.mdx)-এর ভাই।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+ধরো শব্দের দৈর্ঘ্য L, আর trie-তে মোট শব্দ N।
+
+**insert/search/startsWith: O(L)।** প্রতি অক্ষরে ঠিক একটা Map lookup আর একটা নামা; L টা অক্ষর মানে L টা ধাপ। লক্ষ করো, N কোথাও আসলই না। কোটি শব্দ থাকলেও "care" খুঁজতে ৪ ধাপ। এই কারণেই trie-এর খোঁজ শব্দসংখ্যা-নিরপেক্ষ।
+
+**autocomplete: O(L + S)।** prefix পর্যন্ত নামা L ধাপ, তারপর নিচের পুরো subtree ঘোরা; মিলে যাওয়া শব্দগুলোর মোট অক্ষরসংখ্যা S হলে খরচ সেই অনুপাতে।
+
+**Space: O(মোট অক্ষর)।** সবচেয়ে খারাপ অবস্থায় কোনো শেয়ারিং নেই, প্রতি অক্ষরে একটা node; বাস্তবে prefix শেয়ারে অনেক কমে। তুলনা করো: sorted array-তে startsWith লাগে O(L log N), hash set-এ startsWith করাই সম্ভব না। trie তিনটা query-ই O(L)-এ দেয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. search-এ isEnd চেক ভুলে যাওয়া।**
+`_walk` পথটা পেয়ে যাবে, কিন্তু সেটা শব্দ না prefix? "ca" খুঁজলে পথ আছেই, true ফেরত দিলে মানে বললে "ca" শব্দ। শেষে `&& node.isEnd` না থাকলে search আর startsWith এক হয়ে যায়।
+
+**২. delete-এ শেয়ারড prefix কেটে ফেলা।**
+"card" মুছতে গিয়ে শুধু d মুছলে ঠিক, কিন্তু r পর্যন্ত উঠে গেলে "car" শেষ। count ছাড়া delete লিখলে এই ভুল প্রায় নিশ্চিত। node কাটার আগে জিজ্ঞেস করো, ওর নিচ দিয়ে আর শব্দ যায় কিনা।
+
+**৩. children হিসেবে plain object `{}` ব্যবহার করা।**
+`{}`-এর prototype-এ "constructor", "toString" আগে থেকেই থাকে। কেউ "constructor" insert করলে `node.children["constructor"]` মনে হবে আগেই আছে, গোলমাল পাকাবে। তাই হয় Map, নয়তো `Object.create(null)`।
+
+**৪. autocomplete-এ null চেক না করা।**
+prefix-টাই trie-তে না থাকলে `_walk` দেয় null। সেই null-এর ওপর `_collect` চালালে `node.children` পড়তে গিয়ে crash। আগে চেক করো, তারপরই DFS।
+
+**৫. case আর whitespace normalize না করা।**
+"Cat" insert হলো, তুমি খুঁজলে "cat"। trie বলবে নেই, কারণ C আর c আলাদা অক্ষর। ইউজার-ফেসিং কিছু হলে দুই দিকেই `toLowerCase()` (প্রয়োজনে `trim()`) চালাও, নাহলে ডেটা থাকলেও কেউ পাবে না।
+
+## Animation Spec
+
+> **Animation Spec: Trie Autocomplete**
+>
+> - **দৃশ্য:** trie গাছ root থেকে নিচে; পাশে টাইপ বক্স; নিচে সাজেশন লিস্ট।
+> - **ইনপুট:** আগে কয়েকটা শব্দ insert (বাটনে বাটনে), তারপর prefix টাইপ।
+> - **ধাপ:** insert-এ নতুন node গাছে জন্মায়, শেয়ারড পথ ধূসর থেকে আলোকিত হয়; প্রতি কী-স্ট্রোকে হাঁটার পথ ধাপে ধাপে সবুজ হয়, ভাঙলে লাল; মিলে যাওয়া subtree জ্বলে ওঠে, শব্দগুলো সাজেশনে নামে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; আলাদা "isEnd বন্ধ" টগল, "ca"-কে শব্দ ধরার ভুলটা দেখানোর জন্য।
+> - **লক্ষ্য:** prefix মানে একটাই পথ; সাজেশন মানে ওই পথের নিচের পুরো subtree।
+
+## অনুশীলন
+
+- **সহজ ১:** Implement Trie (LeetCode 208)। হিন্ট: এই পাতার class-টাই প্রায় পুরো উত্তর। না দেখে নিজে আবার লেখো, insert আর search আলাদা করে।
+- **সহজ ২:** Longest Common Prefix (LeetCode 14)। হিন্ট: trie দিয়েও হয়, কিন্তু আগে sorting-এর কল্পে ভাবো। sort করলে প্রথম আর শেষ শব্দের common prefix-ই উত্তর; কেন, সেটা [Why Sorting](../sorting/why-sorting.mdx)-এ।
+- **মাঝারি ১:** Design Add and Search Words (LeetCode 211)। হিন্ট: "." দেখলেই সব child-এ একসাথে DFS, কেউ একজন মিললেই true।
+- **মাঝারি ২:** Replace Words (LeetCode 648)। হিন্ট: dictionary-র root-গুলো trie-তে ঢুকাও; প্রতি শব্দ নিয়ে নামো, প্রথম isEnd পেলেই সেই prefix-ই replacement।
+- **কঠিন:** Word Search II (LeetCode 212)। হিন্ট: ভ্যারিয়েন্ট ১-এর কাঠামোই। অভিধান trie-তে, প্রতি cell থেকে backtracking DFS, trie node না মিললেই prune।
+
+## সারসংক্ষেপ
+
+- Trie = অক্ষরে অক্ষরে নামা গাছ, প্রতি node-এ children ম্যাপ আর isEnd পতাকা।
+- insert, search, startsWith সবাই O(L), শব্দসংখ্যা N-এর সাথে সম্পর্ক নেই।
+- autocomplete = prefix node খোঁজো + নিচে DFS।
+- delete-এ ref-count ছাড়া নামলে শেয়ারড prefix নষ্ট করবেই।
+- children রাখার দুই পথ: Map (সাধারণ কাজ) বনাম fixed array (a-z নিশ্চিত, গতি চাই)।

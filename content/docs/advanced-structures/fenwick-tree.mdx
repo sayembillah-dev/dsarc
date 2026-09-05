@@ -1,0 +1,244 @@
+---
+title: "Fenwick Tree (BIT): দুই লাইনের জাদুতে prefix sum"
+description: segment tree-এর চার ভাগের এক ভাগ মেমরি আর দশ লাইনের কোডে একই গতি; শর্ত একটাই, অপারেশনটা prefix-friendly হতে হবে। পুরো dry run, তিনটা ভ্যারিয়েন্ট, আর তিন ভাইয়ের সৎ তুলনা।
+---
+
+## কী শিখব
+
+- Fenwick tree কীভাবে প্রতিটা slot-এর দায়িত্ব তার index-এর শেষ set bit দিয়ে ঠিক করে
+- `i & -i` কৌশলটা আসলে কী বের করে, আর query/update-এ লাফ দুই দিকে কেন
+- সেই একই উদাহরণে ([2, 4, 1, 3, 5]) [segment tree](./segment-tree.mdx)-এর উত্তরের সাথে ঘরে ঘরে মিল
+- তিনটা ভ্যারিয়েন্ট: inversion গোনা, range-update point-query ট্রিক, 2D Fenwick-এর ঝলক
+- Fenwick বনাম segment tree বনাম prefix sum: কে কী পারে, কে কী পারে না
+
+## ধারণা
+
+[Segment tree](./segment-tree.mdx) পড়ে এসেছ তো? ওখানে দেখেছ, range query আর point update দুটোই O(log n)-এ পাওয়া যায়, দামে 4n মেমরি আর চল্লিশ লাইনের recursive কোড। এবার ধরো, segment tree-এর এক বুড়ো ভাই এসে বলল: "অপারেশনটা যদি prefix-friendly হয়, মানে range sum = দুটো prefix sum-এর বিয়োগ, তাহলে একই গতি দেবো চার ভাগের এক ভাগ মেমরিতে, কোড লাগবে দশ লাইন।" বিশ্বাস হচ্ছে না, তাই না? এই ভাইয়ের নাম **Fenwick tree**, অন্য নাম Binary Indexed Tree বা BIT।
+
+রহস্যটা একটাই জায়গায়: **প্রতিটা slot তার index-এর শেষ set bit যত, ততগুলো element-এর দায়িত্বে থাকে।** শেষ set bit বের করার এক লাইনের কায়দা `i & -i`, যুক্তিটা [bit manipulation](../problem-solving/bit-manipulation.mdx) পাতায় দেখেছ। যেমন index 4-এর binary 100, শেষ set bit 4, তাই slot 4 দায়িত্বে থাকে 4টা element-এর: [1, 4]। আবার index 3-এর binary 011, শেষ set bit 1, তাই slot 3 দায়িত্বে মাত্র নিজের: [3, 3]।
+
+এই দায়িত্ব-বণ্টনের ফল কী? যেকোনো prefix [1, i]-কে সর্বোচ্চ log n-টা টুকরোয় ভাগ করা যায়, প্রতিটা টুকরোর যোগফল কোনো না কোনো slot-এ জমাই আছে। আর একটা element বদলালে শুধু যেসব slot-এর দায়িত্বে সে পড়ে, তাদের ঠিক করলেই চলে। [Prefix sum](../problem-solving/prefix-sum.mdx)-এর মতোই সব হিসাব, কিন্তু টুকরো টুকরো, তাই update-ও সস্তা।
+
+## ধাপে ধাপে ড্রাই রান
+
+Segment tree পাতার সেই একই দোকান: [2, 4, 1, 3, 5] (মঙ্গল থেকে শনি)। ভেতরে Fenwick সব 1-indexed, তাই arr-এর index 0..4 বসবে slot 1..5-এ।
+
+### কার দায়িত্ব কতটুকু
+
+| slot i | i-এর binary | i & -i | দায়িত্বে range | tree[i]-এর মান |
+|--------|-------------|--------|-----------------|----------------|
+| 1 | 0001 | 1 | [1,1] | 2 |
+| 2 | 0010 | 2 | [1,2] | 6 |
+| 3 | 0011 | 1 | [3,3] | 1 |
+| 4 | 0100 | 4 | [1,4] | 10 |
+| 5 | 0101 | 1 | [5,5] | 5 |
+
+চোখে দেখলে আরও পরিষ্কার:
+
+```
+slot:       1     2     3     4     5
+arr:        2     4     1     3     5
+
+tree[1]= 2  [1]
+tree[2]= 6  [1----2]
+tree[3]= 1              [3]
+tree[4]=10  [1----------------4]
+tree[5]= 5                          [5]
+```
+
+Tree ভরা হয় প্রতিটা element-কে add করে করে (যে কায়দাটা একটু পরে update walk-এ দেখবে)। ফলে যে tree পেলাম: [_, 2, 6, 1, 10, 5], প্রথম ঘরটা চিরকাল ফাঁকা।
+
+### prefixSum(2): প্রথম তিন দিনের যোগফল
+
+arr-এর index 2 মানে ভেতরে slot 3। এবার লাফের খেলা: প্রতি ধাপে `i -= i & -i`, মানে শেষ set bit-টা উধাও।
+
+| ধাপ | i | binary | i & -i | সংগ্রহ | পরের i |
+|-----|---|--------|--------|--------|--------|
+| 1 | 3 | 0011 | 1 | tree[3] = 1 | 3 - 1 = 2 |
+| 2 | 2 | 0010 | 2 | tree[2] = 6 | 2 - 2 = 0 |
+| 3 | 0 | - | - | i = 0, থামো | - |
+
+মোট 1 + 6 = **7** = 2 + 4 + 1। খেয়াল করো: slot 3 দিলো [3,3]-এর টুকরো, slot 2 দিলো [1,2]-এর টুকরো, দুটো মিলে পুরো [1,3]। তিন element-এর যোগফল মাত্র দুই লাফে।
+
+### rangeSum(1, 3): segment tree-র উত্তর মেলাও
+
+rangeSum(l, r) = prefixSum(r) - prefixSum(l - 1), তাই ভেতরে:
+
+- prefixSum(3): slot 4 থেকে শুরু, tree[4] = 10, পরের i = 4 - 4 = 0, থামো। উত্তর 10।
+- prefixSum(0): slot 1 থেকে, tree[1] = 2, পরের i = 0, থামো। উত্তর 2।
+
+10 - 2 = **8**। Segment tree পাতায় query(1, 3) তিনটা node মিলিয়ে 8 দিয়েছিল, এখানে দুটো prefix-এর বিয়োগে সেই হুবহু 8। একই দোকান, একই হিসাব, ভিন্ন কারিগর।
+
+### update: বৃহস্পতিবার 1 থেকে 10
+
+arr-এর index 2, মানে ভেতরে slot 3। পার্থক্য delta = 10 - 1 = +9 (Fenwick-এ সবসময় delta-ই দেওয়া হয়, মান নয়)। এবার লাফ উল্টোদিকে: `i += i & -i`, মানে ওপরে, যে সব slot-এর দায়িত্বে index 2 পড়ে, তাদের দিকে।
+
+| ধাপ | i | binary | i & -i | tree[i] | পরের i |
+|-----|---|--------|--------|---------|--------|
+| 1 | 3 | 0011 | 1 | 1 + 9 = 10 | 3 + 1 = 4 |
+| 2 | 4 | 0100 | 4 | 10 + 9 = 19 | 4 + 4 = 8 |
+| 3 | 8 | - | - | 8 > 5, থামো | - |
+
+মাত্র দুটো slot বদলাল, segment tree-এ তিনটা node বদলেছিল। আর এবার rangeSum(1, 3) = 19 - 2 = **17**, segment tree-র 17-এর সাথে হুবহু মিল। দুই কারিগরের হিসাব কখনো মিস করে না, শুধু পথ ভিন্ন।
+
+## কোড: পুরো implementation
+
+পুরো Fenwick class, সাথে segment tree পাতার হুবহু একই demo, যাতে তুলনা করা যায়:
+
+```js
+class Fenwick {
+  constructor(arr) {
+    this.n = arr.length;
+    this.tree = new Array(this.n + 1).fill(0); // slot 0 পরিত্যক্ত, 1..n চলবে
+    for (let i = 0; i < this.n; i++) this.add(i, arr[i]);
+  }
+
+  add(idx, delta) {                            // arr[idx]-এ delta যোগ (idx 0-indexed)
+    for (let i = idx + 1; i <= this.n; i += i & -i) {
+      this.tree[i] += delta;
+    }
+  }
+
+  prefixSum(idx) {                             // arr[0] + ... + arr[idx] (idx 0-indexed)
+    let sum = 0;
+    for (let i = idx + 1; i > 0; i -= i & -i) {
+      sum += this.tree[i];
+    }
+    return sum;
+  }
+
+  rangeSum(l, r) {                             // arr[l] + ... + arr[r]
+    return this.prefixSum(r) - this.prefixSum(l - 1);
+  }
+}
+
+// ডেমো: সেই একই দোকান, একই প্রশ্ন
+const fw = new Fenwick([2, 4, 1, 3, 5]);
+console.log(fw.rangeSum(1, 3)); // 8  (segment tree-ও 8 দিয়েছিল)
+console.log(fw.rangeSum(0, 4)); // 15 (পুরো সপ্তাহ)
+console.log(fw.prefixSum(2));   // 7  (মঙ্গল + বুধ + বৃহস্পতি)
+
+fw.add(2, 9);                   // বৃহস্পতিবার 1 থেকে 10: পার্থক্য +9
+console.log(fw.rangeSum(1, 3)); // 17 (আবারও মিল)
+console.log(fw.rangeSum(0, 4)); // 24
+```
+
+গোটা কোডটাই কত, দশ লাইন? Segment tree-র চল্লিশ লাইনের বিপরীতে এটাই Fenwick-এর আসল জাদু।
+
+## ভ্যারিয়েন্ট ১: inversion গোনা (compression + Fenwick)
+
+Array [2, 4, 1, 3, 5]-এ কয়টা inversion, মানে কত জোড়ায় আগেরটা বড়? চাবিকাঠি: ডান থেকে বামে এসো, প্রতিটা মান দেখার আগে জিজ্ঞেস করো "এতক্ষণে আমার চেয়ে ছোট কয়টা দেখেছ", আর Fenwick-এ গুনে রাখো কে কে এসেছে। মানগুলো বড় হলে আগে ছোট সংখ্যায় চাপিয়ে নাও (coordinate compression):
+
+```js
+function countInversions(arr) {
+  const sorted = [...new Set(arr)].sort((a, b) => a - b);
+  const rank = new Map(sorted.map((v, i) => [v, i])); // মান → তার ক্রম
+  const bit = new Fenwick(new Array(sorted.length).fill(0));
+  let inv = 0;
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const r = rank.get(arr[i]);
+    inv += bit.prefixSum(r - 1);   // ডানদিকে আমার চেয়ে ছোট কয়টা
+    bit.add(r, 1);                 // আমাকে দেখা গেল, জমিয়ে রাখো
+  }
+  return inv;
+}
+
+console.log(countInversions([2, 4, 1, 3, 5])); // 3: (2,1), (4,1), (4,3)
+```
+
+O(n log n)-এ সেরা গোনা। এই একই কাঠামো LC 315 আর 493-এ ফিরে ফিরে আসবে, অনুশীলনে আছে।
+
+## ভ্যারিয়েন্ট ২: range-update point-query ট্রিক
+
+ভূমিকা উল্টে দাও: এবার পুরো range-এ update লাগে, কিন্তু query একটা index-এ। কৌশল: [l, r]-এ +v মানে add(l, +v) আর add(r + 1, -v), তারপর i-এর আসল মান = prefixSum(i):
+
+```js
+const rq = new Fenwick([0, 0, 0, 0, 0]);
+rq.add(1, 5);   // বাম প্রান্তে +5
+rq.add(4, -5);  // range-এর ঠিক পরে -5, ফাঁদ কেটে দাও
+console.log(rq.prefixSum(0)); // 0: বাইরে
+console.log(rq.prefixSum(2)); // 5: [1,3]-এর ভেতরে
+console.log(rq.prefixSum(4)); // 0: আবার বাইরে
+```
+
+কেন কাজ করে? Prefix-এর জাদু: 2-এ পৌঁছানো পর্যন্ত শুধু +5-টা জমেছে, 4-এ পৌঁছাতে +5 আর -5 কাটাকাটি। দুটো update-ই O(log n), query O(log n)।
+
+## ভ্যারিয়েন্ট ৩: 2D Fenwick (ঝলক)
+
+Grid-এ submatrix-এর যোগফল আর cell update লাগলে? একই ধারণা দুই দিকে: tree[x][y], লাফ দুই দিকেই `i & -i` দিয়ে। কোড বড় না, কিন্তু চোখের সামনে ভাসা দরকার, তাই এখানে শুধু নামটা রাখলাম। LC 308-এ গেলে সেদিন ফিরে এসো।
+
+## কোড ব্রেকডাউন: মূল Fenwick, লাইনে লাইনে
+
+1. `this.tree = new Array(this.n + 1)` : ভেতরের হিসাব 1-indexed। কেন? 0 দিয়ে শুরু করলে `i & -i` = 0, লুপ আর থামে না। slot 0-কে শুরুতেই পরিত্যক্ত ঘোষণা করাটাই নিরাপদ।
+2. constructor-এ n-বার add : গাছ ভরার সাদাসিধে উপায়, খরচ O(n log n), যা প্রায় সব ক্ষেত্রেই যথেষ্ট।
+3. `for (let i = idx + 1; ...)` : বাইরের API 0-indexed, ভেতরে 1-indexed। ব্যবহারকারীকে Fenwick-এর index-নিয়ম মুখস্থ করাতে চাই না, তাই class-টাই রূপান্তর করে দেয়।
+4. `i += i & -i` : শেষ set bit-টা i-তে যোগ হলে সেটা carry হয়ে উপরে ওঠে, মানে পরের slot-টা একটা বড় দায়িত্বের। এই লুপ ঠিক যেসব slot-এর দায়িত্বে idx পড়ে, তাদেরই ছোঁয়, বেশি কাউকে নয়।
+5. `i -= i & -i` : শেষ set bit উধাও হলে i পিছিয়ে যায় আগের টুকরোর শুরুতে। প্রতি লাফে একটা পুরো টুকরোর জমানো যোগফল সংগ্রহ হয়।
+6. `return this.prefixSum(r) - this.prefixSum(l - 1)` : range = বড় prefix - ছোট prefix। এই বিয়োগটাই Fenwick-এর জন্মশর্ত: অপারেশনটাকে "বিয়োগযোগ্য" হতেই হবে।
+7. `prefixSum(l - 1)`-এ l = 0 হলে : prefixSum(-1) ডাকা হয়, i = 0 দিয়ে শুরু, লুপে ঢোকেই না, 0 ফেরত। edge case-টা নিজে থেকেই সামলানো, কোনো if লাগে না।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**query: O(log n)।** প্রতি লাফে `i -= i & -i` i-এর শেষ set bit-টা উড়িয়ে দেয়, মানে binary-তে অন্তত একটা 1 কমে। n-এর binary-তে 1 থাকে সর্বোচ্চ log2(n) + 1-টা, তাই লাফও সর্বোচ্চ তত। আমাদের উদাহরণে 3 → 2 → 0, মাত্র দুই লাফ।
+
+**update: O(log n)।** প্রতি লাফে `i += i & -i` শেষ set bit-কে অন্তত দ্বিগুণ করে (1 যোগ হয় সেই bit-এ, carry উপরে ওঠে)। 1 থেকে শুরু করে n ছাড়াতে দ্বিগুণ হতে হতে সর্বোচ্চ log n-টা লাফ লাগে। উদাহরণে 3 → 4 → 8, দুই লাফেই শেষ।
+
+**space: O(n), হুবহু n + 1।** Segment tree-এর 4n-এর চার ভাগের এক ভাগ। Recursion stack-ও নেই, কারণ সবকিছু লুপে।
+
+**build: O(n log n)** এই সাদাসিধে উপায়ে, n-টা add করে। O(n)-এর চতুর build-ও আছে (প্রতি slot-এ তার range-এর আগের slot-গুলো মিলিয়ে এক পাসে), কিন্তু বেশিরভাগ প্রতিযোগিতায় n log n-ই যথেষ্ট।
+
+তিন ভাইয়ের সৎ তুলনা:
+
+| | Prefix sum | Fenwick | Segment tree |
+|---|---|---|---|
+| জায়গা | n | n + 1 | 4n |
+| কোডের দৈর্ঘ্য | 5 লাইন | 10 লাইন | 40 লাইন |
+| range sum query | O(1) | O(log n) | O(log n) |
+| point update | O(n) | O(log n) | O(log n) |
+| range min/max | পারে না | পারে না | পারে |
+| কখন নেবে | update-ই নেই | sum-family, update আছে | min/max/gcd, lazy দরকার |
+
+সারকথা: Fenwick যা পারে, [segment tree](./segment-tree.mdx) তাও পারে; কিন্তু segment tree যা পারে (min/max, lazy), Fenwick তার অনেকটাই পারে না। তাহলে Fenwick কেন? কারণ তার ছোট্ট জগতে সে সবচেয়ে হালকা, সবচেয়ে কম কোড, সবচেয়ে কম ভুলের জায়গা।
+
+## সাধারণ ভুল আর edge case
+
+**১. 1-indexing ভুলে tree[0] ছোঁয়া।**
+Fenwick-এর সব জাদু 1 থেকে শুরু। ভুল করে 0-indexed i দিয়ে লুপ চালালে `0 & -0` = 0, i আর কখনো বাড়ে না, প্রোগ্রাম অসীম লুপে ঝুলে যাবে। এই পাতার class নিজেই রূপান্তর করে, কিন্তু নিজে লিখলে এই ভুলই সবার আগে হয়।
+
+**২. add-এ delta-র জায়গায় নতুন মান পাঠানো।**
+`add(2, 10)` মানে index 2-এ **আরও** 10 যোগ হলো, মান 10 হলো না। মান বসাতে চাইলে পুরনো মান নিজে জমিয়ে রেখে delta = নতুন - পুরনো বের করে পাঠাও (LC 307-এ ঠিক এটাই করতে হবে)। Segment tree-এর `set` যা সহজেই করে, Fenwick-এর এটাই ছোট্ট দাম।
+
+**৩. range min/max করতে গিয়ে Fenwick ডাকা।**
+rangeSum কাজ করে কারণ যোগফল বিয়োগযোগ্য। কিন্তু min([1,4]) থেকে min([1,0]) বাদ দিয়ে min([2,4]) পাওয়ার কোনো উপায় নেই। min/max/gcd টাইপ query দেখলেই সোজা [segment tree](./segment-tree.mdx)-এ যাও; Fenwick দিয়ে জোরাজুরি করতে গেলে ভুল উত্তরও মিলবে না, সরাসরি ভুল রাস্তা।
+
+**৪. compression ভুলে inversion গোনায় বসে যাওয়া।**
+মান যদি 10^9 পর্যন্ত হয়, Fenwick-এর size মানের ওপর নয়, distinct মানের সংখ্যার ওপর রাখতে হবে। compression ছাড়া বসলে মেমরি ফেটে যাবে, আর sorted + rank map-টাই সেই চাবিকাঠি।
+
+**৫. rangeSum-এ off-by-one।**
+rangeSum(l, r) = prefixSum(r) - prefixSum(l - 1), এখানে l - 1, l নয়। ভুলে prefixSum(l) বাদ দিলে arr[l]-টা গোনাই হলো না, উত্তর এক ঘর কমে গেল। এই ভুল l = 0-এ ধরা পড়ে না, কারণ তখন দুটোই এক; তাই নতুন Fenwick কোড প্রথমে l = 1 দিয়ে পরীক্ষা করো।
+
+## Animation Spec
+
+> **Animation Spec: Lowbit Ladder**
+>
+> - **দৃশ্য:** নিচে মূল array, উপরে tree array; প্রতিটা slot-এর নিচে তার দায়িত্ব-range রঙিন ব্র্যাকেটে; পাশে i-এর binary হাল্কা করে দেখানো।
+> - **ইনপুট:** array (preset [2,4,1,3,5]); prefixSum index; update index আর delta।
+> - **ধাপ:** query-তে নিচের লাফগুলো (i -= i & -i): যে slot থেকে সংগ্রহ হচ্ছে সবুজে জ্বলে ওঠে, তার ব্র্যাকেট array-র ওপর highlight হয়; update-এ ওপরের লাফ (i += i & -i) কমলায়, বদলানো মান লিখে দেখায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; binary দেখাও/লুকাও টগল; পাশাপাশি segment tree-এর node-ছোঁয়া গোনার তুলনা মোড।
+> - **লক্ষ্য:** শেষ set bit-ই দায়িত্বের মাপ; লাফ মানে log n-টা ধাপ, তাই এত কম কোডে এত গতি।
+
+## অনুশীলন
+
+- **সহজ ১:** Running Sum of 1d Array (LeetCode 1480)। হিন্ট: খাঁটি [prefix sum](../problem-solving/prefix-sum.mdx), Fenwick লাগবেই না; লক্ষ্য হলো prefix-চিন্তাটা গরম করা, কারণ Fenwick-এর সব কিছু prefix-এর টুকরো।
+- **সহজ ২:** Range Sum Query - Mutable (LeetCode 307)। হিন্ট: এই পাতার Fenwick class হুবহু চলবে; শুধু update(index, val)-এ val নয়, delta = val - arr[index] পাঠাও, তাই মূল array-টা আলাদা জমিয়ে রাখো। [Segment tree](./segment-tree.mdx) দিয়েও একই সমস্যা করেছিলে, সময় আর মেমরির পার্থক্য লক্ষ্য করো।
+- **মাঝারি ১:** Global and Local Inversions (LeetCode 775)। হিন্ট: local inversion সবাইই global; পার্থক্য তখনই, যখন কোনো "দূরের" inversion থাকে। Fenwick দিয়ে global গুনো, local তো এক লুপেই গোনা যায়, তারপর তুলনা।
+- **মাঝারি ২:** Count of Smaller Numbers After Self (LeetCode 315)। হিন্ট: উপরের countInversions প্রায় হুবহু, শুধু উত্তরটা প্রতিটা index-এর জন্য আলাদা রাখো; compression আর ডান-থেকে-বাম, এই দুটোই মূল কাঠামো।
+- **কঠিন:** Reverse Pairs (LeetCode 493)। হিন্ট: শর্ত a[i] > 2 × a[j], তাই শুধু a[j] নয়, 2 × a[j]-ও compression-এ ঢোকাতে হবে। কোড গুলিয়ে গেলে [merge sort](../sorting/merge-sort.mdx)-এর merge ধাপেই এই গোনা হয়ে যায়, সেই রাস্তাও আছে।
+
+## সারসংক্ষেপ
+
+- Fenwick = একটা সাধা array; প্রতিটা slot তার index-এর শেষ set bit যত, ততগুলো element-এর যোগফল ধরে।
+- `i & -i` দিয়ে লাফ: query-তে নিচে (টুকরো সংগ্রহ), update-এ উপরে (দায়িত্ব জানানো); দুই দিকেই সর্বোচ্চ log n লাফ।
+- মেমরি n, কোড দশ লাইন; [segment tree](./segment-tree.mdx)-এর চার ভাগের এক ভাগ জায়গায় sum-family-র একই গতি।
+- কিন্তু শুধু বিয়োগযোগ্য অপারেশন: sum, xor, count চলে; min/max চলে না, সেখানে segment tree-ই রাজা।
+- মনে রাখো তিনটা কথা: ভেতরে 1-indexed, update-এ delta (মান নয়), আর tree[0] চিরকাল পরিত্যক্ত।
