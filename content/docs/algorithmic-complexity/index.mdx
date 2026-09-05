@@ -1,0 +1,24 @@
+---
+title: Algorithmic Complexity
+description: দুটো algorithm-এর মধ্যে ভালোটা কীভাবে চেনো, Time vs Space Complexity, Big-O notation আর সব গুরুত্বপূর্ণ runtime।
+---
+
+ধরো, একই কাজের দুটো code তোমার সামনে। দুটোই ঠিকঠাক চলে। এবার বলো তো, কোনটা ভালো?
+
+উত্তরটা লুকানো আছে input বড় হলে code কেমন behave করে, সেটার মধ্যে। এই "কেমন behave করে" মাপার নামই complexity analysis। Section-টা DSA-র পুরো ভিত্তি, তাই এখানে একটু বেশি সময় দিলে পরের সব chapter সহজ লাগবে।
+
+**Section Roadmap:** আগে complexity কেন লাগে, তারপর Time vs Space, তারপর কীভাবে হিসাব করব, তারপর Asymptotic Notation (Big-O, θ, Ω), আর শেষে Common Runtimes (Constant থেকে Factorial)।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Complexity কেন লাগে?](./why-complexity.mdx): কেন seconds দিয়ে মাপা চলে না, আর Big-O আসলে কী
+2. [Time vs Space Complexity](./time-vs-space.mdx): সময় নাকি মেমরি, দুই ধরনের খরচ আর তাদের trade-off
+3. [কীভাবে Complexity হিসাব করব](./how-to-calculate.mdx): কোড দেখেই Big-O বলে দেওয়ার ৩টা নিয়ম
+4. [Asymptotic Notation](./asymptotic-notation.mdx): Big-O, θ, Ω, তিনটার পার্থক্য কোথায়
+5. [Common Runtimes](./common-runtimes.mdx): O(1) থেকে O(n!) পর্যন্ত সব দরকারি runtime
+
+## সারাংশ
+
+সহজ কথায়, complexity মানে input বড় হলে কাজ কত দ্রুত বাড়ে, আর এটা হার্ডওয়্যারের উপর নির্ভর করে না। Time আর Space-এর মধ্যে trade-off থাকে। হিসাবের নিয়ম: ধ্রুবক বাদ, বড় term রাখো, loop গোনো। সবচেয়ে বেশি ব্যবহার হয় Big-O (worst case)। আর runtime-এর ক্রম: O(1) থেকে O(n!) পর্যন্ত।
+
+**পরবর্তী:** [Arrays & Strings](/docs/arrays-strings)।
