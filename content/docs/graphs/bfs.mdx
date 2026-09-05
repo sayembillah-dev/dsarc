@@ -1,87 +1,300 @@
 ---
 title: "Breadth First Search (BFS): স্তরে স্তরে ঘোরা"
-description: queue দিয়ে স্তরে স্তরে ছড়িয়ে খোঁজা; unweighted graph-এ shortest path।
+description: queue দিয়ে স্তরে স্তরে ছড়িয়ে খোঁজা; unweighted graph-এ shortest path। পুরো dry run, তিনটা ভ্যারিয়েন্ট, complexity-এর হিসাব, আর সবচেয়ে বেশি হওয়া ভুলটা।
 ---
 
 ## কী শিখব
 
-- স্তরে স্তরে ঘোরা; unweighted shortest path
+- BFS কীভাবে queue দিয়ে graph ছড়িয়ে ঘোরে, স্তরে স্তরে
+- কেন unweighted graph-এ shortest path-এর জন্য BFS-ই সেরা
+- হাতে হাতে একটা পুরো dry run: প্রতি ধাপে queue আর visited কেমন দেখায়
+- তিনটা জরুরি ভ্যারিয়েন্ট: দূরত্ব বের করা, পথ reconstruction, level-wise print
+- Complexity O(V + E) কেন, আর visited নিয়ে সেই বিখ্যাত ভুলটা কী
 
 ## ধারণা
 
-ভাবো তো, পুকুরে পাথর ফেললে ঢেউ কীভাবে ছড়ায়। কেন্দ্র থেকে এক চক্কর, তারপর আরেক চক্কর। BFS-ও graph-এ ঠিক এমনই ছড়ায়: শুরুর node থেকে আগে ১ ধাপ দূরের সবাই, তারপর ২ ধাপ দূরের সবাই। কাজটা হয় **queue** দিয়ে। আর যেহেতু কাছের সবাইকে আগে দেখে ফেলে, unweighted graph-এ BFS-ই **সবচেয়ে কম edge-এর পথ** (shortest path) দিয়ে দেয়। cycle-এ আটকে না যেতে সাথে একটা **visited** set রাখবে।
+ভাবো তো, পুকুরে পাথর ফেললে ঢেউ কীভাবে ছড়ায়। কেন্দ্র থেকে এক চক্কর, তারপর আরেক চক্কর, তারপর আরেক। যে কাছে, সে আগে পায়; যে দূরে, সে পরে। BFS-ও graph-এ ঠিক এমনই ছড়ায়: শুরুর node থেকে আগে ১ ধাপ দূরের সবাই, তারপর ২ ধাপ দূরের সবাই, তারপর ৩ ধাপের।
 
-## কোড উদাহরণ
+কাজটা হয় **queue** দিয়ে। [Queue](../stacks-queues/queue-fifo.mdx)-এর নিয়মটা মনে করিয়ে দাও: যে আগে ঢুকে, সে আগে বের হয় (FIFO)। তাই কাছের node-গুলো আগে queue-তে ঢুকে, আগেই process হয়। দূরেরগুলো অপেক্ষায় থাকে। এটাই ঢেউয়ের সেই স্তরে স্তরে ছড়ানো।
+
+আর যেহেতু কাছের সবাইকে আগে দেখে ফেলে, unweighted graph-এ BFS-ই **সবচেয়ে কম edge-এর পথ** (shortest path) দিয়ে দেয়। এই একটা গুণের জন্যই BFS এত জায়গায় জিতে যায়।
+
+তিনটা জিনিস লাগবে:
+
+1. একটা **queue**: এখন কাকে কাকে দেখার পালা আছে
+2. একটা **visited** set: কাকে আগেই দেখে ফেলেছি (নাহলে cycle-এ আটকে অসীম লুপ)
+3. Graph-টা নিজে: adjacency list-এ রাখা (দেখো [Graph Representation](./graph-representation.mdx))
+
+একটা প্রশ্ন মাথায় রাখো: একই কাজ যদি queue-র বদলে stack দিয়ে করতাম? তাহলে কাছের সবাইকে আগে না দেখে একটা পথ ধরে গভীরে চলে যেতাম। সেটাই [DFS](./dfs.mdx)। দুটোর পার্থক্য শুধু ডেটা স্ট্রাকচারটা, ফলাফল আকাশ-পাতাল।
+
+## ধাপে ধাপে: একটা পুরো dry run
+
+কোডে যাওয়ার আগে হাতে হাতে একবার চালিয়ে দেখি। Graph-টা ধরো:
+
+```
+        A
+       / \
+      B   C
+      |   |
+      D   E
+       \ /
+        F
+```
+
+Edge-গুলো: A-B, A-C, B-D, C-E, D-F, E-F। শুরু A থেকে।
+
+নিয়মটা মনে রাখো: **node-কে queue-তে ঢোকানোর মুহূর্তেই visited বলে দাগ দেবো**, বের করার সময় নয়। এই সূক্ষ্ম ব্যাপারটা একটু পরে বড় হয়ে ফিরে আসবে।
+
+| ধাপ | বের হলো | নতুন ঢুকল | queue (সামনে → পেছনে) | visited-এ নতুন |
+|-----|---------|-----------|----------------------|----------------|
+| শুরু | - | A | [A] | A |
+| 1 | A | B, C | [B, C] | B, C |
+| 2 | B | D | [C, D] | D |
+| 3 | C | E | [D, E] | E |
+| 4 | D | F | [E, F] | F |
+| 5 | E | (F আগেই visited) | [F] | - |
+| 6 | F | কেউ না, queue খালি | [] | - |
+
+Output: **A, B, C, D, E, F**।
+
+খেয়াল করো ধাপ ৫-এ। E থেকে F-এর edge আছে ঠিকই, কিন্তু F ততক্ষণে D-এর কাছ থেকে queue-তে ঢুকে visited হয়ে গেছে। তাই আর ঢোকেনি। visited-এর আসল কাজটা এখানেই।
+
+আরেকটা জিনিস চোখে পড়ল? ধাপে ধাপে দূরত্বটাও দেখা যাচ্ছে: A দূরত্ব ০, B আর C দূরত্ব ১, D আর E দূরত্ব ২, F দূরত্ব ৩। BFS নিজে থেকেই স্তর বেঁটে দিচ্ছে। এই ধারণাটাই পরের ভ্যারিয়েন্টগুলোর ভিত্তি।
+
+## কোড: পুরো implementation
+
+Graph class-টা আগের পাতারই, adjacency list:
 
 ```js
-// আগের পাতার Graph class (adjacency list)
 class Graph {
   constructor() { this.adj = new Map(); }
-  addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
-  addEdge(u, v) {
-    this.addVertex(u); this.addVertex(v);
+
+  addVertex(v) {
+    if (!this.adj.has(v)) this.adj.set(v, []);
+  }
+
+  addEdge(u, v) {                 // undirected: দুই দিকেই
+    this.addVertex(u);
+    this.addVertex(v);
     this.adj.get(u).push(v);
     this.adj.get(v).push(u);
   }
+
   neighbors(v) { return this.adj.get(v) || []; }
 }
 
 const g = new Graph();
 g.addEdge("A", "B"); g.addEdge("A", "C");
-g.addEdge("B", "D"); g.addEdge("C", "D");
+g.addEdge("B", "D"); g.addEdge("C", "E");
+g.addEdge("D", "F"); g.addEdge("E", "F");
+```
 
+এবার আসল BFS:
+
+```js
 function bfs(graph, start) {
-  const visited = new Set([start]);
-  const queue = [start], order = [];
-  while (queue.length) {
-    const node = queue.shift();          // FIFO
+  const visited = new Set([start]);   // শুরুটাকেই দাগ দিয়ে দিলাম
+  const queue = [start];
+  let head = 0;                       // shift() না, index সরিয়ে dequeue
+  const order = [];
+
+  while (head < queue.length) {
+    const node = queue[head++];       // dequeue
     order.push(node);
+
     for (const next of graph.neighbors(node)) {
-      if (!visited.has(next)) {          // আগে দেখিনি?
-        visited.add(next);
-        queue.push(next);                // পেছনে যোগ
+      if (!visited.has(next)) {       // আগে দেখিনি?
+        visited.add(next);            // ঢোকানোর সাথে সাথেই দাগ
+        queue.push(next);             // পেছনে দাঁড় করাও
       }
     }
   }
   return order;
 }
-console.log(bfs(g, "A")); // ['A','B','C','D']
 
-// unweighted shortest path (কত ধাপ দূরে)
-function shortestPathBFS(graph, start, target) {
-  const visited = new Set([start]);
-  const queue = [[start, 0]];            // [node, distance]
-  while (queue.length) {
-    const [node, dist] = queue.shift();
-    if (node === target) return dist;
-    for (const next of graph.neighbors(node)) {
-      if (!visited.has(next)) { visited.add(next); queue.push([next, dist + 1]); }
-    }
-  }
-  return -1;
-}
-console.log(shortestPathBFS(g, "A", "D")); // 2
+console.log(bfs(g, "A")); // ['A', 'B', 'C', 'D', 'E', 'F']
 ```
 
-## কোড ব্রেকডাউন
+`shift()` দিয়েও লেখা যায়, চোখে সুন্দরও লাগে। কিন্তু JavaScript-এ `array.shift()` প্রতিবার বাকি সব উপাদান এক ঘর সরায়, মানে প্রতি dequeue-তে O(n)। বড় graph-এ সেটাই bottleneck হয়ে যায়। তাই `head` index সামনে সরাচ্ছি, dequeue হচ্ছে O(1)-এ।
 
-- **queue**-টাই আসল জাদু। যাকে আগে ঢুকিয়েছি, সে আগে বের হবে (FIFO), তাই স্তর ধরে ধরে এগোয়।
-- **visited** ছাড়া cycle-এ ঘুরতেই থাকবে। graph-এ এটা অপরিহার্য।
-- প্রতিটা node-এর সাথে দূরত্ব রেখে দিলে হাতে হাতে shortest path-ও পেয়ে যাবে।
+## ভ্যারিয়েন্ট ১: দূরত্ব বের করা (shortest path)
 
-## Complexity
+যেহেতু BFS স্তরে স্তরে যায়, কোনো node যখনই প্রথম visited হয়, সেই মুহূর্তেই তার shortest দূরত্ব নিশ্চিত। node-এর সাথে দূরত্বটা জমিয়ে রাখলেই চলবে:
 
-- O(V + E) time; O(V) space।
+```js
+function shortestDistance(graph, start, target) {
+  const visited = new Set([start]);
+  const queue = [[start, 0]];         // [node, start থেকে দূরত্ব]
+  let head = 0;
+
+  while (head < queue.length) {
+    const [node, dist] = queue[head++];
+
+    if (node === target) return dist; // প্রথমবার পেলেই সেটাই shortest
+
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        queue.push([next, dist + 1]); // এক স্তর নিচে, দূরত্ব + 1
+      }
+    }
+  }
+  return -1;                          // পৌঁছানোই যায় না (disconnected)
+}
+
+console.log(shortestDistance(g, "A", "F")); // 3
+```
+
+## ভ্যারিয়েন্ট ২: পথটা reconstruction করা
+
+দূরত্ব তো পেলাম, কিন্তু পথটা কোনটা? কে কার আগে এসেছিল, এই তথ্যটা রাখলেই শেষ থেকে উল্টো হেঁটে পথ বানানো যায়। এরকম map-কে বলে **parent map**:
+
+```js
+function shortestPath(graph, start, target) {
+  const visited = new Set([start]);
+  const parent = new Map([[start, null]]); // কে কার parent
+  const queue = [start];
+  let head = 0;
+
+  while (head < queue.length) {
+    const node = queue[head++];
+
+    if (node === target) break;       // পেয়ে গেছি, আর ঘোরা দরকার নেই
+
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        parent.set(next, node);       // next-এ এসেছি node থেকে
+        queue.push(next);
+      }
+    }
+  }
+
+  if (!parent.has(target)) return null;   // পথই নেই
+
+  const path = [];
+  for (let cur = target; cur !== null; cur = parent.get(cur)) {
+    path.push(cur);                   // শেষ থেকে উল্টো হাঁটা
+  }
+  return path.reverse();
+}
+
+console.log(shortestPath(g, "A", "F")); // ['A', 'B', 'D', 'F']
+```
+
+খেয়াল করো, পথটা এসেছে A → B → D → F, A → C → E → F নয়। দুটোই ঠিক, দুটোই ৩ ধাপের। কোনটা আসবে তা ঠিক হয় neighbor-গুলো কোন ক্রমে ঘোরা হচ্ছে তার ওপর। BFS **একটা** shortest path-এর গ্যারান্টি দেয়, নির্দিষ্ট কোনোটার নয়।
+
+## ভ্যারিয়েন্ট ৩: level-wise print
+
+মাঝে মাঝে দরকার হয় কে কোন স্তরে আছে, স্তরগুলো আলাদা আলাদা। (Tree-র level order traversal মনে আছে? সেখানেও এই একই কৌশল।) চাবিকাঠি হলো: প্রতি রাউন্ডে queue-তে যতগুলো node অপেক্ষা করছে, তারা সবাই **একই স্তরের**।
+
+```js
+function levels(graph, start) {
+  const visited = new Set([start]);
+  const queue = [start];
+  let head = 0;
+  const result = [];
+
+  while (head < queue.length) {
+    const size = queue.length - head; // এই স্তরে কজন
+    const level = [];
+
+    for (let i = 0; i < size; i++) {
+      const node = queue[head++];
+      level.push(node);
+      for (const next of graph.neighbors(node)) {
+        if (!visited.has(next)) {
+          visited.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    result.push(level);               // এক স্তর শেষ
+  }
+  return result;
+}
+
+console.log(levels(g, "A"));
+// [['A'], ['B', 'C'], ['D', 'E'], ['F']]
+```
+
+আরেকটা ভ্যারিয়েন্ট প্রায়ই কাজে লাগে: **multi-source BFS**। ধরো grid-এ একসাথে অনেক জায়গা থেকে আগুন ছড়াচ্ছে, কোন ঘরে কখন আগুন পৌঁছাবে? শুরুতেই সব source-কে একসাথে queue-তে ঢুকিয়ে দাও, বাকি সব আগের মতোই। নিচের অনুশীলনে এর ব্যবহার পাবে।
+
+## কোড ব্রেকডাউন: মূল bfs, লাইনে লাইনে
+
+মূল `bfs` ফাংশনটা আবার দেখি, কোন লাইন কেন আছে:
+
+1. `const visited = new Set([start])` : শুরুর node-কে শুরুতেই দাগ দিলাম। Set নেওয়ার কারণ `has()` চলে O(1)-এ। Array হলে `includes()` লাগত, সেটা O(n)।
+2. `const queue = [start]` : queue-তে শুধু শুরুটা। এখন এটাই একমাত্র "পালায় থাকা" node।
+3. `let head = 0` : নকল dequeue pointer। `head` যাকে দেখাচ্ছে, সে-ই পরে বের হবে।
+4. `while (head < queue.length)` : queue খালি না হওয়া পর্যন্ত। খালি মানে পৌঁছানো যায় এমন সব node দেখা শেষ।
+5. `const node = queue[head++]` : dequeue। আগে পড়ো, তারপর head সরাও। O(1)।
+6. `order.push(node)` : এই মুহূর্তে node-টা আসলে process হলো।
+7. `for (const next of graph.neighbors(node))` : node-এর সব neighbor ঘুরে দেখো।
+8. `if (!visited.has(next))` : সবচেয়ে গুরুত্বপূর্ণ লাইন। এটা না থাকলে cycle-এ চিরকাল ঘুরতাম।
+9. `visited.add(next)` : queue-তে **ঢোকানোর মুহূর্তেই** দাগ। বের করার সময় দিলে একই node বারবার queue-তে ঢুকে যেত (নিচে দেখছ)।
+10. `queue.push(next)` : পেছনে দাঁড় করাও। এর পালা আসবে, কিন্তু কাছেরদের পরে।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Time: O(V + E)।** যুক্তিটা হাতে গোনা যায়:
+
+- প্রতিটা node queue-তে **সর্বোচ্চ একবার** ঢোকে (visited হলে আর ঢুকতে পারে না), আর একবারই বের হয়। মানে V-টা enqueue, V-টা dequeue।
+- প্রতিটা node বের হওয়ার সময় তার সব neighbor ঘোরা হয়। সব node-এর neighbor list মিলিয়ে মোট ঘোরা হয় যতগুলো edge। Undirected graph-এ প্রতিটা edge দুই দিক থেকে দুইবার দেখা হয় (u থেকে v, আবার v থেকে u), directed-এ একবার। যেভাবেই হোক, O(E)।
+- দুটো মিলে O(V + E)।
+
+**Space: O(V)।** visited set-এ সর্বোচ্চ V-টা node। queue-তেও সবচেয়ে খারাপ মুহূর্তে প্রায় V-টা। ভাবো, শুরুর node-এর এক লক্ষ neighbor; সবাই এক ধাপে queue-তে ঢুকে গেল। তাই মোট O(V)।
+
+প্র্যাকটিক্যাল কথা: খুব চওড়া graph-এ (প্রতি node-এর হাজার হাজার neighbor) BFS-এর queue মেমরি চাপ খায়। আবার খুব গভীর আর সরু graph-এ [DFS](./dfs.mdx)-এর recursion stack চাপ খায়। কোনটা কখন, সেটা graph-এর গঠন দেখে ঠিক করতে হয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. visited দাগ দেওয়া হয় dequeue-এর সময়, enqueue-এর নয়।**
+সবচেয়ে বেশি হওয়া ভুল এটা। ধরো B আর C দুজনেরই neighbor D। ধাপ ২-এ B process হলে D queue-তে ঢুকল, কিন্তু দাগ পড়ল না (তুমি দিচ্ছ dequeue-এর সময়)। ধাপ ৩-এ C process হলে D-কে আবার unvisited মনে হবে, আরেকবার queue-তে ঢুকবে। ছোট graph-এ শুধু নষ্ট কাজ, ঘন graph-এ queue ফুলে ফাটবে। নিয়ম একটাই: **ঢোকানোর মুহূর্তেই দাগ।**
+
+**২. visited ভুলে গেলে অসীম লুপ।**
+Graph-এ cycle থাকা মানেই কোনো না কোনো পথ দিয়ে ফিরে আসা যায়। visited ছাড়া A → B → D → F → E → C → A → ... ঘুরতেই থাকবে।
+
+**৩. Disconnected graph।**
+শুরুর node যেখানে, তার component-টুকুই ঘোরা হবে। পুরো graph-এর সবাইকে ঘোরাতে হলে বাইরে একটা loop লাগবে:
+
+```js
+function bfsAll(graph) {
+  const visited = new Set();
+  for (const v of graph.adj.keys()) {
+    if (visited.has(v)) continue;
+    // এই v থেকে একটা পুরো BFS চালাও; visited শেয়ার থাকবে
+  }
+}
+```
+
+**৪. Weighted graph-এ BFS দিয়ে shortest path খোঁজা।**
+BFS-এর গ্যারান্টি শুধু unweighted (বা সব edge-এর weight সমান) graph-এর জন্য। Weight থাকলে যাবে [Dijkstra](./dijkstra.mdx)-র কাছে। BFS সেখানে ভুল উত্তর দেবে, একদম নিঃশব্দে।
+
+**৫. Directed vs undirected।**
+`addEdge`-এ দুই দিকেই push করলে undirected, এক দিকে করলে directed। BFS দুটোতেই চলে, কিন্তু directed-এ shortest path-এর মানে বদলে যায়: ফিরতি পথ নাও থাকতে পারে।
 
 ## Animation Spec
 
 > **Animation Spec: BFS Ripple**
 >
-> - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue।
-> - **ইনপুট:** start node।
-> - **ধাপ:** প্রতিটা স্তর একই রঙে; visited node বেগুনি; queue-এর enqueue/dequeue চোখে দেখা যায়।
+> - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue-এর live অবস্থা।
+> - **ইনপুট:** start node; চাইলে graph preset (সরু / চওড়া / cycle-ওয়ালা)।
+> - **ধাপ:** প্রতিটা স্তর আলাদা রঙে; visited node বেগুনি; queue-এর enqueue/dequeue চোখে দেখা যায়; node বের হলে পাশের order list-এ যোগ হয়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে "visited দাগ পড়ে dequeue-এ" টগল, ভুলটা কেমন দেখায় তা দেখানোর জন্য।
 > - **লক্ষ্য:** BFS মানে স্তর-ভিত্তিক প্রসার, মানে unweighted shortest।
 
 ## অনুশীলন
 
-- BFS দিয়ে graph connected কিনা বের করো।
+- **সহজ ১:** BFS দিয়ে দেখো graph connected কিনা। হিন্ট: BFS শেষে visited-এর size আর মোট node সংখ্যা মিলিয়ে দেখো।
+- **সহজ ২:** দুটো node-এর দূরত্ব বের করো, `shortestDistance` না উল্টে নিজে লিখে।
+- **মাঝারি ১:** একটা maze grid দেওয়া আছে (0 = খোলা, 1 = দেয়াল)। শুরু থেকে শেষ কোঠায় সবচেয়ে কম ঘরে যায়? হিন্ট: প্রতিটা cell একটা node, চার দিক চারটা edge।
+- **মাঝারি ২:** Rotting Oranges (LeetCode 994)। প্রতি মিনিটে পচা কমলা পাশের টাটকাগুলো পচায়। সব পচতে কত মিনিট? হিন্ট: শুরুতেই সব পচা কমলা একসাথে queue-তে, এটাই multi-source BFS।
+- **কঠিন:** Word Ladder (LeetCode 127)। এক শব্দ থেকে আরেক শব্দে যেতে হবে, প্রতি ধাপে একটাই অক্ষর বদলাবে, আর মাঝের সব শব্দ অভিধানে থাকতে হবে। হিন্ট: শব্দ = node, এক অক্ষরের পার্থক্য = edge। BFS ছাড়া shortest পথ পাবে না।
+
+## সারসংক্ষেপ
+
+- BFS = queue + visited + স্তরে স্তরে ছড়ানো।
+- Unweighted graph-এ এটাই shortest path-এর আসল হাতিয়ার।
+- Time O(V + E), space O(V)।
+- দুটো কথা মাথায় রাখো: visited-এর দাগ ঢোকানোর মুহূর্তেই, আর weight থাকলে Dijkstra-র কাছে যাও।
