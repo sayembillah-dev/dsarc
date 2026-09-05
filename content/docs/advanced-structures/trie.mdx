@@ -1,0 +1,88 @@
+---
+title: "Trie (Prefix Tree): prefix-ভিত্তিক শব্দ খোঁজা"
+description: অক্ষর ধরে অক্ষর নামা tree; autocomplete ও prefix query O(L)।
+---
+
+## কী শিখব
+
+- prefix-ভিত্তিক দ্রুত শব্দ খোঁজা/autocomplete
+
+## ধারণা
+
+Trie হলো এমন tree যেখানে প্রতিটা edge একটা অক্ষর, আর root থেকে কোনো node পর্যন্ত পথ অর্থাৎ একটা prefix। একই prefix-এর শব্দগুলো পথ **শেয়ার** করে। ফলে prefix খোঁজা/autocomplete হয় শব্দের সংখ্যা নয়, বরং **শব্দের দৈর্ঘ্যের** সমান দ্রুত, O(L)।
+
+```text
+       (root)
+        /  \
+       c    d
+      /      \
+     a        o
+    / \        \
+   t   r        g
+ (cat)(car)   (dog)
+```
+
+## কোড উদাহরণ
+
+```js
+class TrieNode {
+  constructor() { this.children = {}; this.isEnd = false; }
+}
+class Trie {
+  constructor() { this.root = new TrieNode(); }
+
+  insert(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node.children[ch]) node.children[ch] = new TrieNode();
+      node = node.children[ch];
+    }
+    node.isEnd = true;                 // শব্দ শেষ চিহ্ন
+  }
+
+  search(word) {
+    const node = this._walk(word);
+    return node !== null && node.isEnd; // পুরো শব্দ থাকতে হবে
+  }
+
+  startsWith(prefix) { return this._walk(prefix) !== null; }
+
+  _walk(str) {                          // str ধরে নামা
+    let node = this.root;
+    for (const ch of str) {
+      if (!node.children[ch]) return null;
+      node = node.children[ch];
+    }
+    return node;
+  }
+}
+
+const trie = new Trie();
+["cat", "car", "dog"].forEach(w => trie.insert(w));
+console.log(trie.search("car"));      // true
+console.log(trie.search("ca"));       // false (শব্দ নয়, শুধু prefix)
+console.log(trie.startsWith("ca"));   // true
+```
+
+## কোড ব্রেকডাউন
+
+- `children` অর্থাৎ অক্ষর থেকে পরের node।
+- `isEnd` না থাকলে "cat" থাকলেও "ca" শব্দ হিসেবে গণ্য হতো, তাই জরুরি।
+- prefix শেয়ার হওয়ায় memory সাশ্রয় ও দ্রুত prefix query।
+
+## Complexity
+
+- insert/search O(L) (L = শব্দের দৈর্ঘ্য)।
+
+## Animation Spec
+
+> **Animation Spec: Autocomplete Trie**
+>
+> - **দৃশ্য:** trie গাছ; একটা prefix টাইপ করলে সেই পথ আলোকিত হয়ে নিচের সব সম্ভাব্য শব্দ (suggestions) দেখায়।
+> - **ইনপুট:** শব্দ insert; prefix টাইপ।
+> - **ধাপ:** টাইপের সাথে সাথে পথ highlight; matching subtree-র শব্দগুলো তালিকায়।
+> - **লক্ষ্য:** কেন autocomplete-এ Trie আদর্শ।
+
+## অনুশীলন
+
+- একটা `autocomplete(prefix)` মেথড লেখো যা সব matching শব্দ ফেরত দেয়।

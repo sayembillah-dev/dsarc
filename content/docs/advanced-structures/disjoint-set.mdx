@@ -1,0 +1,71 @@
+---
+title: "Disjoint Set (Union-Find): dynamic connectivity প্রায় O(1)"
+description: path compression ও union by rank-এ গোষ্ঠী মেলানো ও connectivity চেক প্রায় ধ্রুবক সময়ে।
+---
+
+## কী শিখব
+
+- গোষ্ঠী (set) দ্রুত মেলানো ও "একই গোষ্ঠীতে কিনা" চেক
+
+## ধারণা
+
+Union-Find অনেকগুলো উপাদানকে অ-ছেদী (disjoint) গোষ্ঠীতে রাখে ও দুটো মূল অপারেশন দেয়:
+
+- **find(x):** x কোন গোষ্ঠীতে (root/representative)
+- **union(a, b):** দুই গোষ্ঠী মেলানো
+
+দুটো অপ্টিমাইজেশন (**path compression** ও **union by rank/size**) এদের প্রায় O(1) করে (α, প্রায়-ধ্রুবক)। Kruskal MST (section 13), cycle detection, connectivity-তে অপরিহার্য।
+
+## কোড উদাহরণ
+
+নিচের উদাহরণে দুটো অপ্টিমাইজেশনই আছে।
+
+```js
+class DSU {
+  constructor(n) {
+    this.parent = Array.from({ length: n }, (_, i) => i);
+    this.rank = new Array(n).fill(0);
+  }
+  find(x) {
+    if (this.parent[x] !== x) this.parent[x] = this.find(this.parent[x]); // path compression
+    return this.parent[x];
+  }
+  union(a, b) {
+    const ra = this.find(a), rb = this.find(b);
+    if (ra === rb) return false;              // ইতিমধ্যে একই গোষ্ঠী
+    if (this.rank[ra] < this.rank[rb]) this.parent[ra] = rb;   // union by rank
+    else if (this.rank[ra] > this.rank[rb]) this.parent[rb] = ra;
+    else { this.parent[rb] = ra; this.rank[ra]++; }
+    return true;
+  }
+  connected(a, b) { return this.find(a) === this.find(b); }
+}
+
+const dsu = new DSU(5);
+dsu.union(0, 1); dsu.union(1, 2);
+console.log(dsu.connected(0, 2)); // true  (0-1-2 এক গোষ্ঠী)
+console.log(dsu.connected(0, 3)); // false
+```
+
+## কোড ব্রেকডাউন
+
+- **path compression:** find-এর সময় প্রতিটা node সরাসরি root-এ জোড়া, ফলে পরের find দ্রুত।
+- **union by rank:** ছোট গাছকে বড় গাছের নিচে জোড়া, ফলে গাছ চ্যাপ্টা থাকে।
+- `union` false দিলে দুই প্রান্ত আগেই এক গোষ্ঠীতে (Kruskal-এ cycle সংকেত)।
+
+## Complexity
+
+- প্রতি অপারেশন প্রায় O(α(n)) ≈ O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Grouping Forest**
+>
+> - **দৃশ্য:** node গুলো ছোট গাছ (গোষ্ঠী); union করলে দুই গাছ জোড়ে; find-এ path compression চ্যাপ্টা করে।
+> - **ইনপুট:** union(a,b); find(x)।
+> - **ধাপ:** union-এ root জোড়া; find-এ pointer সরাসরি root-এ পুনঃসংযুক্ত (দৃশ্যমান compression)।
+> - **লক্ষ্য:** dynamic connectivity ও অপ্টিমাইজেশনের প্রভাব।
+
+## অনুশীলন
+
+- DSU দিয়ে একটা undirected graph-এ connected component গোনো।

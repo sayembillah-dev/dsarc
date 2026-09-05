@@ -1,0 +1,4 @@
+{
+  "title": "Advanced Data Structures",
+  "pages": ["index", "trie", "segment-tree", "fenwick-tree", "disjoint-set", "suffix-arrays"]
+}

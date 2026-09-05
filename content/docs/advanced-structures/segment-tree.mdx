@@ -1,0 +1,79 @@
+---
+title: "Segment Tree: range query ও update O(log n)"
+description: array অর্ধেক ভাগ করে সারাংশ node-এ; range sum/min query ও update দুটোই O(log n)।
+---
+
+## কী শিখব
+
+- range query (যেমন range sum/min) ও update দুটোই O(log n)
+
+## ধারণা
+
+"index 2 থেকে 7 পর্যন্ত যোগফল কত?", এমন **range query** array-তে O(n)। প্রতিবার element বদলালেও আবার O(n)। **Segment Tree** array-কে recursively অর্ধেক ভাগ করে প্রতিটা অংশের সারাংশ (sum/min/max) node-এ রাখে, ফলে query ও update দুটোই **O(log n)**। নিচের উদাহরণটা range sum-এর।
+
+```text
+             [0-3]:সব যোগ
+            /          \
+        [0-1]          [2-3]
+        /   \          /   \
+      [0]   [1]      [2]   [3]
+```
+
+## কোড উদাহরণ
+
+```js
+class SegmentTree {
+  constructor(arr) {
+    this.n = arr.length;
+    this.tree = new Array(2 * this.n).fill(0);
+    for (let i = 0; i < this.n; i++) this.tree[this.n + i] = arr[i]; // leaves
+    for (let i = this.n - 1; i > 0; i--)                              // internal
+      this.tree[i] = this.tree[2 * i] + this.tree[2 * i + 1];
+  }
+
+  update(index, value) {
+    let i = index + this.n;
+    this.tree[i] = value;
+    while (i > 1) { i = i >> 1; this.tree[i] = this.tree[2*i] + this.tree[2*i+1]; }
+  }
+
+  query(left, right) {                 // [left, right)  যোগফল
+    let sum = 0, l = left + this.n, r = right + this.n;
+    while (l < r) {
+      if (l & 1) sum += this.tree[l++];
+      if (r & 1) sum += this.tree[--r];
+      l >>= 1; r >>= 1;
+    }
+    return sum;
+  }
+}
+
+const st = new SegmentTree([1, 2, 3, 4, 5]);
+console.log(st.query(1, 4)); // 2+3+4 = 9
+st.update(2, 10);            // index 2-এ 10
+console.log(st.query(1, 4)); // 2+10+4 = 16
+```
+
+## কোড ব্রেকডাউন
+
+- নিচের অর্ধেক (leaves) মূল array; উপরের node তাদের যোগফল।
+- update-এ শুধু পথ ধরে উপরে গিয়ে সারাংশ ঠিক করা (log n)।
+- query-এ প্রয়োজনীয় কয়েকটা node-এর সারাংশ মিলিয়ে নেওয়া (log n)।
+- sum-এর জায়গায় `Math.min`/`Math.max` দিলে range-min/max tree।
+
+## Complexity
+
+- build O(n); query/update O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Range Query Path**
+>
+> - **দৃশ্য:** segment tree; query range-এর জন্য কোন node গুলো "যথেষ্ট" তা সবুজে highlight।
+> - **ইনপুট:** array; query range; update।
+> - **ধাপ:** query-তে log n node নির্বাচন; update-এ leaf থেকে root পর্যন্ত পথ আপডেট।
+> - **লক্ষ্য:** কেন range query O(log n)।
+
+## অনুশীলন
+
+- এই tree-কে range-min query-তে রূপান্তর করো।
