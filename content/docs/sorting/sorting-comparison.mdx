@@ -1,5 +1,5 @@
 ---
-title: "সব Sort-এর তুলনা: কোনটা কখন"
+title: "সব Sort-এর তুলনা: কোনটা কখন নেবে"
 description: ৬টা sorting algorithm-এর complexity, space ও stability টেবিল, সাথে বাছাই-নিয়ম।
 ---
 
@@ -9,7 +9,7 @@ description: ৬টা sorting algorithm-এর complexity, space ও stability 
 
 ## ধারণা
 
-একই সমস্যার ৬টা সমাধান শিখলাম; এখন পাশাপাশি রেখে বিচার করি। কোনটা কখন, তা ঠিক করতে time, space ও stability তিনটাই দেখতে হবে।
+একই সমস্যার ৬টা সমাধান শেখা শেষ। এখন ভাবো তো, বাস্তবে কোনটা নেবে? সেটা ঠিক করতে হলে সবগুলোকে পাশাপাশি রেখে বিচার করতে হবে, আর বিচারের মাপকাঠি তিনটা: time, space, আর stability।
 
 ## কোড উদাহরণ
 
@@ -24,17 +24,17 @@ description: ৬টা sorting algorithm-এর complexity, space ও stability 
 | Quick | O(n log n) | O(n log n) | O(n²) | O(log n) | না |
 | Heap | O(n log n) | O(n log n) | O(n log n) | O(1) | না |
 
-**নিয়ম:** সাধারণ ব্যবহারে built-in `sort` (dual-pivot quick/merge)। স্থিতিশীলতা লাগলে merge; মেমরি কম ও নিশ্চিত O(n log n) লাগলে heap।
+**নিয়ম:** সাধারণ কাজে built-in `sort` (ভেতরে dual-pivot quick/merge) ব্যবহার করলেই চলে। stability লাগলে Merge, আর মেমরি কম ও নিশ্চিত O(n log n) চাইলে Heap।
 
 ## কোড ব্রেকডাউন
 
-- O(n²) তিনটা (Bubble, Selection, Insertion) সহজ ও ছোট ডেটায় ঠিক আছে।
-- Merge সবসময় O(n log n) ও stable, কিন্তু O(n) extra space নেয়।
-- Quick গড়ে দ্রুততম, কিন্তু worst case O(n²); Heap নিশ্চিত O(n log n) ও in-place, কিন্তু unstable।
+- O(n²)-এর তিনটা (Bubble, Selection, Insertion) সহজ, ছোট ডেটায় চলে যায়।
+- Merge সবসময় O(n log n) আবার stable, কিন্তু O(n) extra space নেয়।
+- Quick গড়ে সবচেয়ে দ্রুত, কিন্তু worst case-এ O(n²)। Heap নিশ্চিত O(n log n) আর in-place, কিন্তু unstable।
 
 ## Complexity
 
-- টেবিলেই সব: সেরা ক্ষেত্রে O(n), সবচেয়ে খারাপে O(n²); O(n log n) গোষ্ঠীতে Merge, Quick, Heap।
+- টেবিলেই সব আছে: সেরা ক্ষেত্রে O(n), সবচেয়ে খারাপে O(n²); O(n log n) গোষ্ঠীতে Merge, Quick, Heap।
 
 ## Animation Spec
 
@@ -42,9 +42,9 @@ description: ৬টা sorting algorithm-এর complexity, space ও stability 
 >
 > - **দৃশ্য:** ৬টা panel একসাথে, একই input, প্রতিটায় ভিন্ন algorithm।
 > - **ইনপুট:** একই array, speed।
-> - **ধাপ:** সব একসাথে চলবে; কে আগে শেষ করে ও কতটা কাজ করে counter-এ।
+> - **ধাপ:** সব একসাথে চলবে; কে আগে শেষ করল আর কতটা কাজ করল, counter-এ দেখা যাবে।
 > - **লক্ষ্য:** একই ডেটায় গতির নাটকীয় পার্থক্য।
 
 ## অনুশীলন
 
-- ১০০০ এলোমেলো সংখ্যায় কোন algorithm সবচেয়ে কম comparison করে, পরীক্ষা করো।
+- ১০০০টা এলোমেলো সংখ্যা নিয়ে পরীক্ষা করো, কোন algorithm সবচেয়ে কম comparison করে।

@@ -1,6 +1,6 @@
 ---
-title: "Sorting: কেন শিখব ও কী কী বিবেচ্য"
-description: stability, in-place, comparison-ভিত্তিক ধারণা, সাথে JS built-in sort-এর সঠিক ব্যবহার।
+title: "Sorting কেন শিখব, আর কী দিয়ে algorithm বিচার করব"
+description: stability, in-place, comparison-ভিত্তিক ধারণা, সাথে JS-এর built-in sort-এর সঠিক ব্যবহার।
 ---
 
 ## কী শিখব
@@ -9,15 +9,17 @@ description: stability, in-place, comparison-ভিত্তিক ধারণ�
 
 ## ধারণা
 
-Sorting শুধু "সাজানো" নয়, এটা binary search, duplicate খোঁজা, interval merge ইত্যাদির পূর্বশর্ত। algorithm বিচারে দেখি:
+ভাবো তো, একটা ফোনবুকে কোনো নাম খুঁজছ। তুমি কি প্রথম পাতা থেকে একটা একটা করে দেখো? না, মাঝখান খুলে বুঝে নাও কোন দিকে যেতে হবে। কিন্তু এই চালাকি (binary search) তখনই চলে যখন নামগুলো আগে থেকেই sorted থাকে। শুধু খোঁজাই না, duplicate ধরা, interval merge, এমন অনেক কাজের পূর্বশর্তই হলো sorting।
 
-- **Time complexity** (দ্রুততা)
-- **Space** (in-place = অতিরিক্ত মেমরি লাগে না)
-- **Stability** (সমান মানের আপেক্ষিক ক্রম বজায় থাকে কিনা)
+তাহলে একটা sorting algorithm ভালো নাকি খারাপ, মাপবে কী দিয়ে? তিনটা জিনিস দেখি:
+
+- **Time complexity**: কতটা দ্রুত চলে
+- **Space**: in-place মানে অতিরিক্ত মেমরি প্রায় লাগেই না
+- **Stability**: সমান মানের উপাদানগুলোর আপেক্ষিক ক্রম আগের মতোই থাকে কিনা
 
 ## কোড উদাহরণ
 
-JS built-in, বাস্তবে যা ব্যবহার করি:
+বাস্তব কাজে হাতে sort লেখার দরকার পড়ে না, JS-এর built-in-টাই ব্যবহার করি:
 
 ```js
 const nums = [5, 2, 9, 1];
@@ -25,14 +27,14 @@ nums.sort((a, b) => a - b);  // ছোট থেকে বড় (comparator জ
 console.log(nums);           // [1, 2, 5, 9]
 ```
 
-<Callout type="warn" title="comparator ছাড়া সংখ্যা sort না">
-শুধু `nums.sort()` করলে string হিসেবে তুলনা করে, তাই সংখ্যায় ভুল ফল আসে। সংখ্যা sort-এ comparator বাধ্যতামূলক।
+<Callout type="warn" title="comparator ছাড়া সংখ্যা sort কোরো না">
+শুধু `nums.sort()` লিখলে JS উপাদানগুলোকে string ধরে তুলনা করে, ফলে সংখ্যায় ভুল ফল আসবেই। সংখ্যা sort করতে গেলে comparator বাধ্যতামূলক।
 </Callout>
 
 ## কোড ব্রেকডাউন
 
-- `sort((a,b) => a-b)` ফলাফল ঋণাত্মক হলে a আগে বসে।
-- আমরা নিচে হাতে বানানো algorithm শিখব বোঝার জন্য; production-এ built-in `sort` (সাধারণত O(n log n))।
+- `sort((a, b) => a - b)`: ফলাফল ঋণাত্মক হলে a আগে বসে, তাই ছোট থেকে বড় সাজে।
+- নিচে হাতে বানানো algorithm-গুলো শিখব বোঝার জন্য। production কোডে built-in `sort`-ই ব্যবহার করবে, এটা সাধারণত O(n log n)।
 
 ## Complexity
 
@@ -42,11 +44,11 @@ console.log(nums);           // [1, 2, 5, 9]
 
 > **Animation Spec: Sorting Sandbox (মাস্টার)**
 >
-> - **দৃশ্য:** উচ্চতাভিত্তিক bar array; নিচে algorithm নির্বাচন dropdown।
-> - **ইনপুট:** array মান/আকার, speed, algorithm।
-> - **ধাপ:** নির্বাচিত algorithm অনুযায়ী compare (হলুদ)/swap (লাল)/sorted (সবুজ) রঙে চলবে; comparison ও swap counter দেখাবে।
-> - **লক্ষ্য:** এক জায়গায় সব sort তুলনা করা।
+> - **দৃশ্য:** উচ্চতাভিত্তিক bar array; নিচে algorithm নির্বাচনের dropdown।
+> - **ইনপুট:** array-র মান ও আকার, speed, algorithm।
+> - **ধাপ:** নির্বাচিত algorithm অনুযায়ী compare (হলুদ), swap (লাল), sorted (সবুজ) রঙে চলবে; সাথে comparison ও swap counter দেখাবে।
+> - **লক্ষ্য:** এক জায়গায় সব sort পাশাপাশি তুলনা করা।
 
 ## অনুশীলন
 
-- comparator বদলে বড় থেকে ছোট sort করো।
+- comparator-টা বদলে দেখো, বড় থেকে ছোট sort করা যায় কিনা।

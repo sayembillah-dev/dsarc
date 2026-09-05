@@ -1,19 +1,21 @@
 ---
 title: "Quick Sort: pivot বেছে ভাগ করা"
-description: pivot-এর চেয়ে ছোট বাঁয়ে, বড় ডানে সাজিয়ে recursion; গড়ে দ্রুততম, in-place।
+description: pivot-এর চেয়ে ছোট বাঁয়ে, বড় ডানে সাজিয়ে recursion; গড়ে সবচেয়ে দ্রুত, in-place।
 ---
 
 ## কী শিখব
 
-- pivot বেছে ভাগ করা, বাস্তবে দ্রুততম গড়ে
+- pivot বেছে ভাগ করা, গড়ে বাস্তবে দ্রুততম
 
 ## ধারণা
 
-একটা **pivot** বেছে নিই; pivot-এর চেয়ে ছোট সব বাঁয়ে, বড় সব ডানে সাজাই (**partition**)। তারপর বাঁ ও ডান অংশে recursively একই কাজ। গড়ে O(n log n), in-place।
+ভাবো তো, একদল বাচ্চাকে উচ্চতা অনুযায়ী দুই দলে ভাগ করতে হবে। তুমি যে কাউকে ধরে বললে, "এর চেয়ে খাটোরা বাঁয়ে দাঁড়াও, লম্বারা ডানে।" এই যে মাপকাঠি হিসেবে একজনকে ধরলে, সেই হলো **pivot**।
+
+Quick Sort-ও ঠিক এটাই করে। একটা **pivot** বেছে নেয়, তারপর pivot-এর চেয়ে ছোট সব উপাদানকে বাঁয়ে, বড় সবকে ডানে সাজায়। এই কাজটার নাম **partition**। এরপর বাঁ আর ডান অংশে recursively একই কাজ চলে। গড়ে O(n log n), আর in-place।
 
 ## কোড উদাহরণ
 
-in-place, Lomuto partition:
+এই version-টা in-place, partition-এ Lomuto পদ্ধতি:
 
 ```js
 function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
@@ -41,11 +43,11 @@ console.log(quickSort([8, 3, 1, 7, 0, 10, 2])); // [0,1,2,3,7,8,10]
 
 ## কোড ব্রেকডাউন
 
-- `partition` pivot-কে তার চূড়ান্ত জায়গায় বসায়; বাঁয়ে ছোট, ডানে বড়।
-- এরপর দুই পাশে recursion।
+- `partition` pivot-কে তার চূড়ান্ত জায়গায় বসিয়ে দেয়: বাঁয়ে ছোট, ডানে বড়।
+- এরপর দুই পাশে recursion চলে।
 
-<Callout type="warn" title="বাজে pivot-এ worst case">
-**worst case O(n²)** হয় যদি pivot বাজে হয় (যেমন already-sorted-এ শেষ pivot); random pivot দিয়ে এড়ানো যায়।
+<Callout type="warn" title="pivot বাজে হলে worst case">
+pivot যদি বাজে হয় (যেমন already-sorted array-তে শেষ উপাদানটা), তাহলে **worst case O(n²)** হয়ে যায়। সমাধান সহজ: random pivot নিলে এই বিপদ প্রায় আর থাকে না।
 </Callout>
 
 ## Complexity
@@ -56,11 +58,11 @@ console.log(quickSort([8, 3, 1, 7, 0, 10, 2])); // [0,1,2,3,7,8,10]
 
 > **Animation Spec: Pivot Partition**
 >
-> - **দৃশ্য:** bar; pivot আলাদা রঙ; দুটো pointer (i, j) হাঁটে; ছোটগুলো বাঁয়ে জড়ো হয়।
+> - **দৃশ্য:** bar; pivot আলাদা রঙে; দুটো pointer (i, j) হাঁটে; ছোটগুলো বাঁয়ে জড়ো হতে থাকে।
 > - **ইনপুট:** array, pivot কৌশল (last / random)।
-> - **ধাপ:** partition-এ swap দেখা যায়; pivot মাঝে বসে; পরে দুই পাশে recursion।
-> - **লক্ষ্য:** partition যুক্তি ও কেন pivot পছন্দ গুরুত্বপূর্ণ।
+> - **ধাপ:** partition-এ swap দেখা যাবে; pivot মাঝে বসবে; পরে দুই পাশে recursion।
+> - **লক্ষ্য:** partition-এর যুক্তি, আর কেন pivot-এর পছন্দ এত গুরুত্বপূর্ণ।
 
 ## অনুশীলন
 
-- random pivot যোগ করে already-sorted array-তে worst case এড়াও।
+- random pivot যোগ করে দেখো, already-sorted array-তেও worst case এড়ানো যায় কিনা।

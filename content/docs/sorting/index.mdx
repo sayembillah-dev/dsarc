@@ -1,13 +1,13 @@
 ---
 title: Sorting Algorithms
-description: কেন sorting জরুরি, Bubble থেকে Heap পর্যন্ত ৬টা algorithm, তাদের complexity, stability ও বাছাই-নিয়ম, সব একসাথে।
+description: কেন sorting শেখা জরুরি, Bubble থেকে Heap পর্যন্ত ৬টা algorithm, কার complexity কত, কে stable, আর কোনটা কখন নেবে, সব একসাথে।
 ---
 
-সাজানো (sorting) DSA-র সবচেয়ে শেখনীয় বিষয়, কারণ একই সমস্যার অনেক সমাধান, প্রতিটার complexity আলাদা। এখানে ছবির ৬টা algorithm-ই শিখব।
+ভাবো তো, হাতে একগাদা নাম আছে, এগুলোকে বর্ণক্রমে সাজাতে হবে। তুমি কী করবে? মজার ব্যাপার হলো, এই একটাই কাজ অনেকভাবে করা যায়, আর প্রতিটা পদ্ধতির দাম, মানে complexity, একদম আলাদা। এজন্যই sorting DSA-র সবচেয়ে মজার শেখার জায়গা। এই section-এ ছবির ৬টা algorithm-ই শিখব।
 
-**Section Roadmap:** কেন sorting, Bubble, Selection, Insertion, Merge, Quick, Heap, তুলনা টেবিল।
+**Section Roadmap:** কেন sorting, তারপর Bubble, Selection, Insertion, Merge, Quick, Heap, আর শেষে একটা তুলনা টেবিল।
 
-সব জায়গায় লাগবে এমন সাধারণ swap হেল্পার:
+একটা কাজ প্রায় সব algorithm-এ বারবার লাগবে: দুটো উপাদানের জায়গা বদল। তাই এই সাধারণ swap হেল্পারটা আগে থেকেই হাতের কাছে রাখি:
 
 ```js
 function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
@@ -15,17 +15,17 @@ function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
 
 ## এই Chapter-এ যা যা আছে
 
-1. [কেন Sorting শিখব ও কী কী বিবেচ্য](./why-sorting.mdx): stability, in-place, comparison-ভিত্তিক ধারণা, JS built-in `sort`
-2. [Bubble Sort](./bubble-sort.mdx): পাশাপাশি তুলনা করে বড়টা ধীরে ধীরে শেষে ঠেলা
-3. [Selection Sort](./selection-sort.mdx): প্রতিবার সবচেয়ে ছোটটা খুঁজে সামনে বসানো
-4. [Insertion Sort](./insertion-sort.mdx): তাস সাজানোর মতো একটা একটা করে সঠিক জায়গায় বসানো
+1. [কেন Sorting শিখব ও কী কী বিবেচ্য](./why-sorting.mdx): stability, in-place, comparison-ভিত্তিক ধারণা, সাথে JS-এর built-in `sort`
+2. [Bubble Sort](./bubble-sort.mdx): পাশাপাশি তুলনা করে বড়টা ধীরে ধীরে শেষে ভাসিয়ে দেওয়া
+3. [Selection Sort](./selection-sort.mdx): প্রতিবার সবচেয়ে ছোটটা খুঁজে সামনে বসিয়ে দেওয়া
+4. [Insertion Sort](./insertion-sort.mdx): তাস সাজানোর মতো একটা একটা করে সঠিক জায়গায় ঢোকানো
 5. [Merge Sort](./merge-sort.mdx): ভাগ করো, সাজাও, মেলাও, O(n log n)
-6. [Quick Sort](./quick-sort.mdx): pivot বেছে ভাগ করা, বাস্তবে দ্রুততম গড়ে
-7. [Heap Sort](./heap-sort.mdx): heap দিয়ে সাজানো, O(n log n) ও in-place
-8. [সব Sort-এর তুলনা](./sorting-comparison.mdx): complexity টেবিল ও কোনটা কখন
+6. [Quick Sort](./quick-sort.mdx): pivot বেছে ভাগ করা, গড়ে বাস্তবে সবচেয়ে দ্রুত
+7. [Heap Sort](./heap-sort.mdx): heap দিয়ে সাজানো, O(n log n) আবার in-place
+8. [সব Sort-এর তুলনা](./sorting-comparison.mdx): complexity টেবিল, আর কোনটা কখন নেবে
 
 ## সারাংশ
 
-O(n²): Bubble, Selection, Insertion (সহজ, শেখার জন্য)। O(n log n): Merge (stable, O(n) space), Quick (গড়ে দ্রুত, worst O(n²)), Heap (in-place, নিশ্চিত O(n log n))। স্থিতিশীলতা ও space অনুযায়ী বাছাই।
+সহজ কথায়: O(n²) গোষ্ঠীতে Bubble, Selection, Insertion, এগুলো সহজ, শেখার জন্য দারুণ। O(n log n) গোষ্ঠীতে Merge (stable, কিন্তু O(n) space খায়), Quick (গড়ে দ্রুত, worst case O(n²)) আর Heap (in-place, নিশ্চিত O(n log n))। এখানেই আসল জিনিস: stability আর space দেখেই তোমাকে বেছে নিতে হবে।
 
 **পরবর্তী:** [Searching Algorithms](/docs/searching)।
