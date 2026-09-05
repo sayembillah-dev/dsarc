@@ -1,20 +1,20 @@
 ---
-title: "Disjoint Set (Union-Find): dynamic connectivity প্রায় O(1)"
-description: path compression ও union by rank-এ গোষ্ঠী মেলানো ও connectivity চেক প্রায় ধ্রুবক সময়ে।
+title: "Disjoint Set (Union-Find): connectivity চেক প্রায় O(1)-এ"
+description: path compression আর union by rank, দুটো ছোট কৌশলে গোষ্ঠী মেলানো আর "একই দলে কিনা" চেক প্রায় ধ্রুবক সময়ে।
 ---
 
 ## কী শিখব
 
-- গোষ্ঠী (set) দ্রুত মেলানো ও "একই গোষ্ঠীতে কিনা" চেক
+- গোষ্ঠী (set) দ্রুত মেলানো আর "একই গোষ্ঠীতে কিনা" চেক
 
 ## ধারণা
 
-Union-Find অনেকগুলো উপাদানকে অ-ছেদী (disjoint) গোষ্ঠীতে রাখে ও দুটো মূল অপারেশন দেয়:
+ধরো, ক্লাসের সবাইকে কয়েকটা দলে ভাগ করা, আর প্রতি মুহূর্তে দুজনকে ধরে জিজ্ঞেস করতে হচ্ছে, "তোরা কি একই দলে?" মাঝে মাঝে আবার দুটো দল এক হয়ে যাচ্ছে। এটাই **Union-Find**-এর খেলা। অনেকগুলো উপাদান থাকে disjoint (অ-ছেদী) গোষ্ঠীতে, আর হাতে থাকে দুটো অপারেশন:
 
-- **find(x):** x কোন গোষ্ঠীতে (root/representative)
-- **union(a, b):** দুই গোষ্ঠী মেলানো
+- **find(x):** x আসলে কোন গোষ্ঠীর, মানে তার representative বা root কে
+- **union(a, b):** দুটো গোষ্ঠী জোড়া লাগিয়ে এক করে দাও
 
-দুটো অপ্টিমাইজেশন (**path compression** ও **union by rank/size**) এদের প্রায় O(1) করে (α, প্রায়-ধ্রুবক)। Kruskal MST (section 13), cycle detection, connectivity-তে অপরিহার্য।
+এখানেই আসল জিনিস। দুটো ছোট্ট কৌশল, **path compression** আর **union by rank/size**, এদের জোড়ে প্রতিটা অপারেশন প্রায় O(1) হয়ে যায় (ঠিক বললে α(n), কিন্তু ব্যবহারে ধ্রুবকের মতোই)। Kruskal MST (section 13), cycle detection, connectivity, সব জায়গায় Union-Find অপরিহার্য।
 
 ## কোড উদাহরণ
 
@@ -49,9 +49,9 @@ console.log(dsu.connected(0, 3)); // false
 
 ## কোড ব্রেকডাউন
 
-- **path compression:** find-এর সময় প্রতিটা node সরাসরি root-এ জোড়া, ফলে পরের find দ্রুত।
-- **union by rank:** ছোট গাছকে বড় গাছের নিচে জোড়া, ফলে গাছ চ্যাপ্টা থাকে।
-- `union` false দিলে দুই প্রান্ত আগেই এক গোষ্ঠীতে (Kruskal-এ cycle সংকেত)।
+- **path compression:** find চলার সময় পথের প্রতিটা node-কে সরাসরি root-এর সাথে জুড়ে দিই। পরের find-টা তখন এক লাফেই শেষ।
+- **union by rank:** ছোট গাছটাকে বড় গাছের নিচে ঢুকিয়ে দিই, ফলে গাছটা লম্বা না হয়ে চ্যাপ্টাই থাকে।
+- `union` যদি false ফেরায়, তার মানে দুই প্রান্ত আগে থেকেই একই গোষ্ঠীতে। Kruskal-এ এটাই cycle-এর সংকেত ছিল, মনে আছে?
 
 ## Complexity
 
@@ -68,4 +68,4 @@ console.log(dsu.connected(0, 3)); // false
 
 ## অনুশীলন
 
-- DSU দিয়ে একটা undirected graph-এ connected component গোনো।
+- DSU দিয়ে একটা undirected graph-এ connected component গুণে ফেলো তো।

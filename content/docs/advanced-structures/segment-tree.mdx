@@ -1,15 +1,17 @@
 ---
-title: "Segment Tree: range query ও update O(log n)"
-description: array অর্ধেক ভাগ করে সারাংশ node-এ; range sum/min query ও update দুটোই O(log n)।
+title: "Segment Tree: range query আর update O(log n)-এ"
+description: পুরো array না ঘেঁটেও যেকোনো অংশের যোগফল; recursive অর্ধেক ভাগের কৌশলে query ও update O(log n)।
 ---
 
 ## কী শিখব
 
-- range query (যেমন range sum/min) ও update দুটোই O(log n)
+- range query (যেমন range sum/min) আর update, দুটোই O(log n)
 
 ## ধারণা
 
-"index 2 থেকে 7 পর্যন্ত যোগফল কত?", এমন **range query** array-তে O(n)। প্রতিবার element বদলালেও আবার O(n)। **Segment Tree** array-কে recursively অর্ধেক ভাগ করে প্রতিটা অংশের সারাংশ (sum/min/max) node-এ রাখে, ফলে query ও update দুটোই **O(log n)**। নিচের উদাহরণটা range sum-এর।
+ধরো, একটা array আছে আর তুমি জিজ্ঞেস করলে, "index 2 থেকে 7 পর্যন্ত যোগফল কত?" সাদামাটা উপায়ে পুরো range-টা ঘুরে যোগ করতে হয়, O(n)। এবার ভাবো, মাঝে মাঝে একটা করে element বদলে যাচ্ছে, তাহলে তো প্রতিবার নতুন করে হিসাব। বিরক্তিকর, তাই না?
+
+**Segment Tree** এই ঝামেলার আসল সমাধান। array-টাকে recursively অর্ধেক অর্ধেক করে ভাগ করো, প্রতিটা অংশের সারাংশ (sum/min/max) জমিয়ে রাখো একটা node-এ। ফলে query হোক বা update, দুটোই চলে **O(log n)**-এ। নিচের উদাহরণটা range sum-এর।
 
 ```text
              [0-3]:সব যোগ
@@ -56,10 +58,10 @@ console.log(st.query(1, 4)); // 2+10+4 = 16
 
 ## কোড ব্রেকডাউন
 
-- নিচের অর্ধেক (leaves) মূল array; উপরের node তাদের যোগফল।
-- update-এ শুধু পথ ধরে উপরে গিয়ে সারাংশ ঠিক করা (log n)।
-- query-এ প্রয়োজনীয় কয়েকটা node-এর সারাংশ মিলিয়ে নেওয়া (log n)।
-- sum-এর জায়গায় `Math.min`/`Math.max` দিলে range-min/max tree।
+- tree-এর নিচের অর্ধেক হলো leaf, সেখানেই বসে মূল array-টা; উপরের node-গুলো তাদের যোগফল ধরে রাখে।
+- update করলে শুধু ওই পথ ধরে উপরে উঠে সারাংশ ঠিক করে দিলেই চলে, O(log n)।
+- query-তেও পুরো range ঘোরার দরকার নেই, ঠিকঠাক কয়েকটা node-এর সারাংশ মিলিয়ে নিলেই উত্তর, O(log n)।
+- sum-এর বদলে `Math.min` বা `Math.max` বসালেই তৈরি হয়ে যাবে range-min বা range-max tree।
 
 ## Complexity
 
@@ -76,4 +78,4 @@ console.log(st.query(1, 4)); // 2+10+4 = 16
 
 ## অনুশীলন
 
-- এই tree-কে range-min query-তে রূপান্তর করো।
+- এই tree-টাকে range-min query-তে রূপান্তর করে ফেলো তো।

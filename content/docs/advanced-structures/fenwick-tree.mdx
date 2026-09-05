@@ -1,15 +1,17 @@
 ---
-title: "Fenwick Tree (BIT): কম কোডে prefix sum O(log n)"
-description: Binary Indexed Tree; lowest set bit-এর কৌশলে prefix sum ও point update O(log n)।
+title: "Fenwick Tree (BIT): দুই লাইনের জাদুতে prefix sum"
+description: Segment Tree-এর হালকা ভাই; lowest set bit-এর কৌশলে prefix sum ও point update O(log n), কোডও অল্প।
 ---
 
 ## কী শিখব
 
-- prefix sum ও update, কম কোডে O(log n)
+- prefix sum আর update, কম কোডে O(log n)
 
 ## ধারণা
 
-Fenwick Tree segment tree-র হালকা বিকল্প: **prefix sum** ও **point update** দুটোই O(log n), কিন্তু কোড ছোট ও memory কম। কৌশলটা binary-এর "lowest set bit"-এর উপর দাঁড়ানো: প্রতিটা index একটা নির্দিষ্ট range-এর যোগফল রাখে।
+Segment Tree তুমি জানোই। এবার বলো তো, কেবল prefix sum লাগলে কি এত বড় গাছ দরকার? **Fenwick Tree** (অন্য নাম Binary Indexed Tree বা BIT) হলো ওরই হালকা ভাই। prefix sum আর point update, দুটোই O(log n), অথচ কোড লাগে অল্প, memory-ও কম।
+
+আসল জাদুটা লুকিয়ে আছে binary-র "lowest set bit"-এ। প্রতিটা index-এ জমা থাকে একটা নির্দিষ্ট range-এর যোগফল, আর কোন index কতটুকু range ঢাকছে, সেটা বলে দেয় ওই bit-টাই।
 
 ## কোড উদাহরণ
 
@@ -42,9 +44,9 @@ console.log(ft.rangeSum(1, 3)); // 2+10+4 = 16
 
 ## কোড ব্রেকডাউন
 
-- `i & -i` অর্থাৎ সবচেয়ে ডানের set bit: এটাই কোন range কতটুকু ঢাকে ঠিক করে।
-- update-এ bit যোগ করে উপরে, query-তে bit বিয়োগ করে নিচে যাই।
-- range sum = দুই prefix sum-এর বিয়োগ।
+- `i & -i` মানে সবচেয়ে ডানদিকের set bit; এই bit-টাই ঠিক করে কোন index কত বড় range ঢাকছে।
+- update-এর সময় bit যোগ করে উপরে উঠি, query-র সময় bit বিয়োগ করে নিচে নামি।
+- range sum চাই? সহজ, দুটো prefix sum বিয়োগ করে দাও।
 
 ## Complexity
 
@@ -61,4 +63,4 @@ console.log(ft.rangeSum(1, 3)); // 2+10+4 = 16
 
 ## অনুশীলন
 
-- Fenwick vs Segment Tree: কখন কোনটা, তুলনা লেখো।
+- Fenwick বনাম Segment Tree: কখন কোনটা নেবে? নিজের কথায় একটা তুলনা লিখে ফেলো।

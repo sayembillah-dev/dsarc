@@ -1,15 +1,17 @@
 ---
-title: "Trie (Prefix Tree): prefix-ভিত্তিক শব্দ খোঁজা"
-description: অক্ষর ধরে অক্ষর নামা tree; autocomplete ও prefix query O(L)।
+title: "Trie (Prefix Tree): autocomplete এত দ্রুত কীভাবে?"
+description: ফোনের autocomplete-এর ভেতরের খেলা; অক্ষর ধরে অক্ষর নামা এক tree, prefix query O(L)-এ।
 ---
 
 ## কী শিখব
 
-- prefix-ভিত্তিক দ্রুত শব্দ খোঁজা/autocomplete
+- prefix ধরে দ্রুত শব্দ খোঁজা আর autocomplete
 
 ## ধারণা
 
-Trie হলো এমন tree যেখানে প্রতিটা edge একটা অক্ষর, আর root থেকে কোনো node পর্যন্ত পথ অর্থাৎ একটা prefix। একই prefix-এর শব্দগুলো পথ **শেয়ার** করে। ফলে prefix খোঁজা/autocomplete হয় শব্দের সংখ্যা নয়, বরং **শব্দের দৈর্ঘ্যের** সমান দ্রুত, O(L)।
+ফোনে "ca" টাইপ করতেই cat, car, cap ভেসে ওঠে। কোটি কোটি শব্দের ভিড়ে এত তাড়াতাড়ি মিলায় কীভাবে? ভেতরে যে কাঠামোটা থাকে, তার নাম **Trie** (উচ্চারণ "try")।
+
+ব্যাপারটা হলো এমন এক tree, যেখানে প্রতিটা edge-এ বসে একটা করে অক্ষর। root থেকে কোনো node পর্যন্ত নামা মানেই একটা prefix তৈরি। একই prefix-এর শব্দগুলো পথটা **শেয়ার** করে নেয়। তাই খোঁজার সময় লাগে শব্দের সংখ্যার উপর নয়, শুধু **শব্দের দৈর্ঘ্যের** উপর, অর্থাৎ O(L)।
 
 ```text
        (root)
@@ -66,13 +68,13 @@ console.log(trie.startsWith("ca"));   // true
 
 ## কোড ব্রেকডাউন
 
-- `children` অর্থাৎ অক্ষর থেকে পরের node।
-- `isEnd` না থাকলে "cat" থাকলেও "ca" শব্দ হিসেবে গণ্য হতো, তাই জরুরি।
-- prefix শেয়ার হওয়ায় memory সাশ্রয় ও দ্রুত prefix query।
+- `children` হলো অক্ষর থেকে পরের node-এর ম্যাপ।
+- `isEnd` ছাড়া চলবে না কেন, ধরো "cat" আছে, তুমি "ca" খুঁজলে। Trie ওই prefix-টা পাবেই, কিন্তু "ca" কি আসলেই একটা শব্দ? `isEnd` ছাড়া বুঝবেই না।
+- prefix শেয়ার হয় বলে memory-ও বাঁচে, prefix query-ও দ্রুত হয়।
 
 ## Complexity
 
-- insert/search O(L) (L = শব্দের দৈর্ঘ্য)।
+- insert/search O(L), যেখানে L হলো শব্দের দৈর্ঘ্য।
 
 ## Animation Spec
 
@@ -85,4 +87,4 @@ console.log(trie.startsWith("ca"));   // true
 
 ## অনুশীলন
 
-- একটা `autocomplete(prefix)` মেথড লেখো যা সব matching শব্দ ফেরত দেয়।
+- একটা `autocomplete(prefix)` মেথড লেখো, যেটা সব matching শব্দ ফেরত দেবে।

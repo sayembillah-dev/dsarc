@@ -1,6 +1,6 @@
 ---
-title: "Suffix Trees & Suffix Arrays: দ্রুত pattern matching"
-description: string-এর সব suffix গুছিয়ে substring search, longest repeated substring ও আরও অনেক কিছু দ্রুত।
+title: "Suffix Trees & Suffix Arrays: pattern matching-এর শক্তি"
+description: একটা string-এর সব suffix গুছিয়ে রাখলেই substring search, longest repeated substring, সব দ্রুত হয়ে যায়।
 ---
 
 ## কী শিখব
@@ -9,12 +9,12 @@ description: string-এর সব suffix গুছিয়ে substring search,
 
 ## ধারণা
 
-কোনো string-এর সব **suffix** (শেষাংশ) নিয়ে কাজ করলে অনেক string-সমস্যা (substring খোঁজা, longest repeated substring, longest common substring) দ্রুত হয়।
+"banana"-র মধ্যে "nan" আছে কিনা, সেটা খোঁজা সহজ। কিন্তু ভাবো তো, লাখ লাখ অক্ষরের লেখার মধ্যে বারবার খুঁজতে হবে, আবার জিজ্ঞেস করা হবে "যে অংশটা দুইবার এসেছে, সবচেয়ে বড়টা কোনটা?" এমন প্রশ্নের উত্তরের জন্য একটা সুন্দর কৌশল আছে: string-টার সব **suffix** (শেষের দিকের অংশগুলো) নিয়ে কাজ করা।
 
-- **Suffix Array:** সব suffix-কে বর্ণানুক্রমে sort করে তাদের শুরুর index-এর array। সহজ, memory-সাশ্রয়ী; binary search দিয়ে pattern খোঁজা O(m log n)।
-- **Suffix Tree:** সব suffix-কে একটা compressed trie-তে রাখা; খোঁজা O(m) কিন্তু গঠন জটিল ও memory-বহুল।
+- **Suffix Array:** সব suffix-কে বর্ণানুক্রমে সাজাও, রেখে দাও শুধু শুরুর index-গুলো। সহজ, memory কম লাগে, আর binary search দিয়ে pattern খোঁজা O(m log n)।
+- **Suffix Tree:** সব suffix-কে ঢুকিয়ে দাও একটা compressed trie-তে। খোঁজা চলে O(m)-এ, কিন্তু বানানো জটিল, memory-ও অনেক খায়।
 
-বাস্তবে বেশিরভাগ সময় **suffix array** ব্যবহার হয় (সরল ও যথেষ্ট দ্রুত)।
+বাস্তবে বেশিরভাগ সময় **suffix array**-ই ব্যবহার হয়। সরল বটে, আবার যথেষ্ট দ্রুতও।
 
 ## কোড উদাহরণ
 
@@ -50,9 +50,9 @@ console.log(contains("banana", "xyz"));  // false
 
 ## কোড ব্রেকডাউন
 
-- সব suffix sort করলে একই prefix-ওয়ালা suffix পাশাপাশি আসে, তাই binary search দিয়ে pattern খোঁজা যায়।
-- এই সরল version O(n² log n); বাস্তবে O(n log n)/O(n) construction algorithm আছে (advanced)।
-- Suffix tree আরও ক্ষমতাশালী কিন্তু implement করা কঠিন, তাই সাধারণত suffix array।
+- সব suffix sort করে রাখলে একই prefix-ওয়ালা suffix-গুলো পাশাপাশি চলে আসে, তাই binary search দিয়েই pattern পাওয়া যায়।
+- এইটা শেখার সরল version, O(n² log n)। বাস্তবে O(n log n), এমনকি O(n)-এ build করার algorithm আছে, সেগুলো advanced খাতায় পড়ে।
+- Suffix tree আরও ক্ষমতাশালী ঠিকই, কিন্তু implement করা কঠিন। তাই সাধারণত suffix array-তেই কাজ চালানো হয়।
 
 ## Complexity
 
@@ -69,4 +69,4 @@ console.log(contains("banana", "xyz"));  // false
 
 ## অনুশীলন
 
-- suffix array দিয়ে "longest repeated substring" কীভাবে বের করা যায় ভাবো (পাশাপাশি suffix-এর common prefix)।
+- suffix array দিয়ে "longest repeated substring" কীভাবে বের করবে ভাবো। হিন্ট: পাশাপাশি দুটো suffix-এর common prefix দেখো।

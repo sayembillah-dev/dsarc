@@ -1,22 +1,22 @@
 ---
 title: Advanced Data Structures
-description: Trie, Segment Tree, Fenwick Tree (BIT), Disjoint Set (Union-Find) আর Suffix Array, নির্দিষ্ট সমস্যার দক্ষ সমাধান একসাথে।
+description: Trie, Segment Tree, Fenwick Tree, Union-Find আর Suffix Array, যেগুলো নির্দিষ্ট কয়েকটা সমস্যাকে জাদুর মতো দ্রুত করে দেয়।
 ---
 
-আগের section-এ Graph শিখেছ; এবার কয়েকটা **বিশেষায়িত কাঠামো**, যেগুলো নির্দিষ্ট ধরনের সমস্যা অসাধারণ দক্ষতায় সমাধান করে: autocomplete, range query, dynamic connectivity, string matching। competitive programming ও বড় সিস্টেমে এদের ভূমিকা বিশাল। আগের section-এর Kruskal-এ Union-Find কাজে লেগেছিল, এখানে সেটাই বিস্তারিত শিখবে।
+গত section-এ Graph শিখলে। এবার চলো কয়েকটা **বিশেষায়িত কাঠামো** দেখি, যেগুলো দিয়ে নির্দিষ্ট কিছু সমস্যা অবিশ্বাস্য দ্রুততায় ফোড়া যায়: autocomplete, range query, dynamic connectivity, string matching। competitive programming হোক বা বড় সিস্টেম, সব জায়গায় এদের ভূমিকা বিশাল। আগের section-এ Kruskal চালাতে গিয়ে Union-Find কাজে লেগেছিল, মনে আছে তো? এখানে সেটাই ভেঙে ফেলে দেখব।
 
 **Section Roadmap:** Trie, Segment Tree, Fenwick Tree (BIT), Disjoint Set (Union-Find), Suffix Trees & Arrays।
 
 ## এই Chapter-এ যা যা আছে
 
-1. [Trie (Prefix Tree)](./trie.mdx): prefix-ভিত্তিক দ্রুত শব্দ খোঁজা ও autocomplete
-2. [Segment Tree](./segment-tree.mdx): range query ও update দুটোই O(log n)
-3. [Fenwick Tree (BIT)](./fenwick-tree.mdx): কম কোডে prefix sum ও update O(log n)
-4. [Disjoint Set (Union-Find)](./disjoint-set.mdx): গোষ্ঠী মেলানো ও connectivity চেক প্রায় O(1)
-5. [Suffix Trees & Suffix Arrays](./suffix-arrays.mdx): সব suffix গুছিয়ে দ্রুত pattern matching
+1. [Trie (Prefix Tree)](./trie.mdx): prefix ধরে চোখের পলকে শব্দ খোঁজা আর autocomplete
+2. [Segment Tree](./segment-tree.mdx): range query আর update, দুটোই O(log n)
+3. [Fenwick Tree (BIT)](./fenwick-tree.mdx): কম কোডে prefix sum আর update O(log n)
+4. [Disjoint Set (Union-Find)](./disjoint-set.mdx): গোষ্ঠী মেলানো আর connectivity চেক, প্রায় O(1)
+5. [Suffix Trees & Suffix Arrays](./suffix-arrays.mdx): সব suffix গুছিয়ে রেখে দ্রুত pattern matching
 
 ## সারাংশ
 
-Trie অর্থাৎ prefix tree, autocomplete O(L)। Segment Tree অর্থাৎ range query ও update O(log n)। Fenwick/BIT অর্থাৎ হালকা prefix-sum O(log n)। Union-Find অর্থাৎ dynamic grouping প্রায় O(1) (path compression ও rank)। Suffix Array/Tree অর্থাৎ string pattern matching-এর শক্তিশালী হাতিয়ার।
+সহজ কথায়, এই section হলো পাঁচটা হাতিয়ারের গল্প। Trie মানে prefix tree, autocomplete চলে O(L)-এ। Segment Tree দিয়ে range query ও update, দুটোই O(log n)। Fenwick বা BIT হলো হালকা prefix-sum মেশিন, O(log n)। Union-Find দিয়ে dynamic grouping প্রায় O(1), path compression আর rank-এর জোরে। আর Suffix Array বা Tree হলো string pattern matching-এর শক্তিশালী হাতিয়ার।
 
 **পরবর্তী:** [Complex & Disk-based Structures](/docs/disk-based-structures)।
