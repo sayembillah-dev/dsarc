@@ -1,68 +1,149 @@
 ---
 title: "B-Tree: database-এর চওড়া গাছ"
-description: এক node-এ অনেক key, অনেক চাইল্ড। গাছ কম গভীর, তাই disk-ও কম বার পড়তে হয়।
+description: এক node-এ অনেক key, অনেক child, গাছ চওড়া কিন্তু চাপা। কেন disk-এর জগতে height-ই মুদ্রা, split-এর dry run, আর B+ Tree-এর দিকে সেতু।
 ---
 
 ## কী শিখব
 
-- database আর disk-এর জন্য বানানো বহু-চাইল্ডওয়ালা balanced tree
+- কেন RAM-এর বাইরে গেলে binary tree আর চলে না: disk-এর খরচের হিসাব
+- B-Tree-এর গঠন: এক node-এ অনেক key, অনেক child
+- Order m মানে কী, আর নিয়মগুলো কেন সেভাবে
+- Node ভরে গেলে split কীভাবে গাছ balanced রাখে, dry run সহ
+- কোথায় লাগে, আর B+ Tree-তে কী বদলায়
 
-## ধারণা
+## ধারণা: আগে সমস্যাটা
 
-disk থেকে ডেটা পড়া ভয়ংকর ধীর কাজ, RAM-এর তুলনায় হাজার গুণ slow। তাই database-এর কাছে গাছের height-ই সব। height কম মানে কম বার disk পড়া, মানে দ্রুত কাজ।
+ধরো, এক কোটি record-এর database। BST দিয়ে index বানালে height হবে প্রায় log₂(১ কোটি) ≈ 24। মনে হবে ঠিক আছে? কিন্তু ধরো গাছটা RAM-এ নেই, disk-এ, যেখানে প্রতিটা node পড়া মানে একটা disk read। Disk read RAM-এর চেয়ে হাজার থেকে লক্ষ গুণ ধীর। 24টা disk read মানে ব্যবহারকারী অপেক্ষায়।
 
-এই চিন্তা থেকেই **B-Tree**। binary tree-র প্রতিটা node-এ ১টা key, ২টা চাইল্ড। B-Tree-তে প্রতিটা node-এ **অনেক key আর অনেক চাইল্ড** থাকে। ফলে গাছ চওড়া হয়, গভীর হয় না। এজন্যই database index আর file system এই কাঠামোর ওপর দাঁড়িয়ে (section 15-এ এর আত্মীয় B+ Tree নিয়ে বিস্তারিত পড়বে)।
+দুটো সিদ্ধান্ত এখান থেকে:
 
-মূল ধর্ম (order m-এর B-Tree ধরো):
+- **Disk read-ই আসল খরচ**, node-এর ভেতরের তুলনা প্রায় ফ্রি।
+- তাই লক্ষ্য একটাই: **height যত কমানো যায়**, আর প্রতি read-এ যত বেশি তথ্য।
 
-- প্রতিটা node-এ সর্বোচ্চ m-1 key, m চাইল্ড
-- সব leaf একই স্তরে, মানে perfectly balanced
-- node-এর ভিতরে key গুলো sorted
+এই দুটো থেকেই B-Tree: node-গুলো মোটা (অনেক key), গাছ চওড়া, height নামমাত্র। আর node-এর আকার বানানো হয় disk page-এর মতো (যেমন 4KB), যেন **একটা read-এ পুরো node** আসে।
 
+## গঠন: order m-এর নিয়ম
+
+Order m-এর B-Tree-তে:
+
+- প্রতি node-এ সর্বোচ্চ **m - 1** টা key, সর্বোচ্চ **m** টা child।
+- Node-এর ভেতর key-গুলো sorted, আর দুই key-এর মাঝখানের child-এ থাকে মাঝখানের মানগুলো।
+- সব leaf **একই স্তরে**, গাছ সবসময় perfectly balanced।
+- Root ছাড়া সব node-এ অন্তত অর্ধেক ভরা থাকতে হয় (m/2 - 1 key), ফাঁকা node-এ disk নষ্ট না।
+
+```text
+order 4-এর একটা node:
+        [ 10 | 20 | 30 ]
+       /      |     |     \
+   <10    10-20  20-30   >30
 ```
-        [ 10 | 20 ]
-       /     |     \
-   [<10]  [10-20]  [>20]
-```
 
-## কোড উদাহরণ
+তিনটা key মানে চারটা দরজা, প্রতিটা দরজা একটা পরিসরের দিকে। Binary tree-র "বামে ছোট, ডানে বড়" সেই একই নিয়মের চওড়া রূপ, শুধু দুই দরজার জায়গায় m টা।
 
-node-এর গঠনটা দেখো (ধারণা):
+## Dry run: খোঁজা আর split
+
+**খোঁজা** `[10 | 20 | 30]` node-এ 25: keys-এর মধ্যে দেখে (20 < 25 < 30), তৃতীয় দরজায় নামো। প্রতি node-এ দুই ধাপ: ভেতরে কোন দরজা, তারপর নিচে। লক্ষ করো, ভেতরের তুলনাটা RAM-এ হয়, সস্তা; নিচে নামাটাই disk read, দামি। Height-ই read-এর সংখ্যা।
+
+**Insert আর split** (order 4, মানে সর্বোচ্চ 3 key):
+
+| ধাপ | কাজ | ফল |
+|-----|------|-----|
+| 1 | 10, 20, 30 insert | `[10, 20, 30]` ভরে গেল |
+| 2 | 40 আসে, জায়গা নেই | **split:** মাঝের key 20 উপরে ওঠে, node দুই ভাগ: `[10]` আর `[30, 40]` |
+| 3 | আরও insert | leaf ভরলেই মাঝের key উপরে, গাছ বাড়ে **উপরের দিকে** |
+
+দুটো জিনিস লক্ষ করো। এক, split-এ মাঝের key উপরে উঠে নতুন ভাগের বিচারক হয়। দুই, গাছ নিচে না বেড়ে **উপরে** বাড়ে (root split হলে নতুন root), এজন্যই সব leaf সবসময় একই স্তরে থাকে, কারও পথ লম্বা হয় না। AVL-এর rotation-এর সঙ্গে তুলনা করো: সেখানে ঘুরে ভারসাম্য, এখানে ভাগ হয়ে ভারসাম্য।
+
+## কোড: node-এর গঠন (ধারণা)
 
 ```js
 class BTreeNode {
   constructor(isLeaf = true) {
-    this.keys = [];      // sorted key লিস্ট (একাধিক)
-    this.children = [];  // চাইল্ড লিস্ট (keys+1 টা)
+    this.keys = [];       // sorted, সর্বোচ্চ m - 1 টা
+    this.children = [];   // সর্বোচ্চ m টা; leaf হলে খালি
     this.isLeaf = isLeaf;
   }
 }
-const node = new BTreeNode();
-node.keys = [10, 20];
-console.log(node.keys, node.isLeaf); // [10, 20] true
-// খোঁজা: node-এর keys-এ কোথায় fit করে দেখে সঠিক child-এ নামা
-// (পূর্ণ insert/split বাস্তবায়ন advanced, section 15-এ B+ Tree বিস্তারিত)
+
+// খোঁজার ভাবনা: ভেতরে দরজা খোঁজো, তারপর নিচে নামো
+function search(node, target) {
+  if (!node) return false;
+
+  let i = 0;
+  while (i < node.keys.length && target > node.keys[i]) {
+    i++;                              // কোন দরজায়, বের করো
+  }
+
+  if (i < node.keys.length && node.keys[i] === target) {
+    return true;                      // এই node-এই পেলে
+  }
+
+  if (node.isLeaf) return false;      // নামার জায়গা নেই, নেই
+
+  return search(node.children[i], target); // i নম্বর দরজায় নামো
+}
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: search, লাইনে লাইনে
 
-- অনেক key মানে অনেক চাইল্ড, অনেক চাইল্ড মানে কম height, আর কম height মানে কম disk read।
-- "node full হলে split", এই এক কৌশলেই গাছ সবসময় balanced থাকে।
-- বাস্তবে node-এর আকার disk-page-এর আকারের সাথে মেলানো হয়, যেন একবার পড়লেই পুরো node পাওয়া যায়।
+1. `while (target > node.keys[i]) i++` : node-এর ভেতর linear খোঁজ, কোন দরজায় যেতে হবে। মানগুলো sorted বলে `keys[i] === target` মিললেই থামো। (বাস্তবে এখানে binary searchও চলে, node মোটা হলে।)
+2. `keys[i] === target` : এই node-এই মিলল, আর নামা লাগে না। B-Tree-তে internal node-ও মান ধরে, শুধু leaf না।
+3. `isLeaf` হলে false : leaf-এর নিচে আর কিছু নেই, নিশ্চিত নেই।
+4. `search(node.children[i], target)` : i নম্বর দরজা, মানে keys[i]-এর চেয়ে ছোট আর keys[i-1]-এর চেয়ে বড়দের এলাকা। Recursion-এর প্রতি স্তর একটা disk read।
 
 ## Complexity
 
-- search/insert/delete সব O(log n); তবে আসল জয়টা disk-access-এ, সেখানে পার্থক্য বিশাল।
+| দিক | খরচ | কেন |
+|-----|------|-----|
+| Search / insert / delete | O(log n) তুলনা, কিন্তু আসল মাপ: **O(logₘ n) disk read** | ভিত্তি m-এর log: node যত মোটা, স্তর তত কম |
+| Height | খুব ছোট | m = 500 জাতীয় order-এ ১ কোটি record মাত্র ৩-৪ স্তরে |
+| Space | O(n) | মোটা node-এ বেশি জায়গা, কিন্তু disk-ভারা কমে |
+
+মজার হিসাব: m = 500 হলে প্রতি স্তরে fanout 500, তিন স্তরেই 500³ = ১২.৫ কোটি পর্যন্ত record ঢোকে। Binary গাছে একই ডেটায় ২৪+ স্তর। **সেই 24 read থেকে 3 read**, এটাই database-এর গতির আসল গল্প।
+
+## কোথায় লাগে, আর B+ Tree-এর সেতু
+
+Database index (MySQL-এর InnoDB, PostgreSQL), file system (NTFS, ext4-এর ভাইয়েরা): সবাই এই পরিবারের। বাস্তবে যেটা চলে তার নাম **B+ Tree**: পার্থক্য হলো সব আসল ডেটা leaf-এ থাকে, internal node-গুলো শুধু পথ দেখায়, আর leaf-গুলো পরস্পর linked থাকে, তাই range query (`WHERE age BETWEEN 20 AND 30`) leaf-এ নেমে পাশাপাশি হেঁটেই শেষ। [B+ Tree](../disk-based-structures/b-plus-tree.mdx)-এ এই গল্প পুরোদস্তুর।
+
+## সাধারণ ভুল আর edge case
+
+**১. B-Tree কে "binary tree-এর ভুল বানান" ভাবা।**
+B মানে binary না (ব্যাপকভাবে balanced বলে ধরা হয়)। Node-এ অনেক key, এটাই মৌলিক পার্থক্য; দুটো কাঠামো আলাদা।
+
+**২. RAM-এর খরচ আর disk-এর খরচ এক ধরা।**
+RAM-এ তুলনা আর read প্রায় সমান দামের, তাই সেখানে binary যথেষ্ট। Disk-এ read-ই হাজার গুণ দামি, তাই সেখানে সব ডিজাইন "কম read" ঘিরে। কোন পরিবেশের কথা, সেটা না বলে উত্তর অর্ধেক।
+
+**৩. Node-এর মাঝের key আর child-এর সম্পর্ক গুলানো।**
+দুই key-এর মাঝের child-এ থাকে মাঝের পরিসরের মান। i নম্বর child-এ keys[i]-এর ছোট (আর keys[i-1]-এর বড়) সবাই। এই পরিসর-ধারণা গুললে search-এর দরজা ভুলে যাবে।
+
+**৪. Split-কে নিচের দিকে বৃদ্ধি ভাবা।**
+B-Tree উপরে বাড়ে: root split হলে নতুন root জন্মায়। এক কারণেই সব leaf চিরকাল একই স্তরে, AVL/bst-এর মতো হেলানো হওয়ার প্রশ্নই নেই।
+
+**৫. অর্ধেক-ভরা নিয়ম উপেক্ষা করা।**
+Node-গুলো অন্তত অর্ধেক ভরা রাখার বাধ্যবাধকতা না থাকলে গাছ ভেতরে ভেতরে ফাঁকা হয়ে disk নষ্ট করত, আর height নিয়ন্ত্রণের গ্যারান্টিও থাকত না। Delete-এর merge/borrow এই নিয়ম রক্ষারই অস্ত্র।
 
 ## Animation Spec
 
-> **Animation Spec: Multi-key Node & Split**
+> **Animation Spec: Multi-key Node and Split**
 >
-> - **দৃশ্য:** প্রতিটা node-এ একাধিক key; full node-এ insert করলেই **split**, মাঝের key উপরে উঠে যায়।
-> - **ইনপুট:** order m; insert sequence।
-> - **ধাপ:** node ভরলেই split animation; height কত কম থাকে সেটা দেখা।
-> - **লক্ষ্য:** কেন database-এ binary tree নয়, B-Tree।
+> - **দৃশ্য:** মোটা node-গুলো, ভেতরে key-এর ঘর; নিচে disk read কাউন্টার আর height মিটার।
+> - **ইনপুট:** order m (3/4/5); insert সিকোয়েন্স; speed।
+> - **ধাপ:** insert-এ key সঠিক leaf-এ নেমে বসে; node ভরলে মাঝের key উপরে ভাসে, node দুই ফালি হয়; পাশে একই সিকোয়েন্সে binary tree-র height বাড়তে থাকে, দুই মিটার পাশাপাশি।
+> - **নিয়ন্ত্রণ:** step, play, reset; খোঁজার পথ হাইলাইট।
+> - **লক্ষ্য:** fanout বড় মানে height ছোট মানে disk read কম: চেইনটা চোখে দেখা।
 
 ## অনুশীলন
 
-- কেন কম height মানে কম disk read, নিজের ভাষায় লিখে দেখো।
+- **সহজ ১:** order 3-এর B-Tree-তে 1 থেকে 7 পর্যন্ত ক্রমে insert করো, প্রতি split হাতে আঁকো। Root কখন বদলাল?
+- **সহজ ২:** বন্ধুকে বোঝাও: কেন database-এ AVL নয়, B-Tree। উত্তরে "disk read" কথাটা থাকা চাই।
+- **মাঝারি ১:** m = 200 ধরলে ১০ কোটি record কত স্তরে ঢোকে? হিসাব দেখাও। Binary BST-তে কত লাগত, তুলনা করো।
+- **মাঝারি ২:** Search-এর ভেতরের খোঁজাটাকে binary search-এ বদলাও। কখন এটা সার্থক, কখন অপ্রয়োজনী? (হিন্ট: node কতটা মোটা, তার উপর নির্ভর করে।)
+- **কঠিন:** B+ Tree-তে range query কেন সস্তা, সেটা ব্যাখ্যা করো: leaf-link থাকলে `BETWEEN 20 AND 30` কীভাবে চলে, আর internal node-এ ডেটা না থাকায় আর কী লাভ হয়? তারপর [B+ Tree](../disk-based-structures/b-plus-tree.mdx) পড়ে নিজের উত্তর মিলাও।
+
+## সারসংক্ষেপ
+
+- Disk-এর জগতে খরচ মাপা হয় read-এর সংখ্যায়, আর read = height, তাই গাছকে চাপা করতে হয়।
+- B-Tree: মোটা node (m-1 key, m child), নিয়ম সেই পরিসর-ভিত্তিক দরজা।
+- Node ভরলে split, মাঝের key উপরে; গাছ উপরে বাড়ে, leaf সবসময় এক স্তরে।
+- Height log ভিত্তি m-এ: কয়েক স্তরেই কোটি record, database আর file system-এর ভিত্তি এটাই।
+- বাস্তবে চলে B+ Tree: ডেটা leaf-এ, leaf-রা linked, range query সস্তা।

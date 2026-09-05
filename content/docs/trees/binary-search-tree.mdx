@@ -1,27 +1,50 @@
 ---
 title: "Binary Search Tree (BST): সাজানো গাছে দ্রুত খোঁজা"
-description: বাঁয়ে ছোট, ডানে বড়। এই এক নিয়মেই search/insert গড়ে O(log n)।
+description: বামে ছোট, ডানে বড়, এই এক নিয়মে search/insert গড়ে O(log n)। পুরো dry run, delete-এর তিন কেস, in-order-এর জাদু, আর skewed গাছের বিপদ।
 ---
 
 ## কী শিখব
 
-- সাজানো tree, দ্রুত search/insert/delete
+- BST-এর একটাই নিয়ম, আর সেখান থেকে সব শক্তি
+- Search আর insert-এর পুরো dry run: প্রতি ধাপে অর্ধেক বাদ
+- Delete-এর তিন কেস, কঠিনটা পর্যন্ত
+- কেন in-order traversal সবসময় sorted ক্রম দেয়
+- Skewed tree: কখন সব সুবিধা জলে যায়, আর তখন কী হয়
 
 ## ধারণা
 
-ধরো, তোমার হাতে একটা সাজানো ফোনবুক। কারো নাম খুঁজতে মাঝখান থেকে খোলো, দেখো নামটা এর আগে না পরে। অর্ধেক বাদ, আবার অর্ধেক বাদ। **BST** ঠিক এই খেলাটাই খেলে, শুধু tree-র গায়ে।
+[Binary Search](../searching/binary-search.mdx)-এর কথা মনে করো: sorted array-তে প্রতি ধাপে অর্ধেক বাদ। সেই একই ক্ষমতা, কিন্তু এমন কাঠামোয় যেখানে insert/delete-ও সস্তা, এই ইচ্ছা থেকেই **Binary Search Tree**।
 
-নিয়ম একটাই: প্রতিটা node-এর জন্য **বাঁ subtree-র সব ছোট, ডান subtree-র সব বড়**। এই নিয়মে search/insert গড়ে O(log n), কারণ প্রতি ধাপে অর্ধেক বাদ পড়ে যায়, binary search-এর মতোই।
+নিয়ম একটাই, প্রতিটা node-এর জন্য:
 
-```
-       8
-      / \
-     3   10
-    / \    \
-   1   6    14
+```text
+বাম subtree-র সব মান < node < ডান subtree-র সব মান
 ```
 
-## কোড উদাহরণ
+```text
+        8
+       / \
+      3   10
+     / \    \
+    1   6    14
+       / \
+      4   7
+```
+
+যেকোনো node নাও, নিয়ম মিলবে। যেমন 3-এর বামে 1 (ছোট), ডানে 6 (বড়, কিন্তু 8-এর চেয়ে ছোট)। খেয়াল করো, নিয়ম শুধু সরাসরি child নয়, **পুরো subtree-এর** উপর। এই বিস্তৃতিটা জরুরি, ভুলগুলোতে দেখবে।
+
+## Dry run: search(7)
+
+| ধাপ | current | তুলনা | সিদ্ধান্ত |
+|-----|---------|-------|-----------|
+| 1 | 8 | 7 < 8 | বামে |
+| 2 | 3 | 7 > 3 | ডানে |
+| 3 | 6 | 7 > 6 | ডানে |
+| 4 | 7 | সমান | **পেলে** |
+
+৪ ধাপ। পুরো গাছে ৯টা node, অথচ ৯টার কেউ আর দেখাই হলো না: প্রতি ধাপে এক পুরো subtree বাদ পড়েছে, হুবহু binary search-এর অর্ধেক-বাদের মতো। আর 5 খুঁজলে? 8 → 3 → 6 → 4, তারপর 4-এর ডান null, মানে **নেই**, তাও নিশ্চিতভাবে, কারণ থাকলে ওই পথেই থাকত।
+
+## কোড: নিজে বানাও BST
 
 ```js
 class TreeNode {
@@ -33,21 +56,8 @@ class TreeNode {
 }
 
 class BST {
-  constructor() { this.root = null; }
-
-  insert(value) {
-    const node = new TreeNode(value);
-    if (!this.root) { this.root = node; return; }
-    let current = this.root;
-    while (true) {
-      if (value < current.value) {              // বাঁয়ে যাও
-        if (!current.left) { current.left = node; return; }
-        current = current.left;
-      } else {                                  // ডানে যাও
-        if (!current.right) { current.right = node; return; }
-        current = current.right;
-      }
-    }
+  constructor() {
+    this.root = null;
   }
 
   search(value) {
@@ -58,9 +68,85 @@ class BST {
     }
     return false;
   }
+
+  insert(value) {
+    const node = new TreeNode(value);
+    if (!this.root) {
+      this.root = node;
+      return;
+    }
+    let current = this.root;
+    while (true) {
+      if (value < current.value) {
+        if (!current.left) { current.left = node; return; }  // ফাঁকা পেলে বসে গেল
+        current = current.left;
+      } else {
+        if (!current.right) { current.right = node; return; }
+        current = current.right;
+      }
+    }
+  }
 }
 
-// in-order helper (আগের পাতার মতোই)
+const bst = new BST();
+[8, 3, 10, 1, 6, 14, 4, 7].forEach((v) => bst.insert(v));
+console.log(bst.search(7));  // true
+console.log(bst.search(5));  // false
+```
+
+Insert-ও search-এরই ভাই: খোঁজার পথ ধরেই নামো, যেখানে পথ শেষ (null), সেখানেই নতুনটা বসে। তাই insert-এর খরচও খোঁজার খরচই।
+
+## Dry run: insert(5)
+
+| ধাপ | current | 5 যাবে | ফাঁকা? |
+|-----|---------|--------|---------|
+| 1 | 8 | বামে | না |
+| 2 | 3 | ডানে | না |
+| 3 | 6 | বামে | না (4 আছে) |
+| 4 | 4 | ডানে | **হ্যাঁ: 4-এর ডানে 5 বসল** |
+
+নতুন node সবসময় **leaf হিসেবে** ঢোকে, কাউকে সরাতে হয় না। এটাই array থেকে বিশাল পার্থক্য: sorted array-তে মাঝে insert মানে সবাইকে সরানো O(n), BST-তে শুধু পথ হেঁটে বসা O(h)।
+
+## Delete: তিন কেস
+
+Delete-ই BST-র কঠিন অপারেশন, তিন ভাগে ভাঙো:
+
+1. **Leaf মোছা (child নেই):** সোজা কেটে ফেলো। 7 মুছতে গেলে 6-এর ডান null হয়ে যায়, ব্যস।
+2. **এক child-ওয়ালা মোছা:** child-টাকে নিজের জায়গায় তুলে দাও। 14-এর বদলে ওর child বসে যায় (থাকলে)।
+3. **দুই child-ওয়ালা মোছা:** চালাকি এখানে। Node-টাকে সরাসরি মোছা যায় না, তাই তার **in-order successor** (ডান subtree-র সর্বনিম্ন, মানে ক্রমে পরেরটা) খুঁজে তার মান দিয়ে এই ঘর ভরো, তারপর successor-টাকে মোছো (সে তো leaf বা এক-childই হবে)। যেমন 3 মুছতে হলে successor 4: 3-এর জায়গায় 4 বসে, পুরনো 4-এর ঘর মুছে যায়। নিয়ম ভাঙে না, কারণ successor-ই ছিল ডানদিকের সবচেয়ে ছোট।
+
+```js
+delete(value) {
+  this.root = this._deleteRec(this.root, value);
+}
+
+_deleteRec(node, value) {
+  if (!node) return null;
+
+  if (value < node.value) {
+    node.left = this._deleteRec(node.left, value);
+  } else if (value > node.value) {
+    node.right = this._deleteRec(node.right, value);
+  } else {
+    // পেলে! তিন কেস:
+    if (!node.left) return node.right;         // কেস ১+২: ডান child (বা null) উঠে আসে
+    if (!node.right) return node.left;         // কেস ২: বাম child উঠে আসে
+
+    // কেস ৩: ডান subtree-র সর্বনিম্ন দিয়ে ভরাও
+    let succ = node.right;
+    while (succ.left) succ = succ.left;
+    node.value = succ.value;
+    node.right = this._deleteRec(node.right, succ.value); // successor-টা এবার মোছো
+  }
+  return node;
+}
+```
+
+## In-order-এর জাদু: sorted ক্রম
+
+মনে করো [Traversal](./binary-tree-traversal.mdx)-এর in-order: বাম, root, ডান। BST-এর নিয়ম বলছে বামে ছোট, ডানে বড়, তাই in-order চালালেই ফল **ছোট থেকে বড়** এসে যায়:
+
+```js
 function inOrder(node, out = []) {
   if (!node) return out;
   inOrder(node.left, out);
@@ -69,35 +155,69 @@ function inOrder(node, out = []) {
   return out;
 }
 
-const bst = new BST();
-[8, 3, 10, 1, 6, 14].forEach(v => bst.insert(v));
-console.log(bst.search(6));  // true
-console.log(bst.search(7));  // false
-console.log(inOrder(bst.root)); // [1,3,6,8,10,14] sorted!
+console.log(inOrder(bst.root)); // [1, 3, 4, 5, 6, 7, 8, 10, 14]
 ```
 
-## কোড ব্রেকডাউন
+এক লাইনে: **BST + in-order = sorted output**। কোনো sort চালানো লাগল না, কাঠামো নিজেই ক্রম ধরে রাখে। কোনো BST-কে যাচাই করতেও এটা লাগে: in-order বের করে দেখো strictly increasing কিনা।
 
-- insert হোক বা search, নিয়ম একই: ছোট হলে বাঁয়ে, বড় হলে ডানে। প্রতি ধাপে অর্ধেক বাদ।
-- আর **in-order traversal সবসময় sorted ক্রম দেয়**, BST-র সবচেয়ে সুন্দর ধর্ম এটাই।
+## Skewed tree: সব শেষ হওয়ার দৃশ্য
 
-<Callout type="warn" title="সতর্কতা: skewed tree">
-sorted ডেটা insert করলে গাছ একপাশে হেলে যায় (linked list-এর মতো), আর complexity ঘটে যায় O(n)। সমাধান? balancing। পরের পাতায় AVL Tree দেখব।
-</Callout>
+ধরো sorted ডেটাই insert করলে: 1, 2, 3, 4, 5। প্রতিটা নতুন মান আগেরটার ডানেই বসতে থাকে:
+
+```text
+1 → 2 → 3 → 4 → 5   (সব ডানে, একদম হেলানো দণ্ড)
+```
+
+গাছ আর গাছ রইল না, হয়ে গেল linked list। Search-এ এবার প্রতি ধাপে অর্ধেক বাদ হয় না, একটা বাদ হয়: **O(n)**। BST-র সব O(log n) প্রতিশ্রুতি দাঁড়িয়ে ছিল "গাছ ভারসাম্যপূর্ণ" এই শর্তের উপর। এই বিপদ থেকে বাঁচাতেই [AVL Tree](./avl-tree.mdx) জন্ম নিয়েছে, যেখানে গাছ নিজে ঘুরে ভারসাম্য রাখে।
 
 ## Complexity
 
-- গড়ে O(log n); worst case (skewed গাছ) O(n)।
+| অপারেশন | Average | Worst (skewed) | কেন |
+|---------|---------|----------------|-----|
+| search | O(log n) | O(n) | খরচ = গাছের height; ভরা গাছে log n, হেলানোয় n |
+| insert | O(log n) | O(n) | খোঁজার পথই হাঁটা |
+| delete | O(log n) | O(n) | খোঁজা + সর্বোচ্চ একটা successor-খোঁজা |
+| in-order (sorted পাওয়া) | O(n) | O(n) | সবাই একবার |
+
+## সাধারণ ভুল আর edge case
+
+**১. নিয়মটা শুধু child-এর উপর যাচাই করা।**
+`node.left.value < node.value` চেক করলেই BST হয় না। বাম subtree-এর **সবাইকে** ছোট হতে হবে, গভীরের কেউ বড় হলেই নিয়ম ভাঙে। যাচাই করতে in-order নাও, সেটা increasing কিনা দেখো।
+
+**২. Delete-এ দুই-child কেসে successor না খুঁজে আধখোড়া মোছা।**
+ডান subtree-র যেকোনো node দিয়ে ভরালে নিয়ম ভাঙে; লাগে সর্বনিম্নটা (in-order successor)। বাম subtree-র সর্বোচ্চও চলে, দুটোই বৈধ, কিন্তু একটা ধরো আর পাকা থাকো।
+
+**৩. Search-এ দিক ভুলে যাওয়া।**
+ছোট বামে, বড় ডানে। চাপে পড়ে উল্টো লিখলে নেই-এমন জিনিসও "আছে" দেখাবে। ছোট একটা গাছ হাতে বানিয়ে দুইটা search-ই dry run করো।
+
+**৪. Sorted ডেটা insert করে O(log n) আশা করা।**
+উপরের skewed দৃশ্যটাই। ডেটা আগে থেকে sorted হলে shuffle করে insert করো, নয়তো self-balancing গাছ (AVL) নাও।
+
+**৫. Duplicate-এর নীতি না ঠিক করা।**
+সমান মান এলে কোথায় যাবে? আমাদের কোডে ডানে (`else` পড়ে)। তুমি চাইলে count রাখতে পারো, কিন্তু না ভেবে লিখলে duplicate হারিয়ে যায় বা দুইবার যায়। নীতি আগে ঠিক করো।
 
 ## Animation Spec
 
-> **Animation Spec: BST Insert & Search**
+> **Animation Spec: BST Insert and Search**
 >
-> - **দৃশ্য:** tree; নতুন মান root থেকে শুরু করে বাঁ/ডান সিদ্ধান্ত নিতে নিতে নিচে নামে।
-> - **ইনপুট:** insert/search-এর মান।
-> - **ধাপ:** প্রতিটা তুলনায় ছোট না বড়, সেটা দেখিয়ে পথ highlight হয়; জায়গা পেলে মানটা বসে যায়।
-> - **লক্ষ্য:** BST-র নিয়মটা, আর কেন গড়ে O(log n) হয়।
+> - **দৃশ্য:** tree; নতুন/খোঁজা মান একটা বল হয়ে root থেকে নামে; প্রতি তুলনায় পথ কাঁপে (বাম/ডান); নিচে in-order-এর ফল সরাসরি জমতে থাকে।
+> - **ইনপুট:** insert সিকোয়েন্স (random / sorted / প্রিসেট); search মান; delete দৃশ্য।
+> - **ধাপ:** insert-এ বল পথ বয়ে leaf-এ বসে; search-এ পথ সবুজ/লাল; sorted সিকোয়েন্সে গাছ দণ্ড হয়ে যায়, পাশে height কাউন্টার লালে ওঠে।
+> - **নিয়ন্ত্রণ:** step, play, reset; AVL-এর সঙ্গে তুলনা টগল (পরের পেজের আমন্ত্রণ)।
+> - **লক্ষ্য:** "খোঁজা মানে অর্ধেক বাদ" আর "sorted ডেটা মানে দণ্ড", দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- BST-তে সবচেয়ে ছোট মান খোঁজার মেথড লেখো। (hint: শুধু বাঁয়ে যেতে থাকো।)
+- **সহজ ১:** `[5, 2, 8, 1, 3, 7, 9]` দিয়ে BST বানাও হাতে (ক্রমে insert)। গাছ আঁকো, তারপর in-order লিখে মিলাও sorted এল কিনা।
+- **সহজ ২:** তোমার গাছে search(7) আর search(4)-এর পথ লিখো: কোন কোন node দেখা হলো।
+- **মাঝারি ১:** `findMin` আর `findMax` লেখো। (হিন্ট: একটায় শুধু বামে, আরেকটায় শুধু ডানে, যতক্ষণ পারো। কেন এটা কাজ করে, নিয়ম দিয়ে ব্যাখ্যা করো।)
+- **মাঝারি ২:** `isValidBST(root)` লেখো। (হিন্ট: শুধু parent-এর সঙ্গে তুলনা যথেষ্ট না; প্রতি node-এর একটা বৈধ পরিসর (min, max) থাকে, recursion-এ নিচে নামার সঙ্গে পরিসর সরু হয়। অথবা in-order নিয়ে increasing চেক।)
+- **কঠিন:** k-তম ছোট উপাদান BST থেকে (LeetCode 230), গাছ sort না করে। (হিন্ট: in-order ঘুরে k-তমটা থামাও। Early exit লাগলে কোথায় রাখবে, ভাবো। Extra: প্রতি node-এ subtree-র size রাখলে O(h)-এও হয়, সেটা order-statistics tree-এর বীজ।)
+
+## সারসংক্ষেপ
+
+- BST-এর এক নিয়ম: বামে ছোট, ডানে বড়, পুরো subtree জুড়ে।
+- Search/insert/delete গড়ে O(log n), কারণ প্রতি ধাপে অর্ধেক বাদ; খরচ আসলে O(height)।
+- Delete-এর কঠিন কেসে in-order successor দিয়ে ভরাও, নিয়ম অক্ষত থাকে।
+- In-order চালালেই sorted output: এটাই BST-র পরিচয়পত্র আর যাচাই-যন্ত্র।
+- Sorted ডেটা insert মানে দণ্ড-গাছ আর O(n): এখান থেকেই AVL-এর অস্তিত্ব।

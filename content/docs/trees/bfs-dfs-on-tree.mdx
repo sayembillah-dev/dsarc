@@ -1,70 +1,141 @@
 ---
 title: "Tree-তে BFS আর DFS: এক নজরে"
-description: stack দিলে DFS, queue দিলে BFS। দুটো কৌশলই আসলে তুমি আগেই শিখে ফেলেছ।
+description: Stack দিলে গভীরে, queue দিলে স্তরে। দুই কৌশল পাশাপাশি, iterative DFS-এর পুরো dry run, space-এর তুলনা, আর graph-এর দিকে সেতু।
 ---
 
 ## কী শিখব
 
-- দুই traversal কৌশল এক নজরে
+- এক লাইনে পুরো ব্যাপারটা: stack মানে DFS, queue মানে BFS
+- Iterative DFS হাতে stack দিয়ে, পুরো dry run
+- দুটোর space খরচ কোথায় আলাদা: গভীরতা বনাম প্রস্থ
+- কোন ধরনের প্রশ্নে কোনটা স্বাভাবিক
+- Tree থেকে graph-এ যাওয়ার পথে কী বদলায়
 
 ## ধারণা
 
-আগের দুই পাতায় যা করলে, তারই নামকরণ এই পাতায়:
+আগের পেজগুলোতে তুমি দুটোই শিখে গেছ, এখানে শুধু পাশাপাশি বসাই:
 
-- **DFS** (pre/in/post) আগে গভীরে ঢোকে। চলে recursion বা **stack** দিয়ে।
-- **BFS** (level-order) স্তরে স্তরে এগোয়। চলে **queue** দিয়ে।
+- **DFS** ([Pre/In/Post](./binary-tree-traversal.mdx)): এক শাখা ধরে গভীরে নেমে যায়, শেষে গিয়ে ফেরে। চলে recursion বা **stack** দিয়ে।
+- **BFS** ([Level-Order](./level-order-traversal.mdx)): স্তরে স্তরে এগোয়। চলে **queue** দিয়ে।
 
-ব্যাপারটা হলো, পরে graph (section 13) পড়লেও এই একই দুটো ধারণা লাগবে। tree আসলে graph-এরই বিশেষ রূপ, শুধু cycle নেই।
+গোপন কথা হলো, আসলে traversal-এর ক্রম ঠিক করে দেয় **কাঠামোটা**: কোনটা আগে বের হবে, stack (LIFO) না queue (FIFO), সেই এক সিদ্ধান্তেই দুই জগৎ। এই পেজে সেটা প্রমাণ করি iterative DFS লিখে।
 
-## কোড উদাহরণ
+## পরীক্ষার গাছ
 
-DFS-টা এবার recursion ছাড়া, হাতে stack দিয়ে:
+```text
+        1
+       / \
+      2   3
+     / \
+    4   5
+```
+
+## Dry run: iterative DFS (pre-order)
+
+নিয়ম: stack-এ root; বারবার top বের করে visit, তারপর child-গুলো push। কিন্তু stack LIFO, তাই **ডান আগে push**, তবে বাম আগে বের হয়:
+
+| ধাপ | pop (visit) | push | stack (ডানে top) | output |
+|-----|-------------|------|--------------------|--------|
+| শুরু | - | 1 | `[1]` | `[]` |
+| 1 | 1 | 3, তারপর 2 | `[3, 2]` | `[1]` |
+| 2 | 2 | 5, তারপর 4 | `[3, 5, 4]` | `[1, 2]` |
+| 3 | 4 | - | `[3, 5]` | `[1, 2, 4]` |
+| 4 | 5 | - | `[3]` | `[1, 2, 4, 5]` |
+| 5 | 3 | - | `[]` | `[1, 2, 4, 5, 3]` |
+
+ফল `[1, 2, 4, 5, 3]`, হুবহু recursive pre-order। ধাপ ১-এ ডান (3) আগে ঢুকেছিল বলে বাম (2) আগে বের হলো, LIFO-র খেলা। এই push-এর উল্টো ক্রমটাই সবচেয়ে পিছলা জায়গা।
+
+## কোড: iterative DFS
 
 ```js
-class TreeNode {
-  constructor(value) {
-    this.value = value;
-    this.left = null;
-    this.right = null;
-  }
-}
-
 function dfsIterative(root) {
   if (!root) return [];
-  const stack = [root], out = [];
-  while (stack.length) {
-    const node = stack.pop();       // উপরেরটা নিই (LIFO, অর্থাৎ গভীরে আগে)
+
+  const stack = [root];
+  const out = [];
+
+  while (stack.length > 0) {
+    const node = stack.pop();        // LIFO: শেষে ঢোকা আগে বের হয়
     out.push(node.value);
-    if (node.right) stack.push(node.right); // ডান আগে push (বাঁ আগে বের হবে)
-    if (node.left) stack.push(node.left);
+
+    if (node.right) stack.push(node.right);  // ডান আগে push
+    if (node.left) stack.push(node.left);    // বাম পরে push, আগে বের হবে
   }
+
   return out;
 }
 
-const r = new TreeNode(1);
-r.left = new TreeNode(2); r.right = new TreeNode(3);
-r.left.left = new TreeNode(4); r.left.right = new TreeNode(5);
-console.log(dfsIterative(r)); // [1,2,4,5,3] (pre-order)
+console.log(dfsIterative(r)); // [1, 2, 4, 5, 3]
 ```
 
-## কোড ব্রেকডাউন
+আর BFS-এর কোড? [Level-Order](./level-order-traversal.mdx)-এর সেই queue-ওয়ালা কোডটাই, এক অক্ষর বদল নয়। stack-এর জায়গায় queue, pop-এর জায়গায় shift, push-এর জায়গায় push, ক্রম বদলে যায় নিজে থেকেই। এই হুবহু-এক কোডের সাক্ষ্য দিয়েই বোঝো: traversal আসলে কাঠামোর ছায়া।
 
-- recursion-এর call stack-ই আসলে DFS-এর stack। এখানে শুধু সেটা হাতে বানিয়ে করলাম।
-- এক লাইনে মনে রাখো: stack মানে DFS, queue মানে BFS।
+## Recursion বনাম explicit stack
 
-## Complexity
+একটা সত্যি পরিষ্কার করে দিই: recursive DFS-ও ভেতরে stack-ই ব্যবহার করে, [Call Stack](../recursion/call-stack.mdx)-এর। তাহলে পার্থক্য কী?
 
-- DFS, BFS দুটোই O(n) time। space যথাক্রমে O(h) (stack) আর O(n) (queue), আগের পাতাগুলোর হিসাবই।
+- **Recursive:** কোড ছোট, কিন্তু stack engine-এর হাতে, সীমা তার।
+- **Iterative + stack:** stack তোমার হাতে, তোমার heap-এ, অনেক গভীর গাছেও overflow-এর ভয় কম। আর মাঝপথে থামা/চালিয়ে যাওয়া (pause-resume) সহজ।
+
+Space-এর হিসাব দুটোতেই O(h), কারণ মনে রাখতে হয় পথটা।
+
+## Complexity: পাশাপাশি
+
+| দিক | DFS (stack/recursion) | BFS (queue) |
+|-----|------------------------|--------------|
+| Time | O(n) | O(n) |
+| Space | O(h), গভীরতা | O(w), সবচেয়ে চওড়া স্তর |
+| ভারসাম্যপূর্ণ গাছে | O(log n) | O(n) (শেষ স্তরই n/2) |
+| হেলানো গাছে | O(n) | O(1) (প্রতি স্তরে একজন) |
+
+শেষ দুই সারিটাই আসল শিক্ষা: গাছের **আকৃতি** দেখে কোনটার space সাশ্রয়ী ঠিক হয়। লম্বা চিকন গাছে BFS জিতে, চওড়া ফাটা গাছে DFS।
+
+## কোন প্রশ্নে কোনটা
+
+- **DFS স্বাভাবিক:** পথ খোঁজা (root থেকে leaf), subtree-র হিসাব (sum, count), গাছের গঠনগত প্রশ্ন, topological-স্বাদের কাজ।
+- **BFS স্বাভাবিক:** "সবচেয়ে কাছের" প্রশ্ন (shortest path, unweighted), স্তরভিত্তিক প্রশ্ন (height, স্তরের যোগফল), "কত ধাপে" ঘরানার।
+
+আর graph-এ গেলে? একই দুই কঙ্কাল, শুধু একটা `visited` set যোগ হবে, কারণ graph-এ cycle থাকে, একই node-এ আবার ঘুরে আসা যায়। Tree-তে cycle নেই বলে আমরা এ যাবত চেক করিনি। [Graphs](../graphs/bfs.mdx)-এ সেই পূর্ণ রূপ।
+
+## সাধারণ ভুল আর edge case
+
+**১. Iterative DFS-এ push-এর ক্রম উল্টানো।**
+বাম আগে push করলে LIFO বলে ডান আগে বের হয়, ক্রম উল্টো যায়। Pre-order চাইলে **ডান আগে, বাম পরে**। এক লাইনের ভুল, কিন্তু পুরো ফল বদলায়।
+
+**২. Queue আর stack গুলিয়ে ফেলা।**
+চাপে পড়ে BFS লিখতে গিয়ে `pop()` লিখে ফেললে সেটা আর BFS থাকে না, DFS হয়ে যায়, ক্রম উল্টোদিকে। "কোনটা আগে বের হচ্ছে" এই এক প্রশ্ন সব ঠিক করে দেয়।
+
+**৩. Space-এর তুলনা না জানা।**
+"DFS কম জায়গা নেয়" সাধারণ কথা না: হেলানো গাছে DFS-এ O(n), চওড়া গাছে BFS-এ O(n)। প্রশ্ন হলো গাছের আকৃতি কেমন, তারপর কোনটা।
+
+**৪. খালি গাছ/ null child চেক ভুলে যাওয়া।**
+`stack.pop()`-এর পর `node.left` পড়ার আগে null চেক; নইলে TypeError। প্রতি push-এর আগে `if (node.left)` বাধ্যতামূলক।
+
+**৫. Graph-এ tree-র কোড হুবহু চাপানো।**
+Graph-এ cycle থাকে, visited ছাড়া চালালে A → B → A ঘুরে অনন্ত লুপ। Tree-র কোড graph-এ যাওয়ার আগে visited-সেট জোড়া লাগবে, এটা ভুললে বড় বিপদ।
 
 ## Animation Spec
 
 > **Animation Spec: Stack vs Queue Traversal**
 >
-> - **দৃশ্য:** একই tree, পাশে একবার stack (DFS), একবার queue (BFS)।
-> - **ইনপুট:** DFS/BFS toggle।
-> - **ধাপ:** data structure-এর push/pop অনুযায়ী visit-এর ক্রম কীভাবে বদলায়, সরাসরি দেখা যাবে।
-> - **লক্ষ্য:** কাঠামো (stack/queue) কীভাবে traversal-এর ক্রম ঠিক করে দেয়।
+> - **দৃশ্য:** একই গাছ দুইবার পাশাপাশি; বামের নিচে stack (উল্লম্ব), ডানের নিচে queue (অনুভূমিক); visit হওয়া node-এ সিরিয়াল নম্বর।
+> - **ইনপুট:** গাছ প্রিসেট (ভারসাম্যপূর্ণ/হেলানো); speed; space মিটার।
+> - **ধাপ:** দুই পক্ষে একসাথে অপারেশন চলে: একদিকে push/pop, আরেকদিকে enqueue/dequeue; গাছে visit-এর ক্রম দুই রকম ফুটে ওঠে; মিটারে সর্বোচ্চ জায়গা দাগায়।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** একই কোড, শুধু কাঠামো বদলে ক্রমই বদলে যায়; আর space গাছের আকৃতির বন্দী, দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- BFS iterative আর DFS iterative, কোনটায় কোন structure লাগে, মিলাও।
+- **সহজ ১:** পরীক্ষার গাছে iterative DFS-এর dry run নিজে করো (টেবিল: pop, push, stack, output)। কোন ধাপে 3 stack-এর একদম তলায় পড়ে রইল, কেন?
+- **সহজ ২:** একই গাছে BFS-এর queue-এর টেবিল বানাও। দুই টেবিল পাশাপাশি রেখে বলো, কোন মুহূর্তে দুটোর ভাগ্য আলাদা হলো।
+- **মাঝারি ১:** Iterative DFS দিয়ে pre-order-এর বদলে **in-order** লেখো। (হিন্ট: সোজা push-pop দিয়ে হয় না; node-কে দুই ধরনের কাজে ভাগ করো: "ঘোরা বাকি" আর "visit করা", stack-এ দুটোই রাখো। এই কৌশলটা অনেক জায়গায় লাগে।)
+- **মাঝারি ২:** দুইটা গাছ বানাও: একটা লম্বা হেলানো, একটা পূর্ণ। দুটোতেই DFS আর BFS চালিয়ে সর্বোচ্চ stack/queue-আকার লিখো। তুলনাটা টেবিলের সঙ্গে মিলাও।
+- **কঠিন:** একই কোড দিয়ে tree আর DAG (cycle-হীন graph) দুটোতেই DFS চালাও। DAG-এ কী আলাদা ঘটল, আর পুরো graph-এ গেলে কোন এক জিনিস যোগ করতেই হবে? (হিন্ট: একই node দুই পথে আসতে পারে; visited ছাড়া কতবার process হবে, ভাবো।)
+
+## সারসংক্ষেপ
+
+- Stack মানে DFS (গভীরে), queue মানে BFS (স্তরে): traversal কাঠামোর ছায়া।
+- Iterative DFS-এ ডান আগে push, তবে বাম আগে বের হয়: LIFO-র খেলা।
+- Time দুটোই O(n); space DFS-এ O(গভীরতা), BFS-এ O(প্রস্থ): গাছের আকৃতিই বিচারক।
+- পথ/হিসাবের প্রশ্নে DFS, "কাছের/কত ধাপে" প্রশ্নে BFS স্বাভাবিক।
+- Graph-এ গেলে এই দুটোই, শুধু visited-সেট সঙ্গী: সেদিকেই এগোচ্ছি।

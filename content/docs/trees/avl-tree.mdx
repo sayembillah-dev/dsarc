@@ -1,81 +1,182 @@
 ---
 title: "AVL Tree: নিজেই ভারসাম্য রাখা BST"
-description: BST হেলে গেলে O(n), তাই AVL প্রতিটা insert/delete-এর পর rotation দিয়ে গাছ ঠিক রাখে, সবসময় O(log n)।
+description: Balance factor আর rotation দিয়ে গাছ কখনও হেলে পড়ে না। চার রকম ভাঙন, right rotation-এর পুরো dry run, আর কেন সব অপারেশন নিশ্চিত O(log n)।
 ---
 
 ## কী শিখব
 
-- rotation দিয়ে গাছ ভারসাম্যে রাখা, যাতে worst case কখনোই না আসে
+- Skewed BST-এর বিপদ থেকে AVL-এর জন্ম: সমস্যাটা আগে পাকা করা
+- Balance factor কী, আর কখন গাছ "ভাঙে"
+- Rotation আসলে কী করে: দুই-tিনটা pointer বদলে গাছ চাপা হয়
+- চার রকম ভাঙন (LL, RR, LR, RL) আর তাদের ফিক্স
+- কেন এতে সব অপারেশন নিশ্চিত O(log n)
 
-## ধারণা
+## ধারণা: সমস্যাটা আগে
 
-ধরো, BST-তে 1, 2, 3, 4, 5 ক্রমে insert করলে। প্রতিটা নতুন মান আগেরটার ডানেই বসতে থাকবে, আর গাছটা হয়ে যাবে লম্বা এক দণ্ড, প্রায় linked list। তখন search করতে O(n) লাগবে, BST-র সব সুবিধা জলে।
+[BST](./binary-search-tree.mdx)-এ দেখেছিলে, sorted ডেটা insert করলে গাছ হেলে দণ্ড হয়ে যায়, search হয় O(n)। BST-র সব শক্তি একটা শর্তে টিকে ছিল: গাছ ভরা থাকলে height log n। প্রশ্ন হলো, কে গাছটাকে ভরা রাখবে?
 
-এখানেই আসল জিনিস। **AVL Tree** কিন্তু হেলে পড়তে দেয় না। প্রতিটা insert/delete-এর পর ও নিজে চেক করে নেয়, কোনো node-এর বাঁ আর ডান subtree-র height-এর পার্থক্য যেন সর্বোচ্চ ১ থাকে। এই পার্থক্যের নাম **balance factor**। পার্থক্য বাড়িয়ে দিলে **rotation** দিয়ে ঘুরিয়ে সোজা করে ফেলে। ফলে height সবসময় নিয়ন্ত্রণে থাকে, আর search/insert সবসময় O(log n)।
+**AVL Tree** এর উত্তর: গাছ নিজেই। প্রতি insert/delete-এর পর পথের প্রতি node চেক করে: আমার দুই পাশের height-এর পার্থক্য কি ১-এর বেশি? হলে ঘুরে ঠিক হয়ে যাও। এই পার্থক্যের নাম **balance factor**:
 
-ভারসাম্যহীনতা চার রকম হতে পারে, প্রতিটার নিজের ফিক্স আছে:
+```text
+balanceFactor(node) = height(node.left) - height(node.right)
+```
 
-- LL: ডানে rotate (right rotation)
-- RR: বাঁয়ে rotate (left rotation)
-- LR: আগে বাঁয়ে, তারপর ডানে
-- RL: আগে ডানে, তারপর বাঁয়ে
+AVL-এর শর্ত: প্রতি node-এ balance factor ∈ {-1, 0, 1}। মনে রাখো, height সবসময় মনে রাখা হয় node-এর ভেতর, নইলে প্রতি চেকে আবার গাছ ঘোরা লাগত।
 
-## কোড উদাহরণ
+## Rotation: দুই মিনিটের অস্ত্রোপচার
 
-rotation-এর মূল অংশ:
+Rotation মানে কয়েকটা pointer বদলে গাছের আকৃতি পাল্টানো, কিন্তু **BST নিয়ম অক্ষত রেখে**। দুটোই মূল, বাকি দুটো এদের জোড়া:
+
+**Right rotation (বামে ভারী ঠিক করা):**
+
+```text
+      y                x
+     / \              / \
+    x   T3   ──→    T1   y
+   / \                  / \
+ T1   T2              T2   T3
+```
+
+কী বদলাল? মাত্র দুইটা বাঁধন: `y.left = x.right` (T2-এর নতুন ঠিকানা), আর `x.right = y`। আর BST নিয়ম ভাঙেনি, কারণ T2-এর সব মান x আর y-এর মাঝখানেরই ছিল, ঘোরার পরও সেখানেই আছে। **Left rotation** হুবহু এর আয়নার রূপ।
+
+## Dry run: 1, 2, 3 insert (RR ভাঙন)
+
+| ধাপ | insert | গাছ | অবস্থা |
+|-----|--------|------|--------|
+| 1 | 1 | `1` | balanced |
+| 2 | 2 | `1 → 2` (ডানে) | balanced (bf = -1) |
+| 3 | 3 | `1 → 2 → 3` দণ্ড | 1-এর bf = -2: **ভাঙন!** |
+
+ধাপ ৩-এ node 1-এর বাম height 0, ডান height 2, পার্থক্য 2। ভাঙন কোন দিকে? ডানে, আর ডান child-এরও ডানে, মানে **RR (Right-Right)**। ফিক্স: **left rotation** node 1-এ:
+
+```text
+  1              2
+   \            / \
+    2    ──→   1   3
+     \
+      3
+```
+
+Height 3 থেকে 2-এ নেমে গেল, আর মাঝের মান 2 root হয়ে BST নিয়মও অক্ষত। এই ছোট্ট ঘূর্ণনেই সব জাদু।
+
+## চার রকম ভাঙন আর ফিক্স
+
+| ভাঙন | কোথায় ভারী | ফিক্স |
+|------|--------------|------|
+| LL (Left-Left) | বামে, আর বাম child-এর বামে | একটা right rotation |
+| RR (Right-Right) | ডানে, আর ডান child-এর ডানে | একটা left rotation |
+| LR (Left-Right) | বামে, কিন্তু বাম child-এর ডানে | আগে child-এ left rotation (LL বানায়), তারপর right |
+| RL (Right-Left) | ডানে, কিন্তু ডান child-এর বামে | আগে child-এ right rotation, তারপর left |
+
+LR/RL-এ দুই ধাপ কেন? এক ঘূর্ণনে ভারী দিকটা বদলে যায় না, বরং আরও এলোমেলো হয়। আগে ভেতরের বাঁকা অংশটাকে সোজা করে LL/RR-এ আনা হয়, তারপর এক ঘূর্ণনেই শেষ। নাম মুখস্থ করার দরকার নেই, যুক্তিটা মনে রাখো: **আগে সোজা করো, তারপর ঘোরাও**।
+
+## কোড: rotation আর rebalance
 
 ```js
 function height(node) { return node ? node.height : 0; }
-function balanceFactor(node) { return node ? height(node.left) - height(node.right) : 0; }
-function update(node) { node.height = 1 + Math.max(height(node.left), height(node.right)); }
 
-// right rotation (LL ঠিক করে)
+function update(node) {
+  node.height = 1 + Math.max(height(node.left), height(node.right));
+}
+
+function balanceFactor(node) {
+  return node ? height(node.left) - height(node.right) : 0;
+}
+
+// right rotation: LL ভাঙনের ফিক্স
 function rotateRight(y) {
   const x = y.left;
-  y.left = x.right;      // x-এর ডান subtree y-এর বাঁয়ে
-  x.right = y;           // y এখন x-এর ডানে
-  update(y); update(x);
-  return x;             // নতুন root
+  const t2 = x.right;
+
+  x.right = y;        // y নিচে নামল
+  y.left = t2;        // x-এর পুরনো ডান অংশ y-এর বামে
+
+  update(y);          // আগে নিচেরটা, তারপর উপরেরটা
+  update(x);
+  return x;           // নতুন subtree-root
 }
-// left rotation (RR ঠিক করে)
-function rotateLeft(x) {
-  const y = x.right;
-  x.right = y.left;
-  y.left = x;
-  update(x); update(y);
-  return y;
-}
-// insert-এর পর balance:
+
+// rebalance: insert/delete-এর পর প্রতি node-এ
 function rebalance(node) {
   update(node);
   const bf = balanceFactor(node);
-  if (bf > 1 && balanceFactor(node.left) >= 0) return rotateRight(node);        // LL
-  if (bf > 1 && balanceFactor(node.left) < 0) { node.left = rotateLeft(node.left); return rotateRight(node); }  // LR
-  if (bf < -1 && balanceFactor(node.right) <= 0) return rotateLeft(node);       // RR
-  if (bf < -1 && balanceFactor(node.right) > 0) { node.right = rotateRight(node.right); return rotateLeft(node); } // RL
-  return node;
+
+  if (bf > 1 && balanceFactor(node.left) >= 0) {
+    return rotateRight(node);                            // LL
+  }
+  if (bf > 1 && balanceFactor(node.left) < 0) {          // LR
+    node.left = rotateLeft(node.left);
+    return rotateRight(node);
+  }
+  if (bf < -1 && balanceFactor(node.right) <= 0) {
+    return rotateLeft(node);                             // RR
+  }
+  if (bf < -1 && balanceFactor(node.right) > 0) {        // RL
+    node.right = rotateRight(node.right);
+    return rotateLeft(node);
+  }
+  return node;                                           // balanced-ই ছিল
 }
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: rotateRight, লাইনে লাইনে
 
-- প্রতিটা node নিজের height মনে রাখে। balance factor মানে বাঁ height বিয়োগ ডান height।
-- এই মান ১-এর বেশি বা -১-এর কম হলেই rotation। শুধু pointer গুলো ঘোরে, মান বা BST-র নিয়ম কিছুই নষ্ট হয় না।
-- rotation আসলে কয়েকটা pointer বদলানো, মানে O(1) কাজ।
+1. `const x = y.left; const t2 = x.right` : তিনটা চরিত্র আগে ধরে রাখা: নতুন নেতা x, তার ডান দল t2, পুরনো নেতা y। t2 না ধরলে ঘোরার মাঝে হারিয়ে যেত।
+2. `x.right = y` : y নিচে নেমে x-এর ডানে গেল।
+3. `y.left = t2` : t2-কে নতুন বাসা, y-এর বামে। এই লাইনটা সবচেয়ে সূক্ষ্ম: t2-র মানগুলো x আর y-এর মাঝের, তাই BST নিয়মে এরা y-এর বামেই থাকার কথা।
+4. `update(y)` আগে, `update(x)` পরে : height নিচের থেকে উপরে ঠিক করতে হয়, কারণ x-এর height y-এর নতুন height-এর উপর নির্ভর করে। ক্রম উল্টালে x পুরনো height নিয়ে হিসাব করে।
+5. `return x` : নতুন subtree-root ফেরত যায়, বাবা call-এর হাতে। পুরো rotation মাত্র দুই pointer-বদল + দুই update, O(1)।
 
 ## Complexity
 
-- insert, search, delete, তিনটাই সবসময় O(log n) নিশ্চিত। skewed হওয়ার ভয় নেই।
+| অপারেশন | খরচ | কেন |
+|---------|------|-----|
+| search | O(log n) | height কখনও ~1.44·log₂n ছাড়ায় না (প্রমাণ চট, মনে রাখো) |
+| insert | O(log n) | খোঁজা O(log n) + ফেরার পথে সর্বোচ্চ দুই rotation, প্রতিটা O(1) |
+| delete | O(log n) | একই, তবে rotation বেশি লাগতে পারে, তবু O(log n) সীমায় |
+| Space | O(n) | প্রতি node-এ height-এর বাড়তি field |
+
+আসল জয়টা worst case-এ: BST যেখানে O(n)-এ পড়তে পারে, AVL সেখানে **নিশ্চিত** O(log n)। দাম হলো insert/delete-এর কিছু বাড়তি কাজ আর কোডের জটিলতা। Map/Set-এর অনেক বাস্তব বাস্তবায়ন এই পরিবারের (Red-Black tree আরও জনপ্রিয়, নীতি একই)।
+
+## সাধারণ ভুল আর edge case
+
+**১. Height আপডেটের ক্রম উল্টানো।**
+Rotation-এ আগে নিচের node (যে নামল), তারপর উপরেরটা। উল্টো করলে নতুন root পুরনো child-এর height নিয়ে ভুল হিসাব করে, পরবর্তী rebalance বিভ্রান্ত হয়।
+
+**২. t2 না ধরে rotation করা।**
+`x.right = y` লেখার আগে `x.right` (t2) না বাঁচালে সেই subtree হারিয়ে যায়, গাছের অংশ উধাও। তিন চরিত্র আগে ধরো, তারপর বদলাও।
+
+**৩. শুধু root-এ rebalance চেক করা।**
+ভাঙন হতে পারে পথের যেকোনো node-এ, শুধু root-এ না। তাই rebalance চলে recursion-এর **ফিরে আসার পথে**, নিচ থেকে উপরে, প্রতি node-এ।
+
+**৪. LR/RL-এ একটা rotation দিয়ে ঠিক করতে চাওয়া।**
+এক ঘূর্ণনে ভেতরের বাঁকা অংশ ভারীই থেকে যায়। দুই ধাপের যুক্তি (আগে সোজা, পরে ঘোরাও) না বুঝে এক ঘূর্ণন দিলে গাছ balanced হয় না, শুধু অন্যরকম ভাঙে।
+
+**৫. AVL-এর height-হিসাব ছোট ডেটায় মূল্যহীন করা।**
+কয়েকশো node-এ plain BST-ই যথেষ্ট, rotation-এর কোড-জটিলতা সেখানে অপচয়। AVL তখনই, যখন worst case সহ্য করা যায় না আর ডেটার ক্রম নিয়ন্ত্রণে নেই।
 
 ## Animation Spec
 
 > **Animation Spec: Rotation Fixer**
 >
-> - **দৃশ্য:** unbalanced tree; হেলে-পড়া অংশ লাল রঙে।
-> - **ইনপুট:** insert sequence; rotation type auto-detect।
-> - **ধাপ:** insert-এর পর ভারসাম্য মাপা হয়; দরকার হলে rotation animation-এ node গুলো ঘুরে balanced হয় (সবুজ)।
-> - **লক্ষ্য:** rotation ঠিক কীভাবে height নিয়ন্ত্রণে রাখে, সেটা চোখে দেখা।
+> - **দৃশ্য:** tree, প্রতি node-এ ছোট balance factor ব্যাজ; ভাঙন হলে node লাল কাঁপে; rotation-এর মুহূর্তে বাঁধন দুটো আলাদা হয়ে ঘুরে বসে।
+> - **ইনপুট:** insert সিকোয়েন্স (sorted / random / কাস্টম); speed।
+> - **ধাপ:** insert-এর ফিরে আসার পথে নিচ থেকে উপরে bf চেক হয়; ভাঙনে চার রকমের মধ্যে সঠিকটা চিহ্নিত হয়ে rotation ঘটে; সবুজ হয়ে গাছ চাপা থাকে।
+> - **নিয়ন্ত্রণ:** step, play, reset; plain BST-এর সঙ্গে একই সিকোয়েন্সের তুলনা।
+> - **লক্ষ্য:** দুই pointer-বদলে গাছ চাপা হয়, আর height লগের বাইরে যায় না, চোখে দেখা।
 
 ## অনুশীলন
 
-- ভাবো তো, 1, 2, 3 ক্রমে insert করলে কোন rotation লাগবে? (RR, মানে left rotation।)
+- **সহজ ১:** 10, 20, 30 ক্রমে insert করলে কোন ভাঙন, কোন rotation? হাতে আঁকো, প্রতি ধাপে bf লিখো।
+- **সহজ ২:** 30, 10, 20 ক্রমে insert করো। এবার ভাঙন কোন ধরনের, কেন এক ঘূর্ণনে ঠিক হয় না?
+- **মাঝারি ১:** `[1..7]` ক্রমে insert করে পুরো AVL গাছটা ধাপে ধাপে আঁকো। শেষ গাছের height কত, আর plain BST হলে কত হত?
+- **মাঝারি ২:** প্রমাণ করো কথায়: কেন rotation BST নিয়ম ভাঙে না। (হিন্ট: t2-এর মানের পরিসর ঘোরার আগে-পরে একই থাকে, দেখাও।)
+- **কঠিন:** AVL-এ height যে O(log n)-এর বেশি হয় না, তার আঁচ পাও এইভাবে: minimum node-সংখ্যা N(h) যা height h-এর AVL গাছে থাকতেই হয়, সেটা মনিট হয় N(h) = N(h-1) + N(h-2) + 1। Fibonacci-র গন্ধ পাচ্ছ? [Memoization](../recursion/memoization.mdx)-এর সেই গাছ। এখান থেকে height ≤ ~1.44 log₂n আসে, হিসাবটা গবেষণা করে দেখো।
+
+## সারসংক্ষেপ
+
+- AVL = BST + নিয়ম: প্রতি node-এ দুই পাশের height-পার্থক্য সর্বোচ্চ ১।
+- Rotation মানে দুই pointer-বদল (O(1)), BST নিয়ম অক্ষত থাকে।
+- ভাঙন চার রকম: LL/RR এক ঘূর্ণনে, LR/RL দুই ঘূর্ণনে; যুক্তি: আগে সোজা, পরে ঘোরাও।
+- Rebalance চলে ফিরে আসার পথে, নিচ থেকে উপরে, প্রতি node-এ।
+- ফল: সব অপারেশন নিশ্চিত O(log n), worst case আর ভয়ের না।
