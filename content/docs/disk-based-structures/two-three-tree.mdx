@@ -1,0 +1,116 @@
+---
+title: "2-3 Tree: split/merge দিয়ে সবসময় balanced tree"
+description: প্রতিটা node-এ ১-২টা key ও ২-৩টা সন্তান; split/merge দিয়ে ভারসাম্য, উচ্চতা সবসময় O(log n)।
+---
+
+## কী শিখব
+
+- সবসময় balanced থাকা multi-way search tree-র ধারণা
+
+## ধারণা
+
+2-3 Tree একটা balanced search tree যেখানে প্রতিটা internal node হয়:
+
+- **2-node:** ১টা key, ২টা সন্তান, অথবা
+- **3-node:** ২টা key, ৩টা সন্তান
+
+**সব leaf সবসময় একই স্তরে** থাকে, তাই tree perfectly balanced, উচ্চতা সবসময় O(log n)। AVL-এর মতোই লক্ষ্য (ভারসাম্য), কিন্তু rotation-এর বদলে node **split/merge** দিয়ে ভারসাম্য রাখে। এটাই B-Tree-র (পরের পাতায় বিস্তারিত) সরলতম রূপ।
+
+```text
+2-node:  [10]        3-node:  [10 | 20]
+        /    \               /    |    \
+     <10     >10          <10  10-20  >20
+```
+
+## কোড উদাহরণ
+
+```js
+class TwoThreeNode {
+  constructor() {
+    this.keys = [];       // 1 বা 2 টা key (sorted)
+    this.children = [];   // 2 বা 3 টা সন্তান
+  }
+  isLeaf() { return this.children.length === 0; }
+  is3Node() { return this.keys.length === 2; }
+}
+
+class TwoThreeTree {
+  constructor() { this.root = null; }
+
+  insert(key) {
+    if (!this.root) {
+      this.root = new TwoThreeNode();
+      this.root.keys.push(key);
+      return;
+    }
+    const split = this._insert(this.root, key);
+    if (split) {
+      // root split: নতুন root, height সবার জন্য সমানভাবে বাড়ে
+      const newRoot = new TwoThreeNode();
+      newRoot.keys = [split.mid];
+      newRoot.children = [this.root, split.right];
+      this.root = newRoot;
+    }
+  }
+
+  _insert(node, key) {
+    if (node.isLeaf()) {
+      node.keys.push(key);
+      node.keys.sort((a, b) => a - b);
+      return node.keys.length === 3 ? this._split(node) : null;
+    }
+    let i = 0;
+    while (i < node.keys.length && key > node.keys[i]) i++;
+    const split = this._insert(node.children[i], key);
+    if (!split) return null;
+    // child split হলে মাঝের key এই node-এ ওঠে
+    node.keys.splice(i, 0, split.mid);
+    node.children.splice(i + 1, 0, split.right);
+    return node.keys.length === 3 ? this._split(node) : null;
+  }
+
+  _split(node) {                  // 3-key node ভাঙা: মাঝের key parent-এ ওঠে
+    const right = new TwoThreeNode();
+    const mid = node.keys[1];
+    right.keys = [node.keys[2]];
+    node.keys = [node.keys[0]];
+    if (!node.isLeaf()) right.children = node.children.splice(2, 2);
+    return { mid, right };
+  }
+
+  height() {
+    let h = 0, node = this.root;
+    while (node) { h++; node = node.children[0]; }
+    return h;
+  }
+}
+
+const tree = new TwoThreeTree();
+for (const k of [10, 20, 30, 40, 50, 60, 70]) tree.insert(k);
+console.log("root keys:", tree.root.keys);  // root keys: [ 40 ]
+console.log("height:", tree.height());      // height: 3 (সব leaf একই স্তরে)
+```
+
+## কোড ব্রেকডাউন
+
+- insert-এ সঠিক leaf খুঁজে key বসায়; node-এ 3টা key হয়ে গেলে **split** হয়, মাঝেরটা parent-এ তুলে দেওয়া হয়।
+- split উপরের দিকে ছড়াতে পারে; root split হলে height বাড়ে, আর সেটা সবার জন্য সমান।
+- `is3Node()` দিয়ে চেনা যায় node-এ ২টা key (৩টা সন্তান) আছে কি না।
+- গাছ কখনো একপাশে হেলে যায় না, তাই worst case-ও O(log n)।
+
+## Complexity
+
+- search/insert/delete O(log n) নিশ্চিত।
+
+## Animation Spec
+
+> **Animation Spec: Split & Grow**
+>
+> - **দৃশ্য:** 2-3 tree; একটা full (3-key) node-এ insert করলে split হয়ে মাঝের key উপরে ওঠে।
+> - **ইনপুট:** insert sequence।
+> - **ধাপ:** node overflow, তারপর split animation; height সমানভাবে বাড়া।
+> - **লক্ষ্য:** rotation-হীন ভারসাম্য (split/merge) বোঝা।
+
+## অনুশীলন
+
+- 1 থেকে 7 পরপর insert করলে height কীভাবে বাড়ে ভাবো (উপরের কোড চালিয়ে মিলিয়ে দেখো)।

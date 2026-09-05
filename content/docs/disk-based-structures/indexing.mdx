@@ -1,0 +1,74 @@
+---
+title: "Indexing: Linear (Hash) বনাম Tree-Based"
+description: equality query-তে hash index O(1), range-এ B+ Tree; query-প্যাটার্ন অনুযায়ী index বাছাই।
+---
+
+## কী শিখব
+
+- database কীভাবে দ্রুত খোঁজে, indexing-এর দুই ঘরানা
+
+## ধারণা
+
+**Index** মানে ডেটার উপর একটা অতিরিক্ত কাঠামো যা খোঁজা দ্রুত করে (বইয়ের পেছনের index-এর মতো)। মূল দুই ঘরানা:
+
+**১) Linear / Hash-based Indexing**
+
+- key থেকে সরাসরি জায়গা (hash table-এর মতো)
+- **সমতা (equality) query**-তে দুর্দান্ত: `WHERE id = 42`, O(1)
+- কিন্তু **range query**-তে অকার্যকর (`WHERE id > 42`, hash-এ ক্রম নেই)
+
+**২) Tree-based Indexing (B/B+ Tree)**
+
+- key গুলো sorted কাঠামোতে
+- equality **ও** range, দুটোই ভালো: `WHERE age BETWEEN 20 AND 30`
+- এজন্য বেশিরভাগ database-এর default index tree-based (B+ Tree)
+
+## কোড উদাহরণ
+
+```js
+// একই ডেটার উপর দুই ঘরনের index
+const users = [
+  { id: 42, name: "Ana", age: 25 },
+  { id: 7, name: "Rafi", age: 30 },
+  { id: 99, name: "Mim", age: 35 },
+  { id: 13, name: "Raju", age: 22 },
+];
+
+// Hash index আদর্শ: SELECT * FROM users WHERE id = 42;   (equality, O(1))
+const hashIndex = new Map(users.map(u => [u.id, u]));
+console.log(hashIndex.get(42));   // { id: 42, name: 'Ana', age: 25 }
+
+// B+ Tree index আদর্শ: sorted, তাই range ও sort দুটোই পারে
+const ageIndex = [...users].sort((a, b) => a.age - b.age);
+const nameIndex = [...users].sort((a, b) => a.name.localeCompare(b.name));
+
+// SELECT * FROM users WHERE age BETWEEN 20 AND 30;   (range)
+console.log(ageIndex.filter(u => u.age >= 20 && u.age <= 30).map(u => u.name));
+// [ 'Raju', 'Ana', 'Rafi' ]
+
+// SELECT * FROM users ORDER BY name;   (sorted scan)
+console.log(nameIndex.map(u => u.name));   // [ 'Ana', 'Mim', 'Rafi', 'Raju' ]
+```
+
+## কোড ব্রেকডাউন
+
+- Hash: দ্রুততম equality, কিন্তু ক্রম/range নেই।
+- Tree (B+): সামান্য ধীর equality, কিন্তু range/sort/prefix সবই ভালো, তাই বেশি বহুমুখী।
+- বাস্তবে DBA কোন column-এ কোন ধরনের index দেবে, তা query-প্যাটার্ন দেখে ঠিক করে।
+
+## Complexity
+
+- Hash: equality O(1); Tree: O(log n) কিন্তু range-সক্ষম।
+
+## Animation Spec
+
+> **Animation Spec: Query অনুযায়ী Index Choice**
+>
+> - **দৃশ্য:** একটা query; বাঁয়ে hash index, ডানে tree index; কোনটা কীভাবে সাড়া দেয়।
+> - **ইনপুট:** query type (equality / range / sort)।
+> - **ধাপ:** equality-তে hash ঝলসে ওঠে; range-এ tree leaf-scan করে; hash "পারছি না" দেখায়।
+> - **লক্ষ্য:** index বাছাই query-প্যাটার্নের উপর নির্ভরশীল।
+
+## অনুশীলন
+
+- তোমার একটা টেবিলে কোন column-এ hash, কোনটায় B+ Tree index দেবে, যুক্তিসহ ভাবো।

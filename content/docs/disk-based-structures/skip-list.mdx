@@ -1,0 +1,86 @@
+---
+title: "Skip List: linked list-এ express lane"
+description: বহু-স্তর pointer দিয়ে sorted linked list-এ গড়ে O(log n) search, randomness-ভিত্তিক সহজ ভারসাম্য।
+---
+
+## কী শিখব
+
+- linked list-এ "express lane" বসিয়ে O(log n) search
+
+## ধারণা
+
+সাধারণ sorted linked list-এ search O(n) (index নেই)। **Skip List** কয়েকটা অতিরিক্ত স্তর (express lane) যোগ করে: উপরের স্তরে কম node (কিছু "লাফিয়ে" যায়), নিচের স্তরে সব node। খোঁজার সময় উপরে দ্রুত এগিয়ে দরকারমতো নিচে নামা, ফলে গড়ে **O(log n)**। randomness দিয়ে স্তর ঠিক হয়, তাই এটা সহজ, balanced tree-র বিকল্প।
+
+```text
+L2:  1 --------> 9 --------> 25
+L1:  1 ----> 6 -> 9 ----> 17 -> 25
+L0:  1 -> 6 -> 9 -> 12 -> 17 -> 20 -> 25   (সব node)
+```
+
+## কোড উদাহরণ
+
+```js
+class SkipNode {
+  constructor(value, level) {
+    this.value = value;
+    this.next = new Array(level + 1).fill(null); // প্রতি স্তরে next
+  }
+}
+
+// search: সবচেয়ে উপরের স্তর থেকে শুরু;
+//   পরের node ছোট হলে সামনে এগোও (express),
+//   নাহলে এক স্তর নিচে নামো; নামতে নামতে target পাও।
+function search(head, target, maxLevel) {
+  let node = head;
+  for (let level = maxLevel; level >= 0; level--) {
+    while (node.next[level] && node.next[level].value < target) {
+      node = node.next[level];   // এই স্তরে সামনে এগোই
+    }                            // পরেরটা বড়, তাই নিচে নামি
+  }
+  node = node.next[0];
+  return node !== null && node.value === target;
+}
+
+// উপরের diagram-এর list-টা বানাই (প্রতিটা node-এর স্তর হাতে ঠিক করা)
+function buildList(values, levels) {
+  const nodes = values.map((v, i) => new SkipNode(v, levels[i]));
+  for (let i = 0; i < nodes.length - 1; i++) {
+    for (let l = 0; l <= levels[i]; l++) {
+      let j = i + 1;
+      while (levels[j] < l) j++;      // এই স্তরে পরের node খোঁজা
+      nodes[i].next[l] = nodes[j];
+    }
+  }
+  return nodes[0];
+}
+
+const values = [1, 6, 9, 12, 17, 20, 25];
+const levels = [2, 1, 2, 0, 1, 0, 2];  // কে কত স্তর পর্যন্ত ওঠে
+const head = buildList(values, levels);
+console.log(search(head, 17, 2));     // true
+console.log(search(head, 15, 2));     // false
+```
+
+## কোড ব্রেকডাউন
+
+- উপরের স্তর "দূরপাল্লার" লাফ; নিচের স্তর "লোকাল"।
+- `search` প্রতি স্তরে যতদূর সম্ভব এগোয়, পরেরটা বড় হলেই এক স্তর নামে।
+- নতুন node-এর স্তর সাধারণত coin-flip (random) দিয়ে ঠিক হয়, ফলে গড়ে ভারসাম্য থাকে।
+- Redis-এর sorted set (ZSET) skip list ব্যবহার করে।
+
+## Complexity
+
+- গড় search/insert/delete O(log n); space O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Express Lanes**
+>
+> - **দৃশ্য:** বহু-স্তর linked list; search-এ pointer উপরে দ্রুত এগোয়, দরকারে নিচে নামে।
+> - **ইনপুট:** target; insert (random level সহ)।
+> - **ধাপ:** "সামনে নাকি নিচে" সিদ্ধান্ত highlight; পথ ট্রেস।
+> - **লক্ষ্য:** কেন express lane search দ্রুত করে।
+
+## অনুশীলন
+
+- coin-flip স্তর কেন ভারসাম্য দেয়, সম্ভাবনার দিক থেকে ভাবো।
