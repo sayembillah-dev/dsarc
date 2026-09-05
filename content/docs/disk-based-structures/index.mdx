@@ -9,14 +9,14 @@ description: 2-3 Tree, B-Tree ও B+ Tree, Skip List, ISAM আর Indexing, ব�
 
 ## এই Chapter-এ যা যা আছে
 
-1. [2-3 Tree](./two-three-tree): split/merge দিয়ে সবসময় balanced multi-way search tree
-2. [B-Tree ও B+ Tree](./b-plus-tree): database ও file system-এর মূল index, কম height মানে কম disk read
-3. [Skip List](./skip-list): linked list-এ express lane বসিয়ে গড়ে O(log n) search
-4. [ISAM](./isam): static index-ভিত্তিক পুরনো কিন্তু শিক্ষণীয় disk indexing পদ্ধতি
-5. [Indexing (Linear ও Tree-Based)](./indexing): hash (equality O(1)) বনাম tree (equality ও range)
+1. [2-3 Tree](./two-three-tree.mdx): split/merge দিয়ে সবসময় balanced multi-way search tree
+2. [B-Tree ও B+ Tree](./b-plus-tree.mdx): database ও file system-এর মূল index, কম height মানে কম disk read
+3. [Skip List](./skip-list.mdx): linked list-এ express lane বসিয়ে গড়ে O(log n) search
+4. [ISAM](./isam.mdx): static index-ভিত্তিক পুরনো কিন্তু শিক্ষণীয় disk indexing পদ্ধতি
+5. [Indexing (Linear ও Tree-Based)](./indexing.mdx): hash (equality O(1)) বনাম tree (equality ও range)
 
 ## সারাংশ
 
 2-3 Tree অর্থাৎ split/merge-ভিত্তিক balanced tree (B-Tree-র বীজ)। B/B+ Tree অর্থাৎ কম-height, disk-বান্ধব; B+ Tree-র linked leaf range query-তে সেরা (database default)। Skip List অর্থাৎ express-lane linked list, গড়ে O(log n)। ISAM অর্থাৎ static index (read-heavy-তে ভালো, write-heavy-তে দুর্বল)। Indexing: hash (equality O(1)) বনাম tree (equality+range)।
 
-**পরবর্তী:** [Problem Solving Techniques (Patterns)](../problem-solving) - কাঠামো শেখা শেষ, এবার সমস্যা-সমাধানের প্যাটার্ন।
+**পরবর্তী:** [Problem Solving Techniques (Patterns)](../problem-solving/index.mdx) - কাঠামো শেখা শেষ, এবার সমস্যা-সমাধানের প্যাটার্ন।

@@ -9,7 +9,7 @@ description: প্রতি ধাপে locally সেরা সিদ্ধ�
 
 ## ধারণা
 
-Greedy প্রতিটা ধাপে সাময়িকভাবে সবচেয়ে ভালো (locally optimal) সিদ্ধান্ত নেয়, এই আশায় যে তা global-ভাবেও সেরা হবে। **সব সমস্যায় কাজ করে না** - শুধু "greedy choice property" থাকলে। কাজ করলে খুব সরল ও দ্রুত (Kruskal, Prim, Dijkstra সবই greedy, দেখো [Graphs](../graphs) chapter)।
+Greedy প্রতিটা ধাপে সাময়িকভাবে সবচেয়ে ভালো (locally optimal) সিদ্ধান্ত নেয়, এই আশায় যে তা global-ভাবেও সেরা হবে। **সব সমস্যায় কাজ করে না** - শুধু "greedy choice property" থাকলে। কাজ করলে খুব সরল ও দ্রুত (Kruskal, Prim, Dijkstra সবই greedy, দেখো [Graphs](../graphs/index.mdx) chapter)।
 
 ## কোড উদাহরণ
 
@@ -30,7 +30,7 @@ console.log(minNotes(1270)); // [1000, 100, 100, 50, 20]
 ## কোড ব্রেকডাউন
 
 - প্রতিবার সবচেয়ে বড় সম্ভব নোট নেওয়া -> কম নোট।
-- **সতর্কতা:** এই greedy শুধু "canonical" মুদ্রা-সিস্টেমে সঠিক; অদ্ভুত মুদ্রায় (যেমন [1,3,4], amount 6) greedy ভুল করে - তখন [Dynamic Programming](./dynamic-programming) লাগে।
+- **সতর্কতা:** এই greedy শুধু "canonical" মুদ্রা-সিস্টেমে সঠিক; অদ্ভুত মুদ্রায় (যেমন [1,3,4], amount 6) greedy ভুল করে - তখন [Dynamic Programming](./dynamic-programming.mdx) লাগে।
 
 ## Complexity
 

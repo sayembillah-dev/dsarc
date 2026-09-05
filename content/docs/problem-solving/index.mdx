@@ -3,30 +3,30 @@ title: Problem Solving Techniques
 description: Interview ও বাস্তব সমস্যায় বারবার ফিরে আসা ১৫টা প্যাটার্ন - brute force থেকে DP, two pointer থেকে two heaps পর্যন্ত।
 ---
 
-কাঠামো শেখা শেষ; এবার **প্যাটার্ন**-এর পালা। এই chapter-এর প্রতিটা কৌশল interview ও বাস্তব সমস্যায় বারবার ঘুরেফিরে আসে। প্যাটার্ন চিনতে পারলে অচেনা সমস্যাও চেনা লাগবে, আর সমাধানের পথ দ্রুত খুঁজে পাবে। Recursion-এর ভিত্তি ধরে নেওয়া হয়েছে - দরকার হলে আগে [Recursion](../recursion) chapter দেখে নাও।
+কাঠামো শেখা শেষ; এবার **প্যাটার্ন**-এর পালা। এই chapter-এর প্রতিটা কৌশল interview ও বাস্তব সমস্যায় বারবার ঘুরেফিরে আসে। প্যাটার্ন চিনতে পারলে অচেনা সমস্যাও চেনা লাগবে, আর সমাধানের পথ দ্রুত খুঁজে পাবে। Recursion-এর ভিত্তি ধরে নেওয়া হয়েছে - দরকার হলে আগে [Recursion](../recursion/index.mdx) chapter দেখে নাও।
 
 **Section Roadmap:** Brute Force, Divide & Conquer, Greedy, Backtracking, Dynamic Programming, Two Pointer, Fast & Slow Pointer, Sliding Window, Merge Intervals, Cyclic Sort, Kth Element, Two Heaps, Island (Grid) Traversal, Randomised, Multi-threaded।
 
 ## এই Chapter-এ যা যা আছে
 
-1. [Brute Force](./brute-force): সব সম্ভাবনা পরীক্ষা - সবসময়-সঠিক বেসলাইন
-2. [Divide & Conquer](./divide-and-conquer): ভাগ, জয়, জোড়া - recursion-এর মাস্টার ছাঁচ
-3. [Greedy](./greedy): প্রতি ধাপে সেরা বাছাই; কখন কাজ করে, কখন ফেল
-4. [Backtracking](./backtracking): চেষ্টা করো, ফিরে এসো, pruning করো
-5. [Dynamic Programming](./dynamic-programming): overlapping subproblem জমিয়ে optimize
-6. [Two Pointer](./two-pointer): sorted array-তে জোড়া, এক pass-এ
-7. [Fast & Slow Pointers](./fast-slow-pointers): cycle ধরা ও মাঝের node খোঁজা
-8. [Sliding Window](./sliding-window): টানা subarray/substring-এ চলমান হিসাব
-9. [Merge Intervals](./merge-intervals): sort + sweep দিয়ে overlap একত্র
-10. [Cyclic Sort](./cyclic-sort): 1..n রেঞ্জে প্রতিটা সংখ্যা নিজের ঘরে
-11. [Kth Element](./kth-element): quickselect ও heap দিয়ে k-তম উপাদান
-12. [Two Heaps](./two-heaps): দুই heap-এ চলমান median
-13. [Island (Grid) Traversal](./island-traversal): grid-কে graph ভেবে flood fill
-14. [Randomised Algorithms](./randomised-algorithms): এলোমেলোতা দিয়ে adversarial প্রতিরোধ
-15. [Multi-threaded](./multithreaded-algorithms): ভাগ করে সমান্তরালে - পরিচিতি
+1. [Brute Force](./brute-force.mdx): সব সম্ভাবনা পরীক্ষা - সবসময়-সঠিক বেসলাইন
+2. [Divide & Conquer](./divide-and-conquer.mdx): ভাগ, জয়, জোড়া - recursion-এর মাস্টার ছাঁচ
+3. [Greedy](./greedy.mdx): প্রতি ধাপে সেরা বাছাই; কখন কাজ করে, কখন ফেল
+4. [Backtracking](./backtracking.mdx): চেষ্টা করো, ফিরে এসো, pruning করো
+5. [Dynamic Programming](./dynamic-programming.mdx): overlapping subproblem জমিয়ে optimize
+6. [Two Pointer](./two-pointer.mdx): sorted array-তে জোড়া, এক pass-এ
+7. [Fast & Slow Pointers](./fast-slow-pointers.mdx): cycle ধরা ও মাঝের node খোঁজা
+8. [Sliding Window](./sliding-window.mdx): টানা subarray/substring-এ চলমান হিসাব
+9. [Merge Intervals](./merge-intervals.mdx): sort + sweep দিয়ে overlap একত্র
+10. [Cyclic Sort](./cyclic-sort.mdx): 1..n রেঞ্জে প্রতিটা সংখ্যা নিজের ঘরে
+11. [Kth Element](./kth-element.mdx): quickselect ও heap দিয়ে k-তম উপাদান
+12. [Two Heaps](./two-heaps.mdx): দুই heap-এ চলমান median
+13. [Island (Grid) Traversal](./island-traversal.mdx): grid-কে graph ভেবে flood fill
+14. [Randomised Algorithms](./randomised-algorithms.mdx): এলোমেলোতা দিয়ে adversarial প্রতিরোধ
+15. [Multi-threaded](./multithreaded-algorithms.mdx): ভাগ করে সমান্তরালে - পরিচিতি
 
 ## সারাংশ
 
 Brute force সবসময় বেসলাইন; আগে সেটা ভাবো, তারপর optimize। Divide & Conquer অর্থাৎ ভাগ-জয়-জোড়া। Greedy প্রতি ধাপে সেরা বাছে, তবে সব সমস্যায় কাজ করে না। Backtracking অর্থাৎ choose-explore-unchoose, pruning সহ। DP অর্থাৎ overlapping subproblem-এর ফল জমিয়ে optimize (memoization বা tabulation)। Two Pointer sorted-এ জোড়ায়, Fast & Slow cycle/মাঝে, Sliding Window টানা অংশে O(n) দেয়। Merge Intervals = sort + sweep, Cyclic Sort = 1..n রেঞ্জে নিজের ঘরে, Kth Element = quickselect বা heap, Two Heaps = চলমান median, Island = grid-এ flood fill, Randomised = এলোমেলো প্রতিরোধ, Multi-threaded = সমান্তরাল ভাগ-করা। কোন ইঙ্গিতে কোন প্যাটার্ন লাগবে - তার চিটশিট পরের chapter-এ।
 
-**পরবর্তী:** [Practice & Roadmap to Expertise](../practice-roadmap) - শেখা প্যাটার্নগুলো প্র্যাকটিসে রূপান্তরের পথ।
+**পরবর্তী:** [Practice & Roadmap to Expertise](../practice-roadmap/index.mdx) - শেখা প্যাটার্নগুলো প্র্যাকটিসে রূপান্তরের পথ।

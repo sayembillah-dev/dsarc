@@ -11,7 +11,7 @@ description: overlapping subproblem-এর ফল জমিয়ে রেখ�
 
 DP তখন কাজে লাগে যখন সমস্যায় (১) **overlapping subproblems** (একই ছোট সমস্যা বারবার) ও (২) **optimal substructure** (ছোট সমাধান দিয়ে বড় সমাধান) - দুটোই থাকে। কৌশল দুই ধরনের:
 
-- **Top-down (Memoization):** recursion + cache (দেখো [Memoization](../recursion/memoization))
+- **Top-down (Memoization):** recursion + cache (দেখো [Memoization](../recursion/memoization.mdx))
 - **Bottom-up (Tabulation):** ছোট থেকে বড় টেবিল পূরণ
 
 ## কোড উদাহরণ
@@ -36,7 +36,7 @@ console.log(coinChange([1, 3, 4], 6)); // 2  (3+3), greedy দিত 3 (4+1+1)!
 
 - `dp[a]` = amount `a` বানানোর সর্বনিম্ন মুদ্রা।
 - প্রতিটা amount-এর জন্য সব মুদ্রা চেষ্টা করে সেরা নেওয়া; ছোট থেকে বড়।
-- [Greedy](./greedy) যেখানে ভুল করে, DP সব সম্ভাবনা মিলিয়ে সঠিক দেয়।
+- [Greedy](./greedy.mdx) যেখানে ভুল করে, DP সব সম্ভাবনা মিলিয়ে সঠিক দেয়।
 
 ## Complexity
 

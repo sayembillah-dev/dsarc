@@ -9,7 +9,7 @@ description: এলোমেলো পছন্দ দিয়ে adversarial i
 
 ## ধারণা
 
-এলোমেলো পছন্দ ব্যবহার করে এমন algorithm, যার গতি/ফল খারাপ-ইচ্ছুক ইনপুটের (adversarial) হাতে ধরা পড়ে না। দুই ধরনের: **Las Vegas** - ফল সবসময় সঠিক, সময় এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort)); **Monte Carlo** - সময় নিশ্চিত, ফলে ছোট ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায় - তাই quicksort/[quickselect](./kth-element)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
+এলোমেলো পছন্দ ব্যবহার করে এমন algorithm, যার গতি/ফল খারাপ-ইচ্ছুক ইনপুটের (adversarial) হাতে ধরা পড়ে না। দুই ধরনের: **Las Vegas** - ফল সবসময় সঠিক, সময় এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort.mdx)); **Monte Carlo** - সময় নিশ্চিত, ফলে ছোট ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায় - তাই quicksort/[quickselect](./kth-element.mdx)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
 
 ## কোড উদাহরণ
 
@@ -29,7 +29,7 @@ console.log(shuffle([1, 2, 3, 4, 5])); // যেমন [3,1,5,2,4] - প্র�
 
 - শেষ থেকে প্রতিটা ঘরে 0..i রেঞ্জের random index-এর সাথে swap; প্রতিটা অবস্থান সম-সম্ভাব্য বলেই এটা unbiased।
 - naive "random দুই ঘর বারবার swap" biased ফল দেয় - তাই Fisher-Yates-ই স্ট্যান্ডার্ড।
-- একই ধারণা [quickselect](./kth-element)-এ: pivot বাছাইয়ের আগে random index-টা শেষে swap করে নাও।
+- একই ধারণা [quickselect](./kth-element.mdx)-এ: pivot বাছাইয়ের আগে random index-টা শেষে swap করে নাও।
 
 ## Complexity
 
@@ -47,4 +47,4 @@ console.log(shuffle([1, 2, 3, 4, 5])); // যেমন [3,1,5,2,4] - প্র�
 
 ## অনুশীলন
 
-- [Quickselect](./kth-element)-এ random pivot যোগ করো: Math.random দিয়ে pivot index বেছে সেটাকে শেষে swap করে নাও।
+- [Quickselect](./kth-element.mdx)-এ random pivot যোগ করো: Math.random দিয়ে pivot index বেছে সেটাকে শেষে swap করে নাও।

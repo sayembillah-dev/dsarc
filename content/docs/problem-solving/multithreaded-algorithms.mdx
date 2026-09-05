@@ -9,7 +9,7 @@ description: কাজ ভাগ করে সমান্তরালে চা
 
 ## ধারণা
 
-বড় কাজ টুকরো করে একাধিক thread-এ একসাথে চালালে সময় কমে - যেমন merge sort-এর দুই অর্ধেক আলাদা thread-এ। JavaScript মূলত **single-threaded** (event loop), তবু browser-এ Web Worker ও Node-এ worker_threads দিয়ে আসল parallelism পাওয়া যায়। DSA interview-তে গভীরে আসে না, কিন্তু মূল ধারণাগুলো জানা দরকার: race condition (একই ডেটা একসাথে পাল্টানোর বিপদ), shared state, আর [Divide & Conquer](./divide-and-conquer)-এর সাথে মিল।
+বড় কাজ টুকরো করে একাধিক thread-এ একসাথে চালালে সময় কমে - যেমন merge sort-এর দুই অর্ধেক আলাদা thread-এ। JavaScript মূলত **single-threaded** (event loop), তবু browser-এ Web Worker ও Node-এ worker_threads দিয়ে আসল parallelism পাওয়া যায়। DSA interview-তে গভীরে আসে না, কিন্তু মূল ধারণাগুলো জানা দরকার: race condition (একই ডেটা একসাথে পাল্টানোর বিপদ), shared state, আর [Divide & Conquer](./divide-and-conquer.mdx)-এর সাথে মিল।
 
 ## কোড উদাহরণ
 
@@ -37,7 +37,7 @@ parallelSum(Array.from({ length: 1000000 }, (_, i) => i + 1))
 
 ## কোড ব্রেকডাউন
 
-- [Divide & Conquer](./divide-and-conquer)-এরই সমান্তরাল রূপ: কাজ ভাগ, আলাদা আলাদা সমাধান, শেষে combine।
+- [Divide & Conquer](./divide-and-conquer.mdx)-এরই সমান্তরাল রূপ: কাজ ভাগ, আলাদা আলাদা সমাধান, শেষে combine।
 - `Promise.all` সব টুকরো শেষ না হওয়া পর্যন্ত অপেক্ষা করে; আসল CPU-parallelism চাইলে worker_threads (Node) বা Web Worker (browser) - ভাগ-কর-combine-কর ছাঁচ একই।
 - সাবধানতা: একই ডেটা একসাথে পাল্টালে race condition - তাই প্রতিটা worker আলাদা ডেটা-অংশে কাজ করে।
 

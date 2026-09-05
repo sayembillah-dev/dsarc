@@ -9,7 +9,7 @@ description: quickselect partition দিয়ে পুরো sort না ক�
 
 ## ধারণা
 
-"k-তম বৃহত্তম" চাইলে পুরো array sort করা অপচয়। **Quickselect** [Quick Sort](../sorting/quick-sort)-এর partition-ই ব্যবহার করে: pivot একটা ঠিক ঘরে বসে গেলে দেখা যায় উত্তর কোন ভাগে - অন্য ভাগ ফেলে দিই (পুরো sort নয়, এক ভাগেই খোঁজ)। বিকল্প: k-আকারের একটা **heap** রেখে সবাইকে একবার ঢুকালে top-k আয়ত্তে (stream-এ এটাই ভালো, দেখো [Heaps](../heaps) chapter)।
+"k-তম বৃহত্তম" চাইলে পুরো array sort করা অপচয়। **Quickselect** [Quick Sort](../sorting/quick-sort.mdx)-এর partition-ই ব্যবহার করে: pivot একটা ঠিক ঘরে বসে গেলে দেখা যায় উত্তর কোন ভাগে - অন্য ভাগ ফেলে দিই (পুরো sort নয়, এক ভাগেই খোঁজ)। বিকল্প: k-আকারের একটা **heap** রেখে সবাইকে একবার ঢুকালে top-k আয়ত্তে (stream-এ এটাই ভালো, দেখো [Heaps](../heaps/index.mdx) chapter)।
 
 ## কোড উদাহরণ
 
