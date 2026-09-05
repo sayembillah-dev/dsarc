@@ -1,6 +1,6 @@
 ---
 title: "Graph পরিভাষা ও প্রকার: Vertex, Edge, Directed/Undirected"
-description: vertex, edge, directed/undirected, weighted, cycle, connected, graph-এর মৌল ভাষা।
+description: vertex, edge, directed/undirected, weighted, cycle, connected: graph বোঝার মূল ভাষাগুলো এখানেই।
 ---
 
 ## কী শিখব
@@ -9,13 +9,13 @@ description: vertex, edge, directed/undirected, weighted, cycle, connected, grap
 
 ## ধারণা
 
-Graph অর্থাৎ কতগুলো **vertex** (node) ও তাদের সংযোগকারী **edge**-এর সমষ্টি।
+ভাবো তো তোমার Facebook-এর বন্ধুদের কথা। প্রত্যেক মানুষকে একটা গোল বিন্দু ধরো, আর দুইজন বন্ধু হলে তাদের মাঝে একটা লাইন টানো। এই বিন্দুগুলোই **vertex** (node), লাইনগুলোই **edge**, আর পুরো জিনিসটা মিলিয়ে একটা **graph**। চলো এবার ধরনগুলো দেখি:
 
-- **Undirected:** edge দুমুখী (বন্ধুত্ব: A বন্ধু হলে B-ও বন্ধু)
-- **Directed (digraph):** edge একমুখী (Twitter follow: A -> B মানে B -> A নয়)
-- **Weighted:** edge-এ একটা মান/ওজন (দূরত্ব, খরচ)
-- **Cycle:** ঘুরে আবার শুরুতে ফেরা যায় এমন পথ
-- **Connected:** সব vertex একে অপরের থেকে পৌঁছানো যায়
+- **Undirected:** edge দুই দিকেই চলে। Facebook-এর বন্ধুত্বের মতো: তুমি কারো বন্ধু মানে সেও তোমার বন্ধু।
+- **Directed (digraph):** edge একমুখী। Twitter-এ follow করার মতো: তুমি কাউকে follow করলেই যে সে তোমাকে follow করবে, এমন নিয়ম নেই (A -> B মানে B -> A নয়)।
+- **Weighted:** edge-এর সাথে একটা সংখ্যা জড়ানো, যেমন দুই শহরের দূরত্ব বা রাস্তার খরচ।
+- **Cycle:** একটা vertex থেকে বেরিয়ে ঘুরপথে আবার সেখানেই ফিরে আসা যায়।
+- **Connected:** যেকোনো vertex থেকে বাকি সব vertex-এ পৌঁছানো যায়।
 
 ```
 Undirected:  A - B        Directed:  A -> B
@@ -35,26 +35,26 @@ console.log(vertices.length, edges.length); // 4 4 (4 vertex, 4 edge)
 
 ## কোড ব্রেকডাউন
 
-- Tree অর্থাৎ connected, acyclic (cycle নেই), n node হলে n-1 edge।
-- Graph-এ cycle থাকতে পারে, তাই traversal-এ "visited" ট্র্যাক করা আবশ্যক।
+- Tree-ও আসলে একটা graph, শুধু cycle নেই আর সবকিছু connected। n টা node থাকলে edge হবে ঠিক n-1 টা।
+- কিন্তু সাধারণ graph-এ cycle থাকতেই পারে। তাই traversal-এর সময় কোন node দেখে ফেলেছি, সেটা ট্র্যাক করা (visited) আবশ্যক। নইলে একই জায়গায় ঘুরতেই থাকবে।
 
 <Callout type="warn" title="সতর্কতা: visited ছাড়া traversal করো না">
-Graph-এ cycle থাকলে visited ট্র্যাক না করলে traversal infinite loop-এ পড়ে যাবে।
+Graph-এ cycle থাকলে visited ট্র্যাক না করলে traversal infinite loop-এ আটকে যাবে।
 </Callout>
 
 ## Complexity
 
-- পরিভাষা-ভিত্তিক পাতা, নির্দিষ্ট algorithmic complexity নেই; তবে আগামী পাতার traversal-গুলো vertex/edge-নির্ভর, যেমন O(V + E)।
+- এই পাতাটা পরিভাষার, তাই আলাদা algorithmic complexity নেই। পরের পাতাগুলোর traversal-এর খরচ vertex আর edge-এর ওপর নির্ভর করে, যেমন O(V + E)।
 
 ## Animation Spec
 
 > **Animation Spec: Graph Explorer**
 >
-> - **দৃশ্য:** node ও edge; toggle দিয়ে directed/undirected, weighted রূপ বদলানো।
+> - **দৃশ্য:** node আর edge; toggle দিয়ে directed/undirected আর weighted রূপ বদলানো যাবে।
 > - **ইনপুট:** node/edge যোগ-বাদ; edge weight।
-> - **ধাপ:** নির্বাচন বদলালে তীর/লাইন ও weight লেবেল আপডেট।
-> - **লক্ষ্য:** graph-এর ধরন ও পরিভাষা চেনা।
+> - **ধাপ:** নির্বাচন বদলালে তীর/লাইন আর weight লেবেল সাথে সাথে আপডেট হয়।
+> - **লক্ষ্য:** graph-এর ধরন আর পরিভাষা চেনা।
 
 ## অনুশীলন
 
-- তোমার বন্ধু-লিস্ট directed না undirected graph, যুক্তি দাও।
+- ভাবো তো, তোমার বন্ধু-লিস্টটা directed না undirected graph? যুক্তি দাও।

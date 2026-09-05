@@ -1,6 +1,6 @@
 ---
-title: "A* Search Algorithm: Heuristic-গাইডেড খোঁজ"
-description: heuristic যোগ করে target-এর দিকে ঝুঁকে দ্রুত shortest path, গেম/ম্যাপ-এ।
+title: "A* Search Algorithm: Heuristic দিয়ে Target-এর দিকে খোঁজা"
+description: heuristic-এর আন্দাজ যোগ করে target-এর দিকে ঝুঁকে দ্রুত shortest path, গেম আর ম্যাপের প্রিয় algorithm।
 ---
 
 ## কী শিখব
@@ -9,7 +9,7 @@ description: heuristic যোগ করে target-এর দিকে ঝুঁ�
 
 ## ধারণা
 
-Dijkstra সব দিকে সমানভাবে খোঁজে। **A\*** একটা **heuristic** (আন্দাজ, যেমন সরলরেখা দূরত্ব) যোগ করে target-এর দিকে খোঁজাকে "পক্ষপাতী" করে, ফলে অনেক দ্রুত। মূল সূত্র:
+Dijkstra-র একটা দুর্বলতা আছে: সে জানেই না target কোন দিকে। তাই সব দিকে সমানভাবে ছড়িয়ে খোঁজে। **A\*** এখানেই চালাকি করে। এটা একটা **heuristic**, মানে একটা আন্দাজ (যেমন target পর্যন্ত সরলরেখা দূরত্ব) যোগ করে দেয়। ফলে খোঁজা target-এর দিকে ঝুঁকে যায়, আর অনেক কম node দেখেই উত্তর পায়। মূল সূত্রটা:
 
 ```
 f(n) = g(n) + h(n)
@@ -17,7 +17,7 @@ g = start থেকে n পর্যন্ত বাস্তব খরচ
 h = n থেকে target পর্যন্ত আন্দাজ খরচ (heuristic)
 ```
 
-**h সঠিক (admissible, কখনো overestimate করে না) হলে A\* সবচেয়ে ভালো পথ নিশ্চিত করে।**
+একটা শর্ত আছে: **h যেন বাস্তব খরচকে কখনো বড় করে না বলে** (এমন heuristic-কে বলে admissible)। তাহলে A\* সবচেয়ে ভালো পথই দেবে, গ্যারান্টি।
 
 ## কোড উদাহরণ (গ্রিডে, সরল কাঠামো)
 
@@ -67,23 +67,23 @@ console.log(aStar(grid, [0, 0], [2, 3], manhattan)); // 5
 
 ## কোড ব্রেকডাউন
 
-- `h = 0` দিলে A\* ঠিক Dijkstra হয়ে যায়।
-- ভালো heuristic মানে কম node explore, অর্থাৎ দ্রুত।
-- গেম pathfinding, GPS routing-এ ব্যাপক ব্যবহৃত।
+- মজার কথা: `h = 0` করে দিলে A\* আবার Dijkstra-ই হয়ে যায়।
+- heuristic যত ভালো, তত কম node দেখতে হয়, মানে তত দ্রুত।
+- গেমের pathfinding বা GPS routing-এ তুমি যা দেখো, তার বেশিরভাগই A\*-এর কোনো না কোনো রূপ।
 
 ## Complexity
 
-- heuristic-নির্ভর; ভালো h-এ Dijkstra-র চেয়ে অনেক কম node।
+- heuristic-এর ওপর নির্ভর করে; ভালো h মানে Dijkstra-র চেয়ে অনেক কম node।
 
 ## Animation Spec
 
 > **Animation Spec: A\* vs Dijkstra Race**
 >
 > - **দৃশ্য:** গ্রিড-ম্যাপ (দেয়াল সহ); দুটো search পাশাপাশি, একটায় h=0 (Dijkstra), একটায় Manhattan।
-> - **ইনপুট:** start/goal/দেয়াল আঁকা; heuristic নির্বাচন।
+> - **ইনপুট:** start/goal আঁকা, দেয়াল বসানো; heuristic নির্বাচন।
 > - **ধাপ:** explored cell রঙ পায়; A\* goal-এর দিকে ঝুঁকে কম cell খোঁজে।
-> - **লক্ষ্য:** heuristic কীভাবে খোঁজা "গাইড" করে।
+> - **লক্ষ্য:** heuristic কীভাবে খোঁজাকে "গাইড" করে, সেটা বোঝা।
 
 ## অনুশীলন
 
-- একটা inadmissible (অতিরঞ্জিত) heuristic দিলে কী সমস্যা হতে পারে ভাবো।
+- ভাবো তো, heuristic যদি খরচকে বড় করে বলে (inadmissible), তাহলে কী গোলমাল হতে পারে?

@@ -9,12 +9,12 @@ description: সব node-কে সবচেয়ে কম মোট ওজন
 
 ## ধারণা
 
-**MST** অর্থাৎ একটা connected weighted undirected graph-এর এমন উপগ্রাফ যা সব vertex জোড়ে, cycle ছাড়া, ন্যূনতম মোট edge-ওজনে। (যেমন: সব শহরে সবচেয়ে কম তারে বিদ্যুৎ পৌঁছানো।)
+ধরো তোমাকে ১০টা গ্রামে বিদ্যুটের তার টানতে হবে। সব গ্রাম লাইনের আওতায় আসতে হবে, কিন্তু তার যত কম লাগে তত ভালো। এই যে "সবাইকে জোড়ো, খরচ কমাও" সমস্যা, এর সমাধানই **Minimum Spanning Tree (MST)**: একটা connected weighted undirected graph-এর এমন উপগ্রাফ, যা সব vertex জোড়ে, কোনো cycle রাখে না, আর মোট edge-ওজন সবচেয়ে কম।
 
-দুই ক্লাসিক greedy algorithm:
+সমাধানের দুটো ক্লাসিক greedy algorithm আছে:
 
-- **Prim:** এক vertex থেকে শুরু, প্রতিবার সবচেয়ে সস্তা edge দিয়ে নতুন vertex যোগ (min-heap)।
-- **Kruskal:** সব edge ওজন-অনুসারে sort, ছোট থেকে নিতে থাকো, cycle না বানালে নাও (**Union-Find** দিয়ে cycle চেক, section 14)।
+- **Prim:** একটা vertex থেকে শুরু করো। প্রতিবার tree-র সাথে জোড়া যেতে পারে এমন সবচেয়ে সস্তা edge-টা নাও, সাথে নতুন vertex-টাও (min-heap দিয়ে)।
+- **Kruskal:** সব edge ওজন অনুযায়ী sort করো। ছোট থেকে একে একে নিতে থাকো, কিন্তু cycle বানালে বাদ দাও। cycle ধরার জন্য লাগে **Union-Find** (section 14-এ বিস্তারিত)।
 
 ## কোড উদাহরণ (Kruskal, Union-Find সহ)
 
@@ -46,9 +46,9 @@ console.log(result.total); // 4  (edges: 0-1, 2-3, 1-2)
 
 ## কোড ব্রেকডাউন
 
-- Kruskal: সস্তা edge আগে; **Union-Find** দিয়ে দেখি দুই প্রান্ত ইতিমধ্যে একই গোষ্ঠীতে কিনা (হলে cycle, তাই বাদ)।
-- V-1 edge নিলেই MST সম্পূর্ণ।
-- Prim ঘন (dense) graph-এ ভালো; Kruskal পাতলা (sparse) graph-এ ভালো।
+- Kruskal-এর সূত্র: সস্তা edge আগে। তবে নেওয়ার আগে **Union-Find**-কে জিজ্ঞেস করো, দুই প্রান্ত কি আগেই একই দলে? উত্তর হ্যাঁ মানে নিলে cycle হবে, তাই বাদ।
+- V-1 টা edge নিলেই MST হয়ে যায়। বেশি নেওয়ার দরকার নেই।
+- dense graph-এ Prim ভালো চলে, sparse-এ Kruskal।
 
 ## Complexity
 
@@ -60,9 +60,9 @@ console.log(result.total); // 4  (edges: 0-1, 2-3, 1-2)
 >
 > - **দৃশ্য:** weighted graph; নির্বাচিত edge সবুজ, প্রত্যাখ্যাত (cycle) লাল।
 > - **ইনপুট:** algorithm (Prim/Kruskal); graph।
-> - **ধাপ:** Kruskal: sorted edge একে একে চেক; Prim: vertex-set থেকে সস্তা edge দিয়ে প্রসার। running total দেখানো।
-> - **লক্ষ্য:** দুই greedy পদ্ধতির পার্থক্য ও cycle-এড়ানো।
+> - **ধাপ:** Kruskal: sorted edge একে একে চেক; Prim: vertex-set থেকে সস্তা edge দিয়ে প্রসার। running total দেখা যায়।
+> - **লক্ষ্য:** দুই greedy পদ্ধতির পার্থক্য আর কীভাবে cycle এড়ানো হয়।
 
 ## অনুশীলন
 
-- একই graph-এ Prim ও Kruskal একই total দেয় কিনা যাচাই করো।
+- একই graph-এ Prim আর Kruskal চালিয়ে দেখো, total একই আসে কিনা।

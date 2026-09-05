@@ -1,6 +1,6 @@
 ---
 title: "Graph উপস্থাপন: Adjacency List বনাম Matrix"
-description: graph কোডে রাখার দুই প্রধান উপায়, sparse graph-এ list, dense graph-এ matrix।
+description: graph-কে কোডে রাখার দুই প্রধান উপায়: sparse graph-এ list, dense graph-এ matrix।
 ---
 
 ## কী শিখব
@@ -9,12 +9,12 @@ description: graph কোডে রাখার দুই প্রধান উ
 
 ## ধারণা
 
-দুই প্রধান উপায়:
+graph-টা মাথায় পরিষ্কার। কিন্তু কোডে রাখবে কীভাবে? দুটো প্রধান উপায় আছে:
 
-- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের লিস্ট (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V + E)।
-- **Adjacency Matrix:** V×V গ্রিড; `matrix[i][j] = 1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V²), dense graph-এ ভালো।
+- **Adjacency List:** প্রতিটা vertex-এর পাশে তার প্রতিবেশীদের লিস্ট রাখো (`Map` দিয়ে)। edge কম থাকলে (sparse graph) এটাই দক্ষ, জায়গা লাগে O(V + E)।
+- **Adjacency Matrix:** একটা V×V গ্রিড বানাও। `matrix[i][j] = 1` মানে i থেকে j-তে edge আছে। edge আছে কিনা চেক করা O(1), কিন্তু জায়গা লাগে O(V²)। তাই dense graph হলে ভালো, নইলে অপচয়।
 
-বাস্তবে বেশিরভাগ সমস্যায় **adjacency list** ব্যবহার হয়।
+বাস্তবে বেশিরভাগ সমস্যায় তুমি **adjacency list**-ই ব্যবহার করবে।
 
 ## কোড উদাহরণ
 
@@ -41,8 +41,8 @@ console.log(g.neighbors("A")); // ['B','C']
 
 ## কোড ব্রেকডাউন
 
-- `Map<vertex, neighbors[]>`: প্রতিটা vertex-এর সরাসরি প্রতিবেশীর লিস্ট।
-- undirected-এ দুই দিকেই edge যোগ; directed-এ এক দিকে।
+- `Map`-এর প্রতিটা entry-তে একটা vertex আর তার প্রতিবেশীদের array। যা লাগে, সরাসরি হাতে পাবে।
+- undirected graph-এ edge দুই দিকেই যোগ করছি: A জানে B-কে, B-ও জানে A-কে। directed হলে দ্বিতীয় লাইনটা বাদ, শুধু এক দিক।
 
 ## Complexity
 
@@ -52,11 +52,11 @@ console.log(g.neighbors("A")); // ['B','C']
 
 > **Animation Spec: List vs Matrix**
 >
-> - **দৃশ্য:** বাঁয়ে গ্রাফ, ডানে একই graph-এর adjacency list ও matrix পাশাপাশি।
+> - **দৃশ্য:** বাঁয়ে graph, ডানে একই graph-এর adjacency list আর matrix পাশাপাশি।
 > - **ইনপুট:** edge যোগ।
-> - **ধাপ:** edge যোগ করলে list-এ entry ও matrix-এ cell একসাথে আপডেট।
-> - **লক্ষ্য:** দুই উপস্থাপনের trade-off।
+> - **ধাপ:** edge যোগ করলে list-এর entry আর matrix-এর cell একসাথে আপডেট হয়।
+> - **লক্ষ্য:** দুই উপস্থাপনের trade-off বোঝা।
 
 ## অনুশীলন
 
-- ওপরের graph-এর adjacency matrix হাতে আঁকো।
+- ওপরের graph-এর adjacency matrix-টা খাতায় হাতে আঁকো।

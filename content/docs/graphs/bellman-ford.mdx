@@ -1,6 +1,6 @@
 ---
 title: "Bellman-Ford Algorithm: Negative Weight সামলানো"
-description: সব edge বারবার relax করে shortest path, negative weight ও negative cycle সনাক্তকরণ।
+description: সব edge বারবার relax করে shortest path, negative weight আর negative cycle দুটোই সামলায়।
 ---
 
 ## কী শিখব
@@ -9,7 +9,7 @@ description: সব edge বারবার relax করে shortest path, negat
 
 ## ধারণা
 
-Bellman-Ford সব edge-কে **V-1 বার** relax করে। এটা ধীর (O(V * E)) কিন্তু **negative weight** সামলায়, এমনকি **negative cycle** (যেখানে ঘুরলে খরচ কমতেই থাকে) সনাক্ত করে।
+Dijkstra-র একটা শর্ত ছিল: weight negative হবে না। কিন্তু negative weight থাকলেই তো আছে, তখন কী করবে? উত্তর **Bellman-Ford**। কৌশলটা অদ্ভুত সহজ: সব edge একটা পুরো রাউন্ডে relax করো, আর এমন রাউন্ড চালাও **V-1 বার**। হ্যাঁ, Dijkstra-র চেয়ে ধীর (O(V * E))। কিন্তু negative weight সামলায়, আর বোনাস হিসেবে **negative cycle**-ও ধরে ফেলে, সেই cycle যেখানে ঘুরতে ঘুরতে খরচ কমতেই থাকে।
 
 ## কোড উদাহরণ
 
@@ -40,8 +40,8 @@ console.log(bellmanFord(
 
 ## কোড ব্রেকডাউন
 
-- V-1 বার কেন? সবচেয়ে দীর্ঘ shortest path-এ সর্বোচ্চ V-1 edge থাকতে পারে।
-- V-তম বারেও উন্নতি হলে নিশ্চিত negative cycle।
+- V-1 বার কেন? cycle ছাড়া কোনো shortest path-এ সর্বোচ্চ V-1 টা edge থাকতে পারে। তাই ততবার relax করলেই সব ঠিক হয়ে যায়।
+- এখানেই আসল জিনিস: যদি V-তম রাউন্ডেও দূরত্ব কমে, বুঝবে negative cycle আছে। নইলে কমার কথাই নয়।
 
 ## Complexity
 
@@ -51,11 +51,11 @@ console.log(bellmanFord(
 
 > **Animation Spec: Repeated Relaxation**
 >
-> - **দৃশ্য:** graph; প্রতিটা "round"-এ সব edge একে একে relax; distance টেবিল আপডেট।
+> - **দৃশ্য:** graph; প্রতিটা round-এ সব edge একে একে relax; distance টেবিল আপডেট হয়।
 > - **ইনপুট:** graph (negative weight সহ)।
-> - **ধাপ:** round-by-round distance কমা; শেষ round-এ negative cycle সনাক্ত (লাল)।
-> - **লক্ষ্য:** Dijkstra-র সাথে trade-off ও negative weight।
+> - **ধাপ:** round-by-round distance কমছে; শেষ round-এ negative cycle ধরা পড়ল (লাল)।
+> - **লক্ষ্য:** Dijkstra-র সাথে trade-off আর negative weight বোঝা।
 
 ## অনুশীলন
 
-- Dijkstra vs Bellman-Ford: কখন কোনটা, লিস্ট করো।
+- Dijkstra আর Bellman-Ford-এর মধ্যে কখন কোনটা নেবে, লিস্ট করে ফেলো।

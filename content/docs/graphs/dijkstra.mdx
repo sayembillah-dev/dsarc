@@ -9,10 +9,10 @@ description: ওজনসহ graph-এ সবচেয়ে কম খরচে
 
 ## ধারণা
 
-BFS unweighted-এ shortest দেয়, কিন্তু edge-এ ওজন থাকলে (রাস্তার দূরত্ব) BFS যথেষ্ট নয়। **Dijkstra** প্রতিবার **এখন পর্যন্ত সবচেয়ে কাছের** node বেছে (min-heap/priority queue দিয়ে) তার প্রতিবেশীদের দূরত্ব হালনাগাদ করে (**relaxation**)।
+BFS তখনই দারুণ কাজ করে যখন প্রতিটা edge-এর দাম এক। কিন্তু বাস্তবে এক রাস্তা ২ কিমি, আরেক রাস্তা ১০ কিমি। তখন "কম ধাপ" আর "কম খরচ" এক জিনিস নয়। **Dijkstra** এই সমস্যারই সমাধান। কৌশলটা সহজ: প্রতিবার **এখন পর্যন্ত সবচেয়ে কাছের** node-টা তুলে নাও (min-heap বা priority queue দিয়ে), তারপর তার প্রতিবেশীদের দূরত্ব হালনাগাদ করো। এই হালনাগাদের কাজটার নাম **relaxation**।
 
 <Callout type="warn" title="সীমা: negative weight-এ Dijkstra নয়">
-edge weight **negative** হলে Dijkstra ভুল করতে পারে; তখন Bellman-Ford (পরের পাতা) ব্যবহার করো।
+কোনো edge-এর weight **negative** হলে Dijkstra ভুল ফল দিতে পারে। সেই অবস্থায় Bellman-Ford নাও, পরের পাতায় সেটাই আছে।
 </Callout>
 
 ## কোড উদাহরণ
@@ -52,9 +52,9 @@ console.log(dijkstra(wg, "A")); // A:0, B:1, C:3, D:4
 
 ## কোড ব্রেকডাউন
 
-- `dist`: start থেকে প্রতিটা node-এ এখন পর্যন্ত জানা সর্বনিম্ন দূরত্ব।
-- **relaxation:** `d + weight` যদি `dist`-এর পরিচিত মানের চেয়ে ছোট হয়, ছোট পথ পাওয়া গেছে, আপডেট।
-- সবসময় সবচেয়ে কাছের unprocessed node আগে, priority queue-এর কাজ।
+- `dist` মানে start থেকে প্রতিটা node-এ এখন পর্যন্ত জানা সবচেয়ে কম দূরত্ব।
+- **relaxation** মানে এইটুকুই: এই প্রতিবেশীতে যাওয়ার ছোট পথ পেলাম কিনা দেখা। `d + weight` যদি `dist`-এর পুরনো মানের চেয়ে ছোট হয়, নতুন পথ পাওয়া গেছে, আপডেট করে দাও।
+- আর সবসময় সবচেয়ে কাছের unprocessed node-টাই আগে ওঠে। এই কাজটা priority queue-র।
 
 ## Complexity
 
@@ -65,10 +65,10 @@ console.log(dijkstra(wg, "A")); // A:0, B:1, C:3, D:4
 > **Animation Spec: Dijkstra Wavefront**
 >
 > - **দৃশ্য:** weighted graph; প্রতিটা node-এ current best distance লেবেল; priority queue পাশে।
-> - **ইনপুট:** start node; edge weight editable।
-> - **ধাপ:** সবচেয়ে কাছের node "settle" (সবুজ); প্রতিবেশী distance relax (হলুদ flash)।
-> - **লক্ষ্য:** greedy "কাছেরটা আগে" ও relaxation বোঝা।
+> - **ইনপুট:** start node; edge weight বদলানো যায়।
+> - **ধাপ:** সবচেয়ে কাছের node "settle" হয় (সবুজ); প্রতিবেশীদের distance relax হলে হলুদ flash।
+> - **লক্ষ্য:** greedy কৌশল (কাছেরটা আগে) আর relaxation বোঝা।
 
 ## অনুশীলন
 
-- একটা edge weight negative করে দেখো কেন Dijkstra ভুল করতে পারে।
+- একটা edge-এর weight negative করে দেখো, কেন Dijkstra ভুল করতে পারে।

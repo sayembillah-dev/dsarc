@@ -1,6 +1,6 @@
 ---
 title: "Depth First Search (DFS): যতদূর সম্ভব গভীরে"
-description: recursion বা stack দিয়ে এক পথ ধরে গভীরে, আটকালে backtrack।
+description: recursion বা stack দিয়ে এক পথ ধরে গভীরে, আটকে গেলে backtrack।
 ---
 
 ## কী শিখব
@@ -9,7 +9,7 @@ description: recursion বা stack দিয়ে এক পথ ধরে গ�
 
 ## ধারণা
 
-DFS একটা পথ ধরে **যতদূর সম্ভব গভীরে** যায়, আর যেতে না পারলে পিছিয়ে (backtrack) অন্য পথ ধরে। recursion বা **stack** দিয়ে। cycle detection, connected components, topological sort-এ কাজে লাগে।
+ধরো তুমি একটা বড় বাড়িতে ঢুকেছ, করিডরে করিডর। একটা করিডর ধরে হেঁটেই যাচ্ছ, যতদূর যাওয়া যায়। ডেড-এন্ডে পড়লে ফিরে এসে (backtrack) আগের মোড় থেকে অন্য করিডর ধরছ। DFS-ও ঠিক এমন: একটা পথ ধরে **যতদূর সম্ভব গভীরে** যায়, আটকে গেলে ফিরে এসে অন্য পথ নেয়। recursion দিয়ে লিখলে call stack-ই এই কাজটা করে, নইলে নিজে একটা **stack** রাখতে হয়। cycle detection, connected components, topological sort, এসবের ভিত্তিই এই DFS।
 
 ## কোড উদাহরণ
 
@@ -59,8 +59,8 @@ console.log(dfsIter(g, "A")); // যেমন ['A','C','D','B']
 
 ## কোড ব্রেকডাউন
 
-- recursion-এর call stack-ই DFS-এর stack।
-- BFS ও DFS-এর কোড প্রায় এক, শুধু **queue (BFS) বনাম stack (DFS)**।
+- recursion লিখলে নিজে stack বানাতে হয় না, call stack-ই ওই কাজটা করে দেয়।
+- মজার ব্যাপার হলো, BFS আর DFS-এর কোড প্রায় এক। শুধু একটায় **queue**, আরেকটায় **stack**। এই ছোট্ট পার্থক্যই পুরো আচরণ বদলে দেয়।
 
 ## Complexity
 
@@ -70,11 +70,11 @@ console.log(dfsIter(g, "A")); // যেমন ['A','C','D','B']
 
 > **Animation Spec: DFS Deep Dive**
 >
-> - **দৃশ্য:** graph; একটা path ধরে গভীরে নামা, ডেড-এন্ডে backtrack (তীর পিছায়)।
+> - **দৃশ্য:** graph; একটা path ধরে গভীরে নামা, ডেড-এন্ডে backtrack (তীর পিছিয়ে যায়)।
 > - **ইনপুট:** start node।
 > - **ধাপ:** current পথ কমলা; visited বেগুনি; backtrack স্পষ্ট দেখানো।
-> - **লক্ষ্য:** "গভীরে যাও, আটকালে ফিরে এসো" ধারণা; BFS-এর সাথে তুলনা।
+> - **লক্ষ্য:** "গভীরে যাও, আটকে গেলে ফিরে এসো" ধারণাটা; BFS-এর সাথে তুলনা।
 
 ## অনুশীলন
 
-- DFS দিয়ে directed graph-এ cycle আছে কিনা বের করার কৌশল ভাবো।
+- DFS দিয়ে directed graph-এ cycle আছে কিনা বের করার কৌশলটা ভাবো।

@@ -1,6 +1,6 @@
 ---
 title: "Breadth First Search (BFS): স্তরে স্তরে ঘোরা"
-description: queue দিয়ে স্তর-ভিত্তিক প্রসার; unweighted graph-এ shortest path।
+description: queue দিয়ে স্তরে স্তরে ছড়িয়ে খোঁজা; unweighted graph-এ shortest path।
 ---
 
 ## কী শিখব
@@ -9,7 +9,7 @@ description: queue দিয়ে স্তর-ভিত্তিক প্র�
 
 ## ধারণা
 
-BFS শুরু node থেকে **স্তরে স্তরে** ছড়ায় (queue দিয়ে), আগে ১ ধাপ দূরের সব, তারপর ২ ধাপ। তাই unweighted graph-এ **সবচেয়ে কম edge-এর পথ** (shortest path) দেয়। "visited" set দিয়ে cycle সামলাই।
+ভাবো তো, পুকুরে পাথর ফেললে ঢেউ কীভাবে ছড়ায়। কেন্দ্র থেকে এক চক্কর, তারপর আরেক চক্কর। BFS-ও graph-এ ঠিক এমনই ছড়ায়: শুরুর node থেকে আগে ১ ধাপ দূরের সবাই, তারপর ২ ধাপ দূরের সবাই। কাজটা হয় **queue** দিয়ে। আর যেহেতু কাছের সবাইকে আগে দেখে ফেলে, unweighted graph-এ BFS-ই **সবচেয়ে কম edge-এর পথ** (shortest path) দিয়ে দেয়। cycle-এ আটকে না যেতে সাথে একটা **visited** set রাখবে।
 
 ## কোড উদাহরণ
 
@@ -65,9 +65,9 @@ console.log(shortestPathBFS(g, "A", "D")); // 2
 
 ## কোড ব্রেকডাউন
 
-- **queue** মানে স্তরভিত্তিক প্রসার।
-- **visited** মানে পুনরাবৃত্তি/cycle বন্ধ (graph-এ অপরিহার্য)।
-- প্রতিটা node-এর সাথে distance রাখলে shortest path।
+- **queue**-টাই আসল জাদু। যাকে আগে ঢুকিয়েছি, সে আগে বের হবে (FIFO), তাই স্তর ধরে ধরে এগোয়।
+- **visited** ছাড়া cycle-এ ঘুরতেই থাকবে। graph-এ এটা অপরিহার্য।
+- প্রতিটা node-এর সাথে দূরত্ব রেখে দিলে হাতে হাতে shortest path-ও পেয়ে যাবে।
 
 ## Complexity
 
@@ -79,8 +79,8 @@ console.log(shortestPathBFS(g, "A", "D")); // 2
 >
 > - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue।
 > - **ইনপুট:** start node।
-> - **ধাপ:** প্রতিটা স্তর একই রঙে; visited node বেগুনি; queue-এর enqueue/dequeue দেখা যায়।
-> - **লক্ষ্য:** BFS অর্থাৎ স্তর-ভিত্তিক প্রসার অর্থাৎ shortest (unweighted)।
+> - **ধাপ:** প্রতিটা স্তর একই রঙে; visited node বেগুনি; queue-এর enqueue/dequeue চোখে দেখা যায়।
+> - **লক্ষ্য:** BFS মানে স্তর-ভিত্তিক প্রসার, মানে unweighted shortest।
 
 ## অনুশীলন
 
