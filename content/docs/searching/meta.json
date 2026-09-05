@@ -1,0 +1,4 @@
+{
+  "title": "Searching Algorithms",
+  "pages": ["index", "linear-search", "binary-search", "binary-search-variants", "binary-search-on-answer"]
+}

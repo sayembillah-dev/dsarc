@@ -1,0 +1,63 @@
+---
+title: "Binary Search Variants: Lower ও Upper Bound"
+description: target-এর প্রথম/শেষ অবস্থান বা insert-পয়েন্ট খোঁজা; duplicate array-তে range ও count।
+---
+
+## কী শিখব
+
+- target-এর প্রথম/শেষ অবস্থান, বা insert-পয়েন্ট খোঁজা
+
+## ধারণা
+
+অনেক সমস্যায় শুধু "আছে কিনা" নয়, বরং "কোথায় বসবে" বা "প্রথম যেখানে শর্ত পূরণ হয়" জানতে হয়। দুটো দরকারি রূপ:
+
+- **lower bound:** target-এর বড় বা সমান প্রথম index
+- **upper bound:** target-এর বড় প্রথম index
+
+(duplicate থাকা array-তে গণনা/range খুঁজতে এগুলো লাগে।)
+
+## কোড উদাহরণ
+
+```js
+// প্রথম index যেখানে arr[i] >= target
+function lowerBound(arr, target) {
+  let low = 0, high = arr.length; // high = length (exclusive)
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid;              // mid প্রার্থী হতে পারে, তাই রাখি
+  }
+  return low;
+}
+const a = [1, 2, 2, 2, 3, 5];
+console.log(lowerBound(a, 2)); // 1 (প্রথম 2)
+console.log(lowerBound(a, 4)); // 5 (4 বসত এখানে)
+
+// একটি sorted array-তে target কতবার আছে
+function countOccurrences(arr, target) {
+  return lowerBound(arr, target + 1) - lowerBound(arr, target);
+}
+console.log(countOccurrences(a, 2)); // 3
+```
+
+## কোড ব্রেকডাউন
+
+- `high = length` ও `high = mid` (mid+1 নয়), এই ছোট পার্থক্যই lower bound-কে সঠিক করে।
+- upper বিয়োগ lower দিলেই target কতবার আছে বের হয়, একটা পরিষ্কার কৌশল।
+
+## Complexity
+
+- O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Boundary Finder**
+>
+> - **দৃশ্য:** duplicate-সহ sorted bar; lower ও upper সীমা দুই রঙে চিহ্নিত হয়।
+> - **ইনপুট:** array, target।
+> - **ধাপ:** দুটো binary search চলে; দুই সীমার মাঝের অংশ = target-এর range।
+> - **লক্ষ্য:** boundary-ভিত্তিক binary search বোঝা।
+
+## অনুশীলন
+
+- `upperBound` নিজে লেখো (`arr[mid] <= target` কন্ডিশনে ভাবো)।

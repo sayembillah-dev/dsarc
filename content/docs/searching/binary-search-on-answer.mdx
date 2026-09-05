@@ -1,0 +1,53 @@
+---
+title: "Binary Search on Answer: উত্তরের পরিসরে খোঁজা"
+description: শুধু array নয়, monotonic শর্তে উত্তরের পরিসরে binary search; বর্গমূলের floor উদাহরণ।
+---
+
+## কী শিখব
+
+- শুধু array নয়, "উত্তরের পরিসরে" binary search
+
+## ধারণা
+
+Binary search শুধু array-তে না, যেকোনো **monotonic** (একমুখী) শর্তে চলে। যদি "উত্তর X হলে সম্ভব, X-এর বেশি হলেও সম্ভব" এমন প্যাটার্ন থাকে, তাহলে উত্তরের পরিসরে binary search করে সর্বোত্তম উত্তর পাওয়া যায়। (advanced; section 16-এও ফিরব।)
+
+## কোড উদাহরণ
+
+n-এর বর্গমূলের floor বের করা:
+
+```js
+// n-এর বর্গমূলের floor, binary search on answer
+function sqrtFloor(n) {
+  if (n < 2) return n;
+  let low = 1, high = n, ans = 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (mid * mid <= n) { ans = mid; low = mid + 1; } // এখনো বাড়ানো যায়
+    else high = mid - 1;                               // বেশি হয়ে গেছে
+  }
+  return ans;
+}
+console.log(sqrtFloor(17)); // 4  (4²=16 ≤ 17 < 25=5²)
+```
+
+## কোড ব্রেকডাউন
+
+- `mid * mid <= n` শর্তটা monotonic, একটা সীমা পর্যন্ত true, তারপর false।
+- সেই সীমাই আমরা binary search-এ খুঁজি, তাই O(log n)।
+
+## Complexity
+
+- O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Search the Answer Range**
+>
+> - **দৃশ্য:** সংখ্যারেখা (1..n); true অংশ সবুজ, false অংশ লাল; সীমারেখা খোঁজা।
+> - **ইনপুট:** n।
+> - **ধাপ:** mid পরীক্ষা করে অর্ধেক বাদ, true/false সীমা কাছে আসে।
+> - **লক্ষ্য:** "monotonic শর্তে binary search", শক্তিশালী প্যাটার্নের সূচনা।
+
+## অনুশীলন
+
+- একই ধারণায় একটা সংখ্যার cube root-এর floor বের করো।

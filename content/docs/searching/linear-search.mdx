@@ -1,0 +1,47 @@
+---
+title: "Linear Search: একটা একটা করে খোঁজা"
+description: শুরু থেকে শেষ পর্যন্ত প্রতিটা উপাদান পরীক্ষা; সবচেয়ে সরল, sorted না হলেও চলে।
+---
+
+## কী শিখব
+
+- একটা একটা করে খোঁজা
+
+## ধারণা
+
+শুরু থেকে শেষ পর্যন্ত প্রতিটা উপাদান পরীক্ষা করি যতক্ষণ না target পাই। **সবচেয়ে সরল**, কোনো পূর্বশর্ত নেই, array sorted না হলেও চলে।
+
+## কোড উদাহরণ
+
+```js
+function linearSearch(arr, target) {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return i;  // পেলে index ফেরত
+  }
+  return -1;                           // না পেলে -1
+}
+console.log(linearSearch([4, 2, 7, 1, 9], 7)); // 2
+console.log(linearSearch([4, 2, 7, 1, 9], 5)); // -1
+```
+
+## কোড ব্রেকডাউন
+
+- প্রথম মিলেই থেমে index দেয়।
+- worst case: target নেই বা শেষে, তখন পুরো array ঘুরতে হয়।
+
+## Complexity
+
+- worst/avg O(n); best O(1); space O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Linear Scan**
+>
+> - **দৃশ্য:** box সারি; বাম থেকে ডানে কমলা pointer।
+> - **ইনপুট:** array, target।
+> - **ধাপ:** প্রতিটা box-এ থামে (হলুদ), মিললে সবুজ, না মিললে ধূসর করে পরেরটায়।
+> - **লক্ষ্য:** কেন worst case O(n)।
+
+## অনুশীলন
+
+- target-এর সব index (একাধিক থাকলে) বের করার version লেখো।
