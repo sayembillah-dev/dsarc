@@ -1,6 +1,6 @@
 ---
-title: Common Runtimes (সব গুরুত্বপূর্ণ Complexity)
-description: O(1) থেকে O(n!) পর্যন্ত সবচেয়ে দরকারি runtime-গুলো, ভালো থেকে খারাপ ক্রমে, বাস্তব উদাহরণসহ।
+title: "Common Runtimes: O(1) থেকে O(n!)"
+description: সবচেয়ে দরকারি runtime-গুলো ভালো থেকে খারাপ ক্রমে, বাস্তব উদাহরণসহ।
 ---
 
 ## কী শিখব
@@ -9,9 +9,9 @@ description: O(1) থেকে O(n!) পর্যন্ত সবচেয়ে
 
 ## ধারণা
 
-এই subsection-টা roadmap-এর "Common Runtimes", Constant থেকে Factorial পর্যন্ত। প্রতিটার একটা করে বাস্তব উদাহরণ দিচ্ছি।
+চলো, সব দরকারি runtime একসাথে দেখে নিই, Constant থেকে Factorial পর্যন্ত। প্রতিটার একটা করে বাস্তব উদাহরণ দিচ্ছি।
 
-ক্রম (ভালো থেকে খারাপ):
+ক্রমটা মনে রাখো (ভালো থেকে খারাপ):
 
 ```text
 O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!)
@@ -76,7 +76,7 @@ console.log(permutations([1, 2, 3]).length); // 6
 | O(n!) | Factorial | ভয়ংকর | সব permutation |
 
 <Callout type="info" title="বাস্তব অনুভূতি">
-n = 20 হলে O(n²) = 400 অপারেশন (তুচ্ছ), কিন্তু O(2ⁿ) ≈ ১০ লাখ, আর O(n!) ≈ ২৪ কোটি কোটি! তাই বড় input-এ exponential/factorial প্রায় অচল।
+n = 20 হলে O(n²) মানে মাত্র 400 অপারেশন। কিন্তু O(2ⁿ) প্রায় ১০ লাখ, আর O(n!) প্রায় ২৪ কোটি কোটি! তাই বড় input-এ exponential আর factorial algorithm প্রায় অচল হয়ে যায়।
 </Callout>
 
 ## Animation Spec
