@@ -1,0 +1,22 @@
+---
+title: Hash Tables
+description: hash function দিয়ে key থেকে সরাসরি index-এ গড়ে O(1) access, collision সামলানো, Map ও Set-এর ব্যবহার এবং interview প্যাটার্ন, সব একসাথে।
+---
+
+Hash Table হলো DSA-র "জাদু", গড়ে O(1)-এ খোঁজা, যোগ, বাদ। JavaScript-এর `Map`, `Set`, আর object-এর উপরই এটা দাঁড়িয়ে। interview-তে অসংখ্য সমস্যা hash দিয়ে সহজ হয়ে যায়।
+
+**Section Roadmap:** ধারণা, Hash Function, Collision ও নিজে বানানো, Map ও Set, প্রয়োগ প্যাটার্ন।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Hash Table কী ও কেন এত দ্রুত](./hash-table-intro): key দিয়ে সরাসরি মান খোঁজা, গড়ে O(1)
+2. [Hash Function](./hash-function): key কীভাবে সংখ্যায় (index) রূপান্তরিত হয়
+3. [Collision ও তার সমাধান](./collision-handling): দুই key একই index পেলে কী হয়, chaining দিয়ে নিজে বানানো
+4. [Map ও Set](./map-and-set): বাস্তবে ব্যবহারের built-in কাঠামো
+5. [Hash Table প্রয়োগ প্যাটার্ন](./hash-patterns): interview-তে বারবার আসা তিন ক্লাসিক প্যাটার্ন
+
+## সারাংশ
+
+Hash Table অর্থাৎ hash function দিয়ে key থেকে index, গড়ে O(1) access। Collision সামলাতে chaining বা open addressing। বাস্তবে `Map`/`Set` ব্যবহার করি। প্যাটার্ন: frequency count, seen-set, complement lookup; অনেক O(n²) সমস্যা O(n) হয়ে যায়।
+
+**পরবর্তী:** Recursion (শীঘ্রই আসছে)।

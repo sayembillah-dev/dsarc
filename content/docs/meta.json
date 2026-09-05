@@ -1,3 +1,3 @@
 {
-  "pages": ["index", "course-guide", "js-fundamentals", "intro-to-dsa", "algorithmic-complexity", "arrays-strings", "linked-lists", "stacks-queues"]
+  "pages": ["index", "course-guide", "js-fundamentals", "intro-to-dsa", "algorithmic-complexity", "arrays-strings", "linked-lists", "stacks-queues", "hash-tables"]
 }

@@ -1,0 +1,48 @@
+---
+title: "Hash Table: কী ও কেন এত দ্রুত"
+description: key থেকে value দ্রুত ম্যাপিংয়ের ধারণা, hash function দিয়ে সরাসরি index-এ পৌঁছে গড়ে O(1) access।
+---
+
+## কী শিখব
+
+- key থেকে value দ্রুত ম্যাপিংয়ের ধারণা
+
+## ধারণা
+
+Array-তে খুঁজতে index লাগে (সংখ্যা)। কিন্তু আমরা প্রায়ই **নাম/শব্দ** দিয়ে খুঁজতে চাই, যেমন "Rahim-এর roll কত?"। Hash Table এটা করে: একটা **hash function** key-কে একটা array-index-এ রূপান্তর করে, ফলে সরাসরি সেই index-এ গিয়ে মান পাওয়া যায়, গড়ে **O(1)**।
+
+বাস্তব: অভিধান (শব্দ থেকে অর্থ), ফোনবুক (নাম থেকে নম্বর)।
+
+## কোড উদাহরণ
+
+```js
+const rollBook = new Map();
+rollBook.set("Rahim", 5);   // key থেকে value, O(1)
+rollBook.set("Karim", 8);
+
+console.log(rollBook.get("Rahim")); // 5, O(1)
+console.log(rollBook.has("Karim")); // true, O(1)
+```
+
+## কোড ব্রেকডাউন
+
+- `set(key, value)` দিয়ে জমা রাখে।
+- `get(key)` key-এর hash হিসাব করে সরাসরি জায়গায় পৌঁছায়।
+- সংখ্যা index না লাগিয়ে যেকোনো key দিয়ে O(1) access, এটাই মূল শক্তি।
+
+## Complexity
+
+- গড়ে O(1); worst case O(n) (collision বেশি হলে)।
+
+## Animation Spec
+
+> **Animation Spec: Key থেকে Bucket**
+>
+> - **দৃশ্য:** বাঁয়ে key, মাঝে "hash function" মেশিন, ডানে bucket array।
+> - **ইনপুট:** key টাইপ।
+> - **ধাপ:** key মেশিনে ঢুকে একটা সংখ্যা (index) বের হবে, তীর গিয়ে সেই bucket-এ মান বসবে।
+> - **লক্ষ্য:** hashing অর্থাৎ key কে index-এ রূপান্তর।
+
+## অনুশীলন
+
+- একটা Map বানিয়ে ৫টা দেশ-রাজধানী রাখো ও খোঁজো।

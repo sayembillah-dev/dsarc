@@ -1,0 +1,71 @@
+---
+title: "Collision: কারণ ও সমাধান"
+description: দুই key একই index পেলে কী হয়, chaining ও open addressing সমাধান এবং load factor ও resize-এর ধারণা।
+---
+
+## কী শিখব
+
+- দুই key একই index পেলে কী হয়
+
+## ধারণা
+
+ভিন্ন key কখনো একই index পেতে পারে, এটাই **collision**। মূল দুটো সমাধান:
+
+1. **Chaining:** প্রতিটা bucket-এ একটা list রাখা; collision হলে সেই list-এ যোগ। (সবচেয়ে প্রচলিত)
+2. **Open Addressing:** collision হলে পরের খালি ঘর খোঁজা (linear/quadratic probing)।
+
+## কোড উদাহরণ
+
+```js
+// chaining দৃষ্টান্ত: bucket[index] = [ [key,value], [key,value], ... ]
+// আগের পাতার simpleHash আবার ব্যবহার করছি
+function simpleHash(key, size) {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash + key.charCodeAt(i) * (i + 1)) % size;
+  }
+  return hash;
+}
+
+const size = 4;
+const buckets = Array.from({ length: size }, () => []);
+
+function put(key, value) {
+  const idx = simpleHash(key, size);
+  const bucket = buckets[idx];
+  const found = bucket.find(pair => pair[0] === key);
+  if (found) found[1] = value;      // থাকলে আপডেট
+  else bucket.push([key, value]);   // নাহলে যোগ (chain)
+}
+function get(key) {
+  const idx = simpleHash(key, size);
+  const found = buckets[idx].find(pair => pair[0] === key);
+  return found ? found[1] : undefined;
+}
+
+put("a", 1); put("b", 2);
+console.log(get("a")); // 1
+```
+
+## কোড ব্রেকডাউন
+
+- একই index-এ একাধিক key থাকলে সেই bucket-এর ছোট list-এ খুঁজতে হয়।
+- collision কম রাখতে "load factor" (entry/size) নির্দিষ্টের বেশি হলে table **resize** করা হয়।
+- collision বেশি হলে সব এক bucket-এ জমে O(n) হয়ে যেতে পারে, তাই ভালো hash জরুরি।
+
+## Complexity
+
+- গড় O(1); খারাপ hash-এ worst O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Collision & Chaining**
+>
+> - **দৃশ্য:** bucket array; একটা bucket-এ একাধিক entry chain হয়ে ঝুলছে।
+> - **ইনপুট:** এমন দুটো key যাদের hash একই।
+> - **ধাপ:** দ্বিতীয় key একই bucket-এ গিয়ে chain-এ যোগ হবে; get করলে chain ধরে খোঁজা দেখা যাবে।
+> - **লক্ষ্য:** collision বাস্তব ও কীভাবে সামলানো হয়।
+
+## অনুশীলন
+
+- ইচ্ছাকৃতভাবে ছোট size দিয়ে collision ঘটাও ও observe করো।

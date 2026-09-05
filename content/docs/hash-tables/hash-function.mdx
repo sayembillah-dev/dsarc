@@ -1,0 +1,50 @@
+---
+title: "Hash Function: key থেকে index"
+description: key কীভাবে সংখ্যায় (index) রূপান্তরিত হয়, ভালো hash function-এর গুণ এবং একটা সরল hash function-এর বাস্তবায়ন।
+---
+
+## কী শিখব
+
+- key কীভাবে সংখ্যায় (index) রূপান্তরিত হয়
+
+## ধারণা
+
+Hash function key নেয়, একটা সংখ্যা (index) ফেরত দেয়। ভালো hash function-এর গুণ: (১) দ্রুত, (২) একই key-তে সবসময় একই ফলাফল, (৩) মানগুলো সমানভাবে ছড়িয়ে দেয় (কম collision)।
+
+## কোড উদাহরণ
+
+```js
+function simpleHash(key, size) {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash + key.charCodeAt(i) * (i + 1)) % size; // অক্ষরের কোড যোগ
+  }
+  return hash;                       // 0 .. size-1 এর মধ্যে একটা index
+}
+
+console.log(simpleHash("Rahim", 10)); // যেমন 3
+console.log(simpleHash("Karim", 10)); // যেমন 7
+```
+
+## কোড ব্রেকডাউন
+
+- `charCodeAt(i)` দেয় প্রতিটা অক্ষরের সংখ্যা-কোড।
+- `* (i + 1)` দেয় অবস্থানভেদে ওজন, যাতে "abc" ও "cba" আলাদা hash পায়।
+- `% size` ফলাফলকে array-এর সীমার ভেতরে রাখে।
+
+## Complexity
+
+- key-দৈর্ঘ্য k হলে O(k) (সাধারণত ছোট, ধ্রুবকের মতো)।
+
+## Animation Spec
+
+> **Animation Spec: Hash Computation**
+>
+> - **দৃশ্য:** key-এর প্রতিটা অক্ষর থেকে charCode, তারপর চলমান যোগফল, শেষে % size।
+> - **ইনপুট:** key ও table size।
+> - **ধাপ:** অক্ষর ধরে ধরে হিসাব দেখা যাবে, শেষে final index highlight।
+> - **লক্ষ্য:** hash কোনো জাদু নয়, নির্দিষ্ট গণনা, এটা বোঝা।
+
+## অনুশীলন
+
+- size বদলালে একই key-এর index কীভাবে বদলায় দেখো।

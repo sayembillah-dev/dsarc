@@ -1,0 +1,61 @@
+---
+title: "Map ও Set: বাস্তবে যা ব্যবহার করব"
+description: JavaScript-এর built-in Map ও Set-এর দক্ষ ব্যবহার, frequency counting, duplicate সরানো ও iteration কৌশল।
+---
+
+## কী শিখব
+
+- built-in `Map` ও `Set`-এর দক্ষ ব্যবহার
+
+## ধারণা
+
+বাস্তব কোডে আমরা নিজে hash table বানাই না, JavaScript-এর দক্ষ `Map` ও `Set` ব্যবহার করি।
+
+- **Map**: key-value; যেকোনো টাইপ key হতে পারে; ক্রম বজায় থাকে
+- **Set**: শুধু ইউনিক মান; দ্রুত membership চেক
+
+<Callout type="info" title="object না Map?">
+object-ও ব্যবহার করা যায় (`{}`), তবে DSA-তে `Map`/`Set` বেশি নিরাপদ ও দ্রুত (বিশেষত অনেক ডেটায়)।
+</Callout>
+
+## কোড উদাহরণ
+
+```js
+// Map
+const freq = new Map();
+for (const ch of "banana") {
+  freq.set(ch, (freq.get(ch) || 0) + 1); // অক্ষর গণনা
+}
+console.log(freq); // Map { 'b'=>1, 'a'=>3, 'n'=>2 }
+
+// Set
+const unique = new Set([1, 2, 2, 3, 3, 3]);
+console.log([...unique]);      // [1, 2, 3]
+console.log(unique.has(2));    // true, O(1)
+
+// iterate
+for (const [key, count] of freq) console.log(key, count);
+```
+
+## কোড ব্রেকডাউন
+
+- `map.get(k) || 0` মানে না থাকলে 0 ধরে গণনা শুরুর প্রচলিত কৌশল।
+- `Set` দিয়ে duplicate সরানো এক লাইনে: `[...new Set(arr)]`।
+- `Map`/`Set`-এর `get/set/has/add` সবই গড়ে O(1)।
+
+## Complexity
+
+- get/set/has/add গড়ে O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Frequency Counter**
+>
+> - **দৃশ্য:** উপরে input string, নিচে Map entries (key থেকে count) বার সহ।
+> - **ইনপুট:** string।
+> - **ধাপ:** প্রতিটা অক্ষরে সংশ্লিষ্ট count বার এক ধাপ বাড়বে।
+> - **লক্ষ্য:** frequency counting প্যাটার্ন (interview-তে অতি প্রচলিত)।
+
+## অনুশীলন
+
+- একটা string-এ সবচেয়ে বেশি আসা অক্ষরটি বের করো।
