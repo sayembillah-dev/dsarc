@@ -1,0 +1,47 @@
+---
+title: "প্যাটার্ন চেনার চিটশিট"
+description: সমস্যার ইঙ্গিত দেখেই আন্দাজ করো কোন কৌশল লাগবে। এক নজরের চিটশিট।
+---
+
+## কী শিখব
+
+- সমস্যা পড়েই আন্দাজ করা, এখানে কোন কৌশল খাটবে
+
+## ধারণা
+
+ভাবো তো, বেশিরভাগ interview সমস্যা আসলে কয়েকটা চেনা প্যাটার্নের ছদ্মবেশ। ইঙ্গিতটা ধরতে পারলেই অর্ধেক কাজ শেষ:
+
+| ইঙ্গিত (সমস্যায় যা দেখবে) | সম্ভাব্য কৌশল |
+|--------------------------|--------------|
+| Sorted array, জোড়া/triplet | [Two Pointer](../problem-solving/two-pointer.mdx) |
+| টানা subarray/substring, "window" | [Sliding Window](../problem-solving/sliding-window.mdx) |
+| "সব কম্বিনেশন/পারমুটেশন/subset" | [Backtracking](../problem-solving/backtracking.mdx) |
+| "সর্বোচ্চ/সর্বনিম্ন/কয় উপায়", overlapping subproblem | [DP](../problem-solving/dynamic-programming.mdx) |
+| Linked list-এ cycle/মধ্য | [Fast & Slow Pointer](../problem-solving/fast-slow-pointers.mdx) |
+| Top-K / k-তম | [Heap](../heaps/index.mdx) / [Quickselect](../problem-solving/kth-element.mdx) |
+| চলমান median | [Two Heaps](../problem-solving/two-heaps.mdx) |
+| রেঞ্জ/interval একত্র | [Merge Intervals](../problem-solving/merge-intervals.mdx) |
+| 1..n সংখ্যা, missing/duplicate | [Cyclic Sort](../problem-solving/cyclic-sort.mdx) |
+| গ্রিড/matrix-এ অঞ্চল | [Grid DFS/BFS](../problem-solving/island-traversal.mdx) |
+| শব্দ/prefix খোঁজা | [Trie](../advanced-structures/trie.mdx) |
+| গ্রাফে ছোট পথ | [BFS (unweighted)](../graphs/bfs.mdx) / [Dijkstra (weighted)](../graphs/dijkstra.mdx) |
+| "প্রতি ধাপে সেরা বাছাই" | [Greedy](../problem-solving/greedy.mdx) |
+
+## ব্রেকডাউন
+
+- এটা মুখস্থ করার জিনিস না। যত সমস্যা করবে, নিজে থেকেই চোখে পড়বে। চিটশিট শুধু গতিটা বাড়ায়।
+- একই সমস্যায় একাধিক কৌশল খাটতে পারে। তাই brute থেকে শুরু করে সেরাটার দিকে এগোও।
+
+## Animation Spec
+
+> **Animation Spec: Pattern Matcher**
+>
+> - **দৃশ্য:** সমস্যার বর্ণনা একটা কার্ডে। মূল শব্দগুলো (keyword) highlight হয়ে সোজা তীর টানবে সম্পর্কিত প্যাটার্নে।
+> - **ইনপুট:** সমস্যার টেক্সট নির্বাচন।
+> - **ধাপ:** keyword ধরা পড়ল -> মিলে যাওয়া প্যাটার্ন কার্ডটা জ্বলে উঠবে।
+> - **নিয়ন্ত্রণ:** সমস্যা পাল্টানো।
+> - **লক্ষ্য:** ইঙ্গিত -> কৌশল ম্যাপিংটা গেঁথে নেওয়া।
+
+## অনুশীলন
+
+- সমাধান করা শেষ ৫টা সমস্যা কোন কোন প্যাটার্নে পড়ে, লিখে রাখো।
