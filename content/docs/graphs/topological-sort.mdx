@@ -1,0 +1,264 @@
+---
+title: "Topological Sort: dependency মেনে সবাইকে এক লাইনে দাঁড় করানো"
+description: "কোন course-এর আগে কোনটা, কোন কাজের আগে কোনটা: DAG-এর node-গুলোকে এমনভাবে সাজাও যাতে প্রতিটা edge সামনের দিকে তাকায়। Kahn's algorithm আর DFS পদ্ধতি, পুরো dry run সহ।"
+---
+
+## কী শিখব
+
+- Topological sort আসলে কী চায়, আর কেন সেটা শুধু DAG-এই সম্ভব
+- Kahn's algorithm: indegree আর queue দিয়ে পুরো পদ্ধতি
+- হাতে হাতে একটা পুরো dry run, আর কেন একাধিক valid order থাকতে পারে
+- DFS দিয়ে একই কাজ: postorder উল্টে দিলে কেন কাজ করে
+- Cycle থাকলে output দেখেই ধরতে পারবে কীভাবে
+- Complexity O(V + E) কোথা থেকে আসে
+
+## ধারণা
+
+ভাবো তো university-র course-গুলোর কথা। Data Structures নেওয়ার আগে Programming 101 শেষ করতে হয়। Algorithms নেওয়ার আগে Data Structures। কোনো semester-এ তুমি সব course একসাথে নিতে পারো না, কারও কারও আগে অন্যটা লাগবেই।
+
+প্রতিটা course-কে একটা node ধরো, আর "Y নেওয়ার আগে X লাগে" হলে একটা তীর টানো X → Y। এবার প্রশ্নটা হলো: সব course কি এমন এক লাইনে সাজানো যায়, যাতে প্রতিটা তীর বাম থেকে ডানে, মানে সামনের দিকে তাকায়? পারলে সেই সাজানোটার নাম **topological order**, আর বের করার কাজটা **topological sort**।
+
+জুতা পরার আগে মোজা, build system-এ dependency-র আগে dependency, task scheduler-এ আগের কাজের আগে আগের কাজ: সব একই প্রশ্ন।
+
+খেয়াল করো শর্তটা। যদি A-এর আগে B, B-এর আগে C, C-এর আগে আবার A লাগে, তাহলে কে আগে দাঁড়াবে? কেউই পারে না। মানে graph-এ **cycle থাকলে কোনো valid order-ই নেই**। তাই topological sort-এর একটাই শর্ত: graph-টা হতে হবে **DAG** (Directed Acyclic Graph)। Cycle আছে কিনা আলাদা করে যাচাই করতে চাইলে দেখো [Cycle Detection](./cycle-detection.mdx)।
+
+উল্টোদিকে, DAG হলেই অন্তত একটা order সবসময় আছে, প্রায়ই একাধিক। কেন সবসময়? প্রতিটা DAG-এ অন্তত একটা indegree-0 node থাকতেই হবে। না থাকলে যেকোনো node থেকে তীরের উল্টোদিকে হাঁটতে থাকো; node সসীম, তাই একসময় পুরোনো কোনো node-এ ফিরে আসতেই হবে, মানে cycle। DAG-এ সেটা অসম্ভব। আর একটা indegree-0 node সরিয়ে ফেললে বাকি graph-টাও DAG, সেখানেও আবার একটা পাওয়া যাবে। এই যুক্তিটাই একটু পরে Kahn's algorithm-এর প্রাণ হয়ে যাবে।
+
+ভাগ্যকরে ব্যাপারটা হলো, পুরো algorithm-টা [BFS](./bfs.mdx)-এর পরিচিত queue দিয়েই চলে। একটু পরেই দেখবে।
+
+## ধাপে ধাপে: Kahn's algorithm-এর পুরো dry run
+
+ছয়টা course ধরো, C1 থেকে C6। তীর X → Y মানে Y নেওয়ার আগে X শেষ করতে হবে:
+
+```
+  C1 ---+
+        |
+        v
+  C2 -> C3 ---+
+  |           |
+  |           v
+  +-> C4 ---> C5 ---> C6
+```
+
+Edge-গুলো: C1→C3, C2→C3, C2→C4, C3→C5, C4→C5, C5→C6।
+
+Kahn's algorithm-এর ধারণা সোজা: **যার কোনো prerequisite বাকি নেই (indegree 0), সে এখনই নেওয়া যায়।** নিয়ে ফেললে তার dependent-দের বোঝা একটা কমে যায়। বারবার করো।
+
+আগে সবার indegree গুনে নিই: C1:0, C2:0, C3:2, C4:1, C5:2, C6:1।
+
+| ধাপ | বের হলো | indegree কমল | queue (সামনে → পেছনে) | output |
+|-----|---------|--------------|----------------------|--------|
+| শুরু | - | - | [C1, C2] | [] |
+| 1 | C1 | C3: 2→1 | [C2] | [C1] |
+| 2 | C2 | C3: 1→0 (ঢুকল), C4: 1→0 (ঢুকল) | [C3, C4] | [C1, C2] |
+| 3 | C3 | C5: 2→1 | [C4] | [C1, C2, C3] |
+| 4 | C4 | C5: 1→0 (ঢুকল) | [C5] | [C1, C2, C3, C4] |
+| 5 | C5 | C6: 1→0 (ঢুকল) | [C6] | [C1, C2, C3, C4, C5] |
+| 6 | C6 | কেউ না, queue খালি | [] | [C1, C2, C3, C4, C5, C6] |
+
+Output: **C1, C2, C3, C4, C5, C6**। প্রতিটা তীর সামনের দিকে তাকিয়ে আছে, মিলিয়ে দেখো।
+
+কিন্তু একটা জিনিস লক্ষ্য করো। ধাপ ২-এ queue-তে C3 আর C4 দুজনেই ছিল; C3-কে আগে নিলাম ইচ্ছা করে। C4-কে আগে নিলে উত্তর হত C1, C2, C4, C3, C5, C6। দুটোই **একদম ঠিক**। Topological order সাধারণত unique নয়, এটা bug নয়, DAG-এর স্বাভাবিক বৈশিষ্ট্য।
+
+আর cycle থাকলে কী হত? ধরো C6 → C2 নামে একটা তীর যোগ করলাম। তাহলে C2, C3, C4, C5, C6 সবার indegree কখনোই 0 হত না (গোল হয়ে একজন আরেকজনকে অপেক্ষা করত), queue খালি হয়ে যেত, আর output-এ ৬-এর বদলে ১-টা node (শুধু C1) থাকত। Output ছোট হলেই বুঝবে cycle আছে। এই check-টা কোডে গেঁথে দেবো।
+
+## কোড: Kahn's algorithm
+
+```js
+function topoSort(numNodes, edges) {
+  // 1. adjacency list আর indegree, একসাথেই তৈরি
+  const adj = new Map();
+  const indegree = new Map();
+  for (let v = 0; v < numNodes; v++) {
+    adj.set(v, []);
+    indegree.set(v, 0);
+  }
+  for (const [u, v] of edges) {          // u -> v: v-এর আগে u লাগবে
+    adj.get(u).push(v);
+    indegree.set(v, indegree.get(v) + 1);
+  }
+
+  // 2. শুরুতে যাদের indegree 0, তারা "সবাই" queue-তে
+  const queue = [];
+  for (const [v, d] of indegree) {
+    if (d === 0) queue.push(v);
+  }
+  let head = 0;                          // shift() না, index সরিয়ে dequeue
+
+  // 3. বারবার: বের করো, output-এ রাখো, neighbor-দের বোঝা কমাও
+  const order = [];
+  while (head < queue.length) {
+    const node = queue[head++];
+    order.push(node);
+
+    for (const next of adj.get(node)) {
+      indegree.set(next, indegree.get(next) - 1);   // একটা prerequisite শেষ
+      if (indegree.get(next) === 0) {
+        queue.push(next);                // সব prerequisite মিটেছে, এবার পালা
+      }
+    }
+  }
+
+  // 4. output ছোট হলে cycle আছে, valid order অসম্ভব
+  return order.length === numNodes ? order : null;
+}
+
+// ডেমো: C1=0, C2=1, ..., C6=5
+const edges = [[0, 2], [1, 2], [1, 3], [2, 4], [3, 4], [4, 5]];
+console.log(topoSort(6, edges));
+// [0, 1, 2, 3, 4, 5]  (মানে C1, C2, C3, C4, C5, C6)
+
+// cycle-ওয়ালা graph: 0 -> 1 -> 2 -> 0
+console.log(topoSort(3, [[0, 1], [1, 2], [2, 0]]));
+// null (cycle আছে, কোনো valid order নেই)
+```
+
+[BFS](./bfs.mdx) পাতার মতোই `head` pointer দিয়ে dequeue করছি, কারণ `shift()` প্রতিবার O(n)। আর queue-এর জায়গায় অন্য কোনো container বসালেও উত্তর ভুল হয় না, শুধু valid order-গুলোর মধ্যে অন্যটা আসে; তবে queue-তেই সেই "স্তরে স্তরে মুক্তি পাওয়া" অনুভূতিটা থাকে।
+
+## ভ্যারিয়েন্ট ১: DFS দিয়ে topological sort
+
+আরেকটা সুন্দর পথ আছে, [DFS](./dfs.mdx) দিয়ে। ধারণাটা হলো: **একটা node তখনই finish হয়, যখন তার থেকে পৌঁছানো যায় এমন সবাই আগে finish হয়ে গেছে।** তাই DFS-এর postorder-এ node জমা করলে, তার সব dependent ওর আগে পড়ে থাকে। লিস্টটা শেষে উল্টে দিলেই প্রতিটা edge সামনে তাকায়।
+
+```js
+function topoSortDFS(numNodes, edges) {
+  const adj = new Map();
+  for (let v = 0; v < numNodes; v++) adj.set(v, []);
+  for (const [u, v] of edges) adj.get(u).push(v);
+
+  const state = new Array(numNodes).fill(0); // 0 = নতুন, 1 = চলছে, 2 = শেষ
+  const order = [];
+  let hasCycle = false;
+
+  function dfs(node) {
+    if (hasCycle) return;
+    state[node] = 1;                        // ঢুকলাম
+    for (const next of adj.get(node)) {
+      if (state[next] === 1) {              // চলমান node-ই আবার? cycle!
+        hasCycle = true;
+        return;
+      }
+      if (state[next] === 0) dfs(next);
+    }
+    state[node] = 2;                        // এই node-এর সব কাজ শেষ
+    order.push(node);                       // postorder-এ জমা
+  }
+
+  for (let v = 0; v < numNodes; v++) {
+    if (state[v] === 0) dfs(v);
+  }
+
+  return hasCycle ? null : order.reverse(); // উল্টে দিলেই topological order
+}
+
+console.log(topoSortDFS(6, edges));
+// [1, 3, 0, 2, 4, 5] (মানে C2, C4, C1, C3, C5, C6; Kahn-এর থেকে অন্য, কিন্তু valid)
+```
+
+দুটো পদ্ধতি দুটো ভিন্ন valid order দিল, দেখলে? এটাই আগের কথাটার জীবন্ত প্রমাণ: order unique নয়। DFS পদ্ধতির বোনাস হলো, `state[next] === 1` চেকটা দিয়েই cycle-ও ধরা পড়ে, সেটাই [Cycle Detection](./cycle-detection.mdx)-এর directed ভার্সনের ভিত্তি। Recursion নিয়ে অস্বস্তি লাগলে আগে [Recursion](../recursion/recursion-intro.mdx) পাতাটা ঝালিয়ে নিও।
+
+## ভ্যারিয়েন্ট ২: level-wise Kahn (কমপক্ষে কত রাউন্ড?)
+
+মাঝে মাঝে প্রশ্নটা order নয়, সময়। একই semester-এ যত খুশি course নেওয়া যায়, তাহলে সব শেষ করতে কমপক্ষে কত semester? উত্তরটা হলো DAG-এর সবচেয়ে লম্বা চেইনের দৈর্ঘ্য। কৌশলটা [BFS](./bfs.mdx)-এর level-wise ভ্যারিয়েন্টেরই আত্মীয়: এক রাউন্ডে যাদের indegree 0, তারা সবাই **একই রাউন্ডে** পড়া যায়।
+
+```js
+function minSemesters(numNodes, edges) {
+  const adj = new Map();
+  const indegree = new Map();
+  for (let v = 0; v < numNodes; v++) {
+    adj.set(v, []);
+    indegree.set(v, 0);
+  }
+  for (const [u, v] of edges) {
+    adj.get(u).push(v);
+    indegree.set(v, indegree.get(v) + 1);
+  }
+
+  let queue = [];
+  for (const [v, d] of indegree) if (d === 0) queue.push(v);
+
+  let rounds = 0, done = 0;
+  while (queue.length > 0) {
+    const nextRound = [];
+    for (const node of queue) {            // এই রাউন্ডের সবাই একই semester-এ
+      done++;
+      for (const nxt of adj.get(node)) {
+        indegree.set(nxt, indegree.get(nxt) - 1);
+        if (indegree.get(nxt) === 0) nextRound.push(nxt);
+      }
+    }
+    queue = nextRound;                     // পরের semester
+    rounds++;
+  }
+  return done === numNodes ? rounds : -1;  // done কম হলে cycle
+}
+
+console.log(minSemesters(6, edges)); // 4 (C1,C2 → C3,C4 → C5 → C6)
+```
+
+খেয়াল করো, এখানে `head` pointer লাগেনি, কারণ প্রতি রাউন্ডে পুরো queue-টাই নতুন array দিয়ে বদলে যাচ্ছি। খরচ তাও O(V + E)-ই, শুধু queue বদলানোর ঝামেলা।
+
+## কোড ব্রেকডাউন: Kahn's, লাইনে লাইনে
+
+1. `adj.set(v, []); indegree.set(v, 0)` : সব node-কে আগে খালি list আর শূন্য indegree দিয়ে register করে নিই। নইলে যার indegree 0, সে map-এই থাকত না।
+2. `for (const [u, v] of edges)` : একটা লুপেই দুই কাজ, adjacency আর indegree। u → v মানে v-এর আগে u লাগবে, তাই v-এর indegree বাড়ে।
+3. `if (d === 0) queue.push(v)` : শুরুতেই **সব** zero-indegree node queue-তে, একটা নয়। Disconnected DAG-এ এটা ভুললে পুরো component বাদ পড়ে যাবে।
+4. `let head = 0` : নকল dequeue pointer, [BFS](./bfs.mdx)-এর সেই একই কারণ: `shift()` O(n), index সরানো O(1)।
+5. `order.push(node)` : এই মুহূর্তে node-টা লাইনে দাঁড়াল। এর সব prerequisite এর মধ্যে output-এ ঢুকে গেছে, তাই এখন দাঁড়ানো নিরাপদ।
+6. `indegree.set(next, indegree.get(next) - 1)` : node নেওয়া হয়ে গেলে তার প্রতিটা dependent-এর একটা prerequisite কমে গেল।
+7. `if (indegree.get(next) === 0)` : পুরো algorithm-এর চাবিকাঠি। শূন্য হওয়ার মুহূর্তেই queue-তে ঢোকাও, আগে নয় পরে নয়।
+8. `return order.length === numNodes ? order : null` : নিঃশব্দ ভুল উত্তরের বিরুদ্ধে সুরক্ষা। Cycle থাকলে কিছু node কখনো 0-তে পৌঁছায় না, output ছোট হয়ে যায়। এই check ছাড়া আধবাটা order return করে সবাইকে ঠকাতে।
+
+## Complexity: হিসাবটা সরল
+
+**Time: O(V + E)।** হাতে গুনেই দেখো:
+
+- Graph বানাতে: V-টা register, E-টা edge ঢোকানো, O(V + E)।
+- প্রতিটা node queue-তে সর্বোচ্চ একবার ঢোকে, একবার বের হয়: O(V)।
+- প্রতিটা node বের হওয়ার সময় তার বেরিয়ে যাওয়া edge-গুলো একবার করে দেখা হয়: সব মিলে O(E)।
+- DFS ভ্যারিয়েন্টেও একই কথা: প্রতিটা node একবার visit, প্রতিটা edge একবার দেখা, O(V + E)।
+
+**Space: O(V) extra**, indegree map, queue আর order মিলে; DFS-এ recursion stack worst case O(V)। Adjacency list-টা ধরলে মোট O(V + E)।
+
+## সাধারণ ভুল আর edge case
+
+**১. cycle-এর check না করা, আধা output-কে উত্তর ভাবা।**
+সবচেয়ে বিপজ্জনক ভুল, কারণ code চুপচাপ চলে যায়। Cycle থাকলে queue তাড়াতাড়ি খালি হয়ে যায়, output ছোট থাকে, আর তুমি সেটাকেই valid order ভেবে বসো। নিয়ম একটাই: return করার আগে `order.length === numNodes` মিলিয়ে নাও।
+
+**২. আসল graph-এর ডেটা নষ্ট করে ফেলা।**
+indegree কমাতে কমাতে আমরা map-টা শূন্য করে ফেলি। আর যদি ইনপুট থেকে আসা adjacency বা indegree সরাসরি mutate করো, পরের query-র জন্য graph আর থাকে না। নিরাপদ অভ্যাস: indegree-র নিজের copy বানাও, ইনপুট ডেটা ছুঁয়ো না।
+
+**৩. শুরুতে একটা মাত্র zero-indegree node ঢোকানো।**
+DAG disconnected হতে পারে, তখন আলাদা component-এ একাধিক zero-indegree node থাকে। একটা ঢোকালে বাকি component-গুলো অপেক্ষায় থেকে যায়, output আবার ছোট হয়, আর তুমি ভুলবুঝে cycle ভাববে। প্রথমে সবাইকে একসাথে ঢোকাও।
+
+**৪. order unique ভাবা।**
+একই DAG-এর অনেক valid order থাকতে পারে, উপরের দুটো পদ্ধতিই দুটো order দিল। তাই উত্তর মেলানোর সময় নির্দিষ্ট order নয়, "প্রতিটা edge সামনে তাকায় কিনা" মেলাও। আর lexicographically smallest order দরকার হলে সাধারণ queue চলবে না; zero-indegree node-দের [min-heap](../heaps/minheap-class.mdx)-এ রাখতে হবে, যাতে প্রতিবার ছোটটা আগে বের হয়।
+
+**৫. undirected graph-এ topological sort চাওয়া।**
+Undirected edge মানে দুই দিকেই তীর, মানে প্রতিটা edge-ই আসলে দুই node-এর একটা cycle। Direction-ই topological sort-এর প্রাণ, তাই undirected graph-এ প্রশ্নটাই অর্থহীন। আগে নিশ্চিত হও graph-টা directed, তারপর DAG কিনা ভাবো।
+
+## Animation Spec
+
+> **Animation Spec: Topological Assembly Line**
+>
+> - **দৃশ্য:** DAG, প্রতিটা node-এর গায়ে indegree সংখ্যাটা লেখা; ডানদিকে output order-এর খালি ঘরগুলো; নিচে queue-এর live অবস্থা।
+> - **ইনপুট:** course/task preset DAG; "cycle যোগ করো" toggle।
+> - **ধাপ:** indegree 0 হতেই node সবুজ জ্বলে queue-তে ঢোকে। বের হলে ফ্যাকাশে হয়ে output-এর পরের খালি ঘরে বসে যায়, তার তীরগুলো মিলিয়ে যাওয়ার সাথে সাথে neighbor-দের সংখ্যা এক এক করে কমে; 0 হতেই নতুন node জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; cycle toggle চালু করলে দেখা যায় কোনো node-ই 0-তে পৌঁছায় না, queue খালি হয়ে সব থেমে যায়, আটকে থাকা node-গুলো লাল হয়ে cycle-টা উজ্জ্বল করে দেখায়।
+> - **লক্ষ্য:** "indegree 0 মানে সব prerequisite শেষ" অনুভূতিটা পাকা করা, আর cycle কেন পুরো লাইন থামিয়ে দেয় তা দেখা।
+
+## অনুশীলন
+
+- **সহজ ১:** Course Schedule (LeetCode 207): শুধু বলতে হবে সব course শেষ করা যায় কিনা। হিন্ট: order বের করারও দরকার নেই, `topoSort` চালিয়ে output-এর দৈর্ঘ্য numCourses-এর সমান কিনা দেখলেই চলে।
+- **সহজ ২:** হাতে হাতে Kahn চালাও এই task-লিস্টে: T1 → T3, T2 → T3, T3 → T4, T2 → T5। দুটো ভিন্ন valid order বের করতে পারো কিনা দেখো। হিন্ট: প্রথমে সবার indegree লিখে নাও, তারপর 0-ওয়ালাদের একসাথে queue-তে।
+- **মাঝারি ১:** Course Schedule II (LeetCode 210): এবার শুধু হ্যাঁ বা না নয়, আসল order-টা return করতে হবে। হিন্ট: উপরের `topoSort`-ই প্রায় উত্তর; শুধু edge-এর দিকটা খেয়াল করো, তীর prerequisite থেকে course-এর দিকে।
+- **মাঝারি ২:** Parallel Courses (LeetCode 1136): একই semester-এ যত খুশি course নেওয়া যায়, সব শেষ করতে কমপক্ষে কত semester লাগবে? হিন্ট: Kahn-টা level by level চালাও, এক রাউন্ডে যাদের indegree 0 তারা সবাই একই semester। [BFS](./bfs.mdx)-এর level-wise ভ্যারিয়েন্ট মনে আছে?
+- **কঠিন:** Alien Dictionary (LeetCode 269): একটা alien ভাষার শব্দগুলো dictionary order-এ সাজানো; সেখান থেকে অক্ষরগুলোর order বের করো। হিন্ট: পাশাপাশি শব্দ তুলনা করে প্রথম যে অক্ষরে মিল ভাঙে, সেখান থেকে edge বানাও, তারপর topo sort। Cycle আর অসঙ্গত ইনপুট (যেমন "abc"-এর পরে "ab") খেয়াল রেখো।
+
+## সারসংক্ষেপ
+
+- Topological sort = DAG-এর node-দের এমনভাবে সাজানো, যাতে প্রতিটা edge সামনের দিকে তাকায়। Cycle থাকলে order অসম্ভব।
+- Kahn's: indegree গোনো → সব 0-ওয়ালা queue-তে → বের করে neighbor কমাও → 0 হলে ঢোকাও।
+- Output ছোট হলে cycle আছে, এটা built-in ডিটেক্টর।
+- DFS দিয়েও হয়: postorder-এ জমা করে শেষে উল্টে দাও, কারণ node finish হয় তার থেকে পৌঁছানো যায় এমন সবার পরে।
+- Time O(V + E), space O(V) extra।
+- Order unique নয়; lexicographically smallest চাইলে queue-র বদলে min-heap।

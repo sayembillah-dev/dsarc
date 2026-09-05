@@ -1,0 +1,320 @@
+---
+title: "Dijkstra-র Algorithm: weight-ওয়ালা graph-এ shortest path"
+description: "BFS-এর বড় ভাই। min-heap দিয়ে প্রতিবার সবচেয়ে কাছের node আগে; relaxation, পুরো dry run, path reconstruction, আর negative weight-এ কেন ভেঙে পড়ে।"
+---
+
+## কী শিখব
+
+- কেন weight-ওয়ালা graph-এ BFS-এর shortest path আর কাজ করে না
+- Dijkstra-র মূল কৌশল: প্রতিবার এখন পর্যন্ত জানা সবচেয়ে কাছের node-টা আগে নেওয়া
+- relaxation ঠিকঠাক কী, আর "popped মানেই final" invariant-টা কেন সত্য
+- weighted graph রাখার উপায়: adjacency list-এ [neighbor, weight] জোড়া
+- হাতে গোনা dry run, self-contained JS implementation, path reconstruction, complexity-এর হিসাব
+
+## ধারণা
+
+ধরো, তুমি এক শহর থেকে আরেক শহরে যাবে, আর প্রতিটা রাস্তার দৈর্ঘ্য আলাদা। [BFS](./bfs.mdx) তোমাকে বলে দেবে কোন পথে **কম রাস্তা** পড়ে। কিন্তু ২টা লম্বা রাস্তা মিলে ১০০ কিমি হতে পারে, আবার ৫টা ছোট রাস্তা মিলে মাত্র ১২ কিমি। "কম edge" আর "কম খরচ" তখন আর এক জিনিস নয়। BFS-এর shortest path-এর গ্যারান্টিটা ছিল শুধু unweighted graph-এর জন্য, এই পাতায় আমরা সেই ফাঁকটাই পূরণ করব।
+
+Dijkstra-র আইডিয়াটা BFS-এরই বড় হয়ে ওঠা রূপ। BFS queue থেকে যাকে আগে পেয়েছে তাকে আগে process করে। Dijkstra বলে: দাঁড়াও, আগে নাও **এখন পর্যন্ত জানা সবচেয়ে কাছের** node-টাকে। ব্যাপারটা হলো, queue-র জায়গায় [min-heap](../heaps/minheap-class.mdx), অর্থাৎ একটা priority queue ([priority queue](../stacks-queues/priority-queue.mdx)-তে এর জগতটা দেখেছিলে)। কাছেরটাকে আগে নেওয়াটা একটা [greedy](../problem-solving/greedy.mdx) সিদ্ধান্ত: প্রতি ধাপে লোকালি সেরা পছন্দ। আর মজার ব্যাপার, সব edge-এর weight non-negative হলে এই greedy পছন্দটা কখনো ভুল হয় না।
+
+কেন? সেটাই এই পাতার প্রাণ, এক লাইনে: **min-heap থেকে যে node-টা pop হলো, তার distance সেই মুহূর্তেই final।** যুক্তিটা এমন: তার চেয়ে কাছে আর কেউ নেই (heap-ই সে প্রমাণ), আর ঘুরপথে এলে পথে অন্তত একটা দূরত্ব যোগ হবেই, weight তো negative নয়, তাই পরে সস্তা হওয়ার উপায় নেই।
+
+কাজের সময় আমরা শুধু একটা জিনিস বারবার করি, নাম **relaxation**: node u pop হলে তার প্রতিটা neighbor v-এর জন্য দেখি, u হয়ে v-তে গেলে কি এখনকার জানা দূরত্বের চেয়ে কম পড়ে? পড়লে dist[v] নামিয়ে দিই আর নতুন দাম heap-এ ঢুকিয়ে দিই।
+
+Graph-টা থাকবে adjacency list-এ, শুধু প্রতিটা neighbor-এর পাশে weight জমিয়ে রাখব: [Graph Representation](./graph-representation.mdx)-এর weighted সংস্করণ।
+
+## ধাপে ধাপে: একটা পুরো dry run
+
+Undirected graph, প্রতিটা edge-এর পাশে তার weight:
+
+```
+      A -----4----- B
+      |           / |
+      2         1   5
+      |       /     |
+      C -----8----- D
+      |           / |
+      10        2   18
+      |       /     |
+      E -----3----- F
+```
+
+Edge-গুলো: A-B:4, A-C:2, C-B:1, B-D:5, C-D:8, C-E:10, D-E:2, D-F:18, E-F:3। শুরু A থেকে।
+
+heap-এ আমরা (দূরত্ব, node) জোড়া রাখব। খেয়াল করো, কোনো node-এর দাম কমলে পুরনো জোড়াটা heap-এ পড়েই থাকে; সেটা পরে pop হলে skip করে দেব। এই কৌশলের নাম **lazy deletion**।
+
+| ধাপ | pop (দাম, node) | relax হলো | dist (A, B, C, D, E, F) | heap-এ এখন |
+|-----|-----------------|-----------|--------------------------|------------|
+| শুরু | - | dist[A] = 0 | 0, ∞, ∞, ∞, ∞, ∞ | (0,A) |
+| 1 | (0,A) | B=4, C=2 | 0, 4, 2, ∞, ∞, ∞ | (2,C) (4,B) |
+| 2 | (2,C) | B: 2+1=3 (&lt;4), D=10, E=12 | 0, 3, 2, 10, 12, ∞ | (3,B) (4,B) (10,D) (12,E) |
+| 3 | (3,B) | D: 3+5=8 (&lt;10) | 0, 3, 2, 8, 12, ∞ | (4,B) (8,D) (10,D) (12,E) |
+| 4 | (4,B) | বাসি entry, skip | অপরিবর্তিত | (8,D) (10,D) (12,E) |
+| 5 | (8,D) | E: 8+2=10 (&lt;12), F=26 | 0, 3, 2, 8, 10, 26 | (10,E) (12,E) (26,F) |
+| 6 | (10,E) | F: 10+3=13 (&lt;26) | 0, 3, 2, 8, 10, 13 | (12,E) (13,F) (26,F) |
+| 7 | (12,E) | বাসি entry, skip | অপরিবর্তিত | (13,F) (26,F) |
+| 8 | (13,F) | কোনো improvement নেই | অপরিবর্তিত | (26,F) |
+| 9 | (26,F) | বাসি entry, skip; heap খালি | শেষ: 0, 3, 2, 8, 10, 13 | - |
+
+দুটো জিনিস চোখে পড়ার কথা। প্রথম, ধাপ ২-তে B-এর দাম 4 থেকে নেমে 3 হলো: A সরাসরি দিয়েছিল 4, কিন্তু C হয়ে আসলে 3। এই "পরে সস্তা পথ পাওয়া" মুহূর্তগুলোই Dijkstra-র আসল কাজ, আর প্রতিটা এমন মুহূর্তে heap-এ একটা করে বাসি entry জমে। দ্বিতীয়, ধাপ 4, 7, 9-এ আমরা শুধু বাসি entry ফেলে দিচ্ছি; stale check ছাড়া এগুলো নিছক নষ্ট কাজ হতো।
+
+শেষ dist: A=0, B=3, C=2, D=8, E=10, F=13। A থেকে F-এর সেরা পথ A → C → B → D → E → F, খরচ 2+1+5+2+3 = 13। মিলে গেছে।
+
+## কোড: পুরো implementation
+
+আগে weighted Graph class-টা, [Graph Representation](./graph-representation.mdx)-এর adjacency list-এ শুধু weight যোগ করা:
+
+```js
+class Graph {
+  constructor() { this.adj = new Map(); }
+
+  addVertex(v) {
+    if (!this.adj.has(v)) this.adj.set(v, []);
+  }
+
+  addEdge(u, v, w) {              // undirected: দুই দিকেই, weight সহ
+    this.addVertex(u);
+    this.addVertex(v);
+    this.adj.get(u).push([v, w]);
+    this.adj.get(v).push([u, w]);
+  }
+
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+```
+
+এবার একটা compact MinHeap। পুরো তত্ত্বটা [min-heap](../heaps/minheap-class.mdx)-এ আছে (ঢুকিয়ে উপরে ভাসানো: [bubble up](../heaps/heap-insert-bubble-up.mdx), সর্বনিম্ন বের করে নিচে ডোবানো: [extract min](../heaps/heap-extract-min.mdx); আরও ব্যবহার: [priority queue-এর অ্যাপ্লিকেশন](../heaps/priority-queue-applications.mdx))। এখানে শুধু দরকারি অংশটুকু, প্রতিটা element হলো [priority, value] জোড়া:
+
+```js
+class MinHeap {
+  constructor() { this.h = []; }
+  size() { return this.h.length; }
+
+  push(priority, value) {         // শেষে ঢুকিয়ে উপরে ভাসাও
+    this.h.push([priority, value]);
+    let i = this.h.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;                 // parent-এর index
+      if (this.h[p][0] <= this.h[i][0]) break;
+      [this.h[p], this.h[i]] = [this.h[i], this.h[p]];
+      i = p;
+    }
+  }
+
+  pop() {                         // root (সবচেয়ে ছোট) বের করো, নিচে ডোবাও
+    const top = this.h[0];
+    const last = this.h.pop();
+    if (this.h.length > 0) {
+      this.h[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = 2 * i + 2;   // দুই সন্তান
+        let s = i;
+        if (l < this.h.length && this.h[l][0] < this.h[s][0]) s = l;
+        if (r < this.h.length && this.h[r][0] < this.h[s][0]) s = r;
+        if (s === i) break;
+        [this.h[s], this.h[i]] = [this.h[i], this.h[s]];
+        i = s;
+      }
+    }
+    return top;
+  }
+}
+```
+
+আর এটাই আসল Dijkstra:
+
+```js
+function dijkstra(graph, start) {
+  const dist = new Map();
+  for (const v of graph.adj.keys()) dist.set(v, Infinity);
+  dist.set(start, 0);
+
+  const heap = new MinHeap();
+  heap.push(0, start);            // [দূরত্ব, node]
+
+  while (heap.size() > 0) {
+    const [d, node] = heap.pop();       // এখনকার সবচেয়ে কাছের node
+    if (d > dist.get(node)) continue;   // বাসি entry? ফেলে দাও
+
+    for (const [next, w] of graph.neighbors(node)) {
+      const nd = d + w;                 // node হয়ে next-এ যাওয়ার খরচ
+      if (nd < dist.get(next)) {        // relaxation: সস্তা পথ পেলাম
+        dist.set(next, nd);
+        heap.push(nd, next);            // নতুন দামে আবার লাইনে দাঁড় করাও
+      }
+    }
+  }
+  return dist;
+}
+
+const g = new Graph();
+g.addEdge("A", "B", 4); g.addEdge("A", "C", 2); g.addEdge("C", "B", 1);
+g.addEdge("B", "D", 5); g.addEdge("C", "D", 8); g.addEdge("C", "E", 10);
+g.addEdge("D", "E", 2); g.addEdge("D", "F", 18); g.addEdge("E", "F", 3);
+
+console.log(dijkstra(g, "A"));
+// Map { 'A' => 0, 'B' => 3, 'C' => 2, 'D' => 8, 'E' => 10, 'F' => 13 }
+```
+
+## ভ্যারিয়েন্ট ১: পথটা reconstruction করা
+
+dist তো পেলাম, কিন্তু পথটা কোনটা? [BFS](./bfs.mdx)-এ যেমন parent map রেখেছিলে, এখানেও একই কাজ: কোনো node-এর দাম যখনই কমে, মনে রাখো সে কার হয়ে এসেছিল। শেষে target থেকে উল্টো হেঁটে পথ বানাও:
+
+```js
+function shortestPath(graph, start, target) {
+  const dist = new Map();
+  for (const v of graph.adj.keys()) dist.set(v, Infinity);
+  dist.set(start, 0);
+  const parent = new Map([[start, null]]);
+
+  const heap = new MinHeap();
+  heap.push(0, start);
+
+  while (heap.size() > 0) {
+    const [d, node] = heap.pop();
+    if (d > dist.get(node)) continue;
+
+    for (const [next, w] of graph.neighbors(node)) {
+      const nd = d + w;
+      if (nd < dist.get(next)) {
+        dist.set(next, nd);
+        parent.set(next, node);   // next-এ সবচেয়ে সস্তায় আসা হলো node হয়ে
+        heap.push(nd, next);
+      }
+    }
+  }
+
+  if (!parent.has(target)) return null;   // target-এ পৌঁছানোই যায় না
+
+  const path = [];
+  for (let cur = target; cur !== null; cur = parent.get(cur)) {
+    path.push(cur);               // শেষ থেকে উল্টো হাঁটা
+  }
+  return { cost: dist.get(target), path: path.reverse() };
+}
+
+console.log(shortestPath(g, "A", "F"));
+// { cost: 13, path: ['A', 'C', 'B', 'D', 'E', 'F'] }
+```
+
+## ভ্যারিয়েন্ট ২: target পেলেই থেমে যাও
+
+অনেক সময় সবার দূরত্ব দরকার নেই, শুধু start থেকে target। "popped মানেই final" invariant-এর কারণে target pop হওয়ার সাথে সাথেই থেমে যেতে পারো:
+
+```js
+function dijkstraTo(graph, start, target) {
+  const dist = new Map();
+  for (const v of graph.adj.keys()) dist.set(v, Infinity);
+  dist.set(start, 0);
+  const heap = new MinHeap();
+  heap.push(0, start);
+
+  while (heap.size() > 0) {
+    const [d, node] = heap.pop();
+    if (d > dist.get(node)) continue;
+    if (node === target) return d;    // এটাই final, আর ঘোরা দরকার নেই
+
+    for (const [next, w] of graph.neighbors(node)) {
+      const nd = d + w;
+      if (nd < dist.get(next)) {
+        dist.set(next, nd);
+        heap.push(nd, next);
+      }
+    }
+  }
+  return Infinity;                    // target-এ যাওয়াই যায় না
+}
+
+console.log(dijkstraTo(g, "A", "F")); // 13
+```
+
+খেয়াল করো, এই early exit-টা পুরোপুরি দাঁড়িয়ে আছে "popped মানেই final" যুক্তির ওপর। Negative weight থাকলে যুক্তিটাই ভেঙে যায়, target pop হওয়ার পরেও সস্তা পথ বেরিয়ে আসতে পারে। একটু পরেই সেটা দেখাব।
+
+আরেকটা কথা: heap ছাড়াও Dijkstra লেখা যায়, সরল array-এ প্রতিবার সর্বনিম্ন dist-এর node খুঁজে নিয়ে। সেটা O(V²)। Sparse graph-এ heap-ওয়ালা সংস্করণ জিতে, কিন্তু খুব dense graph-এ (E প্রায় V²) array-ভিত্তিকটা লিখতেও সহজ আর পারফরম্যান্সও খারাপ নয়। প্রশ্নের graph-এর গঠন দেখে বেছে নাও।
+
+## কোড ব্রেকডাউন: মূল লুপ, লাইনে লাইনে
+
+মূল `dijkstra`-র লুপটা আবার দেখি, কোন লাইন কেন আছে:
+
+1. `const [d, node] = heap.pop()` : এখন পর্যন্ত জানা সবচেয়ে কাছের node বের হলো। Non-negative weight-এ এই মুহূর্তেই তার দূরত্ব final।
+2. `if (d > dist.get(node)) continue` : lazy deletion-এর চাবিকাঠি। এই জোড়াটা ঢুকেছিল যখন দাম ছিল d; এর মধ্যে dist কমে গেলে entry-টা বাসি। ফেলে দাও, পরেরটা নাও।
+3. `for (const [next, w] of graph.neighbors(node))` : node-এর প্রতিটা (neighbor, weight) জোড়া ঘুরে দেখো।
+4. `const nd = d + w` : node হয়ে next-এ যাওয়ার সম্ভাব্য খরচ।
+5. `if (nd < dist.get(next))` : relaxation-এর শর্ত। জানা দামের চেয়ে সস্তা পেলে তবেই কাজ, নইলে এগিয়ে যাও।
+6. `dist.set(next, nd)` : রেকর্ড হালনাগাদ।
+7. `heap.push(nd, next)` : নতুন দামে heap-এ ঢোকাও। পুরনো (বড় দামের) entry-টা heap-এ পড়ে থাকবে, পরে ২ নম্বর লাইনের চেকেই ধরা পড়বে।
+
+একটা জিনিস পরিষ্কার করি: আমরা heap-এ একই node-এর একাধিক কপি রাখি, পুরনোটা খুঁজে আপডেট (decrease-key) করি না। Array-ভিত্তিক heap-এ কোন element কোথায় আছে খোঁজা ব্যয়বহুল; duplicate রেখে stale check করাই অনেক সস্তা।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Time: O((V + E) log V)।** ধাপে ধাপে গুনে দেখি:
+
+- প্রতিটা সফল relaxation heap-এ একটা push। Undirected graph-এ প্রতিটা edge দুই দিক থেকে সর্বোচ্চ একবার করে সফল relax করাতে পারে, তাই push সর্বোচ্চ O(E)-টা।
+- প্রতিটা push-এর বিপরীতে একটা pop, সঙ্গে stale entry-গুলোও pop হয়। মোট pop-ও O(E)।
+- প্রতিটা push বা pop heap-এ লগারিদমিক সময় নেয়। heap-এ সর্বোচ্চ O(E)-টা element থাকতে পারে, আর log E ≤ log(V²) = 2 log V, মানে প্রতি অপারেশন O(log V)।
+- তাহলে মোট: O(E)-টা heap অপারেশন × O(log V) = O(E log V), সঙ্গে dist বানানোর শুরুর কাজ O(V)। গাদা করে লিখলে O((V + E) log V)।
+
+**Space: O(V + E)** মোট, যেখানে graph নিজে রাখতেই O(V + E) লাগে। অ্যালগরিদমের অতিরিক্ত খরচ: dist map O(V), আর lazy deletion-এর কারণে heap-এ worst case-এ O(E) পর্যন্ত entry জমতে পারে, তবে গড়পড়তা অনেক ছোট থাকে।
+
+## Negative weight-এ কেন ভেঙে পড়ে
+
+পুরো Dijkstra দাঁড়িয়ে আছে একটাই বিশ্বাসের ওপর: pop হওয়া node-এর চেয়ে সস্তা পথ ভবিষ্যতে আর আসবে না, কারণ ঘুরপথে খরচ শুধু বাড়তে পারে। Negative edge থাকলেই বিশ্বাসটা ভুয়া হয়ে যায়। ছোট একটা directed graph দেখো:
+
+```
+        A
+    5 /   \ 8
+     v     v
+     B <---- C
+        -10
+```
+
+Edge: A→B:5, A→C:8, C→B:-10। শুরু A থেকে।
+
+A pop হলে dist: B=5, C=8। heap-এ ছোট B(5), তাই পরের ধাপে B pop হবে। "popped মানেই final" বিশ্বাসে B-এর দাম 5 বলে সিল করে ফেলা হলো। কিন্তু আসল shortest পথ A → C → B, খরচ 8 + (-10) = **-2**! C-এর ভেতর দিয়ে লুকানো বিশাল ছাড়টা (negative edge) Dijkstra আগে থেকে জানার উপায়ই নেই।
+
+মজার কথা, আমাদের lazy deletion কোডটা এই ছোট graph-এ ভাগ্যক্রমে ঠিক উত্তরই দেবে: পরে C pop হলে B আবার কমে heap-এ ঢুকবে। কিন্তু ভরসা করো না। Invariant ভাঙা মানে: early-exit ভ্যারিয়েন্ট ভুল উত্তর return করবে, pop-এর সাথে সাথে node-কে "শেষ" বলে দাগ দেওয়া সংস্করণগুলো ভুল করবে, আর খারাপ গঠনে push-এর সংখ্যা ফুলে সময় উড়ে যাবে। Negative weight দেখলেই সোজা [Bellman-Ford](./bellman-ford.mdx)-এ চলে যাও, সে এই কাজের জন্যই তৈরি।
+
+## সাধারণ ভুল আর edge case
+
+**১. Negative weight-এ Dijkstra চালানো।**
+সবচেয়ে বিপজ্জনক অংশ: কোনো error পাবে না, crash-ও করবে না, চুপচাপ ভুল সংখ্যা দিয়ে দেবে। টেস্টে ধরা পড়বে, বাস্তবে নয়। Graph-এ negative edge আছে কিনা আগে নিশ্চিত হও; থাকলে [Bellman-Ford](./bellman-ford.mdx)।
+
+**২. Heap-র বদলে plain queue বা প্রতিবার sort করা array।**
+Plain queue দিলে "কাছেরটা আগে" গ্যারান্টিই থাকে না, ফল ভুল হতে পারে। প্রতিবার sort করলে correctness বেঁচে যায়, কিন্তু প্রতি ধাপে পুরো তালিকা সাজানো মানে সময় আকাশছোঁয়া; তারপর ভাববে কেন এত ধীর। Heap-ই এই কাজের যন্ত্র।
+
+**৩. Stale entry skip না করা।**
+`if (d > dist.get(node)) continue` লাইনটা বাদ দিলে একই node বারবার পুরনো দামে process হবে: সময় অন্তত দ্বিগুণ। আর যদি pop হওয়ার সাথে সাথে কিছু finalize করে ফেলো (যেমন early exit), বাসি দামে finalize হয়ে সোজাসুজি ভুল উত্তর।
+
+**৪. Distance init করা 0 বা 999 দিয়ে।**
+সবার দূরত্ব 0 দিয়ে শুরু করলে relaxation-এর `nd < dist` শর্ত কখনো সত্য হবে না, কিছুই আপডেট হবে না। আবার 999-র মতো "বড় সংখ্যা" দিলে পৌঁছানো যায় না এমন node-এর জন্যও 999 রিপোর্ট হবে, আর আসল পথের খরচ 1500 হলে 999 ছোট দেখিয়ে ভুল relax হবে। শুধু Infinity ব্যবহার করো; JS-এ Infinity + w = Infinity, তাই unreachable node নিজে থেকেই নিরাপদ।
+
+**৫. "Popped মানেই final" সব জায়গায় ধরে নেওয়া।**
+এই invariant-টা শুধু non-negative weight-এ সত্য। Negative weight থাকলে, কিংবা নিজে কোড বদলে visited-set-ভিত্তিক করে ফেললে, আগে থামো আর ভাবো: শর্তটা কি এখনো টিকছে?
+
+## Animation Spec
+
+> **Animation Spec: Dijkstra Wavefront**
+>
+> - **দৃশ্য:** weighted graph; প্রতিটা node-এর ওপরে live distance লেবেল; পাশে heap-এর বিষয়বস্তু; stale entry ধূসর হয়ে pop-এর মুহূর্তে ছুঁড়ে ফেলা দেখা যায়।
+> - **ইনপুট:** start node; edge weight বদলানো যায়; negative weight দিলে সতর্ক ব্যানার।
+> - **ধাপ:** প্রতি রাউন্ডে সবচেয়ে কম দামের node সবুজ হয়ে "settle"; relax হলে neighbor-এর লেবেল কমে হলুদ flash; বাসি entry ফেলে দেওয়ার অ্যানিমেশন।
+> - **নিয়ন্ত্রণ:** speed, step, reset; early-exit টগল, যাতে target pop হলেই থামে।
+> - **লক্ষ্য:** "কাছেরটা আগে, popped মানেই final" আর relaxation-এর ছড়ে পড়া চোখে দেখা।
+
+## অনুশীলন
+
+- **সহজ ১:** একটা edge list দেওয়া আছে (node-গুলো 0 থেকে n-1)। Graph বানিয়ে `dijkstra` চালাও আর start থেকে সবার দূরত্ব ছাপাও। হিন্ট: উপরের কোড না দেখে আগে নিজে লেখার চেষ্টা করো; আটকে গেলে dry run-এর টেবিলটা মাথায় আনো।
+- **সহজ ২:** Network Delay Time (LeetCode 743)। n-টা node-এর network-এ এক node থেকে signal পাঠালে সবাই কখন পাবে? হিন্ট: এটা হুবহু Dijkstra; উত্তর হলো dist-এর সর্বোচ্চ মান, কেউ Infinity থেকে গেলে -1।
+- **মাঝারি ১:** Cheapest Flights Within K Stops (LeetCode 787)। সর্বোচ্চ k-বার থামে সবচেয়ে সস্তা ফ্লাইট। হিন্ট: state শুধু node নয়, (node, stopsLeft) জোড়া; অথবা [Bellman-Ford](./bellman-ford.mdx) চালাও k+1 রাউন্ড পর্যন্ত।
+- **মাঝারি ২:** Path With Minimum Effort (LeetCode 1631)। grid-এ effort হলো পথের সর্বোচ্চ height-পার্থক্য। হিন্ট: "দূরত্ব" নতুন করে define করো, dist[v] = সেই পথের max edge; relaxation হয় `Math.min` আর `Math.max` দিয়ে।
+- **কঠিন:** একটা target দেওয়া আছে, সব node থেকে target পর্যন্ত shortest দূরত্ব এক ঢিলে। হিন্ট: প্রতিটা node থেকে আলাদা আলাদা Dijkstra চালিও না; graph-টা উল্টে দাও (সব edge-এর দিক পাল্টাও), তারপর target থেকে একবারই Dijkstra চালাও।
+
+## সারসংক্ষেপ
+
+- Non-negative weight-এ "popped মানেই final"; এই invariant-টাই সব।
+- Relaxation: u হয়ে v সস্তা হলে dist[v] নামাও, নতুন দাম heap-এ push করো।
+- Lazy deletion: পুরনো entry heap-এ পড়ে থাকে, pop-এর সময় stale check দিয়ে ফেলে দাও।
+- Time O((V + E) log V), space O(V + E)।
+- Negative weight দেখলেই থেমে যাও, পথ [Bellman-Ford](./bellman-ford.mdx)-এর দিকে।

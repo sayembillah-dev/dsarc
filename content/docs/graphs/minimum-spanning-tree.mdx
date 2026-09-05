@@ -1,0 +1,299 @@
+---
+title: "Minimum Spanning Tree: সবাইকে জোড়ো, মোট খরচ কমাও"
+description: weighted graph-এ সব vertex জোড়ার সবচেয়ে সস্তা উপায়, Kruskal আর Prim দুই algorithm-এ। Union-Find দিয়ে cycle ধরা, cut property-র সূত্র, দুটোর হাতে-গোনা dry run, আর MST নিয়ে গুলিয়ে ফেলা ভুলগুলো।
+---
+
+## কী শিখব
+
+- MST আসলে কী জিনিস: সব vertex জোড়া, cycle নেই, ঠিক V-1টা edge, মোট ওজন সর্বনিম্ন
+- cut property: দুই algorithm-এর পেছনে একটাই সূত্র
+- Kruskal: সব edge sort করে ছোট থেকে নেওয়া, Union-Find দিয়ে cycle ধরা
+- Prim: একটা tree থেকে সস্তা crossing edge দিয়ে ক্রমশ বাড়া
+- দুটোর complexity, কোনটা কখন, আর কেন MST আর shortest path tree এক নয়
+
+## ধারণা
+
+ধরো, তোমাকে ছটা গ্রামে ইন্টারনেটের তার টানতে হবে। যেকোনো দুই গ্রামের মধ্যে তার টানার খরচ আলাদা আলাদা জানা আছে। শর্ত একটাই: প্রতিটা গ্রাম যেন নেটের আওতায় আসে, আর মোট তারের খরচ যেন যত পারে কম। এক মিটার বাড়তি তারও যেন না লাগে।
+
+খেয়াল করো, এখানে কেউ জিজ্ঞেস করেনি "A থেকে F-এ যাওয়ার সবচেয়ে সস্তা পথ কোনটা"। সেটা [Dijkstra](./dijkstra.mdx)-র প্রশ্ন। এখানে প্রশ্নটা অন্য: **পুরো নেটওয়ার্কটাকে** সবচেয়ে সস্তায় connected করো। এই যে "সবাইকে জোড়ো, মোট খরচ কমাও" সমস্যা, এর উত্তরটাই **Minimum Spanning Tree (MST)**: একটা connected weighted undirected graph-এর এমন sub-graph, যা সব vertex জোড়ে, কোনো cycle রাখে না, আর মোট edge-ওজন সবচেয়ে কম।
+
+কয়টা edge লাগবে, সেটা আগেই বলা যায়: ঠিক **V - 1** টা। কারণ V-টা node-কে cycle ছাড়া জোড়াতে V-1 edge-ই লাগে (tree-র সংজ্ঞাতেই এটা আছে), একটা বেশি নিলেই cycle, একটা কম নিলেই কেউ না কেউ ছুটে যায়। আর "সর্বনিম্ন" মানে, এই V-1টা edge-এর মোট ওজনের চেয়ে কমে আর কোনোভাবে জোড়ানো যায় না। মজার কথা, MST একটার বেশি থাকতে পারে (সমান ওজনের edge থাকলে), কিন্তু সেই সর্বনিম্ন **মোটটা** একটাই।
+
+দুটো ক্লাসিক algorithm এটা বের করে, Kruskal আর Prim, দুটোই [greedy](../problem-solving/greedy.mdx)। আর দুটোর বুকের ভেতরে একটাই সূত্র ঘুরে, নাম **cut property**: graph-এর node-গুলোকে যেকোনোভাবে দুই দলে ভাগ করো, তাহলে দুই দলের মাঝখান দিয়ে যাওয়া edge-গুলোর মধ্যে **সবচেয়ে সস্তাটা** অবশ্যই কোনো না কোনো MST-তে থাকবে। কেন? ধরো সেটা না নিয়ে দামিটা নেওয়া হলো। তাহলে দামিটা বাদ দিয়ে সস্তাটা বসালে cycle ভাঙে, graph connected-ই থাকে, আর মোট কমে যায়। মানে দামিটা নেওয়াটাই ভুল ছিল। Kruskal এই সূত্র প্রয়োগ করে global ভাবে (সব edge sort করে), Prim প্রয়োগ করে local ভাবে (tree-র বাইরে যাওয়া সস্তা edge)। দুটো পোশাক, একই মানুষ।
+
+## ধাপে ধাপে: Kruskal-এর একটা পুরো dry run
+
+Kruskal-এর নিয়ম তিন লাইনের: সব edge ওজনে sort করো, ছোট থেকে একে একে দেখো, cycle না বানালে নাও। Graph-টা ধরো:
+
+```
+        A
+       / \
+      B---C
+      |  /|
+      | / |
+      D---E
+      |  /
+      F--'
+```
+
+প্রতিটা edge-এর ওজন: A-B:4, A-C:2, B-C:1, B-D:5, C-D:8, C-E:10, D-E:2, D-F:6, E-F:3।
+
+sort করে ছোট থেকে যাবো। কিন্তু "cycle বানাবে কিনা" জানবো কীভাবে? উত্তর: **Union-Find** (বিস্তারিত আছে [Disjoint Set](../advanced-structures/disjoint-set.mdx)-এ)। প্রতিটা node শুরুতে নিজের আলাদা দলে। edge নিলে দুই প্রান্তের দল জুড়ে যায়। নতুন edge-এর দুই প্রান্ত আগে থেকেই একই দলে থাকলে, নিলে cycle-ই হবে, তাই বাদ।
+
+| ধাপ | edge (ওজন) | সিদ্ধান্ত | কারণ |
+|-----|------------|-----------|------|
+| 1 | B-C (1) | নেওয়া | আলাদা দলে ছিল, জুড়ে গেল: `{B, C}` |
+| 2 | A-C (2) | নেওয়া | A আলাদা ছিল: `{A, B, C}` |
+| 3 | D-E (2) | নেওয়া | নতুন দল: `{D, E}` |
+| 4 | E-F (3) | নেওয়া | F জুড়লো: `{D, E, F}` |
+| 5 | A-B (4) | বাদ | দুটোরই root একই; নিলে cycle A-B-C-A |
+| 6 | B-D (5) | নেওয়া | দুই দল জুড়ে গেল, এবার সবাই এক দলে |
+| 7 | D-F (6) | বাদ | একই দলে; cycle D-E-F-D |
+| 8 | C-D (8) | বাদ | একই দলে |
+| 9 | C-E (10) | বাদ | একই দলে |
+
+নেওয়া edge: B-C, A-C, D-E, E-F, B-D। মোট ১ + ২ + ২ + ৩ + ৫ = **১৩**। আর edge ঠিক ৫টা, মানে V - 1। আসলে ধাপ ৬ শেষ হতেই থেমে যাওয়া যায়, বাকি তিনটা দেখারই দরকার ছিল না। কোডে সেই break-টা আছেই।
+
+## কোড: Kruskal, DSU সহ
+
+আগে Union-Find। ছোট, কিন্তু দুটো অপ্টিমাইজেশন দরকার: find-এ path compression (root খোঁজার পথের সবাইকে root-এর কাছে তুলে দেওয়া) আর union-এ ছোট দলকে বড় দলের নিচে দেওয়া। এগুলো ছাড়া DSU ধীর হয়ে যায়, কথাটা ভুল সেকশনে আবার আসবে।
+
+```js
+class DSU {
+  constructor(n) {
+    this.parent = Array.from({ length: n }, (_, i) => i);
+    this.size = Array(n).fill(1);
+  }
+  find(x) {
+    while (this.parent[x] !== x) {
+      this.parent[x] = this.parent[this.parent[x]]; // path compression
+      x = this.parent[x];
+    }
+    return x;
+  }
+  union(a, b) {
+    let ra = this.find(a), rb = this.find(b);
+    if (ra === rb) return false;             // একই দলে: নিলে cycle
+    if (this.size[ra] < this.size[rb]) [ra, rb] = [rb, ra];
+    this.parent[rb] = ra;                    // ছোট দল বড় দলের নিচে
+    this.size[ra] += this.size[rb];
+    return true;
+  }
+}
+```
+
+এবার Kruskal। input হলো edge list, প্রতিটা `[u, v, w]`:
+
+```js
+function kruskal(n, edges) {                 // edges: [u, v, w]
+  const sorted = [...edges].sort((a, b) => a[2] - b[2]);
+  const dsu = new DSU(n);
+  const mst = [];
+  let total = 0;
+  for (const [u, v, w] of sorted) {
+    if (dsu.union(u, v)) {                   // cycle বানায় না: নাও
+      mst.push([u, v, w]);
+      total += w;
+      if (mst.length === n - 1) break;       // V-1 পূর্ণ, থামো
+    }
+  }
+  return { mst, total };
+}
+```
+
+dry run-এর graph-টা দিয়ে চালাই:
+
+```js
+// A=0, B=1, C=2, D=3, E=4, F=5
+const edges = [
+  [0, 1, 4], [0, 2, 2], [1, 2, 1],
+  [1, 3, 5], [2, 3, 8], [2, 4, 10],
+  [3, 4, 2], [3, 5, 6], [4, 5, 3],
+];
+
+const nm = (i) => "ABCDEF"[i];
+const { mst, total } = kruskal(6, edges);
+console.log("মোট ওজন:", total);              // 13
+for (const [u, v, w] of mst) {
+  console.log(`${nm(u)}-${nm(v)}: ${w}`);
+}
+// B-C: 1, A-C: 2, D-E: 2, E-F: 3, B-D: 5
+```
+
+টেবিলের সাথে মিলিয়ে দেখো, হুবহু সেই পাঁচটা edge।
+
+## ভ্যারিয়েন্ট ১: Prim, অন্য দিক থেকে একই tree
+
+Prim-এর চিন্তা উল্টো দিক থেকে। একটা node থেকে শুরু করো, tree-টাকে blob-এর মতো বাড়াও: প্রতিবার tree-র ভেতরের কোনো node থেকে **বাইরের নতুন** node-এ যাওয়া সবচেয়ে সস্তা edge-টা নাও। এই "সবচেয়ে সস্তা crossing edge" প্রতিবার খুঁজতে heap লাগে। [Dijkstra](./dijkstra.mdx)-র মতোই lazy পদ্ধতি নিচ্ছি: পুরনো entry heap-এ পড়ে থাকবে, pop-এর সময় বাদ দেবো।
+
+MinHeap-টা [A\*](./a-star.mdx)-এর পাতার সেই একই [Min Heap](../heaps/minheap-class.mdx) প্যাটার্ন, entry হিসেবে `[w, u, v]` array (element-wise তুলনা):
+
+```js
+class MinHeap {
+  constructor() { this.a = []; }
+  size() { return this.a.length; }
+  push(x) {                            // শেষে ঢুকিয়ে উপরে ভাসাও
+    this.a.push(x);
+    let i = this.a.length - 1;
+    while (i > 0 && this.less(this.a[i], this.a[(i - 1) >> 1])) {
+      [this.a[i], this.a[(i - 1) >> 1]] = [this.a[(i - 1) >> 1], this.a[i]];
+      i = (i - 1) >> 1;
+    }
+  }
+  pop() {                              // মাথা বের করে শেষটাকে ডুবাও
+    const top = this.a[0], last = this.a.pop();
+    if (!this.a.length) return top;
+    this.a[0] = last;
+    for (let i = 0; ; ) {
+      const l = 2 * i + 1, r = 2 * i + 2;
+      let m = i;
+      if (l < this.a.length && this.less(this.a[l], this.a[m])) m = l;
+      if (r < this.a.length && this.less(this.a[r], this.a[m])) m = r;
+      if (m === i) return top;
+      [this.a[i], this.a[m]] = [this.a[m], this.a[i]];
+      i = m;
+    }
+  }
+  less(x, y) {                         // element-wise: [w, u, v]
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i];
+    return false;
+  }
+}
+
+function prim(n, adj, start = 0) {           // adj: Map, u -> [[v, w], ...]
+  const visited = new Array(n).fill(false);
+  const heap = new MinHeap();
+  const mst = [];
+  let total = 0, count = 0;
+  const visit = (u) => {
+    visited[u] = true;
+    count++;
+    for (const [v, w] of adj.get(u)) {
+      if (!visited[v]) heap.push([w, u, v]); // crossing edge-গুলো heap-এ
+    }
+  };
+  visit(start);
+  while (heap.size() && count < n) {
+    const [w, u, v] = heap.pop();            // সস্তা crossing edge
+    if (visited[v]) continue;                // বাসি: দুই প্রান্তই tree-তে
+    mst.push([u, v, w]);
+    total += w;
+    visit(v);                                // নতুন node, নতুন edge-গুলো
+  }
+  return { mst, total };
+}
+```
+
+একই graph-এ (এবার adjacency list-এ) চালাই:
+
+```js
+const adj = new Map();
+for (const [u, v, w] of edges) {
+  if (!adj.has(u)) adj.set(u, []);
+  if (!adj.has(v)) adj.set(v, []);
+  adj.get(u).push([v, w]);
+  adj.get(v).push([u, w]);                   // undirected: দুই দিকে
+}
+
+const { mst: mst2, total: total2 } = prim(6, adj, 0);
+console.log("মোট ওজন:", total2);             // 13
+for (const [u, v, w] of mst2) {
+  console.log(`${nm(u)}-${nm(v)}: ${w}`);
+}
+// A-C: 2, C-B: 1, B-D: 5, D-E: 2, E-F: 3
+```
+
+Prim-এর dry run-টাও টেবিলে দেখে নিই, A থেকে শুরু:
+
+| ধাপ | pop হলো | সিদ্ধান্ত | tree-তে নতুন | মোট |
+|-----|---------|-----------|--------------|-----|
+| শুরু | - | A visit, heap-এ A-B:4, A-C:2 | A | 0 |
+| 1 | A-C:2 | নেওয়া | C | 2 |
+| 2 | C-B:1 | নেওয়া | B | 3 |
+| 3 | A-B:4 | বাদ, B আগেই tree-তে | - | 3 |
+| 4 | B-A:4 | বাদ, দুটোই tree-তে | - | 3 |
+| 5 | B-D:5 | নেওয়া | D | 8 |
+| 6 | D-E:2 | নেওয়া | E | 10 |
+| 7 | E-F:3 | নেওয়া, V-1 পূর্ণ | F | 13 |
+
+ধাপ ৩ আর ৪ দেখো: A-B:4 আর B-A:4 heap-এ পড়ে ছিল, কিন্তু pop-এর সময় দুই প্রান্তই tree-তে, তাই বাদ। এটাই lazy পদ্ধতির বাসি entry।
+
+এবার বড় কথাটা। **মোট ১৩, আবারও ১৩।** Kruskal যে পাঁচটা edge নিয়েছিল `{B-C, A-C, D-E, E-F, B-D}`, Prim-ও হুবহু সেগুলোই নিলো, শুধু অন্য ক্রমে। দুটো algorithm দুই দিক থেকে এসে (একটা global sort, একটা local প্রসারণ) একই জায়গায় পৌঁছালো, কারণ দুটোর ভেতরেই সেই একটা cut property কাজ করছে।
+
+## ভ্যারিয়েন্ট ২: Kruskal বনাম Prim, কখন কোনটা
+
+| দিক | Kruskal | Prim |
+|-----|---------|------|
+| input | edge list সরাসরি লাগে | adjacency list সুবিধাজনক |
+| মূল খরচ | sort: O(E log E) | heap ops: O(E log V)-এর কাছাকাছি |
+| দারুণ চলে | sparse graph (E কম) | dense graph (E প্রায় V^2) |
+| disconnected graph | নিজে থেকেই forest দেয় | প্রতি component-এ আলাদা চালাতে হয় |
+
+thumb rule-টা সহজ: edge list হাতে পেলে আর graph পাতলা হলে Kruskal; ঘন graph, adjacency list-এ রাখা থাকলে Prim। দুটোই মোটামুটি একই জায়গায় দাঁড়ায়, তাই input-এর রূপ দেখে বেছে নাও।
+
+## কোড ব্রেকডাউন: Kruskal আর DSU, লাইনে লাইনে
+
+1. `this.parent = Array.from({ length: n }, (_, i) => i)` : শুরুতে সবাই নিজের root। n-টা আলাদা আলাদা দল।
+2. `this.size = Array(n).fill(1)` : প্রতিটা দলের আকার। union-এর সময় কে কার নিচে যাবে, এটাই ঠিক করে।
+3. `while (this.parent[x] !== x)` : root খোঁজা। যার parent নিজেই, সে-ই root।
+4. `this.parent[x] = this.parent[this.parent[x]]` : path compression-এর ছোট রূপ (path halving)। খোঁজার পথের প্রত্যেককে এক ধাপ দাদুর কাছে তুলে দিই। পরের find প্রায় O(1)-এ শেষ হয়।
+5. `if (ra === rb) return false` : পুরো Kruskal-এর প্রাণ এই লাইনে। দুই প্রান্তের root একই মানে ওদের মধ্যে পথ আগে থেকেই আছে, নতুন edge নিলে সেটা cycle-ই হবে। তাই false, মানে "নেবে না"।
+6. `if (this.size[ra] < this.size[rb]) [ra, rb] = [rb, ra]` : ছোট দলটা বড় দলের নিচে ঝুলবে। এতে tree-র উচ্চতা log-এর বাইরে বাড়ে না।
+7. `[...edges].sort((a, b) => a[2] - b[2])` : মূল array নষ্ট না করে কপি নিয়ে sort। sort-টাই Kruskal-এর প্রধান খরচ।
+8. `for (const [u, v, w] of sorted)` : সস্তা থেকে দামির দিকে হাঁটা। greedy-র ঠিক এইটুকুই: প্রতিবার locally সস্তাটা নাও, আর cut property বলে দিচ্ছে এতে globally-ও সঠিক।
+9. `if (dsu.union(u, v))` : union সফল হলে edge-টা নেওয়া হলো; ব্যর্থ মানে cycle, বাদ।
+10. `if (mst.length === n - 1) break` : V-1 edge পূর্ণ হলেই থামো। শেষে যদি mst-এর size n-1-এর কম থাকে, বুঝবে graph-টা disconnected ছিল (ভুল ৪ দেখো)।
+
+## Complexity: হাতে গোনা হিসাব
+
+**Kruskal: O(E log E)।**
+- sort-এ E log E, এটাই প্রাণীটা।
+- তারপর E-টা union/find, প্রতিটা path compression আর union by size-এর কারণে প্রায় O(1), কঠোরভাবে O(α(V)) (inverse Ackermann, বাস্তবে ৪-এর নিচে)। মানে মোট O(E log E)। আর E সর্বোচ্চ V^2, তাই log E মানে সর্বোচ্চ 2 log V; এজন্য একে অনেক জায়গায় O(E log V)-ও লেখা হয়।
+
+**Prim (lazy, heap): O(E log E)-এর আশেপাশে, প্রায়ই লেখা হয় O(E log V)।**
+- প্রতিটা edge সর্বোচ্চ দুই দিক থেকে দুইবার heap-এ ঢুকতে পারে, মানে O(E)-টা push-pop, প্রতিটা O(log)। indexed heap দিয়ে eager রূপ নিলে (প্রতিটা node-এর একটাই entry, decrease-key দিয়ে) এটা পরিষ্কার O(E log V)। কিন্তু lazy রূপটা লিখতে সহজ, আর আমাদের [Dijkstra](./dijkstra.mdx)-র ধরনের সাথে মিলে যায়।
+
+**Space:** Kruskal-এ DSU-র O(V) আর sorted কপির O(E)। Prim-এ heap সর্বোচ্চ O(E), সাথে visited-এর O(V)।
+
+## সাধারণ ভুল আর edge case
+
+**১. DSU-তে path compression বা union by size বাদ দেওয়া।**
+দুটো ছাড়া find লম্বা শৃঙ্খল বেয়ে হাঁটে, আর অসংখ্য union-এর পর পুরো জিনিসটা প্রায় O(V)-প্রতি অপারেশনে নেমে যায়। Kruskal তখন তার sort-সুবিধা হারায়। পুরো গল্পটা [Disjoint Set](../advanced-structures/disjoint-set.mdx)-এ আছে। এই দুটো লাইন আলাদা করে বাদ দিও না।
+
+**২. MST আর shortest path tree গুলিয়ে ফেলা।**
+MST মোট ওজন কমায়, কোনো নির্দিষ্ট source থেকে দূরত্ব নয়। ছোট্ট পাল্টা উদাহরণ: তিন node, S-A:2, S-B:2, A-B:1। MST নেবে A-B আর S-A, মোট ৩। কিন্তু সেই tree-তে S থেকে B-এর পথ S-A-B, খরচ ৩, অথচ সরাসরি S-B ছিল ২। মোট কমাতে গিয়ে S-থেকে-B পথ লম্বা হয়ে গেল। দূরত্ব লাগলে যাও [Dijkstra](./dijkstra.mdx)-তে।
+
+**৩. directed graph-এ MST লাগানো।**
+MST-র পুরো সংজ্ঞাটা undirected graph-এর জন্য। directed graph-এ "সবার কাছে পৌঁছানো যায় এমন সস্তা sub-graph"-এর নাম minimum arborescence, আর সেটার algorithm (Edmonds') পুরোপুরি আলাদা। Kruskal-Prim ওখানে ভুল উত্তর দেবে।
+
+**৪. disconnected graph-এর কথা ভুলে যাওয়া।**
+graph-ই connected না হলে spanning "tree" বলে কিছু নেই, পাবে spanning **forest**: প্রতিটা component-এর নিজের আলাদা tree। আগে [Connected Components](./connected-components.mdx) দিয়ে component গুনে নাও, অথবা কোডের শেষে দেখো mst-এর size n - 1 পূর্ণ হলো কিনা। Prim-এও `count < n` থেকে গেলে বুঝবে কাউকে পৌঁছানো যায়নি।
+
+**৫. MST একটাই, এই ধারণা।**
+সমান ওজনের edge থাকলে MST কয়েকটা হতে পারে। তিন node-এর triangle যেখানে তিন edge-ই ১, সেখানে যেকোনো দুটো নিলেই MST, মানে ৩টা সম্ভাব্য MST। যেটা unique, সেটা হলো সর্বনিম্ন **মোট** ওজনটা। আমাদের উদাহরণে দুটো algorithm একই tree দিয়েছে, কিন্তু অন্য tie-তে অন্য রকমও হতে পারত।
+
+## Animation Spec
+
+> **Animation Spec: MST, দুই পদ্ধতি পাশাপাশি**
+>
+> - **দৃশ্য:** weighted undirected graph; দুই প্যানেল, বামে Kruskal আর ডানে Prim, একই graph-এ; নিচে running total।
+> - **ইনপুট:** graph preset বা নিজে edge ওজন বসানো; "শুধু Kruskal" / "শুধু Prim" / "দুটো একসাথে" নির্বাচন।
+> - **ধাপ:** Kruskal প্যানেলে sorted edge list পাশে দেখা যায়; বর্তমান edge হলুদ, নেওয়া হলে সবুজ, cycle-এর কারণে বাদ হলে লাল কাঁপুনি; Union-Find-এর দলগুলো node-এর রঙে ফুটে ওঠে। Prim প্যানেলে tree একটা blob-এর মতো বাড়ে, crossing edge-গুলো heap-এর সাজানো অবস্থায় পাশে থাকে। শেষে দুই প্যানেলের final tree-টা হাইলাইট হয়, আর দুটোর total মিলিয়ে দেখায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "সমান ওজনের edge" toggle, যাতে MST একাধিক হতে পারে সেটা দেখা যায়।
+> - **লক্ষ্য:** দুই রাস্তা, একই cut property, একই সর্বনিম্ন মোট।
+
+## অনুশীলন
+
+- **সহজ ১:** এই পাতার edge list নিয়ে Kruskal নিজে implement করো (DSU সহ), মোট ওজন আর edge-গুলো ছাপাও। হিন্ট: DSU আগে আলাদা class হিসেবে লিখে test করো, তারপর Kruskal-এ বসাও।
+- **সহজ ২:** Min Cost to Connect All Points (LeetCode 1584)। কিছু বিন্দুর coordinate দেওয়া, সব বিন্দু জোড়ার সর্বনিম্ন খরচ। হিন্ট: প্রতিটা জোড়া বিন্দুর মধ্যে Manhattan distance-এর edge ধরো, এটা একটা complete graph; তারপর Prim বা Kruskal, যেটা খুশি।
+- **মাঝারি ১:** Connecting Cities With Minimum Cost (LeetCode 1135)। N-টা শহর আর কিছু সম্ভাব্য রাস্তার খরচ দেওয়া; সব শহর জোড়া সম্ভব না হলে -1। হিন্ট: Kruskal চালাও, শেষে mst-এর edge n - 1 পূর্ণ হলো কিনা দেখো, না হলে -1। ভুল ৪-এর সরাসরি প্রয়োগ।
+- **মাঝারি ২:** প্রমাণ করো (চিন্তা করে), কোনো MST-তে নতুন একটা edge যোগ করলে কি মোট কখনো কমানো যায়? হিন্ট: নতুন edge যোগ করলে ঠিক একটা cycle তৈরি হয়; cut property বলে দিচ্ছে সেই cycle-এর বাকি edge-গুলোর কেউই নতুন edge-এর চেয়ে দামি নয়, তাই বদলাতে লাভ হয় না।
+- **কঠিন:** দ্বিতীয় সেরা (second best) MST বের করো। হিন্ট: MST-তে নেই এমন প্রতিটা edge নাও; সেটা যোগ করলে যে একটাই cycle তৈরি হয়, সেই cycle-এর সবচেয়ে ভারী MST-edge-টা বাদ দিয়ে নতুনটা বসাও; সব বিকল্পের মধ্যে সবচেয়ে সস্তাটাই second best। MST-এর প্রতিটা পথে max edge আগে থেকে বের করে রাখলে দ্রুত হয়।
+
+## সারসংক্ষেপ
+
+- MST = সব vertex জোড়া, cycle নেই, ঠিক V - 1টা edge, মোট ওজন সর্বনিম্ন।
+- দুই algorithm-এর ভেতরে একটাই সূত্র: cut property। দুই দলের মাঝের সস্তা edge MST-তেই থাকে।
+- Kruskal: সব edge sort, ছোট থেকে নাও, cycle ধরে [Union-Find](../advanced-structures/disjoint-set.mdx)। খরচ O(E log E), sort-টাই প্রধান।
+- Prim: একটা tree থেকে heap-এ সস্তা crossing edge নিয়ে বাড়ো। খরচ O(E log V)-এর কাছাকাছি, dense graph-এ জিতে। একই graph-এ দুটোর মোট একই আসবেই, পার্থক্য পথে, গন্তব্যে নয়।
+- MST ≠ shortest path tree; disconnected হলে forest পাবে; directed হলে এটা arborescence, আলাদা খেলা।

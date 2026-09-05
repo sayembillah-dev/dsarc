@@ -1,0 +1,281 @@
+---
+title: "Connected Components: ভাঙা graph গোনা আর লেবেল করা"
+description: "একটা BFS/DFS ঘুরে আসে একটা টুকরো; বাইরের loop-টাই আসল জাদু। component গোনা, compId লেবেল, grid-এ island, আর Union-Find-এর ঝলক।"
+---
+
+## কী শিখব
+
+- Connected component ঠিক কী, আর কেন এটা interview-এর top-৫ pattern
+- বাইরের loop-এর কৌশল: প্রতিটা unvisited node থেকে একবার BFS/DFS
+- শুধু গোনা না, প্রতিটা node-কে component id দিয়ে লেবেল করা
+- Grid-কে implicit graph ভেবে island গোনা (flood fill)
+- Edge ধীরে ধীরে আসলে Union-Find, আর directed graph-এ weakly vs strongly connected
+
+## ধারণা
+
+ভাবো তো, দেশের সব শহরের ম্যাপ। কোনো কোনো শহর রাস্তা দিয়ে জোড়া, কোনো কোনো শহর একদম দ্বীপের মতো আলাদা। প্রশ্ন: এই ম্যাপে আসলে কয়টা "অঞ্চল" আছে, যেখানে এক অঞ্চলের ভেতরে যেকোনো শহর থেকে যেকোনো শহরে যাওয়া যায়, কিন্তু দুই অঞ্চলের মধ্যে কোনো রাস্তাই নেই?
+
+প্রতিটা এমন অঞ্চলই একটা **connected component**: maximal এমন সেট যেখানে সবাই সবার কাছে পৌঁছাতে পারে। "Maximal" কথাটা গুরুত্বপূর্ণ: আরেকটা node যোগ করার সুযোগ থাকলে সেটা আর আলাদা component না, আগেরটারই অংশ।
+
+কেন এত যত্ন? কারণ "কয়টা টুকরো" প্রশ্নটা ছদ্মবেশে হাজার জায়গায় আসে: social network-এ কয়টা আলাদা গোষ্ঠী, network-এ কয়টা subnet, ছবিতে কয়টা আলাদা বস্তু। আর grid-এর island সমস্যাগুলো ([Island Traversal](../problem-solving/island-traversal.mdx)) মূলত এই একই pattern-ই। এমনকি [Cycle Detection](./cycle-detection.mdx)-এ যে বাইরের loop দেখেছ, সেটাও এই পাতারই জিনিস।
+
+## ধাপে ধাপে: বাইরের loop-এর জাদু
+
+কৌশলটা এক লাইনের: **প্রতিটা unvisited node থেকে একবার করে BFS/DFS চালাও; প্রতিটা run ঠিক একটা করে component খালি করে ফেলে।** visited set-টা সব run-এর ওপর শেয়ার থাকবে।
+
+আটটা node-এর একটা graph ধরো, যেটা তিন টুকরো:
+
+```
+  A ── B        D ─── E
+       |         \   /
+       C           F
+
+  G ── H
+```
+
+Edge: A-B, B-C, D-E, D-F, E-F, G-H।
+
+| ধাপ | বাইরের loop দেখল | এই run-এ ঘুরল | visited-এ নতুন | component counter |
+|-----|------------------|---------------|----------------|-------------------|
+| 1 | A (unvisited) | A, B, C | A, B, C | ১ |
+| 2 | B, C (visited) | - | - | ১ |
+| 3 | D (unvisited) | D, E, F | D, E, F | ২ |
+| 4 | E, F (visited) | - | - | ২ |
+| 5 | G (unvisited) | G, H | G, H | ৩ |
+| 6 | H (visited) | - | - | ৩ |
+
+উত্তর: **৩টা component**। খেয়াল করো দুটো জিনিস। এক, BFS শুধু তিনবারই চলল, যদিও node আটটা; বাকি পাঁচবার loop শুধু "আগেই দেখেছি" বলে skip করেছে। দুই, visited শেয়ার না হলে প্রতি node থেকে নতুন করে ঘুরতাম আর counter গর্গর করে বাড়ত। এই দুটোই একটু পরে ভুলের তালিকায় ফিরে আসবে।
+
+## কোড: countComponents
+
+Graph class আগের পাতারই ([Graph Representation](./graph-representation.mdx)), adjacency list-এ undirected:
+
+```js
+class Graph {
+  constructor() { this.adj = new Map(); }
+
+  addVertex(v) {
+    if (!this.adj.has(v)) this.adj.set(v, []);
+  }
+
+  addEdge(u, v) {
+    this.addVertex(u);
+    this.addVertex(v);
+    this.adj.get(u).push(v);
+    this.adj.get(v).push(u);
+  }
+
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+
+function countComponents(graph) {
+  const visited = new Set();          // সব run-এর ওপর শেয়ারড
+  let count = 0;
+
+  for (const v of graph.adj.keys()) { // এই বাইরের loop-টাই আসল
+    if (visited.has(v)) continue;     // আগের component-এর লোক, skip
+
+    count++;                          // নতুন টুকরো পেলাম
+    visited.add(v);
+    const queue = [v];
+    let head = 0;
+
+    while (head < queue.length) {     // একটা পুরো BFS
+      const node = queue[head++];
+      for (const next of graph.neighbors(node)) {
+        if (!visited.has(next)) {
+          visited.add(next);          // ঢোকানোর মুহূর্তেই দাগ
+          queue.push(next);
+        }
+      }
+    }
+  }
+  return count;
+}
+
+const g = new Graph();
+g.addEdge("A", "B"); g.addEdge("B", "C");
+g.addEdge("D", "E"); g.addEdge("D", "F"); g.addEdge("E", "F");
+g.addEdge("G", "H");
+console.log(countComponents(g));   // 3
+
+g.addVertex("I");                  // একা একটা node
+console.log(countComponents(g));   // 4
+```
+
+খেয়াল করো শেষ লাইনটা: একা node "I", কোনো edge নেই, তবু সে একটা component, size ১-এর। বাইরের loop ওকেও ধরে ফেলে।
+
+DFS দিয়েও হুবহু একই কাজ: ভেতরের while-টা বদলে ছোট্ট একটা recursion, বাকি সব অক্ষুণ্ণ। বাইরের loop আর শেয়ারড visited, এই দুটোই আসল pattern; ভেতরে BFS না DFS, সেটা স্বাদের ব্যাপার।
+
+## ভ্যারিয়েন্ট ১: compId দিয়ে লেবেল করা
+
+শুধু সংখ্যা না, অনেক সময় দরকার "কে কোন component-এ"। প্রতিটা node-এর পাশে id লিখে রাখো:
+
+```js
+function labelComponents(graph) {
+  const compId = new Map();           // node -> component নম্বর
+  let id = 0;
+
+  for (const v of graph.adj.keys()) {
+    if (compId.has(v)) continue;
+    id++;                             // নতুন টুকরো, নতুন নম্বর
+
+    compId.set(v, id);
+    const queue = [v];
+    let head = 0;
+    while (head < queue.length) {
+      const node = queue[head++];
+      for (const next of graph.neighbors(node)) {
+        if (!compId.has(next)) {
+          compId.set(next, id);       // যে run-এ পেলাম, সেই নম্বর
+          queue.push(next);
+        }
+      }
+    }
+  }
+  return compId;
+}
+
+const comp = labelComponents(g);
+console.log(comp.get("A"), comp.get("C"));  // 1 1 (একই দল)
+console.log(comp.get("A"), comp.get("G"));  // 1 3 (আলাদা)
+
+function sameComponent(compId, a, b) {
+  return compId.get(a) === compId.get(b);   // O(1)-এ উত্তর
+}
+console.log(sameComponent(comp, "D", "F")); // true
+console.log(sameComponent(comp, "A", "I")); // false
+```
+
+লেবেলিং-এর পর "A আর G কি একই দলে?" জাতীয় প্রশ্নের উত্তর আর ঘোরা ছাড়াই পাওয়া যায়, map-এ দুইটা তাকানো মাত্র। অনেকবার প্রশ্ন আসলে এই map-টাই আগে বানিয়ে রাখা সবচেয়ে বুদ্ধিমানের কাজ।
+
+## ভ্যারিয়েন্ট ২: grid-এ island গোনা
+
+Grid-টা আসলে ভূতুরে graph: প্রতিটা land cell একটা node, চার দিকে চারটা edge, কিন্তু সেটা কোথাও লেখা নেই। (Grid নিয়ে basic কনফিউশন থাকলে আগে [2D Arrays](../arrays-strings/2d-arrays.mdx) দেখে এসো।) বাইরের loop-টা এখানে দুটো nested loop, আর visited set-এর বদলে অনেক সময় grid-টাকেই ডুবিয়ে দিয়ে দাগ দেওয়া হয়:
+
+```js
+function numIslands(grid) {
+  if (grid.length === 0) return 0;
+  const rows = grid.length, cols = grid[0].length;
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  let count = 0;
+
+  for (let r = 0; r < rows; r++) {              // বাইরের loop, এবার ঘরে ঘরে
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] !== "1") continue;         // পানি বা আগেই ডোবানো
+
+      count++;                                  // নতুন island
+      grid[r][c] = "0";                         // ডুবিয়ে দিলাম, এটাই visited
+      const queue = [[r, c]];
+      let head = 0;
+
+      while (head < queue.length) {             // flood fill
+        const [cr, cc] = queue[head++];
+        for (const [dr, dc] of dirs) {
+          const nr = cr + dr, nc = cc + dc;
+          const inBounds = nr >= 0 && nr < rows && nc >= 0 && nc < cols;
+          if (inBounds && grid[nr][nc] === "1") {
+            grid[nr][nc] = "0";                 // ঢোকানোর মুহূর্তেই ডোবাও
+            queue.push([nr, nc]);
+          }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+console.log(numIslands([
+  ["1", "1", "0", "0", "0"],
+  ["1", "1", "0", "0", "0"],
+  ["0", "0", "1", "0", "0"],
+  ["0", "0", "0", "1", "1"],
+]));   // 3
+```
+
+Pattern-টা চেনা লাগছে? একদমই `countComponents`, শুধু graph আলাদা করে লেখার দরকার হয়নি, grid নিজেই graph। আর "ডুবিয়ে দেওয়া" হলো visited set-এর বদলি, কারণ grid-টা ইনপুট, বদলানো যায়। ইনপুট বদলাতে না চাইলে আলাদা visited set রাখো, লজিক একই।
+
+## ভ্যারিয়েন্ট ৩: edge যখন ধীরে ধীরে আসে, Union-Find
+
+এখন ধরো, edge-গুলো একসাথে না এসে আসছেই আছে, আর প্রতিবার তোমাকে বলতে হচ্ছে এখন কয়টা component। প্রতিবার BFS চালালে প্রতি প্রশ্নে O(V + E) খরচ, মোটামুটি অপচয়। এখানেই [Disjoint Set](../advanced-structures/disjoint-set.mdx) জিতে যায়: প্রতিটা union প্রায় O(1)-এ, আর component count রাখা একটা counter মাত্র। ঝলকটা দেখো:
+
+```js
+// DisjointSet ক্লাসটা ওই পাতায় পুরোটা আছে; এখানে শুধু ব্যবহারটা
+const dsu = new DisjointSet(nodes);
+let components = nodes.length;
+
+for (const [u, v] of edges) {
+  if (dsu.union(u, v)) {   // আগে আলাদা ছিল, এখন জোড়া লাগল
+    components--;
+  }
+}
+```
+
+একটাই নিয়ম: union সফল হলে দুইটা টুকরো এক হয়ে গেল, counter এক কমে। বিস্তারিত ওই পাতায়; এখানে শুধু জেনে রাখো, static graph-এ BFS/DFS যথেষ্ট, dynamic-এ DSU।
+
+## Directed graph-এ কী হয়
+
+Directed হলে "connected" শব্দটা দুই ভাগে ভাঙে। **Weakly connected**: direction উড়িয়ে দিলে যেগুলো এক টুকরো। **Strongly connected (SCC)**: direction মেনেই সবাই সবার কাছে যেতে পারে, যাওয়া আর ফেরা দুটোই। SCC বের করার দুটো বিখ্যাত অ্যালগরিদম আছে, Kosaraju আর Tarjan; ওগুলো এই পাতার বাইরে। কিন্তু বাইরের loop-এর ধারণাটা ওখানেও কাজে লাগে, মনে রাখো। আর একটা সতর্কতা: undirected-এর এই কোড directed graph-এ চালিয়ে টুকরোগুলোকে "strongly connected" বললে ভুল হবে, ওগুলো weakly মাত্র।
+
+## কোড ব্রেকডাউন: countComponents, লাইনে লাইনে
+
+1. `const visited = new Set()` : একটাই set, সব run-এর ওপর শেয়ারড। এটাই overcount ঠেকায়।
+2. `let count = 0` : এখনো কোনো টুকরো পাইনি।
+3. `for (const v of graph.adj.keys())` : বাইরের loop, pattern-এর প্রাণ। সব node-এর ওপর ঠিক একবার।
+4. `if (visited.has(v)) continue` : আগের কোনো run-এ ঢুকে গেছে মানে ওই component-এর লোক; নতুন কিছু নেই, skip।
+5. `count++` : unvisited পেলাম মানেই একটা নতুন টুকরোর সূচনা। এই লাইন আর লাইন ৩ মিলেই পুরো উত্তর।
+6. `visited.add(v); queue = [v]` : BFS শুরু, আগের পাতার মতোই ঢোকানোর মুহূর্তেই দাগ।
+7. `while (head < queue.length)` : এই run এই টুকরোটা পুরো খালি করবে, একটাও node বাদ যাবে না।
+8. ভেতরের `visited.add(next); queue.push(next)` : একই component-এর বাকি সবাইকে গিলে ফেলো, যাতে বাইরের loop পরে ওদের skip করে।
+
+মোট কথা: বাইরের loop বলে "কোথায় নতুন টুকরো", ভেতরের BFS বলে "টুকরোটা কোত্তখানি"।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Time: O(V + E)।** হাতে গোনো: প্রতিটা node পুরো প্রোগ্রামজুড়ে ঠিক একবার queue-তে ঢোকে, ঠিক একবার বের হয়; প্রতিটা edge দুই দিক থেকে ঠিক একবার করে দেখা হয়। BFS তিনবার চলুক বা ত্রিশবার, মোট কাজ বদলায় না, কারণ কাজটা component-গুলোর মধ্যে ভাগ হয়ে গেছে। বাইরের loop-এর V-টা চেক O(1) করে, তাই সেটাও O(V)।
+
+**Space: O(V)।** visited set-এ সবচেয়ে বেশি V-টা node, queue-তেও একটা বড় component-এর সবাই একসাথে থাকতে পারে। Grid variant-এ আলাদা visited না রাখলে queue-ই মূল খরচ, মোট একই। আর Union-Find পথে গেলে প্রতিটা union প্রায় O(α(V)), মোট কাছাকাছি O((V + E) · α(V)), যেখানে α(V) প্র্যাকটিক্যালি constant।
+
+## সাধারণ ভুল আর edge case
+
+**১. বাইরের loop নেই।**
+শুধু একটা node থেকে BFS চালালে একটাই component ঘোরা হবে, আর তুমি রিপোর্ট করবে "১টা component" যখন আসলে পাঁচটা। Graph disconnected হলেই ধরা পড়বে।
+
+**২. visited শেয়ার না করা।**
+উল্টোটাও হয়: প্রতি run-এ নতুন visited set বানালে আগের component-এর node-গুলো আবার unvisited মনে হবে, আর একই টুকরো বারবার গোনা হবে। Set-টা একটাই, সবার ওপরে।
+
+**৩. Grid-এ boundary check বা দাগ ভুলে যাওয়া।**
+flood fill-এ আগে সীমানা চেক (`nr >= 0 && nr < rows ...`), না করলে index error বা অবৈধ ঘর। আর দাগ দেবে ঘরটা queue-তে ঢোকানোর মুহূর্তেই, বের করার সময় নয়; নাহলে একই ঘর চারবার queue-তে ঢুকে যায়, [BFS](./bfs.mdx)-এর সেই বিখ্যাত ভুলটাই।
+
+**৪. একা node-কে component না ভাবা।**
+কোনো edge নেই এমন node-ও একটা পুরো component, size ১। বাইরের loop ওকে নিজে থেকেই গুনে নেয়। কিন্তু ইনপুট যদি শুধু edge list হয়, খেয়াল রাখো: একা node-গুলো list-এ আসেই না, তাই `n` থেকে হিসাব ঠিক রাখতে হবে, নাহলে ওরা হারিয়ে যাবে।
+
+**৫. Directed-এ এটাকে strongly connected বলা।**
+Direction উড়িয়ে দিলে যে টুকরোগুলো পাও, ওগুলো weakly connected। Strongly connected মানে direction মেনে যাওয়া-আসা দুটোই; সেটার জন্য Kosaraju/Tarjan লাগে। দুটো গুলিয়ে interview-তে আপত্তি খাবে।
+
+## Animation Spec
+
+> **Animation Spec: Component Painter**
+>
+> - **দৃশ্য:** ভাঙা graph; বাইরের loop যেই unvisited node খুঁজে পায়, সে ঝলকে ওঠে, তারপর BFS-এর ঢেউ পুরো টুকরোটা এক রঙে ভরে দেয়; কোণায় counter বাড়ে।
+> - **ইনপুট:** node আর edge যোগ করা যায়; preset (তিন টুকরো / একটাই টুকরো / সবাই একা / grid island)।
+> - **ধাপ:** প্রতি নতুন run-এ নতুন রঙ; ভেতরে queue-এর live অবস্থা; এক টুকরো শেষ হলে counter এক বাড়ে আর রঙটা থেমে যায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "visited শেয়ার বন্ধ" টগল, overcount ভুলটা কেমন দেখায় তা দেখানোর জন্য।
+> - **লক্ষ্য:** একটা traversal = একটা টুকরো; বাইরের loop ছাড়া ছবিটা অসম্পূর্ণ।
+
+## অনুশীলন
+
+- **সহজ ১:** Number of Provinces (LeetCode 547)। `isConnected` matrix দেওয়া, কয়টা province? হিন্ট: এটা হুবহু `countComponents`, শুধু graph-টা matrix আকারে; প্রতি শহর থেকে BFS/DFS চালাও।
+- **সহজ ২:** `n` আর edge list দেওয়া, component গোনো। হিন্ট: আগে adjacency list বানাও; একা node-গুলো edge list-এ নেই, তাই ০ থেকে n-১ পর্যন্ত loop চালাও, নতুন টুকরো পেলেই counter বাড়াও।
+- **মাঝারি ১:** Number of Islands (LeetCode 200)। হিন্ট: উপরের `numIslands` না উল্টে নিজে লিখে দেখো; boundary check আর "ঢোকানোর মুহূর্তেই দাগ", এই দুটোই প্রাণ।
+- **মাঝারি ২:** "এই দুটো node কি একই component-এ?" এমন প্রশ্ন অনেকবার আসবে। হিন্ট: একবার `labelComponents` চালিয়ে compId map বানিয়ে রাখো, তারপর প্রতি প্রশ্নের উত্তর O(1)-এ।
+- **কঠিন:** Earliest Moment When Everyone Becomes Friends (LeetCode 1101)। সময়ানুসারে friendship edge আসছে, কোন মুহূর্তে সবাই এক component-এ? হিন্ট: edge-গুলো সময়ে sort করো, একটা একটা করে union করো; counter ১-এ নামলেই থামো। Union-Find না জানলে আগে [Disjoint Set](../advanced-structures/disjoint-set.mdx) দেখে এসো।
+
+## সারসংক্ষেপ
+
+- Connected component = maximal সেট যেখানে সবাই সবার কাছে পৌঁছায়; একা node-ও size-১ component।
+- বাইরের loop-ই pattern: প্রতি unvisited node থেকে একটা BFS/DFS, প্রতি run = একটা টুকরো; visited সবার ওপর শেয়ারড।
+- compId লেবেল রাখলে "একই দলে কিনা" প্রশ্নের উত্তর O(1)-এ।
+- Grid হলো লেখা ছাড়া graph; flood fill = component গোনা, boundary check আর ঢোকানোর-সময়-দাগ মাথায় রাখো।
+- Edge ধীরে ধীরে আসলে Union-Find, directed-এ strongly connected আলাদা জিনিস (Kosaraju/Tarjan)।
+- Time O(V + E), space O(V); Union-Find পথে প্রায় O((V + E) · α(V))।
