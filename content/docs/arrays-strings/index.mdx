@@ -1,22 +1,22 @@
 ---
 title: Arrays & Strings
-description: সবচেয়ে মৌলিক data structure array, এর memory layout, অপারেশনের complexity, traversal প্যাটার্ন, 2D grid এবং immutable string, সব একসাথে।
+description: Array আর String দিয়েই DSA-র প্রায় সব গল্পের শুরু। Memory layout, অপারেশনের খরচ, traversal প্যাটার্ন, 2D grid, চলো সব একসাথে দেখে নিই।
 ---
 
-Array হলো সবচেয়ে মৌলিক ও সবচেয়ে বেশি ব্যবহৃত data structure। প্রায় সব DSA সমস্যার ভিত্তি এখানে। String-ও আসলে character-এর array, তাই একসাথেই শিখব।
+ভাবো তো, তুমি একটা সিনেমা হলের টিকেট লাইনে দাঁড়িয়ে আছ। সবাই একটার পর একটা, মাঝে কোনো ফাঁক নেই। এখন কেউ জিজ্ঞেস করল, "তিন নম্বরে কে দাঁড়িয়ে আছ?" তুমি গোনা শুরু করবে না, এক নজরেই বলে দেবে। Array ঠিক এমনই কাজ করে, আর String হলো character-দের সেই একই লাইন। এই ছোট্ট ধারণার উপরেই দাঁড়িয়ে আছে DSA-র প্রায় পুরো জগৎ, তাই চলো এগুলো আগে পকেটে পুরি।
 
-**Section Roadmap:** Array কী, memory-তে array, অপারেশন ও complexity, 2D Array, Strings, common patterns (intro)।
+**Section Roadmap:** Array কী, memory-তে কীভাবে থাকে, অপারেশনের খরচ, 2D Array, Strings, আর common patterns-এর প্রথম ঝলক।
 
 ## এই Chapter-এ যা যা আছে
 
-1. [Array কী ও Memory-তে কীভাবে থাকে](./array-basics.mdx): array-এর গঠন ও কেন index access এত দ্রুত
-2. [Array অপারেশন ও Complexity](./array-operations.mdx): insert, delete, search-এর খরচ
-3. [Traversal ও Iteration](./traversal.mdx): array-এর উপর কার্যকরভাবে loop চালানোর প্যাটার্ন
-4. [2D Arrays (Matrix / Grid)](./2d-arrays.mdx): সারি-কলামের গ্রিড, যা image, game, graph-এ লাগে
-5. [Strings](./strings.mdx): character-এর array, অপারেশন ও immutability
+1. [Array কী ও Memory-তে কীভাবে থাকে](./array-basics.mdx): array-এর গঠন, আর index access কেন এত দ্রুত
+2. [Array অপারেশন ও Complexity](./array-operations.mdx): insert, delete, search করতে গেলে খরচ কোথায় কেন
+3. [Traversal ও Iteration](./traversal.mdx): array-এর উপর চালাকির মতো loop চালানোর প্যাটার্ন
+4. [2D Arrays (Matrix / Grid)](./2d-arrays.mdx): সারি-কলামের গ্রিড, যেটা image, game, graph সব জায়গায় লাগে
+5. [Strings](./strings.mdx): character-এর array, অপারেশন আর immutability
 
 ## সারাংশ
 
-Array অর্থাৎ ধারাবাহিক index-ভিত্তিক লিস্ট; access O(1), শুরুতে বা মাঝে insert/delete O(n)। 2D array অর্থাৎ গ্রিড, পুরোটা ঘুরলে O(m·n)। String অর্থাৎ immutable char array; বদলাতে split/join। Two-pointer ও single-pass প্যাটার্ন এখানেই শুরু।
+সহজ কথায়, Array হলো ধারাবাহিক index-ভিত্তিক লিস্ট: access O(1), কিন্তু শুরুতে বা মাঝে insert/delete O(n)। 2D array মানে গ্রিড, পুরোটা ঘুরলে O(m·n)। String হলো immutable char array, বদলাতে গেলে split/join-এর সাহায্য নিতে হয়। আর two-pointer, single-pass প্যাটার্নের গোড়াপত্তনও এখানেই।
 
 **পরবর্তী:** [Linked Lists](/docs/linked-lists)।

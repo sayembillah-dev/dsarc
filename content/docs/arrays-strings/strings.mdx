@@ -1,15 +1,15 @@
 ---
-title: "Strings: character-এর array"
-description: String অপারেশন, immutability, এবং split/join দিয়ে string ও array-র মধ্যে রূপান্তর।
+title: "Strings: character-দের array"
+description: String অপারেশন, immutability, আর split/join দিয়ে string আর array-র মধ্যে যাতায়াত।
 ---
 
 ## কী শিখব
 
-- String অপারেশন ও অপরিবর্তনীয়তা (immutability)
+- String অপারেশন আর অপরিবর্তনীয়তা (immutability)
 
 ## ধারণা
 
-String হলো character-এর ক্রম। JavaScript-এ string **immutable**, একবার বানালে ভেতরের character বদলানো যায় না; বদলাতে হলে নতুন string বানাতে হয়।
+তুমি বন্ধুকে যে মেসেজটা পাঠালে, ওটাই একটা string, একদল character পাশাপাশি বসে আছে। কিন্তু JavaScript-এ string **immutable**। মানে? একবার বানিয়ে ফেললে ভেতরের কোনো character আর বদলাতে পারবে না। বদলাতে চাইলে নতুন একটা string বানাতে হবে। এখানেই আসল জিনিস, কারণ এই একটা নিয়ম পুরো string handling-এর ধরন বদলে দেয়।
 
 ## কোড উদাহরণ
 
@@ -33,23 +33,23 @@ console.log(reversed);
 
 ## কোড ব্রেকডাউন
 
-- `s[0]` পড়া যায়, কিন্তু `s[0] = "H"` কাজ করবে না (immutable)।
-- বদলানোর কাজে: string থেকে array, তারপর পরিবর্তন, তারপর আবার array থেকে string।
-- `split`/`join` জোড়া string সমস্যায় বারবার লাগবে।
+- `s[0]` পড়া যায় ঠিকই, কিন্তু `s[0] = "H"` লিখলে কিছুই হবে না। immutable, মনে আছে তো?
+- তাহলে বদলাবে কীভাবে? string-কে array-তে ভাঙো, সেখানে বদলাও, তারপর আবার জোড়া লাগিয়ে string বানাও।
+- এই `split`/`join` জোড়া string-এর সমস্যায় বারবার কাজে লাগবে, পকেটে রাখো।
 
 ## Complexity
 
-- বেশিরভাগ string অপারেশন O(n) (n = দৈর্ঘ্য); concatenation-এ সাবধান, বারবার করলে O(n²) হতে পারে।
+- বেশিরভাগ string অপারেশন O(n) (n = দৈর্ঘ্য)। concatenation-এ একটু সাবধান, বারবার করলে O(n²) পর্যন্ত চলে যেতে পারে।
 
 ## Animation Spec
 
 > **Animation Spec: String as Char Boxes**
 >
 > - **দৃশ্য:** প্রতিটা character আলাদা box-এ, নিচে index।
-> - **ইনপুট:** string টাইপ; অপারেশন (reverse / slice / uppercase)।
-> - **ধাপ:** reverse করলে box গুলো animation-এ জায়গা বদলাবে; immutable বোঝাতে "নতুন string তৈরি হচ্ছে" লেবেল।
-> - **লক্ষ্য:** string = char array; পরিবর্তন = নতুন কপি।
+> - **ইনপুট:** string টাইপ করা; অপারেশন নির্বাচন (reverse / slice / uppercase)।
+> - **ধাপ:** reverse করলে box গুলো animation-এ জায়গা বদলাবে; immutable বোঝাতে "নতুন string তৈরি হচ্ছে" লেবেল ভেসে উঠবে।
+> - **লক্ষ্য:** string মানে char array, আর পরিবর্তন মানে নতুন কপি, এটা বোঝা।
 
 ## অনুশীলন
 
-- একটা string palindrome কিনা two-pointer দিয়ে চেক করো।
+- এবার দেখি: একটা string palindrome কিনা, two-pointer দিয়ে চেক করো।
