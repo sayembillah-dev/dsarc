@@ -1,55 +1,191 @@
 ---
-title: "Deque: দুই মুখের queue"
-description: সামনে-পেছনে দুই প্রান্তেই যোগ-বাদ করা যায় এমন deque কাঠামো আর এর ব্যবহার।
+title: "Deque: দুই মুখে দুই কাজ"
+description: দুই প্রান্তেই যোগ-বাদ করা যায় এমন deque। array version-এর খরচ, pointer version-এ কীভাবে সব O(1), dry run, আর sliding window-এর দিকে প্রথম পা।
 ---
 
 ## কী শিখব
 
-- দুই প্রান্তেই যোগ/বাদ করা যায় এমন কাঠামো
+- Deque (Double-Ended Queue) আসলে কী, আর stack/queue দুটোরই সাধারণ রূপ কেন এটা
+- চার প্রান্তিক অপারেশন: addFront, addBack, removeFront, removeBack
+- Array দিয়ে বানালে কোন প্রান্ত সস্তা, কোনটা দামি, কেন
+- দুই pointer দিয়ে এমন version যেখানে চারটাই O(1)
+- Dry run, আর deque কোথায় কোথায় কাজে লাগে
 
 ## ধারণা
 
-Queue-তে তো দেখলে, ঢোকা এক প্রান্তে, বের হওয়া আরেক প্রান্তে। এবার ভাবো, দুই প্রান্তেই যদি দুটো কাজই করা যায়? সামনে থেকেও যোগ-বাদ, পেছন থেকেও যোগ-বাদ।
+Queue-তে দেখলে, ঢোকা এক প্রান্তে, বের হওয়া আরেক প্রান্তে। এবার ভাবো, দুই প্রান্তেই যদি দুটো কাজই করা যায়? সামনে থেকেও যোগ-বাদ, পেছন থেকেও যোগ-বাদ।
 
-এই নমনীয় কাঠামোটার নাম Deque (Double-Ended Queue)। Sliding Window (section 16)-এর মতো সমস্যায় এটা দারুণ কাজে লাগে।
+এই নমনীয় কাঠামোটার নাম **Deque (Double-Ended Queue)**, উচ্চারণ "ডেক"। মজার ব্যাপার, তুমি চাইলে deque দিয়ে stack-ও বানাতে পারো (এক প্রান্ত ব্যবহার করলেই হলো), queue-ও বানাতে পারো (ঢোকা একদিকে, বের হওয়া উল্টোদিকে)। মানে deque হলো দুটোরই বাপ, শুধু নিয়ম আলগা।
 
-## কোড উদাহরণ
+```text
+removeFront ↓            ↓ removeBack
+addFront →  [ 0 ][ 1 ][ 2 ]  ← addBack
+```
+
+কোথায় লাগে? দুই প্রান্ত থেকে চাপ দেওয়া প্রতিটা সমস্যায়: palindrome চেক (দুইদিক থেকে মেলাও), sliding window maximum (শেষে এসে জানবে), undo/redo-র দুই তালিকা, এমনকি browser history-র দুই দিকেও।
+
+## Dry run: চার অপারেশনের খেলা
+
+এই ক্রম চলছে: `addBack(1)`, `addBack(2)`, `addFront(0)`, `removeBack()`, `removeFront()`:
+
+| ধাপ | অপারেশন | deque (বামে front) | ফেরত |
+|-----|---------|--------------------|------|
+| শুরু | - | `[ ]` | - |
+| 1 | addBack(1) | `[1]` | - |
+| 2 | addBack(2) | `[1, 2]` | - |
+| 3 | addFront(0) | `[0, 1, 2]` | - |
+| 4 | removeBack() | `[0, 1]` | 2 |
+| 5 | removeFront() | `[1]` | 1 |
+
+চার প্রান্তিক অপারেশনের চারটিই কাজে লেগেছে। দেখো, কোনো মান মাঝখানে কখনও ছোঁয়া হয়নি, সব নাড়াচাড়া দুই কিনারায়। এই "শুধু কিনারা" নীতিটাই পরের সব complexity-র ভিত্তি।
+
+## কোড ১: array দিয়ে সরল version
 
 ```js
 class Deque {
   constructor() { this.items = []; }
-  addFront(x)  { this.items.unshift(x); }
-  addBack(x)   { this.items.push(x); }
-  removeFront(){ return this.items.shift(); }
-  removeBack() { return this.items.pop(); }
-  peekFront()  { return this.items[0]; }
-  peekBack()   { return this.items[this.items.length - 1]; }
+
+  addFront(x)   { this.items.unshift(x); }          // সবাই ডানে সরে, O(n)
+  addBack(x)    { this.items.push(x); }             // O(1)
+  removeFront() { return this.items.shift(); }      // সবাই বামে সরে, O(n)
+  removeBack()  { return this.items.pop(); }        // O(1)
+  peekFront()   { return this.items[0]; }
+  peekBack()    { return this.items[this.items.length - 1]; }
+  isEmpty()     { return this.items.length === 0; }
+  size()        { return this.items.length; }
+}
+```
+
+চিন্তাটা চেনা লাগছে? [Queue](./queue-fifo.mdx)-এ যা হয়েছিল ঠিক তা-ই: পেছনের কাজগুলো (`push`/`pop`) O(1), কিন্তু সামনের কাজগুলো (`unshift`/`shift`) সবাইকে সরায়, O(n)। ছোট্ট কাজে এটা চলে, কিন্তু বারবার সামনে হাত দিলে ফাঁদ।
+
+## কোড ২: দুই pointer-এর দক্ষ version
+
+Queue-এর pointer কৌশলটা দুই দিকে বাড়িয়ে দাও। আগে front শুধু বাড়ত, এবার সে কমতেও পারবে, addFront-এর জন্য:
+
+```js
+class Deque {
+  constructor() {
+    this.items = {};
+    this.front = 0;
+    this.back = 0;
+  }
+
+  addBack(x) {
+    this.items[this.back] = x;
+    this.back++;
+  }
+
+  addFront(x) {
+    this.front--;                    // আগে জায়গা বানাও
+    this.items[this.front] = x;      // তারপর বসাও
+  }
+
+  removeFront() {
+    if (this.isEmpty()) return undefined;
+    const x = this.items[this.front];
+    delete this.items[this.front];
+    this.front++;
+    return x;
+  }
+
+  removeBack() {
+    if (this.isEmpty()) return undefined;
+    this.back--;                     // back সবসময় এক ঘর এগিয়ে, আগে ফেরাও
+    const x = this.items[this.back];
+    delete this.items[this.back];
+    return x;
+  }
+
+  peekFront() {
+    return this.isEmpty() ? undefined : this.items[this.front];
+  }
+
+  peekBack() {
+    return this.isEmpty() ? undefined : this.items[this.back - 1];
+  }
+
+  isEmpty() { return this.back === this.front; }
+  size()    { return this.back - this.front; }
 }
 
 const dq = new Deque();
-dq.addBack(1); dq.addBack(2); dq.addFront(0);
-console.log(dq.peekFront()); // 0
-console.log(dq.peekBack());  // 2
+dq.addBack(1);
+dq.addBack(2);
+dq.addFront(0);
+console.log(dq.peekFront());   // 0
+console.log(dq.peekBack());    // 2
+console.log(dq.removeFront()); // 0
+console.log(dq.size());        // 2
 ```
 
-## কোড ব্রেকডাউন
+একটা অদ্ভুত দৃশ্য লক্ষ করো: `addFront` ডাকার পর front ঋণাত্মক index-এ চলে যায় (0, -1, -2...). Array হলে বিস্ফোরণ, কিন্তু object-এ চাবি যেকোনো সংখ্যাই হতে পারে, তাই নিখুঁত কাজ করে। Object-এর এই ছাড়ই আমরা দুই দিকে pointer চালাতে পারছি।
 
-- চারটা প্রান্তিক অপারেশন আছে: addFront/addBack/removeFront/removeBack।
-- Array দিয়ে বানালে front-এর অপারেশন O(n), কারণ সব এলিমেন্ট সরে যায়। Performance-critical কাজ হলে doubly linked list দিয়ে সব O(1) করা যায়।
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `addFront`-এ আগে `this.front--` তারপর বসানো : ক্রমটা জরুরি। বসিয়ে তারপর কমালে নতুন মান আর front-এর ইশারা এক জায়গায় পড়ে না। আগে জায়গা, পরে মানুষ।
+2. `removeBack`-এ আগে `this.back--` : back সবসময় "পরের ফাঁকা ঘর"-কে দেখায়, শেষ বসা মান থেকে এক ঘর এগিয়ে। তাই বের করার আগে এক ঘর পিছাতে হয়। এই "এক ঘর এদিক" হিসাবটাই deque-এর সবচেয়ে পিছলা জায়গা।
+3. দুই remove-এই `delete` : [Queue](./queue-fifo.mdx)-এর মতোই, বের করেছি মানে মুছেই দিই, নইলে object ফুলে যাবে।
+4. `peekBack()` তে `this.items[this.back - 1]` : একই কারণে। শেষ বসা মান `back`-এ না, `back - 1`-এ।
+5. `isEmpty()` তে `back === front` : দুই আঙুলের দূরত্ব শূন্য মানে লাইনে কেউ নেই। কোনো দিকে কত এগিয়েছে, সেটা অপ্রাসঙ্গিক।
 
 ## Complexity
 
-- array version: back O(1), front O(n); linked-list version: সব O(1)।
+| অপারেশন | Array version | Pointer version |
+|---------|---------------|-----------------|
+| addBack | O(1), amortized | O(1) |
+| removeBack | O(1) | O(1) |
+| addFront | O(n) | O(1) |
+| removeFront | O(n) | O(1) |
+| peek (দুটোই) | O(1) | O(1) |
+
+Derivation একদম পরিচিত সূত্রে: খরচ = সরানোর সংখ্যা। Array version-এ পেছনের কাজে কেউ সরে না, সামনের কাজে সবাই সরে। Pointer version-এ কোনো কাজেই কেউ সরে না, শুধু দুই সংখ্যা বাড়ে-কমে, তাই চারটাই O(1)। সূত্র একবার শিখে গেলে নতুন কাঠামোর খরচ নিজেই বের করতে পারবে, এটাই লক্ষ্য।
+
+## কোথায় deque লাগে
+
+- **Palindrome চেক:** সব অক্ষর deque-এ ভরে দুই প্রান্ত থেকে এক এক করে বের করে মেলাও। দুই মুখের কাঠামো এই সমস্যার জন্য যেন বানানোই।
+- **Sliding window maximum:** window সরার সঙ্গে সঙ্গে সামনে থেকে পুরনো ফেলা, পেছন থেকে ছোট ফেলা, deque ছাড়া O(1) করার পথ নেই। আগে [Monotonic Stack](./monotonic-stack.mdx) পড়ে এলে এই সমস্যাটা হাতের কাছে লাগবে।
+- **Undo/redo, history:** দুই দিকে ঘোরা লাগলে deque স্বাভাবিক ফিট।
+- **Steal scheduling:** আধুনিক task scheduler-এ work-stealing deque-তেই চলে, নামেই গল্প।
+
+## সাধারণ ভুল আর edge case
+
+**১. `unshift`/`shift` ভুলে যাওয়া O(n), বলে "deque তো চারটাই O(1)"।**
+ওই গ্যারান্টি pointer বা linked-list version-এ। Plain array দিয়ে বানিয়ে বড় deque চালালে সামনের অপারেশনগুলো চুপচাপ দামি। বাস্তবে বানান লাগলে pointer version-ই নাও।
+
+**২. `back`-এর "এক ঘর এগিয়ে" হিসাব হারানো।**
+`peekBack`-এ `items[back]` লিখলে পাবে ফাঁকা ঘর, `undefined`। `removeBack`-এ `back--` না করে বের করলে একই মান দুবার বের হবে। সূত্র মুখস্থ না রেখে ছবি আঁকো: back সবসময় পরের ফাঁকা ঘরে।
+
+**৩. খালি deque-তে remove।**
+দুই প্রান্ত মানে দুই রকম খালি-বিস্ফোরণ। প্রতিটা remove-এ `isEmpty()` চেক, নইলে pointer গুলো মিল-ভুল গুলিয়ে যাবে, size ঋণাত্মকও হতে পারে ভুল code-এ।
+
+**৪. Palindrome চেকে মাঝের অক্ষর নিয়ে দ্বিধা।**
+বিজোড় দৈর্ঘ্যে একসময় deque-এ একটাই অক্ষর থাকে, সে নিজের সঙ্গে নিজে মিলে যায়, কিছু করার নেই। Loop থামানোর শর্ত `size() > 1` রাখলে এই ঘর নিজে থেকেই সামলে যায়।
+
+**৫. সব সমস্যায় deque ঢকাঢকি।**
+Deque নমনীয়, কিন্তু সেই নমনীয়তার দাম আছে: দুই প্রান্ত, দুই pointer, চার অপারেশন, সব মিলিয়ে ভুলের জায়গা বেশি। এক প্রান্তে কাজ চললে stack, দুই প্রান্তে একমুখী হলে queue, deque শুধু তখনই যখন সত্যিই দুই মুখ লাগে।
 
 ## Animation Spec
 
 > **Animation Spec: Two-Ended Queue**
 >
-> - **দৃশ্য:** লাইন; দুই প্রান্তে add/remove বাটন।
-> - **ইনপুট:** প্রান্ত ও মান নির্বাচন।
-> - **ধাপ:** নির্বাচিত প্রান্তে এলিমেন্ট ঢোকে বা বের হয়।
-> - **লক্ষ্য:** deque-এর নমনীয়তা।
+> - **দৃশ্য:** অনুভূমিক লাইন; দুই প্রান্তে দুই রঙের আঙুল (front সবুজ, back নীল); নিচে index-এর ঘর, addFront-এ ঋণাত্মক দিকে বাড়তে থাকে।
+> - **ইনপুট:** মান; চার অপারেশনের বাটন; দুই মোড (array / pointer) টগল।
+> - **ধাপ:** array মোডে addFront চালালে পুরো লাইন ডানে সরে, সরানো কাউন্টার বাড়ে; pointer মোডে লাইন স্থির, front-আঙুল বামে এক ঘর এগিয়ে নতুন ঘর জন্ম নেয়। একই সিকোয়েন্স দুই মোডে চালিয়ে মোট খরচ পাশাপাশি।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** চার অপারেশনই কিনারার খেলা, আর pointer দিলে সরানো শূন্য, দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- deque দিয়ে একটা string palindrome কিনা চেক করো (দুই প্রান্ত থেকে মিলিয়ে)।
+- **সহজ ১:** কাগজে dry run: `addBack(3)`, `addFront(1)`, `addBack(5)`, `removeFront()`, `peekBack()`, `removeBack()`। প্রতি ধাপে front, back আর deque লিখো।
+- **সহজ ২:** deque দিয়ে palindrome চেক করো: `"level"` → true, `"lever"` → false। (হিন্ট: সব অক্ষর ভরো; যতক্ষণ size > 1, দুই প্রান্ত থেকে বের করে মেলাও।)
+- **মাঝারি ১:** দেখাও যে deque দিয়ে stack আর queue, দুটোই বানানো যায়: দুটো আলাদা wrapper class লেখো যারা ভেতরে একটাই deque রাখে। কোন চার method কোনটার সঙ্গে মেলে, ম্যাপিংটা লিখো।
+- **মাঝারি ২:** একটা array আর সংখ্যা k দেওয়া আছে। Deque ব্যবহার করে array-টাকে k ঘর বামে ঘোরাও, অতিরিক্ত array ছাড়া। (হিন্ট: সামনে থেকে বের করে পেছনে ঢোকাও, k বার। খরচ কত, আর array দিয়ে একই কাজ করলে কত হতো?)
+- **কঠিন:** Sliding window maximum: `[1, 3, -1, -3, 5, 3, 6]`, window k = 3 হলে প্রতি পজিশনের সর্বোচ্চ: `[3, 3, 5, 5, 6]` (LeetCode 239)। (হিন্ট: deque-এ **index** রাখো এমনভাবে যাতে মানগুলো কমতে থাকে: নতুন উপাদান এলে তার থেকে ছোটগুলো পেছন থেকে ফেলো, window ছাড়লে সামনেরটা ফেলো। প্রতি উপাদান একবার ঢোকে, একবার বের হয়, তাই O(n)। [Monotonic Stack](./monotonic-stack.mdx)-এর আত্মীয় এটা।)
+
+## সারসংক্ষেপ
+
+- Deque = দুই প্রান্তেই যোগ-বাদ, stack আর queue-এর সাধারণ রূপ।
+- Plain array দিয়ে বানালে সামনের কাজ O(n), pointer version-এ চারটাই O(1)।
+- Pointer version-এর মোড়ক: back সবসময় এক ঘর এগিয়ে, addFront-এ front ঋণাত্মকেও যায়, object-এ সেটা বৈধ।
+- খালি deque-তে remove আর back-এর এক-ঘর হিসাব: দুটোই ভুলের উর্বর জমি।
+- যেখানে দুই দিক থেকে চাপ আসে (palindrome, sliding window, undo/redo), সেখানে deque-ই প্রাকৃতিক পছন্দ।

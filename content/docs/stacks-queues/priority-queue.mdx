@@ -1,58 +1,177 @@
 ---
-title: "Priority Queue: অগ্রাধিকার আগে"
-description: যার priority বেশি সে-ই আগে বের হয়, লাইন ভেঙে। ধারণা, একটা সরল বাস্তবায়ন আর heap-এর দিকে ইঙ্গিত।
+title: "Priority Queue: জরুরি আগে, লাইন যেখানেই হোক"
+description: যার priority বেশি সে-ই আগে বের হয়, লাইন ভেঙে। দুই রকম সরল বাস্তবায়নের ট্রেডঅফ, dry run, আর heap কেন এখানেই অপেক্ষা করছে।
 ---
 
 ## কী শিখব
 
-- অগ্রাধিকার অনুযায়ী বের হওয়া queue-এর ধারণা
+- Priority queue-এর নিয়ম: FIFO না, "জরুরি আগে"
+- Min-priority বনাম max-priority, শুধু তুলনার দিক বদলায়
+- দুই রকম সরল বাস্তবায়ন: sort-on-enqueue বনাম scan-on-dequeue, কার খরচ কোথায়
+- কেন আসল জবাব heap, আর সেটা কী প্রতিশ্রুতি দেয়
+- Dry run, ভুলগুলো, আর কোথায় কোথায় লাগে
 
 ## ধারণা
 
-হাসপাতালের emergency-র কথা ভাবো। যে আগে এসেছে সে আগে ডাক্তার দেখবে, ব্যাপারটা এমন না। যার অবস্থা গুরুতর, সে-ই আগে যাবে, লাইনে শেষে দাঁড়িয়ে থাকলেও।
+হাসপাতালের emergency-র কথা ভাবো। যে আগে এসেছে সে আগে ডাক্তার দেখবে, ব্যাপারটা এমন না। হাঁপানির রোগী ঘণ্টা খানেক ধরে বসে আছে, কিন্তু হঠাৎ হৃদরোগের আক্রান্ত এলে সে-ই আগে ঢুকবে, লাইনের শেষে দাঁড়িয়ে থাকলেও।
 
-এটাই Priority Queue। সাধারণ queue-তে নিয়ম "আগে এলে আগে", আর এখানে নিয়ম হলো "যার priority বেশি (বা কম, use case অনুযায়ী), সে আগে"।
+এটাই **Priority Queue**: সাধারণ queue-র নিয়ম "আগে এলে আগে", আর এখানে নিয়ম "যার priority বেশি জরুরি, সে আগে"। উপাদানগুলোর সঙ্গে একটা priority সংখ্যা জুড়ে দাও, বাকিটা কাঠামো সামলাবে।
 
-আসল কাজে এটা বানানো হয় **Heap** দিয়ে (section 12), যেখানে insert ও extract O(log n)। এখানে ধারণাটা বোঝার জন্য একটা সরল (কম-দক্ষ) version দেখি।
+```text
+enqueue("সাধারণ", 5)
+enqueue("জরুরি", 1)     ← ছোট সংখ্যা মানে বেশি জরুরি
+enqueue("মাঝারি", 3)
 
-## কোড উদাহরণ
+dequeue() → "জরুরি"     ← আগে এসেছে বলে না, জরুরি বলে
+```
+
+দুটো স্বাদ আছে। **Min-priority queue**-তে ছোট সংখ্যাটা আগে বের হয় (উপরের উদাহরণ), **max-priority queue**-তে বড়টা আগে। ধারণা এক, শুধু তুলনার দিক উল্টো। কোডে পার্থক্যটা একটা চিহ্নের, কিন্তু ঝামেলাটা সেখানেই, ভুলগুলোতে দেখবে।
+
+## Dry run: কে কখন বের হলো
+
+Min-priority queue-তে এই ক্রম চলছে: `enqueue("B", 3)`, `enqueue("A", 5)`, `enqueue("C", 1)`, `dequeue()`, `enqueue("D", 2)`, `dequeue()`:
+
+| ধাপ | অপারেশন | ভেতরের তালিকা (priority সহ) | ফেরত |
+|-----|---------|------------------------------|-------|
+| 1 | enqueue(B, 3) | B:3 | - |
+| 2 | enqueue(A, 5) | B:3, A:5 | - |
+| 3 | enqueue(C, 1) | B:3, A:5, C:1 | - |
+| 4 | dequeue() | B:3, A:5 | **C** (priority 1) |
+| 5 | enqueue(D, 2) | B:3, A:5, D:2 | - |
+| 6 | dequeue() | A:5 | **D** (priority 2) |
+
+দুটো জিনিস চোখে পড়ো। এক, C সবচেয়ে দেরিতে ঢুকেও প্রথমে বের হলো, এটাই এই কাঠামোর পয়েন্ট। দুই, ভেতরের তালিকা কোনো সাজানো ক্রমে থাকার বাধ্যবাধকতা নেই, **বের হওয়ার মুহূর্তে** সবচেয়ে জরুরিটা যেতে পারলেই হলো। এই "অর্ডার শুধু বের হওয়ার সময়" ধারণাটা পরে heap বোঝার চাবি।
+
+## কোড ১: sort-on-enqueue
+
+সবচেয়ে সরল উপায়: ঢোকানোর সময়ই তালিকা সাজিয়ে রাখো, তাহলে বের করা নিছক সামনেরটা তোলা:
 
 ```js
 class PriorityQueue {
-  constructor() { this.items = []; } // {value, priority}
+  constructor() { this.items = []; } // { value, priority }
 
   enqueue(value, priority) {
     this.items.push({ value, priority });
     this.items.sort((a, b) => a.priority - b.priority); // ছোট priority আগে
-  }                                                     // sort, O(n log n)
-  dequeue() { return this.items.shift(); }              // সর্বোচ্চ অগ্রাধিকার বের
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return undefined;
+    return this.items.shift().value;
+  }
+
+  isEmpty() { return this.items.length === 0; }
+  size()    { return this.items.length; }
 }
 
 const pq = new PriorityQueue();
 pq.enqueue("সাধারণ রোগী", 5);
 pq.enqueue("জরুরি রোগী", 1);
 pq.enqueue("মাঝারি রোগী", 3);
-console.log(pq.dequeue().value); // জরুরি রোগী (priority 1)
+console.log(pq.dequeue()); // জরুরি রোগী: priority 1
+console.log(pq.dequeue()); // মাঝারি রোগী: priority 3
 ```
 
-## কোড ব্রেকডাউন
+## কোড ২: scan-on-dequeue
 
-- এই version-এ প্রতি enqueue-তে পুরো array-টা sort হয়, তাই enqueue O(n log n)। শেখার জন্য যথেষ্ট; বাস্তবে heap ব্যবহার করব।
-- Heap দিয়ে দক্ষ version section 12-তে শিখব।
+উল্টো রাস্তাও আছে: ঢোকানো ফটকায়, বের করার সময় সবচেয়ে জরুরিটা খুঁজে নাও:
 
-## Complexity
+```js
+class PriorityQueue {
+  constructor() { this.items = []; }
 
-- এই version: enqueue O(n log n); heap version: O(log n)।
+  enqueue(value, priority) {
+    this.items.push({ value, priority });      // শেষে বসে গেল, O(1)
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return undefined;
+
+    let best = 0;
+    for (let i = 1; i < this.items.length; i++) {
+      if (this.items[i].priority < this.items[best].priority) {
+        best = i;                              // সবচেয়ে জরুরির index মনে রাখো
+      }
+    }
+    const [top] = this.items.splice(best, 1);  // ওখান থেকে কেটে আনো
+    return top.value;
+  }
+
+  isEmpty() { return this.items.length === 0; }
+}
+```
+
+## দুই version-এর ট্রেডঅফ: খরচ কোথায় ঢোকালে
+
+দুটোই ঠিক কাজ করে, ফারাক শুধু খরচ কোন অপারেশনে ঢোকানো হলো:
+
+| দিক | Sort-on-enqueue | Scan-on-dequeue |
+|-----|-----------------|-----------------|
+| enqueue | O(n log n), প্রতিবার পুরো sort | O(1), শেষে বসল |
+| dequeue | O(n), `shift()` সরায় | O(n), সব স্ক্যান + splice সরায় |
+| কখন ভালো | dequeue বেশি, enqueue কম হলে | enqueue বেশি, dequeue কম হলে |
+
+মোট n-টা অপারেশনে দুটোই কোনো না কোনো পথে O(n²)-এর দিকে ঠেকে। আসল প্রশ্ন: দুটোই কি O(log n) করা যায় না? **যায়, heap দিয়ে**। Heap এমন একটা গাছ-জাতীয় কাঠামো যেখানে সবচেয়ে জরুরি উপাদান সবসময় শিকড়ে থাকে, আর ঢোকানো-বের করা দুটোই O(log n), কারণ গাছের উচ্চতাই log n। পুরো যান্ত্রিকতা [Heaps](../heaps/what-is-heap.mdx) section-এ, সেখানে এই পেজের প্রতিশ্রুতিটা তোমরাই কাটবে। এখন শুধু টেবিলে জায়গাটা ধরে রাখো:
+
+| বাস্তবায়ন | enqueue | dequeue | মোট n অপারেশন |
+|------------|---------|---------|----------------|
+| Sort-on-enqueue | O(n log n) | O(n) | খারাপ |
+| Scan-on-dequeue | O(1) | O(n) | খারাপ |
+| **Heap** (section 12) | **O(log n)** | **O(log n)** | **O(n log n)** |
+
+## কোড ব্রেকডাউন: scan-on-dequeue, লাইনে লাইনে
+
+1. `enqueue` শুধু `push` : ঢোকানোর সময় কোনো সাজানো নেই, এজন্যই O(1)। কাজটা পেছনে ঠেলে দিলাম, বের করার সময় দেখা যাবে।
+2. `let best = 0` : চ্যাম্পিয়ন প্যাটার্ন, [Traversal](../arrays-strings/traversal.mdx)-এর max/min খোঁজার হুবহু রূপ, এবার প্রতিযোগী হলো priority।
+3. `this.items[i].priority < this.items[best].priority` : ছোট priority জেতে, তাই `<`। Max-priority চাইলে এই এক চিহ্নটাই `>` হয়ে যায়, বাকি সব অটুট।
+4. `splice(best, 1)` : চ্যাম্পিয়নকে মাঝ থেকে কেটে আনা। `splice` ভেতরে সরায়, O(n), কিন্তু স্ক্যানটাই তো O(n), তাই বিল একই থাকে।
+5. `[top]` destructuring : `splice` array ফেরায়, প্রথমটাই আমাদের চাই।
+
+## কোথায় priority queue লাগে
+
+- **Dijkstra-র shortest path:** পরেরবার কোন node-এ যাব, সিদ্ধান্ত হয় "এ পর্যন্ত সবচেয়ে কম খরচ" দিয়ে, [Dijkstra](../graphs/dijkstra.mdx)-তে দেখবে heap ছাড়া থামিয়ে দেওয়ার মতো ধীর।
+- **Task scheduler, OS:** জরুরি প্রসেস আগে CPU পায়।
+- **Huffman coding, MST, k-তম বড় উপাদান:** সব জায়গায় "বারবার সর্বোচ্চ/সর্বনিম্ন তোলা" লাগে, আর সেটাই priority queue-র সিগনেচার কাজ।
+
+## সাধারণ ভুল আর edge case
+
+**১. Priority-র দিক গুলিয়ে ফেলা।**
+`a.priority - b.priority` মানে ছোট আগে (min-priority), উল্টোটা বড় আগে। Comparator-এর একটা চিহ্ন উল্টে গেলে জরুরি রোগী শেষে যাবে, আর কোনো error তোমাকে বলে দেবে না। Comparator লেখার পর দুটো উপাদান দিয়ে মিলিয়ে নাও।
+
+**২. দুটো সমান priority-তে FIFO আশা করা।**
+`sort` stable হলে sort-on-enqueue-তে সমান priority-তে আগে আসা আগে যায়, কিন্তু heap version-এ কোনো গ্যারান্টি নেই। সমান priority-তে ক্রম জরুরি হলে priority-র সঙ্গে আগমনক্রমও জুড়ে দাও।
+
+**৩. খালি queue-তে `dequeue()`।**
+চেনা ফাঁদ: নিরবে `undefined`, তারপর `.value` পড়তে গিয়ে TypeError। আগে `isEmpty()`।
+
+**৪. ঢোকানোর পর priority বদলে ফেলা।**
+Queue-এ object-এর reference ঢোকালে পরে বাইরে থেকে priority বদলালে ভেতরের সাজানো অবস্থা আর আপডেট হয় না। Priority কখনও বদলায় না এমন মান ঢোকাও, নয়তো বদলালে নতুন করে ঢোকাও (heap-এ এই সমস্যাটা আলাদা মাথাব্যথা, মনে রেখো)।
+
+**৫. ছোট কাজে পুরো কাঠামো টানা।**
+মাত্র একবার "সবচেয়ে বড়টা" লাগলে priority queue নয়, একটা স্ক্যানই যথেষ্ট, O(n)। Priority queue-র দাম তখনই যখন বারবার insert আর বারবার সর্বোত্তম-তোলা পর্যায়ক্রমে চলবে, যেমন simulation বা Dijkstra।
 
 ## Animation Spec
 
 > **Animation Spec: Priority Line**
 >
-> - **দৃশ্য:** লাইন, প্রতিটা এলিমেন্টে priority ব্যাজ; ছোট priority সামনে।
-> - **ইনপুট:** value ও priority।
-> - **ধাপ:** নতুন জন ঢুকে নিজের priority অনুযায়ী সঠিক জায়গায় বসে; dequeue-তে সামনেরটা বের হয়।
-> - **লক্ষ্য:** "অগ্রাধিকার আগে" ধারণা; heap-এর দিকে সেতু।
-
+> - **দৃশ্য:** লাইন, প্রতিটা উপাদানের উপরে priority ব্যাজ; পাশে তিন mode-এর টগল: sort-on-enqueue, scan-on-dequeue, heap (placeholder পাখা উড়ানো আইকনে, section 12-এর আমন্ত্রণ)।
+> - **ইনপুট:** value আর priority; enqueue/dequeue বাটন।
+> - **ধাপ:** sort mode-এ নতুনজন ঢুকে তালিকা কেঁপে নিজের জায়গায় সরে যায়; scan mode-এ dequeue চাপলে তালিকার উপর দিয়ে স্ক্যানার এগিয়ে সবচেয়ে জরুরিটা চিহ্নিত করে; dequeue-এর মুহূর্তে priority ব্যাজ জ্বলে ওঠে। পাশে খরচ কাউন্টার।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** "অর্ডার দরকার শুধু বের হওয়ার মুহূর্তে", আর সেই মুহূর্ত সস্তা করার লড়াইয়েই heap।
+>
 ## অনুশীলন
 
-- ভাবো তো, প্রতিবার sort না করে heap কেন ভালো? (section 12-তে মিলিয়ে নেবে)।
+- **সহজ ১:** কাগজে dry run (min-priority): enqueue(X,4), enqueue(Y,2), enqueue(Z,2), dequeue(), dequeue()। প্রতি ধাপে তালিকা আর ফেরত লিখো। সমান priority-তে কে আগে গেল, কেন?
+- **সহজ ২:** Sort-on-enqueue version-টা max-priority-তে বদলাও। কোন এক লাইন বদলালে, আর কেন?
+- **মাঝারি ১:** Scan-on-dequeue version-এ `splice` বাদ দিয়ে dequeue লেখো এমনভাবে যাতে সরানো কমে: চ্যাম্পিয়নের জায়গায় শেষ উপাদানটা বসিয়ে দাও, তারপর `pop()`। (হিন্ট: dequeue-এ স্ক্যান O(n) থাকলেও সরানো O(1) হয়ে যায়। কিন্তু এই কৌশল কি sort-on-enqueue-তে চলবে? কেন না?)
+- **মাঝারি ২:** Array-এর k-তম বড় উপাদান বের করো priority queue দিয়ে। (হিন্ট: সব ঢোকাও max-priority-তে, তারপর k বার dequeue। [Kth Element](../problem-solving/kth-element.mdx)-এ আরও দক্ষ রাস্তা দেখবে।)
+- **কঠিন:** দুটো sorted list মিলিয়ে সবচেয়ে ছোট k-টা জোড়ার যোগফল খোঁজার দিকে ভাবো (LeetCode 373)। সরাসরি কোড না লিখলেও বলো: কী priority queue-তে রাখবে, কেন, আর heap না থাকলে এই সমস্যা কেন কষ্টকর? [Heaps](../heaps/what-is-heap.mdx) শেষে ফিরে এসো।
+
+## সারসংক্ষেপ
+
+- Priority queue-তে বের হওয়ার নিয়ম FIFO না, জরুরিত্ব: priority যার বেশি সে আগে।
+- সরল বাস্তবায়ন দুটোর একটাতেই খরচ O(n)-এর উপরে, মোটে দুটোই O(n²) পথ।
+- আসল জবাব heap: enqueue আর dequeue দুটোই O(log n)। এই পেজ সেই প্রতিশ্রুতির অ্যাডভান্স।
+- Comparator-এর দিক, সমান priority, খালি queue: তিনটাই নিঃশব্দ ফাঁদ।
+- একবারের সর্বোত্তম খোঁজায় স্ক্যানই যথেষ্ট; priority queue বারবারের খেলার জন্য।
