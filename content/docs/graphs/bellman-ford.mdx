@@ -1,0 +1,61 @@
+---
+title: "Bellman-Ford Algorithm: Negative Weight সামলানো"
+description: সব edge বারবার relax করে shortest path, negative weight ও negative cycle সনাক্তকরণ।
+---
+
+## কী শিখব
+
+- negative weight সামলানো shortest path
+
+## ধারণা
+
+Bellman-Ford সব edge-কে **V-1 বার** relax করে। এটা ধীর (O(V * E)) কিন্তু **negative weight** সামলায়, এমনকি **negative cycle** (যেখানে ঘুরলে খরচ কমতেই থাকে) সনাক্ত করে।
+
+## কোড উদাহরণ
+
+```js
+// edges: [[u, v, weight], ...]
+function bellmanFord(vertices, edges, start) {
+  const dist = new Map(vertices.map(v => [v, Infinity]));
+  dist.set(start, 0);
+
+  // V-1 বার সব edge relax করি
+  for (let i = 0; i < vertices.length - 1; i++) {
+    for (const [u, v, w] of edges) {
+      if (dist.get(u) + w < dist.get(v)) dist.set(v, dist.get(u) + w);
+    }
+  }
+  // আরেকবার relax হলে, অর্থাৎ negative cycle আছে
+  for (const [u, v, w] of edges) {
+    if (dist.get(u) + w < dist.get(v)) throw new Error("Negative cycle!");
+  }
+  return dist;
+}
+console.log(bellmanFord(
+  ["A", "B", "C"],
+  [["A", "B", 4], ["A", "C", 5], ["B", "C", -3]],
+  "A"
+)); // A:0, B:4, C:1
+```
+
+## কোড ব্রেকডাউন
+
+- V-1 বার কেন? সবচেয়ে দীর্ঘ shortest path-এ সর্বোচ্চ V-1 edge থাকতে পারে।
+- V-তম বারেও উন্নতি হলে নিশ্চিত negative cycle।
+
+## Complexity
+
+- O(V * E)।
+
+## Animation Spec
+
+> **Animation Spec: Repeated Relaxation**
+>
+> - **দৃশ্য:** graph; প্রতিটা "round"-এ সব edge একে একে relax; distance টেবিল আপডেট।
+> - **ইনপুট:** graph (negative weight সহ)।
+> - **ধাপ:** round-by-round distance কমা; শেষ round-এ negative cycle সনাক্ত (লাল)।
+> - **লক্ষ্য:** Dijkstra-র সাথে trade-off ও negative weight।
+
+## অনুশীলন
+
+- Dijkstra vs Bellman-Ford: কখন কোনটা, তালিকা করো।

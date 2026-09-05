@@ -1,0 +1,80 @@
+---
+title: "Depth First Search (DFS): যতদূর সম্ভব গভীরে"
+description: recursion বা stack দিয়ে এক পথ ধরে গভীরে, আটকালে backtrack।
+---
+
+## কী শিখব
+
+- এক পথ ধরে যতদূর যাওয়া যায়
+
+## ধারণা
+
+DFS একটা পথ ধরে **যতদূর সম্ভব গভীরে** যায়, আর যেতে না পারলে পিছিয়ে (backtrack) অন্য পথ ধরে। recursion বা **stack** দিয়ে। cycle detection, connected components, topological sort-এ কাজে লাগে।
+
+## কোড উদাহরণ
+
+```js
+// আগের পাতার Graph class (adjacency list)
+class Graph {
+  constructor() { this.adj = new Map(); }
+  addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
+  addEdge(u, v) {
+    this.addVertex(u); this.addVertex(v);
+    this.adj.get(u).push(v);
+    this.adj.get(v).push(u);
+  }
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+
+const g = new Graph();
+g.addEdge("A", "B"); g.addEdge("A", "C");
+g.addEdge("B", "D"); g.addEdge("C", "D");
+
+// recursive
+function dfs(graph, start, visited = new Set(), order = []) {
+  visited.add(start);
+  order.push(start);
+  for (const next of graph.neighbors(start)) {
+    if (!visited.has(next)) dfs(graph, next, visited, order);
+  }
+  return order;
+}
+console.log(dfs(g, "A")); // যেমন ['A','B','D','C']
+
+// iterative (stack)
+function dfsIter(graph, start) {
+  const visited = new Set(), stack = [start], order = [];
+  while (stack.length) {
+    const node = stack.pop();            // LIFO মানে গভীরে
+    if (visited.has(node)) continue;
+    visited.add(node); order.push(node);
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) stack.push(next);
+    }
+  }
+  return order;
+}
+console.log(dfsIter(g, "A")); // যেমন ['A','C','D','B']
+```
+
+## কোড ব্রেকডাউন
+
+- recursion-এর call stack-ই DFS-এর stack।
+- BFS ও DFS-এর কোড প্রায় এক, শুধু **queue (BFS) বনাম stack (DFS)**।
+
+## Complexity
+
+- O(V + E) time; O(V) space।
+
+## Animation Spec
+
+> **Animation Spec: DFS Deep Dive**
+>
+> - **দৃশ্য:** graph; একটা path ধরে গভীরে নামা, ডেড-এন্ডে backtrack (তীর পিছায়)।
+> - **ইনপুট:** start node।
+> - **ধাপ:** current পথ কমলা; visited বেগুনি; backtrack স্পষ্ট দেখানো।
+> - **লক্ষ্য:** "গভীরে যাও, আটকালে ফিরে এসো" ধারণা; BFS-এর সাথে তুলনা।
+
+## অনুশীলন
+
+- DFS দিয়ে directed graph-এ cycle আছে কিনা বের করার কৌশল ভাবো।

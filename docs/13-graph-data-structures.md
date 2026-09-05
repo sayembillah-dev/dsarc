@@ -1,64 +1,65 @@
-# ১৩ — Graph Data Structures
+# ১৩: Graph Data Structures
 
-Graph হলো সবচেয়ে শক্তিশালী ও বহুমুখী কাঠামো — সোশ্যাল নেটওয়ার্ক, ম্যাপ/GPS, ইন্টারনেট, নির্ভরতা (dependency) — সব graph। Tree আসলে graph-এরই বিশেষ রূপ। এই section-এ ছবির সব graph টপিক শিখব।
+Graph হলো সবচেয়ে শক্তিশালী ও বহুমুখী কাঠামো: সোশ্যাল নেটওয়ার্ক, ম্যাপ/GPS, ইন্টারনেট, নির্ভরতা (dependency), সব graph। Tree আসলে graph-এরই বিশেষ রূপ। এই section-এ ছবির সব graph টপিক শিখব।
 
-> **Section Roadmap:** পরিভাষা → Directed/Undirected → উপস্থাপন (adjacency list/matrix) → BFS → DFS → Shortest Path (Dijkstra, Bellman-Ford, A*) → MST (Prim, Kruskal)
+> **Section Roadmap:** পরিভাষা, Directed/Undirected, উপস্থাপন (adjacency list/matrix), BFS, DFS, Shortest Path (Dijkstra, Bellman-Ford, A*), MST (Prim, Kruskal)
 
 ---
 
-## 13.1 — Graph পরিভাষা ও প্রকার
+## 13.1: Graph পরিভাষা ও প্রকার
 
-**🎯 কী শিখব**
+**কী শিখব**
 - vertex, edge, directed/undirected, weighted
 
-**💡 ধারণা**
-Graph = কতগুলো **vertex** (node) ও তাদের সংযোগকারী **edge**-এর সমষ্টি।
+**ধারণা**
+Graph অর্থাৎ কতগুলো **vertex** (node) ও তাদের সংযোগকারী **edge**-এর সমষ্টি।
 
-- **Undirected:** edge দুমুখী (বন্ধুত্ব — A বন্ধু হলে B-ও বন্ধু)
-- **Directed (digraph):** edge একমুখী (Twitter follow — A→B মানে B→A নয়)
+- **Undirected:** edge দুমুখী (বন্ধুত্ব: A বন্ধু হলে B-ও বন্ধু)
+- **Directed (digraph):** edge একমুখী (Twitter follow: A -> B মানে B -> A নয়)
 - **Weighted:** edge-এ একটা মান/ওজন (দূরত্ব, খরচ)
 - **Cycle:** ঘুরে আবার শুরুতে ফেরা যায় এমন পথ
 - **Connected:** সব vertex একে অপরের থেকে পৌঁছানো যায়
 
 ```
-Undirected:  A — B        Directed:  A → B
-             |   |                    ↑   ↓
-             C — D                    C ← D
+Undirected:  A - B        Directed:  A -> B
+             |   |                    ^    |
+             |   |                    |    v
+             C - D                    C <- D
 ```
 
-**💻 (ধারণা)**
+**কোড (ধারণা)**
 ```js
 // vertices: A,B,C,D ; edges: A-B, A-C, B-D, C-D
 ```
 
-**🔍 ব্রেকডাউন**
-- Tree = connected, acyclic (cycle নেই), n node হলে n−1 edge।
-- Graph-এ cycle থাকতে পারে → traversal-এ "visited" ট্র্যাক করা **আবশ্যক** (নাহলে infinite loop)।
+**ব্রেকডাউন**
+- Tree অর্থাৎ connected, acyclic (cycle নেই), n node হলে n-1 edge।
+- Graph-এ cycle থাকতে পারে, তাই traversal-এ "visited" ট্র্যাক করা **আবশ্যক** (নাহলে infinite loop)।
 
-> **🎬 Animation Spec: Graph Explorer**
+> **Animation Spec: Graph Explorer**
 > - **দৃশ্য:** node ও edge; toggle দিয়ে directed/undirected, weighted রূপ বদলানো।
 > - **ইনপুট:** node/edge যোগ-বাদ; edge weight।
 > - **ধাপ:** নির্বাচন বদলালে তীর/লাইন ও weight লেবেল আপডেট।
 > - **লক্ষ্য:** graph-এর ধরন ও পরিভাষা চেনা।
 
-**📝 অনুশীলন**
-- তোমার বন্ধু-তালিকা directed না undirected graph — যুক্তি দাও।
+**অনুশীলন**
+- তোমার বন্ধু-তালিকা directed না undirected graph, যুক্তি দাও।
 
 ---
 
-## 13.2 — Graph উপস্থাপন (Adjacency List vs Matrix)
+## 13.2: Graph উপস্থাপন (Adjacency List vs Matrix)
 
-**🎯 কী শিখব**
+**কী শিখব**
 - graph কোডে কীভাবে রাখব
 
-**💡 ধারণা**
+**ধারণা**
 দুই প্রধান উপায়:
-- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের তালিকা (`Map`)। কম edge (sparse) হলে দক্ষ — জায়গা O(V+E)।
-- **Adjacency Matrix:** V×V গ্রিড; `matrix[i][j]=1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V²) (dense-এ ভালো)।
+- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের তালিকা (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V+E)।
+- **Adjacency Matrix:** VxV গ্রিড; `matrix[i][j]=1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V^2) (dense-এ ভালো)।
 
 বাস্তবে বেশিরভাগ সমস্যায় **adjacency list** ব্যবহার হয়।
 
-**💻 কোড উদাহরণ (Adjacency List)**
+**কোড উদাহরণ (Adjacency List)**
 ```js
 class Graph {
   constructor() { this.adj = new Map(); }
@@ -80,32 +81,32 @@ g.addEdge("B", "D"); g.addEdge("C", "D");
 console.log(g.neighbors("A")); // ['B','C']
 ```
 
-**🔍 ব্রেকডাউন**
-- `Map<vertex, neighbors[]>` — প্রতিটা vertex-এর সরাসরি প্রতিবেশী।
+**ব্রেকডাউন**
+- `Map<vertex, neighbors[]>`: প্রতিটা vertex-এর সরাসরি প্রতিবেশী।
 - undirected-এ দুই দিকেই edge যোগ; directed-এ এক দিকে।
 
-**⏱️ Complexity** — list: space O(V+E); matrix: space O(V²)।
+**Complexity:** list: space O(V+E); matrix: space O(V^2)।
 
-> **🎬 Animation Spec: List vs Matrix**
+> **Animation Spec: List vs Matrix**
 > - **দৃশ্য:** বাঁয়ে গ্রাফ, ডানে একই graph-এর adjacency list ও matrix পাশাপাশি।
 > - **ইনপুট:** edge যোগ।
 > - **ধাপ:** edge যোগ করলে list-এ entry ও matrix-এ cell একসাথে আপডেট।
 > - **লক্ষ্য:** দুই উপস্থাপনের trade-off।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - ওপরের graph-এর adjacency matrix হাতে আঁকো।
 
 ---
 
-## 13.3 — Breadth First Search (BFS)
+## 13.3: Breadth First Search (BFS)
 
-**🎯 কী শিখব**
+**কী শিখব**
 - স্তরে স্তরে ঘোরা; unweighted shortest path
 
-**💡 ধারণা**
-BFS শুরু node থেকে **স্তরে স্তরে** ছড়ায় (queue দিয়ে) — আগে ১ ধাপ দূরের সব, তারপর ২ ধাপ... তাই unweighted graph-এ **সবচেয়ে কম edge-এর পথ** (shortest path) দেয়। "visited" set দিয়ে cycle সামলাই।
+**ধারণা**
+BFS শুরু node থেকে **স্তরে স্তরে** ছড়ায় (queue দিয়ে), আগে ১ ধাপ দূরের সব, তারপর ২ ধাপ। তাই unweighted graph-এ **সবচেয়ে কম edge-এর পথ** (shortest path) দেয়। "visited" set দিয়ে cycle সামলাই।
 
-**💻 কোড উদাহরণ**
+**কোড উদাহরণ**
 ```js
 function bfs(graph, start) {
   const visited = new Set([start]);
@@ -140,33 +141,33 @@ function shortestPathBFS(graph, start, target) {
 console.log(shortestPathBFS(g, "A", "D")); // 2
 ```
 
-**🔍 ব্রেকডাউন**
-- **queue** → স্তরভিত্তিক প্রসার।
-- **visited** → পুনরাবৃত্তি/cycle বন্ধ (graph-এ অপরিহার্য)।
+**ব্রেকডাউন**
+- **queue** মানে স্তরভিত্তিক প্রসার।
+- **visited** মানে পুনরাবৃত্তি/cycle বন্ধ (graph-এ অপরিহার্য)।
 - প্রতিটা node-এর সাথে distance রাখলে shortest path।
 
-**⏱️ Complexity** — O(V + E) time; O(V) space।
+**Complexity:** O(V + E) time; O(V) space।
 
-> **🎬 Animation Spec: BFS Ripple**
+> **Animation Spec: BFS Ripple**
 > - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue।
 > - **ইনপুট:** start node।
 > - **ধাপ:** প্রতিটা স্তর একই রঙে; visited node বেগুনি; queue-এর enqueue/dequeue দেখা যায়।
-> - **লক্ষ্য:** BFS = স্তর-ভিত্তিক প্রসার = shortest (unweighted)।
+> - **লক্ষ্য:** BFS অর্থাৎ স্তর-ভিত্তিক প্রসার অর্থাৎ shortest (unweighted)।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - BFS দিয়ে graph connected কিনা বের করো।
 
 ---
 
-## 13.4 — Depth First Search (DFS)
+## 13.4: Depth First Search (DFS)
 
-**🎯 কী শিখব**
+**কী শিখব**
 - এক পথ ধরে যতদূর যাওয়া যায়
 
-**💡 ধারণা**
+**ধারণা**
 DFS একটা পথ ধরে **যতদূর সম্ভব গভীরে** যায়, আর যেতে না পারলে পিছিয়ে (backtrack) অন্য পথ ধরে। recursion বা **stack** দিয়ে। cycle detection, connected components, topological sort-এ কাজে লাগে।
 
-**💻 কোড উদাহরণ**
+**কোড উদাহরণ**
 ```js
 // recursive
 function dfs(graph, start, visited = new Set(), order = []) {
@@ -183,7 +184,7 @@ console.log(dfs(g, "A")); // যেমন ['A','B','D','C']
 function dfsIter(graph, start) {
   const visited = new Set(), stack = [start], order = [];
   while (stack.length) {
-    const node = stack.pop();            // LIFO → গভীরে
+    const node = stack.pop();            // LIFO মানে গভীরে
     if (visited.has(node)) continue;
     visited.add(node); order.push(node);
     for (const next of graph.neighbors(node)) {
@@ -194,34 +195,34 @@ function dfsIter(graph, start) {
 }
 ```
 
-**🔍 ব্রেকডাউন**
+**ব্রেকডাউন**
 - recursion-এর call stack-ই DFS-এর stack।
-- BFS ও DFS-এর কোড প্রায় এক — শুধু **queue (BFS) বনাম stack (DFS)**।
+- BFS ও DFS-এর কোড প্রায় এক, শুধু **queue (BFS) বনাম stack (DFS)**।
 
-**⏱️ Complexity** — O(V + E) time; O(V) space।
+**Complexity:** O(V + E) time; O(V) space।
 
-> **🎬 Animation Spec: DFS Deep Dive**
+> **Animation Spec: DFS Deep Dive**
 > - **দৃশ্য:** graph; একটা path ধরে গভীরে নামা, ডেড-এন্ডে backtrack (তীর পিছায়)।
 > - **ইনপুট:** start node।
 > - **ধাপ:** current পথ কমলা; visited বেগুনি; backtrack স্পষ্ট দেখানো।
 > - **লক্ষ্য:** "গভীরে যাও, আটকালে ফিরে এসো" ধারণা; BFS-এর সাথে তুলনা।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - DFS দিয়ে directed graph-এ cycle আছে কিনা বের করার কৌশল ভাবো।
 
 ---
 
-## 13.5 — Dijkstra's Algorithm (Weighted Shortest Path)
+## 13.5: Dijkstra's Algorithm (Weighted Shortest Path)
 
-**🎯 কী শিখব**
+**কী শিখব**
 - ওজনসহ graph-এ সবচেয়ে কম খরচের পথ
 
-**💡 ধারণা**
+**ধারণা**
 BFS unweighted-এ shortest দেয়, কিন্তু edge-এ ওজন থাকলে (রাস্তার দূরত্ব) BFS যথেষ্ট নয়। **Dijkstra** প্রতিবার **এখন পর্যন্ত সবচেয়ে কাছের** node বেছে (min-heap/priority queue দিয়ে) তার প্রতিবেশীদের দূরত্ব হালনাগাদ করে (**relaxation**)।
 
-> **সীমা:** edge weight **negative** হলে Dijkstra ভুল করতে পারে → তখন Bellman-Ford (নিচে)।
+> **সীমা:** edge weight **negative** হলে Dijkstra ভুল করতে পারে; তখন Bellman-Ford (নিচে)।
 
-**💻 কোড উদাহরণ**
+**কোড উদাহরণ**
 ```js
 // graph: Map<node, [[neighbor, weight], ...]>
 function dijkstra(graph, start) {
@@ -255,33 +256,33 @@ const wg = new Map([
 console.log(dijkstra(wg, "A")); // A:0, B:1, C:3, D:4
 ```
 
-**🔍 ব্রেকডাউন**
-- `dist` — start থেকে প্রতিটা node-এ এখন পর্যন্ত জানা সর্বনিম্ন দূরত্ব।
+**ব্রেকডাউন**
+- `dist`: start থেকে প্রতিটা node-এ এখন পর্যন্ত জানা সর্বনিম্ন দূরত্ব।
 - **relaxation:** `d + weight < dist[next]` হলে ছোট পথ পাওয়া গেছে, আপডেট।
-- সবসময় সবচেয়ে কাছের unprocessed node আগে — priority queue-এর কাজ।
+- সবসময় সবচেয়ে কাছের unprocessed node আগে, priority queue-এর কাজ।
 
-**⏱️ Complexity** — min-heap দিয়ে O((V+E) log V)।
+**Complexity:** min-heap দিয়ে O((V+E) log V)।
 
-> **🎬 Animation Spec: Dijkstra Wavefront**
+> **Animation Spec: Dijkstra Wavefront**
 > - **দৃশ্য:** weighted graph; প্রতিটা node-এ current best distance লেবেল; priority queue পাশে।
 > - **ইনপুট:** start node; edge weight editable।
 > - **ধাপ:** সবচেয়ে কাছের node "settle" (সবুজ); প্রতিবেশী distance relax (হলুদ flash)।
 > - **লক্ষ্য:** greedy "কাছেরটা আগে" ও relaxation বোঝা।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - একটা edge weight negative করে দেখো কেন Dijkstra ভুল করতে পারে।
 
 ---
 
-## 13.6 — Bellman-Ford Algorithm
+## 13.6: Bellman-Ford Algorithm
 
-**🎯 কী শিখব**
+**কী শিখব**
 - negative weight সামলানো shortest path
 
-**💡 ধারণা**
-Bellman-Ford সব edge-কে **V−1 বার** relax করে। এটা ধীর (O(V·E)) কিন্তু **negative weight** সামলায়, এমনকি **negative cycle** (যেখানে ঘুরলে খরচ কমতেই থাকে) সনাক্ত করে।
+**ধারণা**
+Bellman-Ford সব edge-কে **V-1 বার** relax করে। এটা ধীর (O(V*E)) কিন্তু **negative weight** সামলায়, এমনকি **negative cycle** (যেখানে ঘুরলে খরচ কমতেই থাকে) সনাক্ত করে।
 
-**💻 কোড উদাহরণ**
+**কোড উদাহরণ**
 ```js
 // edges: [[u, v, weight], ...]
 function bellmanFord(vertices, edges, start) {
@@ -294,7 +295,7 @@ function bellmanFord(vertices, edges, start) {
       if (dist.get(u) + w < dist.get(v)) dist.set(v, dist.get(u) + w);
     }
   }
-  // আরেকবার relax হলে → negative cycle আছে
+  // আরেকবার relax হলে, অর্থাৎ negative cycle আছে
   for (const [u, v, w] of edges) {
     if (dist.get(u) + w < dist.get(v)) throw new Error("Negative cycle!");
   }
@@ -307,30 +308,30 @@ console.log(bellmanFord(
 )); // A:0, B:4, C:1
 ```
 
-**🔍 ব্রেকডাউন**
-- V−1 বার কেন? — সবচেয়ে দীর্ঘ shortest path-এ সর্বোচ্চ V−1 edge থাকতে পারে।
+**ব্রেকডাউন**
+- V-1 বার কেন? সবচেয়ে দীর্ঘ shortest path-এ সর্বোচ্চ V-1 edge থাকতে পারে।
 - V-তম বারেও উন্নতি হলে নিশ্চিত negative cycle।
 
-**⏱️ Complexity** — O(V·E)।
+**Complexity:** O(V*E)।
 
-> **🎬 Animation Spec: Repeated Relaxation**
+> **Animation Spec: Repeated Relaxation**
 > - **দৃশ্য:** graph; প্রতিটা "round"-এ সব edge একে একে relax; distance টেবিল আপডেট।
 > - **ইনপুট:** graph (negative weight সহ)।
 > - **ধাপ:** round-by-round distance কমা; শেষ round-এ negative cycle সনাক্ত (লাল)।
 > - **লক্ষ্য:** Dijkstra-র সাথে trade-off ও negative weight।
 
-**📝 অনুশীলন**
-- Dijkstra vs Bellman-Ford: কখন কোনটা — তালিকা করো।
+**অনুশীলন**
+- Dijkstra vs Bellman-Ford: কখন কোনটা, তালিকা করো।
 
 ---
 
-## 13.7 — A* Search Algorithm
+## 13.7: A* Search Algorithm
 
-**🎯 কী শিখব**
+**কী শিখব**
 - heuristic দিয়ে দ্রুত shortest path (গেম/ম্যাপ-এ)
 
-**💡 ধারণা**
-Dijkstra সব দিকে সমানভাবে খোঁজে। **A\*** একটা **heuristic** (আন্দাজ — যেমন সরলরেখা দূরত্ব) যোগ করে target-এর দিকে খোঁজাকে "পক্ষপাতী" করে, ফলে অনেক দ্রুত। মূল সূত্র:
+**ধারণা**
+Dijkstra সব দিকে সমানভাবে খোঁজে। **A*** একটা **heuristic** (আন্দাজ, যেমন সরলরেখা দূরত্ব) যোগ করে target-এর দিকে খোঁজাকে "পক্ষপাতী" করে, ফলে অনেক দ্রুত। মূল সূত্র:
 
 ```
 f(n) = g(n) + h(n)
@@ -338,9 +339,9 @@ g = start থেকে n পর্যন্ত বাস্তব খরচ
 h = n থেকে target পর্যন্ত আন্দাজ খরচ (heuristic)
 ```
 
-**h সঠিক (admissible — কখনো overestimate করে না) হলে A\* সবচেয়ে ভালো পথ নিশ্চিত করে।**
+**h সঠিক (admissible, কখনো overestimate করে না) হলে A* সবচেয়ে ভালো পথ নিশ্চিত করে।**
 
-**💻 কোড উদাহরণ (গ্রিডে, সরল কাঠামো)**
+**কোড উদাহরণ (গ্রিডে, সরল কাঠামো)**
 ```js
 function aStar(grid, start, goal, h) {
   const key = ([r, c]) => `${r},${c}`;
@@ -364,39 +365,39 @@ function aStar(grid, start, goal, h) {
 const manhattan = (a, b) => Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]);
 ```
 
-**🔍 ব্রেকডাউন**
-- `h=0` দিলে A\* ঠিক Dijkstra হয়ে যায়।
-- ভালো heuristic → কম node explore → দ্রুত।
+**ব্রেকডাউন**
+- `h=0` দিলে A* ঠিক Dijkstra হয়ে যায়।
+- ভালো heuristic মানে কম node explore, অর্থাৎ দ্রুত।
 - গেম pathfinding, GPS routing-এ ব্যাপক ব্যবহৃত।
 
-**⏱️ Complexity** — heuristic-নির্ভর; ভালো h-এ Dijkstra-র চেয়ে অনেক কম node।
+**Complexity:** heuristic-নির্ভর; ভালো h-এ Dijkstra-র চেয়ে অনেক কম node।
 
-> **🎬 Animation Spec: A\* vs Dijkstra Race**
-> - **দৃশ্য:** গ্রিড-ম্যাপ (দেয়াল সহ); দুটো search পাশাপাশি — একটায় h=0 (Dijkstra), একটায় Manhattan।
+> **Animation Spec: A* vs Dijkstra Race**
+> - **দৃশ্য:** গ্রিড-ম্যাপ (দেয়াল সহ); দুটো search পাশাপাশি, একটায় h=0 (Dijkstra), একটায় Manhattan।
 > - **ইনপুট:** start/goal/দেয়াল আঁকা; heuristic নির্বাচন।
-> - **ধাপ:** explored cell রঙ পায়; A\* goal-এর দিকে ঝুঁকে কম cell খোঁজে।
+> - **ধাপ:** explored cell রঙ পায়; A* goal-এর দিকে ঝুঁকে কম cell খোঁজে।
 > - **লক্ষ্য:** heuristic কীভাবে খোঁজা "গাইড" করে।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - একটা inadmissible (অতিরঞ্জিত) heuristic দিলে কী সমস্যা হতে পারে ভাবো।
 
 ---
 
-## 13.8 — Minimum Spanning Tree: Prim ও Kruskal
+## 13.8: Minimum Spanning Tree: Prim ও Kruskal
 
-**🎯 কী শিখব**
+**কী শিখব**
 - সব node-কে সবচেয়ে কম মোট ওজনে জোড়া
 
-**💡 ধারণা**
-**MST** = একটা connected weighted undirected graph-এর এমন উপগ্রাফ যা সব vertex জোড়ে, cycle ছাড়া, ন্যূনতম মোট edge-ওজনে। (যেমন: সব শহরে সবচেয়ে কম তারে বিদ্যুৎ পৌঁছানো।)
+**ধারণা**
+**MST** অর্থাৎ একটা connected weighted undirected graph-এর এমন উপগ্রাফ যা সব vertex জোড়ে, cycle ছাড়া, ন্যূনতম মোট edge-ওজনে। (যেমন: সব শহরে সবচেয়ে কম তারে বিদ্যুৎ পৌঁছানো।)
 
 দুই ক্লাসিক greedy algorithm:
 - **Prim:** এক vertex থেকে শুরু, প্রতিবার সবচেয়ে সস্তা edge দিয়ে নতুন vertex যোগ (min-heap)।
-- **Kruskal:** সব edge ওজন-অনুসারে sort, ছোট থেকে নিতে থাকো — cycle না বানালে নাও (**Union-Find** দিয়ে cycle চেক, section 14)।
+- **Kruskal:** সব edge ওজন-অনুসারে sort, ছোট থেকে নিতে থাকো, cycle না বানালে নাও (**Union-Find** দিয়ে cycle চেক, section 14)।
 
-**💻 কোড উদাহরণ (Kruskal — Union-Find সহ)**
+**কোড উদাহরণ (Kruskal, Union-Find সহ)**
 ```js
-// সরল Union-Find (DSU) — section 14-এ বিস্তারিত
+// সরল Union-Find (DSU), section 14-এ বিস্তারিত
 class DSU {
   constructor(n) { this.parent = Array.from({length: n}, (_, i) => i); }
   find(x) { return this.parent[x] === x ? x : (this.parent[x] = this.find(this.parent[x])); }
@@ -421,26 +422,26 @@ const result = kruskal(4, [
 console.log(result.total); // 4  (edges: 0-1, 2-3, 1-2)
 ```
 
-**🔍 ব্রেকডাউন**
-- Kruskal: সস্তা edge আগে; **Union-Find** দিয়ে দেখি দুই প্রান্ত ইতিমধ্যে একই গোষ্ঠীতে কিনা (হলে cycle → বাদ)।
-- V−1 edge নিলেই MST সম্পূর্ণ।
+**ব্রেকডাউন**
+- Kruskal: সস্তা edge আগে; **Union-Find** দিয়ে দেখি দুই প্রান্ত ইতিমধ্যে একই গোষ্ঠীতে কিনা (হলে cycle, তাই বাদ)।
+- V-1 edge নিলেই MST সম্পূর্ণ।
 - Prim ঘন (dense) graph-এ ভালো; Kruskal পাতলা (sparse) graph-এ ভালো।
 
-**⏱️ Complexity** — Kruskal O(E log E); Prim (heap) O(E log V)।
+**Complexity:** Kruskal O(E log E); Prim (heap) O(E log V)।
 
-> **🎬 Animation Spec: MST Builder**
+> **Animation Spec: MST Builder**
 > - **দৃশ্য:** weighted graph; নির্বাচিত edge সবুজ, প্রত্যাখ্যাত (cycle) লাল।
 > - **ইনপুট:** algorithm (Prim/Kruskal); graph।
-> - **ধাপ:** Kruskal — sorted edge একে একে চেক; Prim — vertex-set থেকে সস্তা edge দিয়ে প্রসার। running total দেখানো।
+> - **ধাপ:** Kruskal: sorted edge একে একে চেক; Prim: vertex-set থেকে সস্তা edge দিয়ে প্রসার। running total দেখানো।
 > - **লক্ষ্য:** দুই greedy পদ্ধতির পার্থক্য ও cycle-এড়ানো।
 
-**📝 অনুশীলন**
+**অনুশীলন**
 - একই graph-এ Prim ও Kruskal একই total দেয় কিনা যাচাই করো।
 
 ---
 
-## ✅ Section সারাংশ
+## Section সারাংশ
 
-Graph = vertex+edge (directed/undirected/weighted)। উপস্থাপন: adjacency list (সাধারণ)। BFS (queue) = unweighted shortest; DFS (stack/recursion) = গভীর অন্বেষণ; দুটোই visited লাগে। Shortest path: Dijkstra (non-negative, heap), Bellman-Ford (negative সামলায়), A* (heuristic-গাইডেড)। MST: Prim ও Kruskal (greedy)।
+Graph অর্থাৎ vertex+edge (directed/undirected/weighted)। উপস্থাপন: adjacency list (সাধারণ)। BFS (queue) অর্থাৎ unweighted shortest; DFS (stack/recursion) অর্থাৎ গভীর অন্বেষণ; দুটোই visited লাগে। Shortest path: Dijkstra (non-negative, heap), Bellman-Ford (negative সামলায়), A* (heuristic-গাইডেড)। MST: Prim ও Kruskal (greedy)।
 
-**পরবর্তী:** [14 — Advanced Data Structures](14-advanced-data-structures.md) →
+**পরবর্তী:** [14: Advanced Data Structures](14-advanced-data-structures.md)

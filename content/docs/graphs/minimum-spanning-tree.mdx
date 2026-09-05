@@ -1,0 +1,68 @@
+---
+title: "Minimum Spanning Tree: Prim ও Kruskal"
+description: সব node-কে সবচেয়ে কম মোট ওজনে জোড়া, দুই ক্লাসিক greedy algorithm।
+---
+
+## কী শিখব
+
+- সব node-কে সবচেয়ে কম মোট ওজনে জোড়া
+
+## ধারণা
+
+**MST** অর্থাৎ একটা connected weighted undirected graph-এর এমন উপগ্রাফ যা সব vertex জোড়ে, cycle ছাড়া, ন্যূনতম মোট edge-ওজনে। (যেমন: সব শহরে সবচেয়ে কম তারে বিদ্যুৎ পৌঁছানো।)
+
+দুই ক্লাসিক greedy algorithm:
+
+- **Prim:** এক vertex থেকে শুরু, প্রতিবার সবচেয়ে সস্তা edge দিয়ে নতুন vertex যোগ (min-heap)।
+- **Kruskal:** সব edge ওজন-অনুসারে sort, ছোট থেকে নিতে থাকো, cycle না বানালে নাও (**Union-Find** দিয়ে cycle চেক, section 14)।
+
+## কোড উদাহরণ (Kruskal, Union-Find সহ)
+
+```js
+// সরল Union-Find (DSU), section 14-এ বিস্তারিত
+class DSU {
+  constructor(n) { this.parent = Array.from({length: n}, (_, i) => i); }
+  find(x) { return this.parent[x] === x ? x : (this.parent[x] = this.find(this.parent[x])); }
+  union(a, b) { const ra = this.find(a), rb = this.find(b); if (ra === rb) return false; this.parent[ra] = rb; return true; }
+}
+
+function kruskal(n, edges) {          // edges: [u, v, weight]
+  edges.sort((a, b) => a[2] - b[2]);  // ওজন-অনুসারে sort
+  const dsu = new DSU(n);
+  const mst = []; let total = 0;
+  for (const [u, v, w] of edges) {
+    if (dsu.union(u, v)) {            // cycle না বানালে নাও
+      mst.push([u, v, w]); total += w;
+    }
+  }
+  return { mst, total };
+}
+
+const result = kruskal(4, [
+  [0, 1, 1], [1, 2, 2], [0, 2, 4], [2, 3, 1], [1, 3, 5],
+]);
+console.log(result.total); // 4  (edges: 0-1, 2-3, 1-2)
+```
+
+## কোড ব্রেকডাউন
+
+- Kruskal: সস্তা edge আগে; **Union-Find** দিয়ে দেখি দুই প্রান্ত ইতিমধ্যে একই গোষ্ঠীতে কিনা (হলে cycle, তাই বাদ)।
+- V-1 edge নিলেই MST সম্পূর্ণ।
+- Prim ঘন (dense) graph-এ ভালো; Kruskal পাতলা (sparse) graph-এ ভালো।
+
+## Complexity
+
+- Kruskal O(E log E); Prim (heap) O(E log V)।
+
+## Animation Spec
+
+> **Animation Spec: MST Builder**
+>
+> - **দৃশ্য:** weighted graph; নির্বাচিত edge সবুজ, প্রত্যাখ্যাত (cycle) লাল।
+> - **ইনপুট:** algorithm (Prim/Kruskal); graph।
+> - **ধাপ:** Kruskal: sorted edge একে একে চেক; Prim: vertex-set থেকে সস্তা edge দিয়ে প্রসার। running total দেখানো।
+> - **লক্ষ্য:** দুই greedy পদ্ধতির পার্থক্য ও cycle-এড়ানো।
+
+## অনুশীলন
+
+- একই graph-এ Prim ও Kruskal একই total দেয় কিনা যাচাই করো।

@@ -1,0 +1,87 @@
+---
+title: "Breadth First Search (BFS): স্তরে স্তরে ঘোরা"
+description: queue দিয়ে স্তর-ভিত্তিক প্রসার; unweighted graph-এ shortest path।
+---
+
+## কী শিখব
+
+- স্তরে স্তরে ঘোরা; unweighted shortest path
+
+## ধারণা
+
+BFS শুরু node থেকে **স্তরে স্তরে** ছড়ায় (queue দিয়ে), আগে ১ ধাপ দূরের সব, তারপর ২ ধাপ। তাই unweighted graph-এ **সবচেয়ে কম edge-এর পথ** (shortest path) দেয়। "visited" set দিয়ে cycle সামলাই।
+
+## কোড উদাহরণ
+
+```js
+// আগের পাতার Graph class (adjacency list)
+class Graph {
+  constructor() { this.adj = new Map(); }
+  addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
+  addEdge(u, v) {
+    this.addVertex(u); this.addVertex(v);
+    this.adj.get(u).push(v);
+    this.adj.get(v).push(u);
+  }
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+
+const g = new Graph();
+g.addEdge("A", "B"); g.addEdge("A", "C");
+g.addEdge("B", "D"); g.addEdge("C", "D");
+
+function bfs(graph, start) {
+  const visited = new Set([start]);
+  const queue = [start], order = [];
+  while (queue.length) {
+    const node = queue.shift();          // FIFO
+    order.push(node);
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) {          // আগে দেখিনি?
+        visited.add(next);
+        queue.push(next);                // পেছনে যোগ
+      }
+    }
+  }
+  return order;
+}
+console.log(bfs(g, "A")); // ['A','B','C','D']
+
+// unweighted shortest path (কত ধাপ দূরে)
+function shortestPathBFS(graph, start, target) {
+  const visited = new Set([start]);
+  const queue = [[start, 0]];            // [node, distance]
+  while (queue.length) {
+    const [node, dist] = queue.shift();
+    if (node === target) return dist;
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) { visited.add(next); queue.push([next, dist + 1]); }
+    }
+  }
+  return -1;
+}
+console.log(shortestPathBFS(g, "A", "D")); // 2
+```
+
+## কোড ব্রেকডাউন
+
+- **queue** মানে স্তরভিত্তিক প্রসার।
+- **visited** মানে পুনরাবৃত্তি/cycle বন্ধ (graph-এ অপরিহার্য)।
+- প্রতিটা node-এর সাথে distance রাখলে shortest path।
+
+## Complexity
+
+- O(V + E) time; O(V) space।
+
+## Animation Spec
+
+> **Animation Spec: BFS Ripple**
+>
+> - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue।
+> - **ইনপুট:** start node।
+> - **ধাপ:** প্রতিটা স্তর একই রঙে; visited node বেগুনি; queue-এর enqueue/dequeue দেখা যায়।
+> - **লক্ষ্য:** BFS অর্থাৎ স্তর-ভিত্তিক প্রসার অর্থাৎ shortest (unweighted)।
+
+## অনুশীলন
+
+- BFS দিয়ে graph connected কিনা বের করো।

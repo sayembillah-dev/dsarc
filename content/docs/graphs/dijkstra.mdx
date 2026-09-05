@@ -1,0 +1,74 @@
+---
+title: "Dijkstra's Algorithm: Weighted Shortest Path"
+description: ওজনসহ graph-এ সবচেয়ে কম খরচের পথ, priority queue আর relaxation দিয়ে।
+---
+
+## কী শিখব
+
+- ওজনসহ graph-এ সবচেয়ে কম খরচের পথ
+
+## ধারণা
+
+BFS unweighted-এ shortest দেয়, কিন্তু edge-এ ওজন থাকলে (রাস্তার দূরত্ব) BFS যথেষ্ট নয়। **Dijkstra** প্রতিবার **এখন পর্যন্ত সবচেয়ে কাছের** node বেছে (min-heap/priority queue দিয়ে) তার প্রতিবেশীদের দূরত্ব হালনাগাদ করে (**relaxation**)।
+
+<Callout type="warn" title="সীমা: negative weight-এ Dijkstra নয়">
+edge weight **negative** হলে Dijkstra ভুল করতে পারে; তখন Bellman-Ford (পরের পাতা) ব্যবহার করো।
+</Callout>
+
+## কোড উদাহরণ
+
+```js
+// graph: Map<node, [[neighbor, weight], ...]>
+function dijkstra(graph, start) {
+  const dist = new Map();
+  for (const node of graph.keys()) dist.set(node, Infinity);
+  dist.set(start, 0);
+
+  // সরল priority queue (বড় graph-এ MinHeap ব্যবহার করো, section 12)
+  const pq = [[0, start]];             // [distance, node]
+  while (pq.length) {
+    pq.sort((a, b) => a[0] - b[0]);    // সবচেয়ে কাছেরটা আগে
+    const [d, node] = pq.shift();
+    if (d > dist.get(node)) continue;  // পুরনো/বাসি entry বাদ
+    for (const [next, weight] of graph.get(node)) {
+      const newDist = d + weight;
+      if (newDist < dist.get(next)) {  // relaxation: ছোট পথ পেলাম
+        dist.set(next, newDist);
+        pq.push([newDist, next]);
+      }
+    }
+  }
+  return dist;                          // start থেকে সবার সর্বনিম্ন দূরত্ব
+}
+
+const wg = new Map([
+  ["A", [["B", 1], ["C", 4]]],
+  ["B", [["C", 2], ["D", 5]]],
+  ["C", [["D", 1]]],
+  ["D", []],
+]);
+console.log(dijkstra(wg, "A")); // A:0, B:1, C:3, D:4
+```
+
+## কোড ব্রেকডাউন
+
+- `dist`: start থেকে প্রতিটা node-এ এখন পর্যন্ত জানা সর্বনিম্ন দূরত্ব।
+- **relaxation:** `d + weight` যদি `dist`-এর পরিচিত মানের চেয়ে ছোট হয়, ছোট পথ পাওয়া গেছে, আপডেট।
+- সবসময় সবচেয়ে কাছের unprocessed node আগে, priority queue-এর কাজ।
+
+## Complexity
+
+- min-heap দিয়ে O((V + E) log V)।
+
+## Animation Spec
+
+> **Animation Spec: Dijkstra Wavefront**
+>
+> - **দৃশ্য:** weighted graph; প্রতিটা node-এ current best distance লেবেল; priority queue পাশে।
+> - **ইনপুট:** start node; edge weight editable।
+> - **ধাপ:** সবচেয়ে কাছের node "settle" (সবুজ); প্রতিবেশী distance relax (হলুদ flash)।
+> - **লক্ষ্য:** greedy "কাছেরটা আগে" ও relaxation বোঝা।
+
+## অনুশীলন
+
+- একটা edge weight negative করে দেখো কেন Dijkstra ভুল করতে পারে।

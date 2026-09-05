@@ -1,0 +1,89 @@
+---
+title: "A* Search Algorithm: Heuristic-গাইডেড খোঁজ"
+description: heuristic যোগ করে target-এর দিকে ঝুঁকে দ্রুত shortest path, গেম/ম্যাপ-এ।
+---
+
+## কী শিখব
+
+- heuristic দিয়ে দ্রুত shortest path (গেম/ম্যাপ-এ)
+
+## ধারণা
+
+Dijkstra সব দিকে সমানভাবে খোঁজে। **A\*** একটা **heuristic** (আন্দাজ, যেমন সরলরেখা দূরত্ব) যোগ করে target-এর দিকে খোঁজাকে "পক্ষপাতী" করে, ফলে অনেক দ্রুত। মূল সূত্র:
+
+```
+f(n) = g(n) + h(n)
+g = start থেকে n পর্যন্ত বাস্তব খরচ
+h = n থেকে target পর্যন্ত আন্দাজ খরচ (heuristic)
+```
+
+**h সঠিক (admissible, কখনো overestimate করে না) হলে A\* সবচেয়ে ভালো পথ নিশ্চিত করে।**
+
+## কোড উদাহরণ (গ্রিডে, সরল কাঠামো)
+
+```js
+// গ্রিডে চারদিকের প্রতিবেশী (0 = পথ, 1 = দেয়াল)
+function neighbors(grid, [r, c]) {
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const out = [];
+  for (const [dr, dc] of dirs) {
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < grid.length && nc >= 0 && nc < grid[0].length && grid[nr][nc] === 0) {
+      out.push([nr, nc]);
+    }
+  }
+  return out;
+}
+
+function aStar(grid, start, goal, h) {
+  const key = ([r, c]) => `${r},${c}`;
+  const open = [[h(start, goal), 0, start]]; // [f, g, node]
+  const gScore = new Map([[key(start), 0]]);
+  while (open.length) {
+    open.sort((a, b) => a[0] - b[0]);        // ছোট f আগে
+    const [, g, node] = open.shift();
+    if (key(node) === key(goal)) return g;   // পৌঁছেছি
+    for (const next of neighbors(grid, node)) {
+      const tentative = g + 1;               // প্রতি পদক্ষেপ খরচ 1
+      if (tentative < (gScore.get(key(next)) ?? Infinity)) {
+        gScore.set(key(next), tentative);
+        open.push([tentative + h(next, goal), tentative, next]); // f = g + h
+      }
+    }
+  }
+  return -1;
+}
+
+// Manhattan distance heuristic (গ্রিডের জন্য)
+const manhattan = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+
+const grid = [
+  [0, 0, 0, 0],
+  [1, 1, 0, 1],
+  [0, 0, 0, 0],
+];
+console.log(aStar(grid, [0, 0], [2, 3], manhattan)); // 5
+```
+
+## কোড ব্রেকডাউন
+
+- `h = 0` দিলে A\* ঠিক Dijkstra হয়ে যায়।
+- ভালো heuristic মানে কম node explore, অর্থাৎ দ্রুত।
+- গেম pathfinding, GPS routing-এ ব্যাপক ব্যবহৃত।
+
+## Complexity
+
+- heuristic-নির্ভর; ভালো h-এ Dijkstra-র চেয়ে অনেক কম node।
+
+## Animation Spec
+
+> **Animation Spec: A\* vs Dijkstra Race**
+>
+> - **দৃশ্য:** গ্রিড-ম্যাপ (দেয়াল সহ); দুটো search পাশাপাশি, একটায় h=0 (Dijkstra), একটায় Manhattan।
+> - **ইনপুট:** start/goal/দেয়াল আঁকা; heuristic নির্বাচন।
+> - **ধাপ:** explored cell রঙ পায়; A\* goal-এর দিকে ঝুঁকে কম cell খোঁজে।
+> - **লক্ষ্য:** heuristic কীভাবে খোঁজা "গাইড" করে।
+
+## অনুশীলন
+
+- একটা inadmissible (অতিরঞ্জিত) heuristic দিলে কী সমস্যা হতে পারে ভাবো।

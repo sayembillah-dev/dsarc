@@ -1,0 +1,62 @@
+---
+title: "Graph উপস্থাপন: Adjacency List বনাম Matrix"
+description: graph কোডে রাখার দুই প্রধান উপায়, sparse graph-এ list, dense graph-এ matrix।
+---
+
+## কী শিখব
+
+- graph কোডে কীভাবে রাখব
+
+## ধারণা
+
+দুই প্রধান উপায়:
+
+- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের তালিকা (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V + E)।
+- **Adjacency Matrix:** V×V গ্রিড; `matrix[i][j] = 1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V²), dense graph-এ ভালো।
+
+বাস্তবে বেশিরভাগ সমস্যায় **adjacency list** ব্যবহার হয়।
+
+## কোড উদাহরণ
+
+```js
+class Graph {
+  constructor() { this.adj = new Map(); }
+
+  addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
+
+  addEdge(u, v) {                 // undirected
+    this.addVertex(u); this.addVertex(v);
+    this.adj.get(u).push(v);
+    this.adj.get(v).push(u);      // directed হলে এই লাইন বাদ
+  }
+
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+
+const g = new Graph();
+g.addEdge("A", "B"); g.addEdge("A", "C");
+g.addEdge("B", "D"); g.addEdge("C", "D");
+console.log(g.neighbors("A")); // ['B','C']
+```
+
+## কোড ব্রেকডাউন
+
+- `Map<vertex, neighbors[]>`: প্রতিটা vertex-এর সরাসরি প্রতিবেশীর তালিকা।
+- undirected-এ দুই দিকেই edge যোগ; directed-এ এক দিকে।
+
+## Complexity
+
+- list: space O(V + E); matrix: space O(V²)।
+
+## Animation Spec
+
+> **Animation Spec: List vs Matrix**
+>
+> - **দৃশ্য:** বাঁয়ে গ্রাফ, ডানে একই graph-এর adjacency list ও matrix পাশাপাশি।
+> - **ইনপুট:** edge যোগ।
+> - **ধাপ:** edge যোগ করলে list-এ entry ও matrix-এ cell একসাথে আপডেট।
+> - **লক্ষ্য:** দুই উপস্থাপনের trade-off।
+
+## অনুশীলন
+
+- ওপরের graph-এর adjacency matrix হাতে আঁকো।
