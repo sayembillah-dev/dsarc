@@ -1,0 +1,55 @@
+---
+title: Loops (পুনরাবৃত্তি)
+description: for, while ও for...of দিয়ে একই কাজ বারবার করা।
+---
+
+## কী শিখব
+
+- একই কাজ বারবার করা: `for`, `while`, `for...of`
+
+## ধারণা
+
+Loop DSA-র প্রাণ। array-এর প্রতিটা উপাদানে যেতে, বারবার তুলনা করতে, সব জায়গায় loop লাগে।
+
+## কোড উদাহরণ
+
+```js
+// ১) সাধারণ for loop: index দরকার হলে
+for (let i = 0; i < 5; i++) {
+  console.log("i =", i); // 0,1,2,3,4
+}
+
+// ২) for...of: array-এর মান সরাসরি চাই
+const fruits = ["আম", "জাম", "কাঁঠাল"];
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+
+// ৩) while: কতবার চলবে আগে জানা নেই
+let n = 8;
+while (n > 1) {
+  n = Math.floor(n / 2); // অর্ধেক করতে থাকি
+  console.log(n);        // 4, 2, 1
+}
+```
+
+## কোড ব্রেকডাউন
+
+- `for (let i = 0; i < 5; i++)`: শুরু (`i=0`), শর্ত (`i<5`), প্রতিবার শেষে (`i++` মানে `i` এক বাড়ে)।
+- `for...of`: প্রতিটা মান একবার করে দেয়, index লাগে না।
+- `while`: শর্ত true থাকা পর্যন্ত চলে। শর্ত কখনো false না হলে **infinite loop** হবে, সাবধান!
+
+## Complexity
+
+`n` বার চললে O(n)। loop-এর ভেতর loop হলে O(n²)।
+
+> **Animation Spec: Loop Tracer**
+>
+> - **দৃশ্য:** array-এর উপরে একটা কমলা pointer, পাশে `i`-এর মান, নিচে execution counter।
+> - **ইনপুট:** array size, loop type (for / while) নির্বাচন।
+> - **ধাপ:** প্রতিটা iteration-এ pointer এক ঘর সরবে, counter বাড়বে; কতবার চলল গোনা হবে।
+> - **লক্ষ্য:** loop কতবার চলে, complexity-র সাথে সংযোগ তৈরি।
+
+## অনুশীলন
+
+- ১ থেকে ১০০ পর্যন্ত সব জোড় সংখ্যার যোগফল বের করো।

@@ -1,0 +1,59 @@
+---
+title: Arrays ও Objects (গভীরে)
+description: Array ও Object-এর মূল অপারেশন, DSA-র বেসিক building block।
+---
+
+## কী শিখব
+
+- Array ও Object-এর মূল অপারেশন (DSA-র বেসিক building block)
+
+## ধারণা
+
+- **Array**: ক্রমানুসারে সাজানো তালিকা, index দিয়ে অ্যাক্সেস (`arr[0]`)।
+- **Object**: key দিয়ে মান খোঁজা যায় (`student.name`)।
+
+## কোড উদাহরণ
+
+```js
+const nums = [10, 20, 30];
+console.log(nums[0]);      // 10 (প্রথম index 0)
+console.log(nums.length);  // 3
+
+nums.push(40);   // শেষে যোগ: [10,20,30,40]
+nums.pop();      // শেষেরটা বাদ: [10,20,30]
+nums.unshift(5); // শুরুতে যোগ: [5,10,20,30]
+nums.shift();    // শুরুরটা বাদ: [10,20,30]
+
+// ঘুরে ঘুরে কাজ (খুব দরকারি)
+const doubled = nums.map(x => x * 2);        // [20,40,60]
+const bigs = nums.filter(x => x > 15);       // [20,30]
+const total = nums.reduce((sum, x) => sum + x, 0); // 60
+
+// Object
+const student = { name: "Rahim", roll: 5 };
+console.log(student.name);   // Rahim
+student.dept = "CSE";        // নতুন key যোগ
+```
+
+## কোড ব্রেকডাউন
+
+- `push/pop`: শেষ প্রান্তে যোগ/বাদ (O(1))।
+- `unshift/shift`: শুরুতে যোগ/বাদ (O(n), কারণ সবাইকে সরাতে হয়)।
+- `map`: প্রতিটা মান রূপান্তর করে নতুন array।
+- `filter`: শর্ত মেলে এমন মান নিয়ে নতুন array।
+- `reduce`: সব মান মিলিয়ে একটা ফলাফল (যেমন যোগফল)।
+
+## Complexity
+
+index access O(1); `map/filter/reduce` O(n)।
+
+> **Animation Spec: Array Ops Playground**
+>
+> - **দৃশ্য:** একসারি box (array), index লেখা নিচে।
+> - **ইনপুট:** push/pop/shift/unshift বাটন, মান টাইপ করার ঘর।
+> - **ধাপ:** push হলে ডান পাশে box স্লাইড করে ঢুকবে; shift হলে বাম box বেরিয়ে বাকিরা এক ঘর সরবে (এই "সরানো"-ই O(n))।
+> - **লক্ষ্য:** কেন শুরুতে যোগ/বাদ ব্যয়বহুল তা দেখা।
+
+## অনুশীলন
+
+- একটা array থেকে শুধু জোড় সংখ্যা `filter` দিয়ে বের করো।

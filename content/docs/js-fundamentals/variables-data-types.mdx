@@ -1,0 +1,65 @@
+---
+title: ভেরিয়েবল ও Data Types
+description: let ও const দিয়ে ডেটা জমা রাখা এবং JavaScript-এর প্রধান data type-গুলোর পরিচিতি।
+---
+
+## কী শিখব
+
+- ডেটা কোথায় জমা রাখব (`let`, `const`)
+- প্রধান data type গুলো
+
+## ধারণা
+
+**Variable** হলো একটা নামওয়ালা box, যেখানে ডেটা জমা রাখা যায়। পরে সেই নাম দিয়ে ডেটা ফেরত পাওয়া যায়।
+
+- `const`: এমন box যার মান একবার দিলে আর বদলাবে না (constant)
+- `let`: এমন box যার মান পরে বদলানো যায়
+
+**প্রধান Data Type:**
+
+| Type | উদাহরণ | মানে |
+|------|--------|------|
+| Number | `42`, `3.14` | সংখ্যা |
+| String | `"hello"` | লেখা |
+| Boolean | `true`, `false` | হ্যাঁ/না |
+| null | `null` | ইচ্ছাকৃত খালি |
+| undefined | `undefined` | মান দেওয়া হয়নি |
+| Object | `{ }` | key-value জোড়া |
+| Array | `[ ]` | তালিকা |
+
+## কোড উদাহরণ
+
+```js
+const name = "Rahim";      // string: বদলাবে না
+let age = 20;              // number: বদলাতে পারে
+age = 21;                 // ঠিক আছে, let বলে বদলানো গেল
+
+const isStudent = true;    // boolean
+const marks = [80, 75, 90]; // array (তালিকা)
+const student = { name: "Rahim", age: 21 }; // object
+
+console.log(typeof name);   // "string"
+console.log(typeof age);    // "number"
+console.log(typeof marks);  // "object" (array-ও object)
+```
+
+## কোড ব্রেকডাউন
+
+- `const name = "Rahim"`: `name` box-এ "Rahim" রাখলাম, আর বদলাবে না।
+- `let age = 20; age = 21;`: `let` বলে মান বদলানো গেল।
+- `typeof x`: x-এর টাইপ কী তা বলে দেয়।
+
+## Complexity
+
+variable-এ মান রাখা/পড়া O(1)।
+
+> **Animation Spec: Variable Boxes**
+>
+> - **দৃশ্য:** কয়েকটা লেবেলযুক্ত box (name, age...)। প্রতিটার ভেতরে বর্তমান মান।
+> - **ইনপুট:** ইউজার মান টাইপ করে box-এ "assign" করতে পারবে।
+> - **ধাপ:** assign করলে মান box-এ উড়ে ঢুকবে; `const` box-এ বদলাতে চাইলে লাল "locked" দেখাবে।
+> - **লক্ষ্য:** `const` vs `let`-এর পার্থক্য এবং variable = named box ধারণা।
+
+## অনুশীলন
+
+- একটা `const` দিয়ে তোমার জন্মসাল রাখো, `let` দিয়ে বয়স রাখো।

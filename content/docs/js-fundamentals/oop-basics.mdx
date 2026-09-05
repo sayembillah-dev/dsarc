@@ -1,0 +1,54 @@
+---
+title: OOP Basics (Class, Object)
+description: class দিয়ে নিজের data structure বানানোর ভিত্তি।
+---
+
+## কী শিখব
+
+- `class` দিয়ে নিজের data structure বানানোর ভিত্তি
+
+## ধারণা
+
+আমরা Linked List, Stack, Tree ইত্যাদি **class** দিয়ে বানাব। Class হলো একটা "blueprint" (নকশা), আর object হলো সেই নকশা থেকে বানানো জিনিস।
+
+## কোড উদাহরণ
+
+```js
+class Student {
+  constructor(name, roll) {   // object বানানোর সময় চলে
+    this.name = name;         // this = এই object
+    this.roll = roll;
+  }
+
+  introduce() {               // method (object-এর কাজ)
+    return `আমি ${this.name}, roll ${this.roll}`;
+  }
+}
+
+const s1 = new Student("Rahim", 5); // new দিয়ে object তৈরি
+console.log(s1.introduce());        // আমি Rahim, roll 5
+console.log(s1.name);               // Rahim
+```
+
+## কোড ব্রেকডাউন
+
+- `class Student`: blueprint সংজ্ঞা।
+- `constructor`: `new Student(...)` করলে এটাই প্রথমে চলে, initial মান সেট করে।
+- `this`: বর্তমান object-কে বোঝায়।
+- `method`: object-এর ভেতরের function (যেমন `introduce`)।
+- `new`: blueprint থেকে বাস্তব object বানায়।
+
+## Complexity
+
+object তৈরি O(1)।
+
+> **Animation Spec: Class Blueprint থেকে Objects**
+>
+> - **দৃশ্য:** বাঁয়ে একটা "blueprint" কার্ড; ডানে `new` চাপলে বাস্তব object কার্ড তৈরি হয়।
+> - **ইনপুট:** name, roll ফিল্ড; "Create Object" বাটন।
+> - **ধাপ:** blueprint থেকে তীর গিয়ে নতুন object কার্ড বানাবে, তার মান পূরণ হবে।
+> - **লক্ষ্য:** class (নকশা) vs object (বাস্তব জিনিস) পার্থক্য।
+
+## অনুশীলন
+
+- একটা `Rectangle` class বানাও যার `area()` method আছে।

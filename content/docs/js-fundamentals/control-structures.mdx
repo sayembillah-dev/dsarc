@@ -1,0 +1,56 @@
+---
+title: Control Structures (if / else / switch)
+description: শর্ত অনুযায়ী প্রোগ্রামকে সিদ্ধান্ত নিতে শেখানো।
+---
+
+## কী শিখব
+
+- শর্ত অনুযায়ী সিদ্ধান্ত নেওয়া
+
+## ধারণা
+
+প্রোগ্রামকে "যদি এমন হয়, তাহলে এটা করো" শেখাতে হয় **conditional** দিয়ে। এটা DSA-তে অসংখ্যবার লাগবে (যেমন: "যদি target পেয়ে যাই, থেমে যাও")।
+
+## কোড উদাহরণ
+
+```js
+const marks = 75;
+
+if (marks >= 80) {
+  console.log("A+ গ্রেড");
+} else if (marks >= 60) {
+  console.log("A গ্রেড");        // এটা ছাপাবে
+} else {
+  console.log("আরও চেষ্টা করো");
+}
+
+// switch: একই মানের অনেক case-এর জন্য পরিষ্কার
+const day = 3;
+switch (day) {
+  case 1: console.log("শনিবার"); break;
+  case 3: console.log("সোমবার"); break; // এটা ছাপাবে
+  default: console.log("অন্য দিন");
+}
+```
+
+## কোড ব্রেকডাউন
+
+- `if`: শর্ত true হলে ভেতরের block চলে।
+- `else if`: আগের শর্ত false হলে পরের শর্ত দেখে।
+- `else`: কোনোটাই না মিললে এটা চলে।
+- `switch/case`: একই variable-এর অনেকগুলো নির্দিষ্ট মান চেক করতে সুবিধাজনক। `break` না দিলে পরের case-ও চলে যায় (fall-through)।
+
+## Complexity
+
+O(1) (শর্ত সংখ্যা নির্দিষ্ট হলে)।
+
+> **Animation Spec: Decision Flow**
+>
+> - **দৃশ্য:** flowchart: diamond (শর্ত) থেকে দুটো তীর (true/false)।
+> - **ইনপুট:** `marks`-এর মান slider দিয়ে বদলানো।
+> - **ধাপ:** মান বদলালে কোন path আলোকিত হচ্ছে ও কোন output আসছে দেখা যাবে।
+> - **লক্ষ্য:** শর্ত অনুযায়ী নিয়ন্ত্রণ কোন পথে যায় তা দেখা।
+
+## অনুশীলন
+
+- একটা সংখ্যা positive, negative না zero, if/else দিয়ে বলো।

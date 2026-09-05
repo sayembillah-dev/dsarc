@@ -1,0 +1,4 @@
+{
+  "title": "JavaScript Fundamentals",
+  "pages": ["index", "why-javascript", "variables-data-types", "operators", "control-structures", "loops", "functions", "arrays-objects", "oop-basics", "pseudo-code"]
+}

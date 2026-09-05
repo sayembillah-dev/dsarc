@@ -1,0 +1,52 @@
+---
+title: Operators (অপারেটর)
+description: Arithmetic, comparison ও logical operator দিয়ে মানের উপর কাজ করা।
+---
+
+## কী শিখব
+
+- গণিত, তুলনা, ও লজিক অপারেটর
+
+## ধারণা
+
+Operator দিয়ে মানের উপর কাজ করা হয়।
+
+- **Arithmetic:** `+ - * / %` (`%` = ভাগশেষ/modulo)
+- **Comparison:** `=== !== > < >= <=` (ফলাফল boolean)
+- **Logical:** `&&` (AND), `||` (OR), `!` (NOT)
+
+<Callout type="warn" title="সবসময় === ব্যবহার করো">
+`===` টাইপসহ মিলিয়ে দেখে (strict), তাই ভুল কম হয়। `==` ব্যবহার করবে না।
+</Callout>
+
+## কোড উদাহরণ
+
+```js
+console.log(10 + 3);   // 13
+console.log(10 % 3);   // 1  (10 ÷ 3-এর ভাগশেষ)
+console.log(10 === 10);// true
+console.log(5 > 3 && 2 < 1); // false (AND: দুটোই true হতে হবে)
+console.log(5 > 3 || 2 < 1); // true  (OR: একটা true হলেই চলে)
+console.log(!true);    // false (NOT: উল্টে দেয়)
+```
+
+## কোড ব্রেকডাউন
+
+- `%` (modulo): জোড়/বিজোড় বের করতে খুব কাজে লাগে: `n % 2 === 0` মানে জোড়।
+- `&&`: দুই দিকই true হলে true।
+- `||`: যেকোনো একদিক true হলেই true।
+
+## Complexity
+
+O(1)।
+
+> **Animation Spec: Truth Table Explorer**
+>
+> - **দৃশ্য:** দুটো toggle switch (A, B) আর তিনটা bulb (`A && B`, `A || B`, `!A`)।
+> - **ইনপুট:** A ও B on/off করা।
+> - **ধাপ:** switch বদলালে bulb জ্বলবে/নিভবে অনুযায়ী।
+> - **লক্ষ্য:** AND/OR/NOT-এর আচরণ হাতে-কলমে বোঝা।
+
+## অনুশীলন
+
+- একটা সংখ্যা জোড় কিনা `%` দিয়ে চেক করো।
