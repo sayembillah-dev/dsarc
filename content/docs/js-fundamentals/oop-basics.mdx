@@ -9,7 +9,7 @@ description: class দিয়ে নিজের data structure বানা�
 
 ## ধারণা
 
-আমরা Linked List, Stack, Tree ইত্যাদি **class** দিয়ে বানাব। Class হলো একটা "blueprint" (নকশা), আর object হলো সেই নকশা থেকে বানানো জিনিস।
+ভাবো তো, বিল্ডার একটা নকশা দিয়ে বারবার ফ্ল্যাট বানায়। নকশা একটাই, কিন্তু ফ্ল্যাট অনেক, আর প্রতিটা ফ্ল্যাটের রং-দরজা আলাদা হতে পারে। প্রোগ্রামিং-এ সেই নকশার নাম **class**, আর নকশা দেখে বানানো ফ্ল্যাটটা **object**। পরে Linked List, Stack, Tree, সবই আমরা class দিয়ে বানাব।
 
 ## কোড উদাহরণ
 
@@ -32,15 +32,15 @@ console.log(s1.name);               // Rahim
 
 ## কোড ব্রেকডাউন
 
-- `class Student`: blueprint সংজ্ঞা।
-- `constructor`: `new Student(...)` করলে এটাই প্রথমে চলে, initial মান সেট করে।
+- `class Student`: এটাই blueprint-এর সংজ্ঞা।
+- `constructor`: `new Student(...)` করলে এটা প্রথমে চলে, initial মান সেট করে।
 - `this`: বর্তমান object-কে বোঝায়।
 - `method`: object-এর ভেতরের function (যেমন `introduce`)।
 - `new`: blueprint থেকে বাস্তব object বানায়।
 
 ## Complexity
 
-object তৈরি O(1)।
+object তৈরি করা O(1)।
 
 > **Animation Spec: Class Blueprint থেকে Objects**
 >
@@ -51,4 +51,4 @@ object তৈরি O(1)।
 
 ## অনুশীলন
 
-- একটা `Rectangle` class বানাও যার `area()` method আছে।
+- একটা `Rectangle` class বানাও, যার `area()` method থাকবে।
