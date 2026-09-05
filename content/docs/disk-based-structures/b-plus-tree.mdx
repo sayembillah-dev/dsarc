@@ -1,0 +1,320 @@
+---
+title: "B+ Tree: database-এর index যেভাবে দাঁড়িয়ে আছে"
+description: internal node শুধু signpost, সব record leaf-এ, leaf-গুলো পরস্পর linked। fanout বড় তাই কোটি record-এও height ৩-৪; range query মানে leaf ধরে হাঁটা।
+---
+
+আগের পাতার [2-3 tree](./two-three-tree.mdx) দেখিয়েছিল split দিয়ে গাছ balanced রাখা যায়। B+ tree সেই একই কায়দাকে নিয়ে গেছে এমন জায়গায় যেখানে প্রতিটা node দেখতে যাওয়ার দাম আকাশছোঁয়া: hard disk। ফলাফল? আজকের প্রায় সব relational database-এর index-এর ভিতর এই গাছই বসে আছে।
+
+## কী শিখব
+
+- B+ tree আর আগের tree-গুলোর পার্থক্য: internal node শুধু guide, record শুধু leaf-এ
+- Leaf split-এ key-এর **কপি** ওঠে, internal split-এ key **চলে** ওঠে: এই পার্থক্যটাই সব
+- কেন একশ মিলিয়ন record-ও মাত্র ৩-৪টা disk read-এ পাওয়া যায়
+- Linked leaf দিয়ে range query কীভাবে উড়ে যায়
+
+## ধারণা
+
+ধরো তুমি একটা বিশাল গোডাউনে জিনিস সাজাচ্ছ, কিন্তু প্রতিবার একটা ঘরে ঢুকতে (disk read) তোমার মিনিটখানেক লেগে যায়। তুমি কি চাবে ঘরগুলো লম্বা সিঁড়ির মতো একটার উপর একটা থাকুক? নাকি এমন কটা চওড়া হল, যেখানে এক নজরেই শ-শ তাক দেখা যায়? অবশ্যই চওড়া হল।
+
+B+ tree-র পুরো ডিজাইন এই এক বাক্য থেকে: **node যত চওড়া, গাছ তত খাটো, disk read তত কম।** 2-3 tree-র node-এ ২-৩টা child, B+ tree-এ order m হলে m-টা পর্যন্ত child। বাস্তব database-এ একটা node = একটা disk page (MySQL-এ 16KB), সেখানে কয়েকশ key ঢুকে যায়, মানে fanout-ই কয়েকশ।
+
+তিনটা নিয়মে পুরো গাছ:
+
+- **Internal node শুধু signpost:** সেখানে key আছে, কিন্তু record নেই। ওরা শুধু বলে "এর চেয়ে ছোট হলে বামে, নয়তো ডানে"।
+- **সব record leaf-এ:** খুঁজতে হলে শেষ পর্যন্ত leaf-এই নামতেই হবে।
+- **Leaf-গুলো পরস্পর linked:** ডানদিকে হাঁটার জন্য আর উপরে উঠতে হয় না।
+
+```text
+               [30 | 60]               ← internal: শুধু guide key
+              /    |    \
+   [10 20] → [30 40 50] → [60 70]      ← leaf: record + পরের leaf-এর লিঙ্ক
+```
+
+## ধাপে ধাপে: order-4 গাছে ১১টা insert
+
+Order 4 মানে প্রতি node-এ সর্বোচ্চ 3টা key, internal node-এ সর্বোচ্চ 4টা child; leaf-ও 3টা record-এর বেশি ধরে না। দুই রকম split আলাদা করে মনে রাখো:
+
+- **Leaf split:** 4টা record জমলে দুই ভাগ (2+2), ডানদিকের প্রথম key-র **কপি** parent-এ ওঠে। Record leaf-এ থেকেই যায়।
+- **Internal split:** 4টা key জমলে মাঝের key **চলে** parent-এ যায়, নিচে আর থাকে না (ওখানে record-ই নেই)।
+
+Sequence: [10, 20, 5, 15, 25, 30, 8, 35, 40, 45, 50]।
+
+| ধাপ | Insert | কী ঘটল | গাছের অবস্থা |
+|-----|--------|---------|----------------|
+| 1-3 | 10, 20, 5 | একটাই leaf root ভরছে | [5 10 20] |
+| 4 | 15 | leaf overflow → split, 15-এর **কপি** ওঠে | [15] / [5 10] → [15 20] |
+| 5 | 25 | ডান leaf-এ বসে | [15] / [5 10] → [15 20 25] |
+| 6 | 30 | leaf split, 25-এর কপি ওঠে | [15 25] / [5 10] → [15 20] → [25 30] |
+| 7, 8 | 8, 35 | দুটোই ঠিক leaf-এ বসে গেল, split নেই | [15 25] / [5 8 10] → [15 20] → [25 30 35] |
+| 9 | 40 | leaf split, 35-এর কপি ওঠে | [15 25 35] (root এখন ভর্তি) |
+| 10 | 45 | শেষ leaf-এ বসে | [15 25 35] / ... → [35 40 45] |
+| 11 | 50 | leaf split → root overflow → **internal split**, 35 **চলে** ওঠে | নিচে |
+
+ধাপ 11-এ দুই ধরনের split একসাথে দেখা গেল:
+
+```text
+50 বসাতে:  [35 40 45 50] overflow → ভাঙো, 45-এর কপি উপরে
+
+root:  [15 25 35 45]  →  এটাও overflow (4টা key) → internal split
+
+                 [35]                      ← 35 নিজে উঠে গেছে (চলে)
+                /    \
+          [15 25]    [45]
+          / |  \     /  \
+ [5 8 10]→[15 20]→[25 30]→[35 40]→[45 50]
+```
+
+জাদুটা দেখো: 35 এখন root-এ signpost, **আবার** leaf [35 40]-এ record হিসেবেও বসে আছে। Internal split-এ 35 leaf থেকে মুছে যায়নি, কারণ leaf split-এ ওঠা ছিল কপি। [2-3 tree](./two-three-tree.mdx)-তে median ওঠে গেলে নিচে আর থাকত না; এখানে থাকে। এটাই দুই গাছের সবচেয়ে বড় পার্থক্য।
+
+## কোড: পুরো implementation (insert + search + range query)
+
+```js
+const ORDER = 4;                 // প্রতি node সর্বোচ্চ ORDER-1 = 3টা key ধরে
+const MAX_KEYS = ORDER - 1;
+
+class LeafNode {
+  constructor() {
+    this.leaf = true;
+    this.keys = [];              // আসল record (সরলতার জন্য key-ই record)
+    this.next = null;            // পরের leaf-এর লিঙ্ক, range scan-এর প্রাণ
+  }
+}
+
+class InternalNode {
+  constructor() {
+    this.leaf = false;
+    this.keys = [];              // signpost (separator)
+    this.children = [];
+  }
+}
+
+class BPlusTree {
+  constructor() { this.root = new LeafNode(); }
+  search(key) {
+    const leaf = this._findLeaf(key);
+    let i = 0;
+    while (i < leaf.keys.length && leaf.keys[i] < key) i++;
+    return i < leaf.keys.length && leaf.keys[i] === key;
+  }
+  range(lo, hi) {
+    const result = [];
+    let leaf = this._findLeaf(lo);      // lo কোন leaf-এ থাকত, O(height)
+    while (leaf) {
+      for (const k of leaf.keys) {
+        if (k > hi) return result;      // hi পেরিয়ে গেলে থামো
+        if (k >= lo) result.push(k);
+      }
+      leaf = leaf.next;                 // পরের leaf-এ হেঁটে যাও
+    }
+    return result;
+  }
+  _findLeaf(key) {
+    let node = this.root;
+    while (!node.leaf) {
+      let i = 0;
+      while (i < node.keys.length && key >= node.keys[i]) i++;
+      node = node.children[i];          // key >= separator হলে ডানে
+    }
+    return node;
+  }
+  insert(key) {
+    const split = this._insert(this.root, key);
+    if (split) {
+      const newRoot = new InternalNode();
+      newRoot.keys = [split.up];
+      newRoot.children = [this.root, split.right];
+      this.root = newRoot;              // root split মানেই height এক বাড়া
+    }
+  }
+  _insert(node, key) {
+    if (node.leaf) {
+      let i = 0;
+      while (i < node.keys.length && key > node.keys[i]) i++;
+      node.keys.splice(i, 0, key);
+      if (node.keys.length <= MAX_KEYS) return null;
+      // Leaf split: ডান টুকরোর প্রথম key-র **কপি** উপরে ওঠে
+      const right = new LeafNode();
+      const mid = Math.ceil(node.keys.length / 2);
+      right.keys = node.keys.splice(mid);
+      right.next = node.next;           // লিঙ্ক দুটো ঠিক করে দাও
+      node.next = right;
+      return { up: right.keys[0], right };
+    }
+    let i = 0;
+    while (i < node.keys.length && key >= node.keys[i]) i++;
+    const split = this._insert(node.children[i], key);
+    if (!split) return null;
+    node.keys.splice(i, 0, split.up);
+    node.children.splice(i + 1, 0, split.right);
+    if (node.keys.length <= MAX_KEYS) return null;
+    // Internal split: মাঝের key **চলে** উপরে যায়, কপি থাকে না
+    const right = new InternalNode();
+    const upIndex = Math.ceil(node.keys.length / 2);   // 4 key হলে 2
+    right.keys = node.keys.splice(upIndex + 1);
+    right.children = node.children.splice(upIndex + 1);
+    const up = node.keys.pop();                        // median নিজে উঠে গেল
+    return { up, right };
+  }
+  levelOrder() {
+    const result = [];
+    const queue = [this.root];
+    let head = 0;
+    while (head < queue.length) {
+      const size = queue.length - head;
+      const level = [];
+      for (let k = 0; k < size; k++) {
+        const node = queue[head++];
+        level.push("[" + node.keys.join(" ") + "]");
+        if (!node.leaf) for (const c of node.children) queue.push(c);
+      }
+      result.push(level.join("  "));
+    }
+    return result;
+  }
+}
+const tree = new BPlusTree();
+for (const k of [10, 20, 5, 15, 25, 30, 8, 35, 40, 45, 50]) tree.insert(k);
+console.log(tree.levelOrder());
+// [ '[35]', '[15 25]  [45]', '[5 8 10]  [15 20]  [25 30]  [35 40]  [45 50]' ]
+console.log(tree.search(30));     // true
+// SQL-এ যেটা লিখত: SELECT * FROM t WHERE k BETWEEN 12 AND 40;
+console.log(tree.range(12, 40));  // [ 15, 20, 25, 30, 35, 40 ]
+```
+
+## ভ্যারিয়েন্ট ১: আসল B-tree (B+ ছাড়া)
+
+B-tree-তে record internal node-এও থাকে, key এক জায়গায়ই থাকে। পার্থক্যটা সামনে রাখলে:
+
+| ব্যাপার | B-tree | B+ tree |
+|---------|--------|---------|
+| record কোথায় | internal + leaf, সব জায়গায় | শুধু leaf-এ |
+| internal node-এ key | record-সহ, মোটা | শুধু signpost, slim |
+| একই page-এ fanout | কম | বেশি (key slim বলে) |
+| range query | গাছই ঘুরতে হয় (in-order) | leaf লিঙ্ক ধরে হাঁটা |
+| একটা key-র search | মাঝপথেই পেতে পারো | leaf পর্যন্ত নামতেই হবে |
+
+```js
+// B-tree node: key-এর পাশেই record, internal node-েও
+class BTreeNode {
+  constructor() {
+    this.keys = [];
+    this.records = [];      // প্রতিটা key-এর record, এখানেই পার্থক্য
+    this.children = [];
+  }
+}
+```
+
+Database-এ slim internal node মানে এক page-এ বেশি key, মানে বেশি fanout, মানে কম height। আর range query-তে B-tree-র লিঙ্কহীন leaf ঘুরতে গেলে প্রতিবার উপরে উঠে নামতে হয়, disk read বেড়ে যায়। এই দুই কারণেই MySQL (InnoDB), PostgreSQL, SQLite সবাই B+ বেছে নিয়েছে।
+
+## ভ্যারিয়েন্ট ২: bulk loading
+
+Sorted ডেটা হাতে থাকলে একটা একটা করে insert করা নির্বোধ কাজ: প্রতিটা insert-এ নামো, split করো। Bulk loading উল্টোটা করে: leaf-গুলো আগে বানিয়ে লিঙ্ক জুড়ে দাও, তারপর নিচ থেকে উপরে signpost বসাও, কোনো split-ই লাগে না। Database-এ `CREATE INDEX` চালালে বাস্তবেই এই কায়দা হয়।
+
+```js
+function bulkLoad(sortedKeys, leafCap) {
+  // ১) নিচের স্তর: leaf ভরো, next লিঙ্ক জুড়ে দাও
+  let level = [];
+  for (let i = 0; i < sortedKeys.length; i += leafCap) {
+    const leaf = new LeafNode();
+    leaf.keys = sortedKeys.slice(i, i + leafCap);
+    if (level.length) level[level.length - 1].next = leaf;
+    level.push(leaf);
+  }
+  // ২) উপরের স্তর: প্রতিটা group-এর separator = ডান child-এর প্রথম key
+  while (level.length > 1) {
+    const up = [];
+    for (let i = 0; i < level.length; i += MAX_KEYS + 1) {
+      const node = new InternalNode();
+      node.children = level.slice(i, i + MAX_KEYS + 1);
+      node.keys = node.children.slice(1).map((c) => firstKey(c));
+      up.push(node);
+    }
+    level = up;
+  }
+  return level[0];
+}
+
+function firstKey(node) {
+  while (!node.leaf) node = node.children[0];
+  return node.keys[0];
+}
+
+const loaded = new BPlusTree();
+loaded.root = bulkLoad([5, 8, 10, 15, 20, 25, 30, 35, 40, 45, 50], 3);
+console.log(loaded.levelOrder());
+// [ '[15 30 45]', '[5 8 10]  [15 20 25]  [30 35 40]  [45 50]' ]
+console.log(loaded.range(10, 35));  // [ 10, 15, 20, 25, 30, 35 ]
+```
+
+## কোড ব্রেকডাউন: insert আর দুই রকম split
+
+1. `constructor() { this.root = new LeafNode(); }` : খালি tree-র root-ই প্রথম leaf। প্রথম split পর্যন্ত গাছের height 1।
+2. `_findLeaf`-এ `key >= node.keys[i]` : separator-এর সমান হলে **ডানে** নামো। এই `>=`-টা গুরুত্বপূর্ণ: leaf split-এ কপি ওঠে বলে separator-এর সমান key তার ডানদিকের leaf-এই থাকে। `>` লিখলে কিছু key হারিয়ে যাবে।
+3. Leaf split-এ `right.next = node.next; node.next = right;` আর `return { up: right.keys[0], right }` : লিঙ্কের দুই লাইনের ক্রম ভুললে range query নিঃশব্দে আধপথে থেমে যাবে। আর `up`-এ ওঠে কপি, `right.keys[0]` leaf-এও থেকে গেল।
+4. Internal split-এ `const up = node.keys.pop()` : এখানে median নিজে উঠে গেল, node-এ আর নেই। কপি নয়, চলে যাওয়া। এই এক লাইনেই B আর B+-এর split-এর পার্থক্য লুকানো।
+5. `range()`-এ `if (k > hi) return result` : leaf-গুলো sorted আর linked বলে hi পেরোলেই থামা যায়, বাকি গাছ ঘোরার দরকারই নেই।
+
+## Complexity: disk read-এর ভাষায় হিসাব
+
+**Height কত?** ধরো fanout m (প্রতি internal node-এ সর্বোচ্চ m-টা child), n-টা record। Fill factor-এর নিয়মে প্রতিটা node (root ছাড়া) অন্তত অর্ধেক ভরা, মানে কমপক্ষে ceil(m/2)-টা child। তাহলে height h-এর গাছে leaf-এর সংখ্যা অন্তত 2 · (m/2)^(h-2) (root-এর অন্তত 2 child, বাকি স্তরে অন্তত m/2 করে)। উল্টো হিসাব: **h ≈ log_`{m/2}`(n) + কয়েকটা ধ্রুবক**, মানে search-এর খরচ O(log_m n)। ধরো একটা node = একটা 16KB page, key+pointer মিলে ~16 byte, fanout m ≈ 1000:
+
+```js
+function minHeight(n, fanout) {
+  let h = 1, cap = fanout;       // height 1: একটাই leaf
+  while (cap < n) { cap *= fanout; h++; }
+  return h;
+}
+console.log(minHeight(1e8, 10));    // 8
+console.log(minHeight(1e8, 100));   // 4
+console.log(minHeight(1e8, 1000));  // 3 - একশ মিলিয়ন record, মাত্র ৩ স্তর
+```
+
+**কেন disk read-ই আসল হিসাব?** RAM-এ comparison ন্যানোসেকেন্ডের খেলা, disk read মিলিসেকেন্ডের, প্রায় লক্ষ গুণ ধীর। একটা search-এ comparison হয়তো ~৩০টা হয়, কিন্তু page read হয় height-টাই, অর্থাৎ ৩। Balanced BST দিয়ে একই কাজ করলে height থাকত log2(10^8) ≈ 27, মানে 27টা disk read। 3 বনাম 27: এটাই B+ tree-র জয়ের গল্প।
+
+- **Search:** h-টা page read, O(log_m n)।
+- **Insert/delete:** নামা + split/merge, সব মিলে O(log_m n)।
+- **Range query (k-টা উত্তর):** একবার নামা O(log_m n), তারপর leaf লিঙ্কে k-টা পড়া, মোট O(log_m n + k)। অতিরিক্ত leaf-গুলোও disk-এ পাশাপাশি বসানো থাকে, তাই sequential read পাওয়া যায়।
+
+B+ tree-র আগে database-গুলো [ISAM](./isam.mdx) ব্যবহার করত, স্থির কাঠামো আর overflow chain-এর ওপর ভরসা। B+ tree কীভাবে সেই সমস্যা মিটাল, আর একটা index ঘিরে বাকি ডিজাইন সিদ্ধান্ত (clustered, secondary, covering) কী কী, সেটা পড়ো [Indexing](./indexing.mdx)-এ।
+
+## সাধারণ ভুল আর edge case
+
+**১. Leaf split-এ key মুছে উপরে তুলে ফেলা।**
+2-3/B-tree-র অভ্যাসে median নিচ থেকে সরিয়ে দিও। B+ tree-এ leaf split-এ ওঠে **কপি**, record leaf-এ থাকবেই। মুছে দিলে search আর ওই record পাবেই না, কারণ record একটাই জায়গায় থাকে: leaf-এ।
+
+**২. Split-এর সময় leaf-এর next লিঙ্ক ভেঙে ফেলা।**
+`right.next = node.next` আগে, `node.next = right` পরে। ক্রম উল্টালে বা ভুললে range query নিঃশব্দে আধটা উত্তর দেবে। এমন bug, যা unit test না লিখলে ধরাই কঠিন।
+
+**৩. Signpost-এ `>` আর `>=` গুলিয়ে ফেলা।**
+Separator-এর সমান key ডানদিকের child-এ থাকে (কপি ওখানেই গেছে)। `_findLeaf`-এ `>` লিখলে বাম child-এ নেমে key হারাবে। একটা অক্ষরের পার্থক্য, গোটা index-এর নির্ভুলতা।
+
+**৪. Internal node-এ key দেখেই ভেবে বসা record পাওয়া গেছে।**
+Internal key শুধু রাস্তার signpost। Record পেতে leaf পর্যন্ত নামতেই হবে। তাই B+ tree-র search-এর "পেলাম/পাইনি" সিদ্ধান্ত হয় শুধু leaf-এ, মাঝপথে কখনো নয়।
+
+**৫. Delete-এ underflow উপেক্ষা করা।**
+Leaf থেকে record সরিয়ে fill factor ceil(m/2)-এর নিচে ফেললে sibling থেকে borrow বা merge করতে হয়। না করলে গাছ আধাখালি node-এ ভরে যায়, height অযথা বাড়ে, invariant ভাঙে। (Insert-এর split-এর উল্টো খেলা; ধারণাটা [2-3 tree](./two-three-tree.mdx)-র delete ভ্যারিয়েন্টে পেয়েছ।)
+
+## Animation Spec
+
+> **Animation Spec: Copy Up, Sweep Right**
+>
+> - **দৃশ্য:** তিন স্তরের B+ tree; internal node-গুলো ধূসর (signpost), leaf-গুলো সবুজ (record), leaf-দের মাঝে তীরচিহ্নের লিঙ্ক।
+> - **ইনপুট:** insert sequence (preset: উপরের ১১টা) আর একটা range query [lo, hi]।
+> - **ধাপ:** leaf split-এ ডানদিকের প্রথম key-র একটা ছায়া-কপি উপরে ভেসে ওঠে; internal split-এ key নিজে উঠে যায়; range query-তে lo-তে নেমে লিঙ্ক ধরে ডানে হাঁটা, পড়া leaf-গুলো জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; order স্লাইডার (3/4/5); সাথে "B-tree mode" টগল, record কোথায় বসে তার তুলনা দেখানোর জন্য।
+> - **লক্ষ্য:** কপি বনাম চলে যাওয়া, আর linked leaf-ই range query-র আসল শক্তি।
+
+## অনুশীলন
+
+- **সহজ ১:** Order-3 B+ tree-তে হাতে [1..8] insert করে আঁকো। কোন key-গুলোর কপি উপরে উঠল তালিকা করো। হিন্ট: leaf split-ই একমাত্র সময়, যখন কপি ওঠে।
+- **সহজ ২:** উপরের গাছে হাতে `range(8, 30)` চালাও: কোন leaf-এ নামলে, কোন leaf-এ থামলে, কয়টা "leaf hop" লাগল।
+- **মাঝারি ১:** `count(lo, hi)` লেখো, যা range-এর সংখ্যাটা দেয় কিন্তু কোনো array বানায় না। হিন্ট: `range()`-এর লুপটাই চালাও, শুধু push-এর বদলে count বাড়াও। Complexity-র কোন অংশ বাঁচল ভেবে দেখো।
+- **মাঝারি ২:** Search-টা LeetCode 700 (Search in a Binary Search Tree)-র সাথে তুলনা করে লেখো: সেখানে দুই দরজা, এখানে m-টা। হিন্ট: `_findLeaf`-এর ভেতরের while-loop-টাই সেই search-এর m-way version।
+- **কঠিন:** `delete` implement করো borrow আর merge সহ, leaf লিঙ্ক অক্ষত রেখে। হিন্ট: leaf খালি হলে দুই পাশ থেকে লিঙ্ক জুড়ে দিতে হয়। Inspiration-এর জন্য LeetCode 715 (Range Module) দেখো, sorted ব্যবধানের bookkeeping-ই সেখানে আসল খেলা।
+
+## সারসংক্ষেপ
+
+- B+ tree = চওড়া balanced tree: internal node শুধু signpost, সব record leaf-এ, leaf-গুলো পরস্পর linked। Leaf split-এ কপি ওঠে, internal split-এ key চলে ওঠে।
+- Fanout কয়েকশ হলে কোটি কোটি record-এও height ৩-৪, মানে ৩-৪টা disk read। Disk-এ page read-ই আসল খরচ, comparison নয়।
+- Range query = একবার নামা + linked leaf ধরে হাঁটা, O(log_m n + k)।
+- এই কারণেই MySQL, PostgreSQL, SQLite সবার index-এ B+ tree। আগের প্রযন্মের গল্প [ISAM](./isam.mdx)-এ, index-এর বাকি ডিজাইন [Indexing](./indexing.mdx)-এ।

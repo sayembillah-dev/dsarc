@@ -1,0 +1,313 @@
+---
+title: "Skip List: sorted list-এ express lane"
+description: "coin-flip দিয়ে express lane বসিয়ে গড়ে O(log n) search; rotation ছাড়াই ভারসাম্য। seeded RNG-সহ runnable কোড, হাতে করা dry run, আর Redis এটাকে কেন বেছে নিয়েছে।"
+---
+
+sorted linked list-এ খোঁজ মানে ধীরে ধীরে হাঁটা। এই পাতায় সেই হাঁটাকে express lane দিয়ে লাফিয়ে লাফিয়ে পার হওয়ার পুরো কৌশলটা শিখব।
+
+## কী শিখব
+
+- sorted list-এর উপর express lane বসিয়ে search কীভাবে গড়ে O(log n)-এ নেমে আসে
+- coin-flip (p = 1/2) দিয়ে স্তর বানালেই ভারসাম্য নিজে থেকে থেকে যায় কেন
+- হাতে হাতে dry run: 17-কে খুঁজতে গিয়ে কোন lane নিলাম, কোথায় নিচে নামলাম
+- পুরো SkipList class: insert / search / delete, seeded RNG দিয়ে deterministic output
+- deterministic 1-2-3 skip list আর 2-3 tree-র সম্পর্ক, p-এর tradeoff, Redis/LevelDB-র পছন্দের কারণ
+- expected O(log n)-এর হিসাব, আর কেন এটা worst-case-এর প্রতিশ্রুতি নয়
+
+## ধারণা
+
+ভাবো তো, ঢাকা থেকে চট্টগ্রাম যাওয়ার কথা। লোকাল ট্রেন প্রতিটা স্টেশনে থামে, একটাও বাদ নয়। এক্সপ্রেস থামে শুধু বড় জংশনে, বাকি স্টেশনগুলো লাফ দিয়ে চলে যায়। দূরে যেতে হলে তুমি আগে এক্সপ্রেসে ওঠো, গন্তব্যের কাছাকাছি এসে লোকালে নেমে যাও। **Skip List** sorted linked list-এ ঠিক এই কায়দাটাই করে।
+
+sorted [linked list](../linked-lists/what-is-linked-list.mdx)-এ search মানে head থেকে একটা একটা করে হাঁটা, O(n)। sorted array হলে [binary search](../searching/binary-search.mdx) দিয়ে সোজা মাঝখানে লাফ দিতে পারতাম; কিন্তু linked list-এ মাঝখানে যাওয়ার কোনো রাস্তাই নেই, pointer ধরে হাঁততেই হয়। William Pugh (১৯৯০) এই রাস্তাটাই বানিয়ে দিলেন: আসল list-এর উপর কয়েকটা অতিরিক্ত স্তর, যেখানে node কম, লাফ বড়।
+
+নিয়ম তিনটা:
+
+1. **L0**-এ সব node থাকে, sorted। এটাই লোকাল লাইন।
+2. উপরের প্রতিটা স্তর নিচের স্তরের কিছু node-এর **express লাইন**: node কম, লাফ লম্বা।
+3. কে উপরে উঠবে, তা ঠিক হয় **coin-flip** দিয়ে। নতুন node এলে কয়েন ছুঁড়ো: head পেলে এক স্তর উপরে তোলো, আবার head পেলে আরেক স্তর। প্রতি ধাপে উঠার সম্ভাবনা p = 1/2।
+
+অর্ধেক node L1-এ ওঠে, এক-চতুর্থাংশ L2-এ, এক-অষ্টাংশ L3-এ। ফলে গঠনটা নিজে থেকেই পিরামিডের মতো হয়। এখানেই মজার ব্যাপারটা: [AVL tree](../trees/avl-tree.mdx)-এ ভারসাম্য রাখতে rotation-এর কত ঝামেলা, আর এখানে শুধু কয়েন ছুঁড়লেই গড়ে সেই একই ফল। এমনকি [hash table](../hash-tables/hash-table-intro.mdx) যা দিয়ে পারে না, sorted ক্রমে range query, সেটাও skip list পারে।
+
+প্রশ্ন জাগতেই পারে: এলোমেলোভাবে তুললে ভারসাম্য আসবেই বা কোথা থেকে? আগে হাতে হাতে একটা search ঘুরে দেখি, তারপর Complexity অংশে সম্ভাবনার হিসাবটা মেলব।
+
+## ধাপে ধাপে: 17-কে খোঁজা, একটা পুরো dry run
+
+ধরো, 3, 6, 7, 9, 12, 17, 19, 21, 25 insert করার পর coin-flip-এর ফলে গঠনটা এমন দাঁড়াল (নিচের কোডটা seed 42 দিয়ে চালালে হুবহু এটাই পাবে):
+
+```text
+L2:  H --------------------------> 19 -> 25 -> *
+L1:  H ------> 6 ----> 9 -> 12 --> 19 -> 25 -> *
+L0:  H -> 3 -> 6 -> 7 -> 9 -> 12 -> 17 -> 19 -> 21 -> 25 -> *
+```
+
+H হলো header (sentinel node), `*` মানে NULL। এবার `search(17)` চালাই। খেলার নিয়ম:
+
+- শুরু হবে সবচেয়ে উপরের ব্যবহৃত স্তর থেকে।
+- পরের node **ছোট** হলে সেই স্তরেই এগিয়ে যাই।
+- পরের node বড়, সমান, কিংবা NULL হলে এক স্তর নিচে নামি। L0-এও আটকে গেলে এক কদম সামনে তাকিয়ে মিলিয়ে দেখি।
+
+| ধাপ | স্তর | দাঁড়িয়ে আছি | পরের node | তুলনা | সিদ্ধান্ত |
+|-----|------|---------------|-----------|-------|-----------|
+| শুরু | L2 | H | 19 | `19 < 17` মিথ্যা | এগোই না; নিচে L1-এ |
+| 1 | L1 | H | 6 | `6 < 17` সত্য | এগিয়ে 6-এ |
+| 2 | L1 | 6 | 9 | `9 < 17` সত্য | এগিয়ে 9-এ |
+| 3 | L1 | 9 | 12 | `12 < 17` সত্য | এগিয়ে 12-এ |
+| 4 | L1 | 12 | 19 | `19 < 17` মিথ্যা | এগোই না; নিচে L0-এ |
+| 5 | L0 | 12 | 17 | `17 < 17` মিথ্যা | থামো |
+| 6 | L0 | 12 | forward[0] = 17 | `17 == 17` সত্য | পেয়ে গেছি! |
+
+মোট ৪ বার pointer ঘুরলাম (6, 9, 12, আর শেষ ধাপে 17)। লোকাল লাইনে হাঁটলে 17 পর্যন্ত ৬টা node পেরোতে হতো।
+
+দুটো জিনিস চোখে পড়ল? প্রথমত, ধাপ 5-এ **সমান দেখলেই থেমে গেছি**। `<=` দিয়ে এগোলে 17-কে পেরিয়ে 19-এ উঠে যেতাম, আর target চোখের সামনে থেকেও হাতছাড়া হতো। এই সূক্ষ্মতাটা ভুলের তালিকায় আবার আসবে। দ্বিতীয়ত, ৯টা node-এ লাভটা বড় কিছু না। কিন্তু এক মিলিয়ন node-এ লোকাল হাঁটা গড়ে পাঁচ লক্ষ ধাপ, আর skip list-এ গড়ে দু-তিন ডজন। ছোট ছবিতে লোকালই যথেষ্ট, বড় ছবিতে এক্সপ্রেসই জিতে।
+
+## কোড: পুরো SkipList implementation
+
+একটা ব্যাপার আগে বলে রাখি। বাস্তবে `Math.random()` চলে, কিন্তু তাহলে প্রতিবার চালালে গঠন বদলে যায়। তাই এখানে ছোট seeded RNG **mulberry32** ব্যবহার করছি: একই seed মানে প্রতিবার একই "এলোমেলো" ক্রম। তুমি চালালে হুবহু এই output-ই পাবে।
+
+```js
+// mulberry32: ছোট seeded RNG; একই seed মানে একই "এলোমেলো" ক্রম
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+class Node {
+  constructor(value, level) {
+    this.value = value;
+    // forward[i] = i-তম স্তরে এই node-এর পরের node
+    this.forward = new Array(level + 1).fill(null);
+  }
+}
+
+class SkipList {
+  constructor(seed = 42, maxLevel = 4, p = 0.5) {
+    this.MAX_LEVEL = maxLevel;   // স্তরের ছাদ
+    this.p = p;                  // উপরে ওঠার সম্ভাবনা
+    this.level = 0;              // এখন ব্যবহৃত সবচেয়ে উপরের স্তর
+    this.rand = mulberry32(seed);
+    this.header = new Node(null, this.MAX_LEVEL); // sentinel: সব স্তরের শুরু
+  }
+
+  randomLevel() {
+    let lvl = 0;
+    while (this.rand() < this.p && lvl < this.MAX_LEVEL) lvl++;
+    return lvl;
+  }
+
+  search(target) {
+    let visits = 0;
+    let cur = this.header;
+    for (let lvl = this.level; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].value < target) {
+        cur = cur.forward[lvl];  // এই স্তরে express-এ এগোই
+        visits++;
+      }
+    }                            // পরেরটা বড়, তাই এক স্তর নামি
+    cur = cur.forward[0];        // L0-এ শেষ এক কদম
+    visits++;
+    return { found: cur !== null && cur.value === target, visits };
+  }
+
+  insert(value) {
+    const update = new Array(this.MAX_LEVEL + 1).fill(null);
+    let cur = this.header;
+    // প্রতি স্তরে "শেষ যে node-এর value ছোট" তাকে update[]-এ জমাই
+    for (let lvl = this.level; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].value < value) {
+        cur = cur.forward[lvl];
+      }
+      update[lvl] = cur;
+    }
+    cur = cur.forward[0];
+    if (cur && cur.value === value) return false; // duplicate নিই না
+
+    const lvl = this.randomLevel();
+    if (lvl > this.level) {            // আগের যেকোনো node-এর চেয়ে উপরে উঠলে
+      for (let i = this.level + 1; i <= lvl; i++) {
+        update[i] = this.header;       // নতুন স্তরে header-ই আগের node
+      }
+      this.level = lvl;
+    }
+
+    const node = new Node(value, lvl);
+    for (let i = 0; i <= lvl; i++) {
+      node.forward[i] = update[i].forward[i]; // আগে নতুনটার সাঁথর বান্ধ
+      update[i].forward[i] = node;            // তারপর পুরোনটা কেটে নতুনটায় জোড়
+    }
+    return true;
+  }
+
+  delete(value) {
+    const update = new Array(this.MAX_LEVEL + 1).fill(null);
+    let cur = this.header;
+    for (let lvl = this.level; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].value < value) {
+        cur = cur.forward[lvl];
+      }
+      update[lvl] = cur;
+    }
+    cur = cur.forward[0];
+    if (!cur || cur.value !== value) return false; // node-টাই নেই
+
+    for (let i = 0; i <= this.level; i++) {
+      if (update[i].forward[i] === cur) {
+        update[i].forward[i] = cur.forward[i]; // যেসব স্তরে সে আছে, সব থেকে বাদ
+      }
+    }
+    // উপরের স্তর খালি হয়ে গেলে ছাদ নামিয়ে দিই
+    while (this.level > 0 && this.header.forward[this.level] === null) {
+      this.level--;
+    }
+    return true;
+  }
+
+  print() {
+    for (let lvl = this.level; lvl >= 0; lvl--) {
+      let row = "L" + lvl + ":  H";
+      let cur = this.header.forward[lvl];
+      while (cur) {
+        row += " -> " + cur.value;
+        cur = cur.forward[lvl];
+      }
+      console.log(row + " -> *");
+    }
+  }
+}
+
+// ---------- ডেমো ----------
+const sl = new SkipList(42);      // seed 42: প্রতিবার চালালে একই গঠন
+for (const v of [3, 6, 7, 9, 12, 17, 19, 21, 25]) sl.insert(v);
+sl.print();
+
+for (const t of [17, 10, 25]) {
+  const r = sl.search(t);
+  console.log("search(" + t + "): found=" + r.found + ", pointer ঘুরলাম " + r.visits + " বার");
+}
+
+sl.delete(9);
+console.log("9 মুছে ফেলার পর:");
+sl.print();
+
+// Output:
+// L2:  H -> 19 -> 25 -> *
+// L1:  H -> 6 -> 9 -> 12 -> 19 -> 25 -> *
+// L0:  H -> 3 -> 6 -> 7 -> 9 -> 12 -> 17 -> 19 -> 21 -> 25 -> *
+// search(17): found=true, pointer ঘুরলাম 4 বার
+// search(10): found=false, pointer ঘুরলাম 3 বার
+// search(25): found=true, pointer ঘুরলাম 3 বার
+// 9 মুছে ফেলার পর:
+// L2:  H -> 19 -> 25 -> *
+// L1:  H -> 6 -> 12 -> 19 -> 25 -> *
+// L0:  H -> 3 -> 6 -> 7 -> 12 -> 17 -> 19 -> 21 -> 25 -> *
+```
+
+মিলিয়ে দেখো: উপরের dry run-এর টেবিল আর `search(17)`-এর `visits = 4` হুবহু মিলে গেছে। dry run-টা বাতুলতা নয়, কোডের আয়না।
+
+## ভ্যারিয়েন্ট ১: deterministic 1-2-3 skip list
+
+কয়েন ছোঁড়া পছন্দ না হলে? তাহলে randomness বাদ দিয়ে একটা কঠোর নিয়ম রাখো: **প্রতি স্তরে, পরপর দুটো "উঁচু" node-এর মাঝে ১, ২ বা ৩টাই নিচু node থাকবে।** insert-এ gap ৪-এ পৌঁছালে মাঝখানের node-টাকে এক স্তর উঁচু করে দাও; delete-এ gap ভেঙে গেলে উল্টোটা।
+
+চমকের ব্যাপার হলো, এই নিয়ম মেনে চললে skip list-টা হুবহু একটা [2-3 tree](./two-three-tree.mdx) হয়ে যায়, শুধু শুয়ে পড়েছে। উঁচু node-গুলোই tree-র internal node, gap-গুলোই child pointer; split/merge-ও একে একে মিলে যায়। এটাই আসল শিক্ষা: probabilistic skip list আর balanced tree একই কয়েনের দুই পিঠ, একটা ভারসাম্য রাখে সম্ভাবনা দিয়ে, আরেকটা নিয়ম দিয়ে।
+
+## ভ্যারিয়েন্ট ২: p প্যারামিটার টিউন করা
+
+p ছোট করলে node কম ওঠে: pointer কম লাগে (মেমরি বাঁচে), স্তরও কম হয়। কিন্তু প্রতি স্তরে গড়ে `1/p` পা এগোতে হয়, মানে স্তর চিকন হলে প্রতি স্তরে হাঁটা বাড়ে। হাতে চালিয়েই দেখি (আগের SkipList class-টাই ব্যবহার করছি):
+
+```js
+function averageVisits(p, n, queries, seed) {
+  const list = new SkipList(seed, 16, p);
+  for (let i = 0; i < n; i++) list.insert(i * 2); // 0, 2, 4, ...
+  const rng = mulberry32(seed + 1);
+  let total = 0;
+  for (let q = 0; q < queries; q++) {
+    total += list.search(Math.floor(rng() * n * 2)).visits;
+  }
+  return total / queries;
+}
+
+console.log("p = 1/2-এ গড় visits:", averageVisits(0.5, 1000, 2000, 7).toFixed(1));
+console.log("p = 1/4-এ গড় visits:", averageVisits(0.25, 1000, 2000, 7).toFixed(1));
+// p = 1/2-এ গড় visits: 9.8
+// p = 1/4-এ গড় visits: 13.0
+```
+
+p = 1/4-এ search সামান্য ধীর, কিন্তু প্রতি node-এ গড় pointer পড়ে 2-এর বদলে 1.33-এ। মেমরি শক্ত জায়গায় এই সৌদাটাই লাভের; Redis-এ ঠিক এই কারণে p = 1/4।
+
+## ভ্যারিয়েন্ট ৩: concurrent system-এ skip list
+
+Redis-এর sorted set (ZSET) আর LevelDB-র memtable দুটোই skip list দিয়ে বানানো। কারণটা শুধু পারফরম্যান্স নয়, **সহজতা**। balanced tree-তে একটা insert rotation ট্রিগার করলে তা root পর্যন্ত উঠে যেতে পারে; অনেক thread একসাথে কাজ করলে লক নেওয়া দুঃস্বপ্ন। skip list-এ insert ছোঁয়ে শুধু `update[]`-এর কয়েকটা লোকাল pointer, আর কয়েনের ফল কারও সাথে আলোচনা করে না। তাই lock-free বা সামান্য লক দিয়ে concurrent skip list বানানো comparatively সহজ (Java-র `ConcurrentSkipListMap` দেখো)। তবে ডিস্কে গেলে ছবি বদলে যায়: পেজ-ভিত্তিক পড়ায় [B+ tree](./b-plus-tree.mdx)-ই রাজা, এই সেকশনের বাকি পাতাগুলো সেই গল্পই।
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+মূল implementation-টা আবার দেখি, কোন লাইন কেন আছে:
+
+1. `mulberry32(seed)` : প্রতিটা কলে 0 থেকে 1-এর মধ্যে ভগ্নাংশ দেয়, কিন্তু ক্রমটা seed-এ বাঁধা। seed 42 রাখলে তুমি আর আমি একই skip list দেখবো।
+2. `this.forward = new Array(level + 1)` : node-টা যত স্তরে উঠেছে, ততগুলো next pointer। `forward[0]`-ই লোকাল লাইনের next।
+3. `this.header = new Node(null, this.MAX_LEVEL)` : sentinel। প্রতিটা স্তরের আগে একটা নিশ্চিত শুরু থাকলে "list খালি" আলাদা করে সামলাতে হয় না।
+4. `while (this.rand() < this.p && lvl < this.MAX_LEVEL)` : coin-flip। প্রতিবার 1/2 সম্ভাবনায় আরেক স্তর। ছাদের শর্তটা ভুললে array-এর বাইরে গিয়ে পড়বে (ভুল ৪ দেখো)।
+5. `for (let lvl = this.level; lvl >= 0; lvl--)` : সবচেয়ে উপরের ব্যবহৃত স্তর থেকে নামা শুরু। dry run-এর টেবিলটাই এখানে কোড হয়ে গেছে।
+6. `while (cur.forward[lvl] && cur.forward[lvl].value < target)` : শর্তটা কঠোর `<`। সমান হলেই থামো, নইলে target-কে পেরিয়ে যাবে (ভুল ৩)।
+7. `update[lvl] = cur` : insert/delete-এর হাতিয়ার। প্রতি স্তরে "যার পরে নতুনটা বসবে" তাকে মনে রাখা; না রাখলে উঁচু স্তরের pointer ঠিক করার উপায়ই থাকে না (ভুল ২)।
+8. `if (cur && cur.value === value) return false` : duplicate নীতি। আমরা reject করেছি; দরকার হলে এখানে count বাড়াতে পারো, কিন্তু নীতিটা একটা ঠিক করতেই হবে (ভুল ৫)।
+9. `node.forward[i] = update[i].forward[i]` তারপর `update[i].forward[i] = node` : splice-এর ক্রম। আগে নতুন node-এর সাঁথর বাঁধো, তারপর পুরোন pointer কাটো। উল্টো করলে পরের list-টাই হারিয়ে যাবে (ভুল ১)।
+10. `while (this.level > 0 && this.header.forward[this.level] === null) this.level--` : delete-এর পর ঝাড়াই। না করলে খালি স্তর জমে `this.level` ফুলে থাকবে, search অযথা উপর দিয়ে নামবে।
+
+## Complexity: expected O(log n)-এর হিসাব
+
+আগে সৎ কথাটা: এখানের সব complexity **expected**, worst-case নয়। হিসাবটা তিন ধাপে:
+
+- **কত স্তর লাগবে?** একটা node স্তর k-তে ওঠার সম্ভাবনা `p^k` (k বার পরপর head)। n-টা node-এ স্তর k-তে expected সংখ্যা `n * p^k`। সেটা 1-এ নামে `k ≈ log_{1/p}(n)`। p = 1/2 হলে height ≈ log₂(n): মিলিয়ন node-এ মাত্র ২০টা স্তর।
+- **প্রতি স্তরে কত পা?** একটা স্তরে ডানে এগোনো মানে "পরের উঁচু node কতদূরে" অপেক্ষা করা। এটা geometric distribution, expected পা ≤ `1/p`। p = 1/2 হলে প্রতি স্তরে গড়ে ২ পা।
+- **মোট:** স্তর সংখ্যা গুণ প্রতি স্তরে পা = `(1/p) * log_{1/p}(n)` = O(log n)। insert আর delete-ও মূলত একটাই search যোগ O(1) pointer কাটাজোড়া, তাই ওরাও expected O(log n)।
+
+**Space:** প্রতি node-এর স্তর নিজেই geometric, গড়ে `1/(1-p)` টা forward pointer। p = 1/2-এ মোট ≈ 2n, মানে expected O(n)।
+
+আর worst case? সব কয়েনে tail পড়লে গঠনটা সাধারণ linked list, search O(n)। কিন্তু height-টা log₂(n)-এর কয়েক গুণ ছাড়ার সম্ভাবনা n-এর ঘাতের হারে কমে যায়; বাস্তবে "দুর্ভাগ্য" দেখার আশা ছেড়েই দাও। এজন্যই এটাকে [randomised algorithm](../problem-solving/randomised-algorithms.mdx)-এর Las Vegas ঘরানায় ফেলা হয়: উত্তর সবসময় ঠিক, দুলে শুধু সময়টা। আর seed ফিক্সড করলে আচরণ পুরোপুরি deterministic, ডিবাগও সহজ।
+
+## সাধারণ ভুল আর edge case
+
+**১. splice-এর ক্রম উল্টে দেওয়া।**
+`update[i].forward[i] = node` আগে লিখে ফেললে পুরোন next pointer হারিয়ে যায়, `node.forward[i]` তখন নিজেকেই বা ভুল node-কে ধরে। নিয়ম একটাই: আগে নতুনটার সাঁথর (`node.forward[i] = update[i].forward[i]`), তারপর পুরোনটা কাটো।
+
+**২. update[] array ভুলে যাওয়া।**
+search-এ শুধু নিচে নামলেই চলে, কিন্তু insert/delete-এ প্রতি স্তরের "শেষ ছোট node" জমা না রাখলে উঁচু স্তরের pointer ঠিক করতে আবার header থেকে নামতে হয়। খারাপ তো হয়ই, আসল কথা হলো আগের descent-এর তথ্য ফেলে দিলে পুরো কাজটাই আবার করতে হয়।
+
+**৩. নামার সময় `<=` ব্যবহার করা।**
+dry run-এর ধাপ 5 মনে করো: `17 < 17` মিথ্যা বলেই থেমেছিলাম। `cur.forward[lvl].value <= target` লিখলে target-এর সমান node-কেও পেরিয়ে যাবে, শেষে `forward[0]`-এ অন্য মান দেখে "নেই" বলে ফেলবে। target চোখের সামনে থেকে হাতছাড়া।
+
+**৪. randomLevel-এ ছাদ ভুলে যাওয়া বা off-by-one।**
+`while (this.rand() < this.p) lvl++` লিখলে কদাচিৎ lvl ছাদ টপকে যাবে, আর `update[lvl]` বা `header.forward[lvl]` হবে undefined। শর্তটা `lvl < this.MAX_LEVEL`। আর মনে রাখো, আমাদের স্তর 0 থেকে শুরু: MAX_LEVEL = 4 মানে মোট 5টা স্তর।
+
+**৫. duplicate-এর নীতি না ঠিক করা।**
+`insert(17)` দুইবার ডাকলে কী হওয়া উচিত? reject, allow, নাকি count? আমরা reject করেছি। নীতি যেটাই হোক, search/delete-কেও সেই নীতিতেই চলতে হবে; নইলে delete একটা 17 মুছে দিলো, আরেকটা ভূতের মতো ভাসতে রইলো। খালি list-এ delete, সবচেয়ে ছোট বা বড় node-এর delete: এগুলো আমাদের কোডে নিজে থেকেই সামলানো, কিন্তু টেস্ট করে নিও।
+
+## Animation Spec
+
+> **Animation Spec: Express Lane Express**
+>
+> - **দৃশ্য:** বহু-স্তর list; search pointer express lane দিয়ে লাফায়, দরকারে নিচে নামে; পাশে live visits counter, আর insert-এর সময় চিহ্নিত `update[]` node-গুলো।
+> - **ইনপুট:** target (search), value (insert/delete); insert-এ coin-flip-এর animation, চাইলে seed ইনপুট বক্স।
+> - **ধাপ:** প্রতি সিদ্ধান্তে "এগোই নাকি নামি" highlight; insert-এ কয়েন ঘুরে নতুন node উপরে ওঠে; splice-এর দুই লাইন দুই ফ্রেমে, যাতে ক্রমটা চোখে পড়ে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; p-এর স্লাইডার (1/2 বনাম 1/4) নাড়ালেই গঠন মোটা/চিকন হয়, সেটা live।
+> - **লক্ষ্য:** express lane + coin-flip = ভারসাম্য, rotation ছাড়াই।
+
+## অনুশীলন
+
+- **সহজ ১:** উপরের গঠনটায় হাতে `search(25)` আর `search(10)` চালিয়ে দুটো dry-run টেবিল বানাও। হিন্ট: প্রতিবার সবচেয়ে উপরের স্তর থেকে শুরু; সমান মানে থামো। কোডের output (৩ আর ৩ বার) দিয়ে যাচাই করো।
+- **সহজ ২:** Binary Search (LeetCode 704) নিজে লিখে পাশ করো, তারপর ভাবো: sorted array-র mid-লাফ আর skip list-এর express lane একই ধারণার কোন দুই রূপ? হিন্ট: দুটোতেই প্রতি ধাপে বাকি search space প্রায় অর্ধেকে নেমে আসে।
+- **মাঝারি ১:** Design Skiplist (LeetCode 1206)। হিন্ট: এই পাতার SkipList class-টাই প্রায় পুরো উত্তর; `update[]` আর splice-এর ক্রমটা আক্ষরে আক্ষরে মাথায় রেখো।
+- **মাঝারি ২:** ভ্যারিয়েন্ট ২-এর পরীক্ষাটা n = 100000 দিয়ে চালাও; p = 1/2, 1/4, 1/8-এর জন্য গড় visits ছাপাও, সাথে মোট pointer সংখ্যাও মাপো। হিন্ট: pointer মাপতে সব node-এর `forward.length` যোগ করো; তাত্ত্বিক হিসাব `n/(1-p)`-এর কাছাকাছি পড়বে।
+- **কঠিন:** deterministic 1-2-3 skip list বানাও, একদম RNG ছাড়া: insert-এ gap 4 হলে মাঝের node-কে এক স্তর তোলো, delete-এ gap ভাঙলে নামাও। তারপর মিলিয়ে দেখো তোমার গঠনটা [2-3 tree](./two-three-tree.mdx)-এর insert trace-এর সাথে হুবহু যাচ্ছে কিনা। হিন্ট: "দুটো উঁচু node-এর মাঝে ১ থেকে ৩টা নিচু", এই invariant-টাই তোমার split/merge-এর সংকেত।
+
+## সারসংক্ষেপ
+
+- Skip List = sorted linked list + coin-flip-এ বানানো express lane; search/insert/delete গড়ে O(log n), space expected O(n)।
+- ভারসাম্য আসে সম্ভাবনা থেকে, rotation থেকে নয়; তাই কোড সরল আর concurrent বান্ধব।
+- নামার পথ `update[]`-এ মনে রাখো; splice-এর ক্রম: আগে নতুনটার সাঁথর, তারপর পুরোনটা কাটো; শর্ত সবসময় কঠোর `<`।
+- Complexity-টা expected, worst-case নয়; দুর্ভাগ্যের সম্ভাবনা জ্যোতির্বিদ্যার হিসাব ছাড়িয়ে যায়।
+- Redis ZSET আর LevelDB-র memtable-এ এটাই চলে; ডিস্কে নামলেই কিন্তু [B+ tree](./b-plus-tree.mdx)-এর রাজত্ব।

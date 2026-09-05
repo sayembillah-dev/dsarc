@@ -1,0 +1,289 @@
+---
+title: "ISAM: একবার বানানো static index, আর overflow-এর গল্প"
+description: "sorted data page-এর উপর একবার বানানো static index; insert গিয়ে জমে overflow chain-এ, আর সেখান থেকেই ধীরে ধীরে performance-এর পতন।"
+---
+
+B+ tree আসার আগে disk indexing মানেই ছিল ISAM: index একবার বানানো, তারপর আর কখনো নড়ে না।
+
+## কী শিখব
+
+- ISAM-এর তিনটা অংশ: sorted data page, static index, overflow chain
+- একটা পুরো dry run: একই lookup কখন 6 ধাপে শেষ হয়, কখন 31 ধাপে
+- insert-এ index কেন এক চুলও নড়ে না, আর সেটাই কেন শেষমেশ বিপদ
+- হাতে লেখা JS simulation, যেখানে প্রতিটা lookup-এর ধাপ গোনা যায়
+- কখন ISAM এখনো সঠিক পছন্দ, কখন B+ tree-ই লাগবে
+
+## ধারণা
+
+ভাবো তো পুরনো দিনের ছাপা টেলিফোন ডিরেক্টরির কথা। পুরো শহরের নাম-নম্বর সাজানো একটা মোটা বই, সামনে একটা সূচি: "ক দিয়ে শুরু এই খণ্ডে, খ দিয়ে ওই খণ্ডে"। কাউকে খুঁজতে গিয়ে পুরো বই উলটাও না: সূচি দেখে সঠিক খণ্ডে গিয়ে কয়েকটা পাতা উল্টালেই পেয়ে যাও।
+
+এবার ধরো, বই ছাপার পর নতুন দুশো গ্রাহক যুক্ত হলো। বই তো প্রতিদিন আর নতুন করে ছাপানো যায় না। তাই পেছনে একটা খাতা জুড়ে দিলে: নতুন নম্বরগুলো সেখানে হাতে লেখা। এবার কাউকে খুঁজতে গেলে আগে বইয়ে দেখো, না পেলে হাতে-লেখা খাতা ধরে একটা একটা করে নাম মেলাও। নতুন গ্রাহক যত বাড়বে, খাতা তত মোটা হবে, খোঁজা তত ধীর হবে। মাসশেষে অফিস বসে পুরো ডিরেক্টরি নতুন করে ছাপায়, খাতা আবার খালি।
+
+এটাই ISAM (Indexed Sequential Access Method)। তিনটা অংশ:
+
+1. **Data file**: record-গুলো key অনুযায়ী sorted, disk page-এ page-এ সাজানো।
+2. **Static index**: প্রতি page-এর প্রথম key, আর সেই page-এর নম্বর। একবার বানানো, তারপর না insert-এ নড়ে, না delete-এ। (এটা আসলে [sparse index](./indexing.mdx) ধরনের: প্রতি record-এ নয়, প্রতি page-এ একটা entry।)
+3. **Overflow chain**: নতুন record-এর ঠিকানা। যে page-এ ওর থাকার কথা ছিল, সেই page-এর সাথে একটা chain জুড়ে দেওয়া।
+
+[B+ tree](./b-plus-tree.mdx)-এর সাথে মূল পার্থক্য এখানেই: B+ tree-তে insert হলে page ভেঙে index নিজেকে গুছিয়ে নেয়; ISAM-এ index অনড়, সব আসর জমে overflow-এ। এই একটা সিদ্ধান্তের পুরো পরিণতি এ পাতায় দেখবো।
+
+## ধাপে ধাপে: 12টা record-এর উপর পুরো dry run
+
+12টা record, key: 10, 20, 30, ..., 120। প্রতি data page-এ জায়গা 3টা করে, মানে 4টা page:
+
+```text
+Static index (একবার বানানো, কখনো বদলায় না):
+[10 → P0]    [40 → P1]    [70 → P2]    [100 → P3]
+    │            │            │             │
+    v            v            v             v
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────┐
+│ 10 20 30 │ │ 40 50 60 │ │ 70 80 90 │ │ 100 110 120 │
+│   (P0)   │ │   (P1)   │ │   (P2)   │ │    (P3)     │
+└──────────┘ └──────────┘ └──────────┘ └─────────────┘
+```
+
+খোঁজার নিয়ম: index-এ এমন **শেষ entry** খোঁজো যার key ≤ target। ওর page-এ গিয়ে পুরো page-টা scan করো। না পেলে ওই page-এর overflow chain ধরে হাঁটো।
+
+**Lookup 80** (এখনো কোনো insert হয়নি):
+
+| ধাপ | কোথায় দেখছি | তুলনা | সিদ্ধান্ত |
+|-----|--------------|--------|-----------|
+| 1 | index entry 1 | 10 ≤ 80? হ্যাঁ | page = P0 ধরে এগিয়ে |
+| 2 | index entry 2 | 40 ≤ 80? হ্যাঁ | page = P1 ধরে এগিয়ে |
+| 3 | index entry 3 | 70 ≤ 80? হ্যাঁ | page = P2 ধরে এগিয়ে |
+| 4 | index entry 4 | 100 ≤ 80? না | থামো, গন্তব্য P2 |
+| 5 | P2-এর ভেতরে | 70 = 80? না | পরের record |
+| 6 | P2-এর ভেতরে | 80 = 80? হ্যাঁ | পাওয়া গেছে |
+
+মোট 6টা তুলনা, disk থেকে মাত্র 2টা block পড়া (index block + P2)।
+
+**এবার তিনটা insert: 15, 25, 35।** তিনটারই থাকার জায়গা P0-তে (index-এ 10-এর পরের entry 40, তাই 15, 25, 35 সবাই P0-এর অধীন)। কিন্তু P0 ভরা। index-এ কোনো বদল না ঘটিয়ে record-গুলো বসে P0-এর overflow chain-এ:
+
+```text
+P0: [10 20 30] ── overflow ──→ [15] → [25] → [35]
+```
+
+**Lookup 25** (insert-এর পর):
+
+| ধাপ | কোথায় দেখছি | তুলনা | সিদ্ধান্ত |
+|-----|--------------|--------|-----------|
+| 1 | index entry 1 | 10 ≤ 25? হ্যাঁ | page = P0 ধরে এগিয়ে |
+| 2 | index entry 2 | 40 ≤ 25? না | থামো, গন্তব্য P0 |
+| 3 | P0-এর ভেতরে | 10 = 25? না | পরের record |
+| 4 | P0-এর ভেতরে | 20 = 25? না | পরের record |
+| 5 | P0-এর ভেতরে | 30 = 25? না | page শেষ, overflow-এ যাও |
+| 6 | overflow-এর 1ম ঘর | 15 = 25? না | chain-এ এগিয়ে |
+| 7 | overflow-এর 2য় ঘর | 25 = 25? হ্যাঁ | পাওয়া গেছে |
+
+7টা তুলনা। এখনো বড় ব্যাপার না। কিন্তু ছবিটা বদলে যায় insert বাড়তে থাকলে। ধরো P0-এর দিকে আরও 24টা ছোট key এসে জমল (11 থেকে 39 পর্যন্ত, যেগুলো আগে থেকে নেই):
+
+```text
+P0-এর chain এখন: [15] → [25] → [35] → [11] → [12] → ... → [39]   (মোট 27টা)
+
+key 38 খুঁজতে: index 2 তুলনা + page scan 3 তুলনা + chain-এ 26 তুলনা = মোট 31 ধাপ
+```
+
+আর সবচেয়ে মজার ব্যাপার: এদিকে P2-এর lookup (যেমন key 80) এক চুলও বদলাল না, এখনো 6 ধাপ। Degradation **আঘাত করে নির্দিষ্ট page-এ**, যেখানে insert জমেছে। এটাই ISAM-এর জীবনচক্র: insert → overflow → ধীর lookup → reorganization → আবার তাজা।
+
+## কোড: পুরো simulation
+
+```js
+// ISAM-এর ছোট্ট simulation: static index + sorted data page + overflow chain
+const PAGE_CAPACITY = 3;   // প্রতি data page-এ সর্বোচ্চ 3টা record
+
+class ISAM {
+  constructor(keys) {
+    // data file: sorted, তারপর page-এ page-এ ভাগ
+    const sorted = [...keys].sort((a, b) => a - b);
+    this.pages = [];
+    for (let i = 0; i < sorted.length; i += PAGE_CAPACITY) {
+      this.pages.push({ keys: sorted.slice(i, i + PAGE_CAPACITY), overflow: [] });
+    }
+    // static index: প্রতি page-এর প্রথম key -> page নম্বর
+    // এই array-টা এই একবারই বানে; insert/delete-এ কখনো বদলায় না
+    this.index = this.pages.map((p, i) => ({ key: p.keys[0], page: i }));
+  }
+
+  // index থেকে মোটামুটি page: শেষ যে entry-র key <= target, সেটার page
+  findPage(key) {
+    let page = 0;
+    let comparisons = 0;
+    for (const entry of this.index) {
+      comparisons++;
+      if (entry.key <= key) page = entry.page;
+      else break;                     // index sorted, বড় পেলেই থামো
+    }
+    return { page, comparisons };
+  }
+
+  lookup(key) {
+    const found = this.findPage(key); // ধাপ ১: index
+    const p = this.pages[found.page];
+    let steps = found.comparisons;
+
+    for (const k of p.keys) {         // ধাপ ২: page-এর ভেতরে scan
+      steps++;
+      if (k === key) return { hit: true, where: "page " + found.page, steps };
+    }
+    for (const k of p.overflow) {     // ধাপ ৩: overflow chain ধরে হাঁটা
+      steps++;
+      if (k === key) return { hit: true, where: "page " + found.page + "-এর overflow", steps };
+    }
+    return { hit: false, where: "কোথাও নেই", steps };
+  }
+
+  insert(key) {
+    const { page } = this.findPage(key);
+    this.pages[page].overflow.push(key);  // index আর page কাঠামো: এক চুলও নড়ে না
+  }
+}
+```
+
+এবার চালিয়ে দেখি, প্রতিটা lookup-এর ধাপ গুনে:
+
+```js
+const db = new ISAM([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]);
+console.log(db.index);
+// [ { key: 10, page: 0 }, { key: 40, page: 1 }, { key: 70, page: 2 }, { key: 100, page: 3 } ]
+
+console.log(db.lookup(80));   // { hit: true, where: 'page 2', steps: 6 }
+
+db.insert(15);
+db.insert(25);
+db.insert(35);                // তিনটাই P0-এর overflow chain-এ
+console.log(db.lookup(25));   // { hit: true, where: 'page 0-এর overflow', steps: 7 }
+console.log(db.lookup(95));   // { hit: false, where: 'কোথাও নেই', steps: 7 }
+console.log(db.lookup(20));   // { hit: true, where: 'page 0', steps: 4 }
+
+// degradation দেখানো: page 0-এর দিকে আরও 24টা ছোট key ঢোকাও
+for (let k = 11; k < 40; k++) {
+  if (k % 5 === 0) continue;  // 15, 25, 35 আগেই chain-এ আছে; 20, 30 main page-এ আছে
+  db.insert(k);
+}
+console.log(db.pages[0].overflow.length); // 27: chain এখন 27 লম্বা
+console.log(db.lookup(38));   // { hit: true, where: 'page 0-এর overflow', steps: 31 }
+console.log(db.lookup(80));   // { hit: true, where: 'page 2', steps: 6 }
+```
+
+আউটপুটে খেয়াল করো: 31 ধাপের lookup(38)-এর পাশে lookup(80) সেই পুরনো 6 ধাপেই আছে। index তো নড়েনি, তাই যে page-এ insert পড়েনি, সে একদম অক্ষত।
+
+## ভ্যারিয়েন্ট ১: multi-level static index
+
+index-এর entry যদি হাজার হাজার page-এ ছড়িয়ে যায়? তখন index-টুকুও disk-এ page-ভিত্তিক, আর তার উপর বসে আরেকটা ছোট static index:
+
+```text
+Top index:     [10 → I0]         [70 → I1]
+                  │                  │
+Leaf index:   [10→P0][40→P1]     [70→P2][100→P3]
+                  │                  │
+Data:           P0    P1           P2    P3
+```
+
+স্তর যতই হোক, নিয়ম এক: সব স্তরই একবার বানানো, insert-এ কোনোটাই নড়ে না। খোঁজা হয় উপর থেকে নিচে, প্রতি স্তরে একটা block পড়ে। এই multi-level ধারণাটা [indexing](./indexing.mdx) পাতায় আরও খুলে আছি, আর এর dynamic সংস্করণই B+ tree।
+
+## ভ্যারিয়েন্ট ২: periodic reorganization
+
+Overflow মোটা হলে পুরো layout নতুন করে বানাও:
+
+```js
+function reorganize(db) {
+  const all = [];
+  for (const p of db.pages) all.push(...p.keys, ...p.overflow);
+  return new ISAM(all);      // sorted data + তাজা index, overflow আবার খালি
+}
+
+const fresh = reorganize(db);
+console.log(fresh.pages.length);   // 13 (আগে 4 ছিল, data বেড়েছে)
+console.log(fresh.lookup(38));     // { hit: true, where: 'page 9', steps: 13 }
+```
+
+chain-এ পড়ে থাকা 38-এর lookup 31 ধাপ থেকে নেমে এলো 13-এ। data বেড়েছে বলে index-ও বড়, তবু overflow শূন্য, খরচ আবার অনুমানযোগ্য। বাস্তবে এই কাজটা off-peak ঘণ্টায় batch-এ চালানো হয়।
+
+## ভ্যারিয়েন্ট ৩: ISAM বনাম B+ tree - কোনটা কখন
+
+| দিক | ISAM | B+ tree |
+|-----|------|---------|
+| index কাঠামো | static, একবার বানানো | dynamic, প্রতি insert/delete-এ গুছে যায় |
+| insert | সস্তা: overflow-এ ছেড়ে দাও | দামি: page split, index update |
+| lookup-এর গ্যারান্টি | chain লম্বা হলে O(n) পর্যন্ত পড়ে | সবসময় O(log n) |
+| রক্ষণাবেক্ষণ | periodic reorganization লাগেই | নিজেই balanced থাকে |
+| আদর্শ workload | read-heavy, প্রায় বদলায় না এমন data | mixed workload, ঘন insert/delete |
+
+split আর merge ঠিক কীভাবে এই গ্যারান্টি কিনে আনে, দেখো [B+ tree](./b-plus-tree.mdx) পাতায়।
+
+## কোড ব্রেকডাউন: মূল ISAM class, লাইনে লাইনে
+
+1. `const PAGE_CAPACITY = 3` : disk page-এর ক্ষমতার অনুকরণ। বাস্তবে এটা ঠিক হয় block size আর record size দিয়ে।
+2. `const sorted = [...keys].sort(...)` : data file সবসময় sorted। spread দিয়ে copy করেছি, নাহলে ডাকার জায়গার array-টাও বদলে যেত।
+3. `this.pages.push({ keys, overflow: [] })` : প্রতি page একটা object: main ঘরগুলো + খালি overflow chain।
+4. `this.index = this.pages.map(...)` : static index-এর জন্ম এই একবারই, constructor-এ। প্রতি entry মনে রাখে page-এর প্রথম (সবচেয়ে ছোট) key আর page নম্বর।
+5. `findPage`-এর loop: "শেষ যে entry-র key ≤ target, সেটার page"। entry বড় হয়ে গেলেই break, কারণ index sorted।
+6. `let page = 0` দিয়ে শুরু: সবচেয়ে ছোট key-এরও ছোট কিছু খুললে default হিসেবে page 0-তেই খোঁজা হবে।
+7. `lookup`-এ আগে `p.keys` scan: record main page-এ থাকলে overflow-এ যাওয়াই লাগে না।
+8. তারপর `p.overflow` scan: chain-এর প্রতি ঘরে একটা করে তুলনা। এখানেই degradation-এর আসল খরচ জমে।
+9. `steps` গোনা: প্রতিটা তুলনাই count হচ্ছে, যাতে তাজা আর জর্জরা ISAM-এর পার্থক্য সংখ্যা দিয়ে দেখা যায়।
+10. `insert`-এ শুধু `overflow.push(key)`: না index-এ নতুন entry, না page split। এই ছোট্ট লাইনটাই ISAM-এর সব শক্তি, আর সব দুর্বলতা।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+ধরো nটা record, page capacity C। তাহলে page সংখ্যা n/C, index-এ entry n/Cটা।
+
+**Lookup, তাজা ISAM (overflow খালি):**
+
+- index খোঁজা: linear scan-এ O(n/C), [binary search](../searching/binary-search.mdx) করলে O(log(n/C))।
+- page-এর ভেতরে scan: সর্বোচ্চ C তুলনা, O(C)।
+- C ছোট ধ্রুবক ধরলে মোট ≈ O(log n), disk-এর হিসাবে 2-3টা block read।
+
+**Lookup, জর্জরা ISAM (chain-এ kটা record):**
+
+- আগের খরচ + chain-এ হাঁটা O(k)। মোট O(log n + k)।
+- k-এর কোনো বাউন্ড নেই। সব insert একই page-এর দিকে গেলে k = O(n), lookup পুরোপুরি O(n)। index তখন প্রায় অকেজো। এটাই বলে দেয় static index write-heavy জগতে দীর্ঘজীবী নয়।
+
+**Insert:** findPage O(log(n/C)) + chain-এর শেষে push O(1) = O(log n)। সস্তা ঠিকই, কিন্তু সেই সস্তার বিল পরে প্রতিটা lookup দেয়। Classic trade-off।
+
+**Reorganization:** সব record জমা করে sort O(n log n), তারপর page আর index বানানো O(n)। প্র্যাকটিসে record-গুলো প্রায়-সাজানোই থাকে, তাই আসল খরচ এর চেয়ে কম।
+
+**B+ tree আলাদা কী করল?** insert-এর সময়েই page ভেঙে index ঠিক করে রাখে, তাই lookup-এর গ্যারান্টি কখনো ভাঙে না: সবসময় O(log n)। দামটা ও ধীরে ধীরে দেয়, প্রতি insert-এ split আর merge দিয়ে। ISAM সেই বিল জমিয়ে রাখে, তারপর reorganization-এ একবারে শোধে।
+
+## সাধারণ ভুল আর edge case
+
+**১. ভাবা যে insert-এ index-এ নতুন entry যোগ হয়।**
+ISAM-এ index জন্মের পর পাথরের মতো স্থির। নতুন record-এর জন্য না page ভাঙে, না index-এ entry বাড়ে; সব যায় overflow chain-এ। B+ tree-র অভ্যাস এনে index update করতে গেলে সেটা আর ISAM থাকে না।
+
+**২. overflow chain-এর degradation হাল্কাভাবে নেওয়া।**
+দুটো insert-এ চোখে পড়ে না, কিন্তু উপরের demo-তেই দেখেছ: chain 27-এ পৌঁছাতে lookup 6 ধাপ থেকে 31 ধাপে চলে গেছে। Chain মনিটর করে reorganization-এর সময় ঠিক না করলে system চুপচাপ ধীর হয়ে মরে।
+
+**৩. সবচেয়ে ছোট key-এরও ছোট key খোঁজা বা insert করা।**
+ধরো key 5। index-এ কোনো entry-ই 5-এর চেয়ে ছোট নয়, তাই findPage default-এ page 0-ই ফেরত দেয়। খোঁজা হয় P0-তে আর তার chain-এ। মনে রাখো: insert 5 করলেও সে P0-এর overflow-এই জমবে, index-এ 5-এর entry কখনোই হবে না।
+
+**৪. delete নিয়ে একদমই না ভাবা।**
+ISAM-এ delete মানে page থেকে record সরিয়ে ঘরটা ফাঁকা রেখে দেওয়া (tombstone)। index তবুও পুরনো key দেখিয়ে যাবে। ফাঁকা ঘর জমতে জমতে page-গুলো অর্ধেক খালি হয়ে যায়, জায়গার অপচয় বাড়ে, আর পথ থাকে না reorganization ছাড়া।
+
+**৫. ভেবে বসা "ISAM মানেই পুরনো আর খারাপ"।**
+না। Data প্রায় বদলায় না (বছরে দুইবার আপডেট হয় এমন archive, static অভিধান, read-only reporting) হলে ISAM সরল, compact, আর index-এ split-এর কোনো overhead নেই। ভুল জায়গায় (write-heavy) বসালে খারাপ; ঠিক জায়গায় এখনো দারুণ।
+
+## Animation Spec
+
+> **Animation Spec: ISAM Lookup আর Overflow-এর পতন**
+>
+> - **দৃশ্য:** উপরে static index টেবিল, নিচে sorted data page-গুলো, প্রতি page-এর পাশে খালি overflow স্লট; কোণায় একটা step counter।
+> - **ইনপুট:** lookup key; insert key; "একগুচ্ছ insert" বাটন; "Reorganize" বাটন।
+> - **ধাপ:** lookup হলে index entry highlight → page-এ লাফ → page scan → দরকার হলে chain বরাবর হাঁটা; প্রতি তুলনায় counter বাড়ে; insert-এ chain-এ নতুন বাক্স জুড়ে যায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে chain length-এর histogram টগল।
+> - **লক্ষ্য:** ছোট chain-এ ISAM দ্রুত; chain বাড়লে lookup ধীর; reorganize চাপলেই আবার তাজা। ব্যবহারকারী নিজে অনুভব করবে static index-এর বিলটা কোথায় আসে।
+
+## অনুশীলন
+
+- **সহজ ১:** কাগজে 9টা key নাও (5, 10, 15, ..., 45), page capacity 3। ISAM বানাও, তারপর 20 আর 45-এর lookup-এ ধাপ গুনো। হিন্ট: index-এ থাকবে শুধু প্রতি page-এর প্রথম key, মানে 3টা entry।
+- **সহজ ২:** ওপরের ISAM-এ 12, 17, 22 insert করো। Overflow chain আঁকো, তারপর 22-এর lookup কত ধাপে শেষ হয় গুনো। হিন্ট: তিনটাই একই page-এর chain-এ পড়বে, তাই শেষেরটা সবচেয়ে দূরে।
+- **মাঝারি ১:** উপরের class-এ `reorganize()` method-ই যোগ করো, আর mass insert-এর আগে-পরে lookup step-এর পার্থক্য console.log-এ দেখাও। হিন্ট: সব page ঘুরে keys আর overflow এক array-তে জমাও, তারপর constructor-ই আবার ডাকো।
+- **মাঝারি ২:** LeetCode 704 (Binary Search) solve করো। হিন্ট: তোমার findPage-টা sorted index-এর উপর খোঁজই তো; [binary search](../searching/binary-search.mdx) মনে করিয়ে linear scan-টা বদলে দাও, index বড় হলে কত লাভ হয় হিসাব করো।
+- **কঠিন:** multi-level ISAM বানাও: index-এর উপর আরেকটা static index, সাথে tombstone-ভিত্তিক delete, আর overflow কোনো threshold ছাড়ালে auto-reorganize। হিন্ট: প্রতি স্তরের entry বলবে নিচের কোন index page-এ নামতে হবে; খোঁজা হবে উপর থেকে নিচে, প্রতি স্তরে এক ধাপ।
+
+## সারসংক্ষেপ
+
+- ISAM = sorted data page + static index + overflow chain; index জন্মের পর আর নড়ে না।
+- insert সস্তা, কিন্তু বিল পরে দেয় lookup: chain লম্বা হলে খোঁজা O(n) পর্যন্ত পড়ে যায়।
+- read-heavy, প্রায়-বদলায়-না data-তে ISAM এখনো সরল আর দ্রুত পছন্দ।
+- ঘন insert/delete হলে চলে যাও [B+ tree](./b-plus-tree.mdx)-এর কাছে: ও নিজেই গুছে নেয়।
+- ISAM চালালে periodic reorganization বাধ্যতামূলক, নইলে system চুপচাপ ধীর হয়ে মরবে।

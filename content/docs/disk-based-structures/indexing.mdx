@@ -1,0 +1,290 @@
+---
+title: "Database Indexing: read-এর গতি, write-এর দাম"
+description: "dense বনাম sparse, primary বনাম secondary, clustered বনাম unclustered, single বনাম multi-level; প্রতিটা trade-off হাতে-গোনা হিসাবসহ।"
+---
+
+Database-এর index হলো একটা বাড়তি কাঠামো: জায়গা আর write-এর খরচ দিয়ে কিনে আনা read-এর গতি।
+
+## কী শিখব
+
+- index আসলে কী, আর কেন এটা কিছুতেই free নয়
+- dense বনাম sparse index, আর sparse কেন sorted data ছাড়া চলেই না
+- primary, secondary, clustered, unclustered: শব্দগুলোর আসল মানে
+- 10টা row-এর table-এ তিন রকম lookup-এর ধাপ-গোনা dry run
+- index কখন ক্ষতি করে, আর multi-level index কীভাবে B+ tree-তে পৌঁছায়
+
+## ধারণা
+
+ভাবো তো, 500 পৃষ্ঠার একটা বইয়ে "recursion" শব্দটা কোন কোন পাতায় আছে জানতে চাইলে। পুরো বই পড়ে ফেলবে? নাকি পেছনের নির্ঘণ্ট খুলে দেখবে? নির্ঘণ্টটা বইয়ের গল্প নয়, একটা **আলাদা কাঠামো**: শব্দ, আর তার পাশে পাতা নম্বর। বই লিখতে এর জন্য বাড়তি কাজ লেগেছে, ছাপাতে বাড়তি পাতা লেগেছে; বিনিময়ে খোঁজার সময় ঘণ্টা থেকে নেমেছে সেকেন্ডে।
+
+Database-এর index হুবহু এটা। Table-এর record-গুলো disk block-এ শুয়ে আছে। Index হলো বাড়তি একটা structure, key থেকে কোন block-এ record, যেটা দিয়ে পুরো table না ঘেঁটেই record পাওয়া যায়। দাম দুটো:
+
+1. **জায়গা**: index নিজেই disk-এ জায়গা খায়।
+2. **Write-এর ধীরতা**: প্রতি insert, update, delete-এ table-এর সাথে index-ও বদলাতে হয়।
+
+এই trade-off মাথায় রেখে index-এর চারটা মৌলিক প্রশ্ন:
+
+- **dense নাকি sparse**: প্রতি record-এর জন্য entry, নাকি প্রতি block-এর জন্য একটা?
+- **primary নাকি secondary**: table যে key-তে sorted, সেটার উপর, নাকি অন্য কোনো column-এর উপর?
+- **clustered নাকি unclustered**: data-র physical ক্রমটাই কি index-এর ক্রম?
+- **single নাকি multi-level**: index একটা টেবিল, নাকি index-এর উপরে আরেকটা index?
+
+চারটা প্রশ্নের উত্তর একটা ছোট table হাতে নিয়ে বের করি।
+
+## ধাপে ধাপে: 10টা student, দুই রকম index
+
+ধরো student table-এ 10টা record, roll অনুযায়ী sorted। এক disk block-এ ধরে 3টা record, তাই 4টা block:
+
+```text
+Data file (roll-এ sorted):
+┌──────────────┬──────────────┬──────────────┬──────┐
+│ B0           │ B1           │ B2           │ B3   │
+│ 101 102 103  │ 104 105 106  │ 107 108 109  │ 110  │
+└──────────────┴──────────────┴──────────────┴──────┘
+
+Dense index (প্রতি record-এ এক entry, মোট 10টা):
+101→B0  102→B0  103→B0  104→B1  105→B1
+106→B1  107→B2  108→B2  109→B2  110→B3
+
+Sparse index (প্রতি block-এ এক entry, মোট 4টা):
+101→B0   104→B1   107→B2   110→B3
+```
+
+Sparse index-এর নিয়ম: data যেহেতু sorted, target-এর জন্য "শেষ যে entry-র key ≤ target", সেটার block-টাই একমাত্র সম্ভাব্য ঠিকানা।
+
+**Lookup 108, sparse index দিয়ে:**
+
+| ধাপ | কোথায় দেখছি | তুলনা | সিদ্ধান্ত |
+|-----|--------------|--------|-----------|
+| 1 | sparse entry 1 | 101 ≤ 108? হ্যাঁ | target = B0 ধরে এগিয়ে |
+| 2 | sparse entry 2 | 104 ≤ 108? হ্যাঁ | target = B1 ধরে এগিয়ে |
+| 3 | sparse entry 3 | 107 ≤ 108? হ্যাঁ | target = B2 ধরে এগিয়ে |
+| 4 | sparse entry 4 | 110 ≤ 108? না | থামো, গন্তব্য B2 |
+| 5 | B2 disk থেকে পড়ো | 1 block read | block হাতে পেলাম |
+| 6 | B2-এর ভেতরে | 107 = 108? না | পরের record |
+| 7 | B2-এর ভেতরে | 108 = 108? হ্যাঁ | পাওয়া গেছে |
+
+**একই lookup তিন পদ্ধতিতে** (নিচের কোড চালালে এই সংখ্যাগুলোই পাবে):
+
+| key | index ছাড়া | dense index | sparse index |
+|-----|-------------|-------------|--------------|
+| 108 | 3 block read, 8 তুলনা | 1 block read, 4 তুলনা | 1 block read, 6 তুলনা |
+| 101 | 1 block read, 1 তুলনা | 1 block read, 4 তুলনা | 1 block read, 3 তুলনা |
+| 999 (নেই) | 4 block read, 10 তুলনা | 0 block read, 4 তুলনা | 1 block read, 5 তুলনা |
+
+তিনটা জিনিস চোখে পড়ার মতো:
+
+1. Sparse index dense-এর চেয়ে অনেক ছোট (4 entry বনাম 10), অথচ খরচ প্রায় কাছাকাছি। বড় table-এ এই পার্থক্যই সব।
+2. Dense index key না পেলে data block-ই পড়ে না (0 block read); sparse সন্দেহ হলেও একটা block পড়েই ফেলে।
+3. **Sparse-এর শর্ত sorted data।** Data এলোমেলো হলে "শেষ entry যার key ≤ target" কথাটাই অর্থহীন: ভুল block-এ গিয়ে পড়বে, আসল record অন্য block-এ বসে থাকবে। নিচের কোডের শেষে এর প্রমাণ আছে। Sorted রাখাটা এত গুরুত্বপূর্ণ কেন, সে গল্প [Why Sorting](../sorting/why-sorting.mdx)-এ।
+
+## কোড: তিন রকম lookup, খরচসহ
+
+```js
+// student table: roll অনুযায়ী sorted, disk block-এ ভাগ করা
+const students = [
+  { roll: 101, name: "Ana" }, { roll: 102, name: "Rafi" }, { roll: 103, name: "Mim" },
+  { roll: 104, name: "Raju" }, { roll: 105, name: "Suma" }, { roll: 106, name: "Tanvir" },
+  { roll: 107, name: "Nila" }, { roll: 108, name: "Emon" }, { roll: 109, name: "Priya" },
+  { roll: 110, name: "Sabbir" },
+];
+
+const BLOCK_CAPACITY = 3;   // এক disk block-এ 3টা record
+const blocks = [];
+for (let i = 0; i < students.length; i += BLOCK_CAPACITY) {
+  blocks.push(students.slice(i, i + BLOCK_CAPACITY));
+}
+
+// dense index: প্রতিটা record-এর জন্য একটা entry
+function buildDenseIndex(records) {
+  return records.map((r, i) => ({ key: r.roll, block: Math.floor(i / BLOCK_CAPACITY) }));
+}
+
+// sparse index: প্রতিটা block-এর জন্য একটা entry (block-এর প্রথম key)
+function buildSparseIndex(blocks) {
+  return blocks.map((b, i) => ({ key: b[0].roll, block: i }));
+}
+
+// পদ্ধতি ১: index ছাড়া - block ধরে ধরে পড়ো, ভেতরে scan
+function lookupNoIndex(blocks, key) {
+  let blockReads = 0, comparisons = 0;
+  for (const block of blocks) {
+    blockReads++;
+    for (const r of block) {
+      comparisons++;
+      if (r.roll === key) return { hit: true, blockReads, comparisons };
+    }
+  }
+  return { hit: false, blockReads, comparisons };
+}
+
+// পদ্ধতি ২: dense index, তার উপর binary search
+function lookupDense(blocks, dense, key) {
+  let blockReads = 0, comparisons = 0;
+  let lo = 0, hi = dense.length - 1, foundEntry = null;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    comparisons++;
+    if (dense[mid].key === key) { foundEntry = dense[mid]; break; }
+    if (dense[mid].key < key) lo = mid + 1; else hi = mid - 1;
+  }
+  if (!foundEntry) return { hit: false, blockReads, comparisons }; // data block ছুঁয়েও না
+  blockReads++;                    // index বলে দিল কোন block-এ, সেটা disk থেকে পড়লাম
+  for (const r of blocks[foundEntry.block]) {
+    comparisons++;
+    if (r.roll === key) return { hit: true, blockReads, comparisons };
+  }
+  return { hit: false, blockReads, comparisons };
+}
+
+// পদ্ধতি ৩: sparse index - শেষ যে entry-র key <= target, সেই block-এ নেমে scan
+function lookupSparse(blocks, sparse, key) {
+  let comparisons = 0;
+  let target = 0;                  // সবচেয়ে ছোট key-এরও ছোট হলে block 0-তেই খোঁজো
+  for (const entry of sparse) {
+    comparisons++;
+    if (entry.key <= key) target = entry.block;
+    else break;                    // index sorted, বড় পেলেই থামো
+  }
+  const blockReads = 1;            // sparse-এ একটাই data block পড়া লাগে
+  for (const r of blocks[target]) {
+    comparisons++;
+    if (r.roll === key) return { hit: true, blockReads, comparisons };
+  }
+  return { hit: false, blockReads, comparisons };
+}
+```
+
+চালিয়ে দেখি তিন পদ্ধতির খরচ:
+
+```js
+const dense = buildDenseIndex(students);
+const sparse = buildSparseIndex(blocks);
+console.log("record: " + students.length + ", dense entry: " + dense.length + ", sparse entry: " + sparse.length);
+// record: 10, dense entry: 10, sparse entry: 4
+
+for (const key of [108, 101, 999]) {
+  const a = lookupNoIndex(blocks, key);
+  const b = lookupDense(blocks, dense, key);
+  const c = lookupSparse(blocks, sparse, key);
+  console.log(
+    "key " + key +
+    ": no-index " + a.blockReads + " block/" + a.comparisons + " তুলনা | " +
+    "dense " + b.blockReads + " block/" + b.comparisons + " তুলনা | " +
+    "sparse " + c.blockReads + " block/" + c.comparisons + " তুলনা | hit: " + c.hit
+  );
+}
+// key 108: no-index 3 block/8 তুলনা | dense 1 block/4 তুলনা | sparse 1 block/6 তুলনা | hit: true
+// key 101: no-index 1 block/1 তুলনা | dense 1 block/4 তুলনা | sparse 1 block/3 তুলনা | hit: true
+// key 999: no-index 4 block/10 তুলনা | dense 0 block/4 তুলনা | sparse 1 block/5 তুলনা | hit: false
+
+// শেষ প্রমাণ: sparse index sorted data ছাড়া কাজ করে না
+const jumbled = [
+  [{ roll: 108 }, { roll: 103 }],
+  [{ roll: 101 }, { roll: 110 }],
+];
+const badSparse = buildSparseIndex(jumbled);
+console.log(lookupSparse(jumbled, badSparse, 101));
+// { hit: false, blockReads: 1, comparisons: 3 } - অথচ 101 block 1-এ বসে আছে!
+```
+
+## ভ্যারিয়েন্ট ১: composite index (একাধিক column-এর key)
+
+Query যদি ঘন ঘন হয় `WHERE dept = 'CSE' AND roll = 107` ঘরনের, তাহলে (dept, roll) জোড়ার উপর একটাই index বানাও:
+
+```text
+(dept, roll) index-এর ক্রম:
+(CSE, 101) (CSE, 104) (CSE, 107) (EEE, 102) (EEE, 105) (EEE, 108) ...
+```
+
+নিয়ম: আগে dept দিয়ে sort, টাই হলে roll দিয়ে। ফলে:
+
+| query | index কাজে লাগে? |
+|-------|------------------|
+| `WHERE dept = 'CSE' AND roll = 107` | পুরোপুরি |
+| `WHERE dept = 'CSE'` | হ্যাঁ (leftmost prefix) |
+| `WHERE roll = 107` | প্রায় নয়: roll একা এই index-এ sorted নয় |
+
+## ভ্যারিয়েন্ট ২: covering index
+
+`SELECT roll FROM students WHERE roll = 108`: উত্তরটা index-এর entry-তেই আছে, key-টাই তো roll। Data block-এ যাওয়াই লাগে না, block read 0। এমন index-কে বলে **covering index**। Secondary index-এ সাধারণত এটা হয় না: index entry বলে শুধু record কোথায়, তাই index → pointer → data block, মানে প্রতি lookup-এ বাড়তি একটা I/O।
+
+## ভ্যারিয়েন্ট ৩: কখন index ক্ষতি করে
+
+প্রতিটা index মানে প্রতিটা insert, update, delete-এ বাড়তি কাজ।
+
+| workload | index-এর ভাগ্য |
+|----------|----------------|
+| read-heavy (রিপোর্ট, ড্যাশবোর্ড) | যত দরকারি index, ততই ভালো |
+| balanced | 2-3টা সাবধানে বাছা index |
+| write-heavy (প্রতি সেকেন্ডে হাজার insert-এর log table) | index যত কম তত ভালো; দরকার হলে batch-এ বানাও |
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `const BLOCK_CAPACITY = 3` : disk block-এর অনুকরণ। বাস্তবে এই সংখ্যাটাই বলে দেয় sparse index কত ছোট হবে।
+2. `blocks.push(students.slice(i, i + BLOCK_CAPACITY))` : sorted record-গুলো ধারাবাহিকভাবে block-এ ভরা, ঠিক যেমন disk-এ থাকে।
+3. `buildDenseIndex` : প্রতি record-এ এক entry; `Math.floor(i / BLOCK_CAPACITY)` বলে দেয় record-টা কোন block-এ।
+4. `buildSparseIndex` : শুধু প্রতি block-এর **প্রথম** key। 10টা entry-র বদলে 4টা।
+5. `lookupNoIndex` : block ধরে ধরে পড়ো আর ভেতরে scan করো; worst case-এ পুরো file-ই পড়া লাগে।
+6. `lookupDense`-এর `while (lo <= hi)` : index-টা sorted array, তাই খোঁজাটা খাঁটি [binary search](../searching/binary-search.mdx)।
+7. `foundEntry` না মিললে সাথে সাথে ফিরে এসো, **data block ছুঁয়েও না** (blockReads 0)। dense index-এর ছোট্ট বোনাস।
+8. `lookupSparse`-এর loop: শেষ যে entry-র key ≤ target, সেটার block। entry বড় হলেই break; এই যুক্তিটা data sorted ধরেই দাঁড়ানো।
+9. sparse-এ data block **একটাই** পড়া হয়, তারপর block-এর ভেতরে সর্বোচ্চ BLOCK_CAPACITY তুলনা।
+10. শেষের jumbled demo: একই কোড unsorted data-তে চালালে 101-কে "নেই" বলে দেয়, অথচ সে block 1-এ বসে আছে। শর্ত ভাঙলে sparse index ভুল উত্তর দেয়, কোনো warning-ও দেয় না।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+ধরো nটা record, এক block-এ bটা record, মানে ceil(n/b)টা block।
+
+**Index ছাড়া:** worst case-এ সব block পড়তে হয়: ceil(n/b) block read, nটা তুলনা। O(n)।
+
+**Dense index:** entry nটা। Index-এ binary search: ceil(log2 n) তুলনা। তারপর 1 block read + block-এর ভেতরে সর্বোচ্চ b তুলনা। মোট ≈ O(log n + b)। জায়গা O(n): table-এর সাথে প্রায় সমান বাড়তি ভার।
+
+**Sparse index:** entry ceil(n/b)টা। খোঁজা ceil(log2(n/b)) তুলনা (binary search হলে) + 1 block read + সর্বোচ্চ b তুলনা। জায়গা O(n/b)। b = 100 হলে sparse index dense-এর মাত্র 1%। তাই বড় table-এ primary index প্রায় সবসময় sparse।
+
+**Multi-level:** sparse index-টাই যদি এক block-এ না ধরে? তার উপরে আবার sparse index। এক block-এ fটা entry ধরলে (fanout) স্তর লাগে log_f(n)। হিসাব করেই দেখি: n = 10^9 record, f = 100 হলে index-এর স্তরগুলো: 10^7 → 10^5 → 10^3 → 10 → 1। মানে মাত্র 5টা block read-এ যেকোনো record, যেখানে index ছাড়া লাগত 10^7 block read। এই লাইন ধরে হাঁটলেই পৌঁছে যাবে [B+ tree](./b-plus-tree.mdx)-এ, যেখানে এই বহু-স্তর কাঠামো insert/delete-এর পরও জীবিত থাকে। Static সংস্করণটা দেখেছ [ISAM](./isam.mdx)-এ।
+
+**Write-এর দাম:** kটা index থাকলে প্রতি insert মানে 1টা data write + kটা index update। index বাড়লে read তীর হয়, write কাঁদে।
+
+## সাধারণ ভুল আর edge case
+
+**১. index-কে free মনে করা।**
+প্রতিটা index জায়গা খায় আর প্রতি write ধীর করে। "Query ধীর, index দিয়ে দেই" বলে লাফানোর আগে জিজ্ঞেস করো: এই table-এ দিনে কতটা লেখা হয়, কতটা পড়া হয়?
+
+**২. unsorted data-তে sparse index বসানো।**
+Sparse-এর পুরো যুক্তি দাঁড়িয়ে আছে "data sorted" এই ধরে নেওয়ার উপর। উপরের কোডের শেষ demo-টা দেখো: unordered data-তে index নিঃশব্দে ভুল উত্তর দেয়। Unsorted field-এ index চাইলে dense secondary index লাগবে।
+
+**৩. যে column-এ WHERE দেখা গেল, সেখানেই index।**
+দশটা column-এ দশটা index বানালে SELECT দ্রুত হবে ঠিকই, কিন্তু প্রতি INSERT-এ এখন 11টা জায়গায় লিখতে হবে। যে index কোনো query-ই ব্যবহার করে না, সে খাঁটি করচর। প্রায় সব database-ই index ব্যবহারের stats দেয়; মাঝে মাঝে দেখে অকেজোগুলো ফেলে দাও।
+
+**৪. low-cardinality column-এ index।**
+`active` column-এ মান দুই রকম: yes আর no। Index বলে দিল "yes"-গুলো ওই ওই block-এ, কিন্তু ওগুলো তো table-এর অর্ধেক। Index ঘুরে অর্ধেক block পড়ার চেয়ে সোজা পুরো table scan-ই সস্তা। Index তখনই কাজে আসে যখন সে সত্যিই কম row-এ ছাঁই করে।
+
+**৫. secondary index-এ শুধু index দেখেই উত্তর মিলবে ভাবা।**
+Primary বা clustered index-এ data-ই index-এর ক্রমে সাজানো। কিন্তু secondary index-এ entry বলে শুধু record কোথায়। Covering না হলে index থেকে pointer নিয়ে আবার data block পড়তে হয়, মানে প্রতি lookup-এ বাড়তি I/O। এই খরচটা query plan-এ দেখা যায়; চোখ বুজে secondary index বানালে ধরা খাবে।
+
+## Animation Spec
+
+> **Animation Spec: Dense বনাম Sparse Lookup Race**
+>
+> - **দৃশ্য:** নিচে block-ভাগ করা data file; উপরে বাঁয়ে dense index, ডানে sparse index; মাঝে shared step counter আর block-read counter।
+> - **ইনপুট:** lookup key; record সংখ্যা আর block capacity-র slider; "unsorted করো" টগল (sparse-এর ভাঙন দেখানোর জন্য)।
+> - **ধাপ:** দুই পক্ষ একসাথে দৌড়ায়: dense binary search-এ লাফ দেয়, sparse আগে ছোট index scan করে তারপর block-এ নামে; প্রতি তুলনায় counter বাড়ে; block read হলে সেই block জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; key বদলে দৌড় আবার।
+> - **লক্ষ্য:** sparse ছোট index দিয়ে প্রায় dense-এর গতি পায়; আর unsorted টগল অন করলেই sparse-এর ভুল উত্তর নিজের চোখে দেখা যায়।
+
+## অনুশীলন
+
+- **সহজ ১:** 12টা record নাও (roll 201 থেকে 212), block capacity 4। কাগজে dense আর sparse দুটো index-ই বানাও, তারপর key 209-এর জন্য দুটোর ধাপ গুনে তুলনা করো। হিন্ট: sparse-এ থাকবে মাত্র 3টা entry।
+- **সহজ ২:** LeetCode 35 (Search Insert Position) solve করো। হিন্ট: sparse index-এর "শেষ entry যার key ≤ target" লজিক আর এই সমস্যার binary search একই মুদ্রার দুই পিঠ।
+- **মাঝারি ১:** উপরের কোডে `buildMultiLevelIndex` লিখো: sparse index-এর উপর আরেকটা sparse index। 1000টা record নিয়ে দেখো block read কেমন বদলায়। হিন্ট: একই buildSparseIndex লজিক index entry-গুলোর উপর আবার চালাও।
+- **মাঝারি ২:** (dept, roll)-এর উপর composite index implement করো, সাথে range query: `dept = 'CSE' AND roll >= 105`। হিন্ট: entries sort করো আগে dept দিয়ে, টাই হলে roll দিয়ে; তারপর প্রথম matching entry খুঁজে সামনে scan।
+- **কঠিন:** একটা mini index-advisor বানাও। ইনপুট: query-গুলোর তালিকা (কোন column-এ filter, দিনে কতবার) আর insert-এর হার। প্রতি সম্ভাব্য index-এর জন্য মোট খরচ বনাম সাশ্রয় হিসাব করে বলবে কোনটা বানানো উচিত। হিন্ট: সাশ্রয় = (query সংখ্যা × বেঁচে যাওয়া তুলনা), খরচ = (insert সংখ্যা × index update)।
+
+## সারসংক্ষেপ
+
+- index = read-এর গতি, বিনিময়ে জায়গা আর write-এর দাম; free কিছু নেই।
+- dense: প্রতি record-এ entry। sparse: প্রতি block-এ entry, শর্ত হলো data sorted।
+- clustered বা primary index-এ data নিজেই index-এর ক্রমে; secondary index covering না হলে বাড়তি block read।
+- index বড় হলে তার উপরে index: এভাবেই multi-level, আর এই লাইনের শেষে [B+ tree](./b-plus-tree.mdx)।
+- সব column-এ index নয়; query-প্যাটার্ন আর write-এর হার দেখে বাছো।
