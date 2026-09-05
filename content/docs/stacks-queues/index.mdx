@@ -1,0 +1,23 @@
+---
+title: Stacks & Queues
+description: নির্দিষ্ট নিয়মে ডেটা ঢোকানো-বের হওয়া stack (LIFO) ও queue (FIFO), তাদের বাস্তব প্রয়োগ, deque ও priority queue-এর ধারণা এবং কখন কোনটা, সব একসাথে।
+---
+
+Array ও Linked List-এ ডেটা যেকোনো জায়গা থেকে access করা যায়। কিন্তু Stack ও Queue হলো "নিয়ন্ত্রিত" data structure, এদের মধ্যে ডেটা ঢোকানো-বের করার নির্দিষ্ট নিয়ম আছে। এরা undo, browser history, task scheduling, BFS/DFS, সব জায়গায় লাগে।
+
+**Section Roadmap:** Stack (LIFO), প্রয়োগ, Queue (FIFO), Deque, Priority Queue (intro), কখন কোনটা।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Stack (LIFO)](./stack-lifo): থালার স্তূপের মতো, শেষে রাখা আগে নেওয়া হয়
+2. [Balanced Parentheses](./balanced-parentheses): বাস্তব সমস্যায় stack প্রয়োগ
+3. [Queue (FIFO)](./queue-fifo): লাইনে দাঁড়ানোর মতো, আগে আসা আগে যায়
+4. [Deque](./deque): দুই প্রান্তেই যোগ ও বাদ করা যায় এমন কাঠামো
+5. [Priority Queue](./priority-queue): অগ্রাধিকার অনুযায়ী বের হওয়া queue
+6. [Stack vs Queue](./stack-vs-queue): দুই নীতির সারসংক্ষেপ
+
+## সারাংশ
+
+Stack অর্থাৎ LIFO (push/pop, O(1)), undo/DFS-এ কাজে লাগে। Queue অর্থাৎ FIFO (enqueue/dequeue, দক্ষ version-এ O(1)), scheduling/BFS-এ লাগে। Deque অর্থাৎ দুই মুখের queue। Priority Queue-তে অগ্রাধিকার আগে বের হয়, দক্ষ বাস্তবায়ন হয় heap দিয়ে।
+
+**পরবর্তী:** Hash Tables (শীঘ্রই আসছে)।

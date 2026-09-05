@@ -1,0 +1,65 @@
+---
+title: "Stack vs Queue: সারসংক্ষেপ"
+description: LIFO বনাম FIFO, দুই নীতির তুলনা, অপারেশন ও প্রয়োগের তালিকা।
+---
+
+## কী শিখব
+
+- stack আর queue-এর মৌলিক পার্থক্য
+
+## ধারণা
+
+| দিক | Stack | Queue |
+|-----|-------|-------|
+| নীতি | LIFO | FIFO |
+| যোগ | push (top) | enqueue (back) |
+| বাদ | pop (top) | dequeue (front) |
+| প্রয়োগ | undo, DFS, recursion | scheduling, BFS |
+
+## কোড উদাহরণ
+
+```js
+// একই ডেটা stack ও queue-তে ঢুকিয়ে বের করি
+const input = [1, 2, 3];
+const stack = [];
+const queue = [];
+
+for (const x of input) {
+  stack.push(x);   // stack-এ উপরে জমা হচ্ছে
+  queue.push(x);   // queue-তে পেছনে দাঁড়াচ্ছে
+}
+
+const fromStack = [];
+while (stack.length) fromStack.push(stack.pop());
+
+const fromQueue = [];
+while (queue.length) fromQueue.push(queue.shift()); // demo-তে shift, সরলতার জন্য
+
+console.log("Input:", input);            // [ 1, 2, 3 ]
+console.log("Stack (LIFO):", fromStack); // [ 3, 2, 1 ], উল্টো ক্রম
+console.log("Queue (FIFO):", fromQueue); // [ 1, 2, 3 ], একই ক্রম
+```
+
+## কোড ব্রেকডাউন
+
+- একই input stack থেকে **উল্টো** ক্রমে বের হয়, কারণ শেষে ঢোকাটা top-এ থাকে।
+- queue থেকে **একই** ক্রমে বের হয়, কারণ আগে দাঁড়ানো সামনে থাকে।
+- এই পার্থক্যই LIFO বনাম FIFO।
+- demo-তে সরলতার জন্য `shift()` ব্যবহার করা হয়েছে; বাস্তবে দক্ষ queue-তে pointer দিয়ে dequeue করা হয়।
+
+## Complexity
+
+- দুটোর মূল অপারেশনই O(1); পার্থক্য শুধু কোন প্রান্ত থেকে বের হয় তার।
+
+## Animation Spec
+
+> **Animation Spec: LIFO vs FIFO**
+>
+> - **দৃশ্য:** পাশাপাশি stack ও queue; একই ক্রমে ডেটা ঢোকানো।
+> - **ইনপুট:** একই input sequence।
+> - **ধাপ:** একই ডেটা ঢুকিয়ে বের করলে stack উল্টো ক্রমে, queue একই ক্রমে বের করবে।
+> - **লক্ষ্য:** দুই নীতির মৌলিক পার্থক্য।
+
+## অনুশীলন
+
+- দুটো stack দিয়ে একটা queue বানানো যায় কিনা ভাবো (ক্লাসিক interview প্রশ্ন)।

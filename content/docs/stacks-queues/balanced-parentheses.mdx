@@ -1,0 +1,55 @@
+---
+title: "Balanced Parentheses: stack-এর প্রয়োগ"
+description: খোলা বন্ধনী stack-এ রেখে বন্ধ বন্ধনীর সাথে জোড়া মেলানো, bracket balancing সমস্যার সমাধান।
+---
+
+## কী শিখব
+
+- বাস্তব সমস্যায় stack প্রয়োগ
+
+## ধারণা
+
+প্রতিটা খোলা বন্ধনী stack-এ রাখি; বন্ধ বন্ধনী এলে দেখি উপরেরটা সঠিক জোড়া কিনা। শেষে stack খালি হলে balanced।
+
+## কোড উদাহরণ
+
+```js
+function isBalanced(str) {
+  const stack = [];
+  const pairs = { ')': '(', ']': '[', '}': '{' };
+  for (const ch of str) {
+    if (ch === '(' || ch === '[' || ch === '{') {
+      stack.push(ch);                 // খোলা হলে রাখি
+    } else if (ch in pairs) {
+      if (stack.pop() !== pairs[ch]) return false; // জোড়া মেলে না
+    }
+  }
+  return stack.length === 0;          // সব বন্ধ হয়েছে?
+}
+
+console.log(isBalanced("({[]})")); // true
+console.log(isBalanced("([)]"));   // false
+```
+
+## কোড ব্রেকডাউন
+
+- খোলা bracket সবসময় push।
+- বন্ধ bracket এলে top-এর সাথে জোড়া মেলাই; না মিললে ভুল।
+- শেষে stack অ-খালি মানে কিছু বন্ধ হয়নি।
+
+## Complexity
+
+- time O(n), space O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Bracket Matcher**
+>
+> - **দৃশ্য:** উপরে string, নিচে stack।
+> - **ইনপুট:** bracket string।
+> - **ধাপ:** প্রতিটা char পড়ার সময় stack-এ push/pop দেখা যাবে; ভুল মিললে লাল flash।
+> - **লক্ষ্য:** stack কীভাবে "মনে রাখে" শেষ খোলা bracket।
+
+## অনুশীলন
+
+- HTML tag `<div></div>` balanced কিনা একই ধারণায় ভাবো।

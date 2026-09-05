@@ -1,0 +1,66 @@
+---
+title: "Queue (FIFO): আগে আসা আগে যায়"
+description: First In, First Out নীতির queue, naive বনাম দক্ষ বাস্তবায়ন এবং front/back pointer কৌশল।
+---
+
+## কী শিখব
+
+- First In, First Out নীতির queue
+
+## ধারণা
+
+Queue হলো লাইনে দাঁড়ানোর মতো। যে **আগে** আসে, সে **আগে** যায় (FIFO)। `enqueue` (পেছনে যোগ), `dequeue` (সামনে থেকে বের)।
+
+বাস্তব উদাহরণ: টিকিট কাউন্টারের লাইন, printer queue, BFS (section 13)।
+
+সহজ version হলো `arr.push()` + `arr.shift()`, কিন্তু `shift()` O(n)। তাই দক্ষ version-এ object আর দুটো pointer (front/back) ব্যবহার করি।
+
+## কোড উদাহরণ
+
+```js
+// naive: arr.shift() O(n), বড় queue-তে ধীর।
+// দক্ষ: দুটো pointer দিয়ে O(1) dequeue।
+class Queue {
+  constructor() { this.items = {}; this.front = 0; this.back = 0; }
+
+  enqueue(x) { this.items[this.back] = x; this.back++; }  // O(1)
+  dequeue()  {
+    if (this.isEmpty()) return undefined;
+    const x = this.items[this.front];
+    delete this.items[this.front];
+    this.front++;
+    return x;                                             // O(1)
+  }
+  peek()    { return this.items[this.front]; }
+  isEmpty() { return this.back === this.front; }
+  size()    { return this.back - this.front; }
+}
+
+const q = new Queue();
+q.enqueue("A"); q.enqueue("B"); q.enqueue("C");
+console.log(q.dequeue()); // A (আগে এসেছিল)
+console.log(q.dequeue()); // B
+console.log(q.peek());    // C
+```
+
+## কোড ব্রেকডাউন
+
+- সহজ version: `arr.push()` + `arr.shift()`; কিন্তু `shift()` O(n)।
+- দক্ষ version: object + front/back pointer, ফলে enqueue ও dequeue দুটোই O(1)।
+
+## Complexity
+
+- enqueue/dequeue O(1) (এই version-এ)।
+
+## Animation Spec
+
+> **Animation Spec: Ticket Line**
+>
+> - **দৃশ্য:** অনুভূমিক লাইন; বাঁয়ে front, ডানে back।
+> - **ইনপুট:** enqueue মান; dequeue বাটন।
+> - **ধাপ:** enqueue করলে ডানে নতুন জন যোগ হয়; dequeue করলে বাম থেকে একজন বেরিয়ে যায়, front pointer এগোয়।
+> - **লক্ষ্য:** FIFO ও front/back pointer বোঝা।
+
+## অনুশীলন
+
+- একটা queue দিয়ে একটা "call center" simulation ভাবো (কে আগে সেবা পাবে)।

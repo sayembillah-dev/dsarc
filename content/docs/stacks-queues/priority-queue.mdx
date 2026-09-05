@@ -1,0 +1,56 @@
+---
+title: "Priority Queue: অগ্রাধিকার আগে"
+description: অগ্রাধিকার অনুযায়ী বের হওয়া queue-এর ধারণা, সরল বাস্তবায়ন এবং heap-এর দিকে ইঙ্গিত।
+---
+
+## কী শিখব
+
+- অগ্রাধিকার অনুযায়ী বের হওয়া queue-এর ধারণা
+
+## ধারণা
+
+সাধারণ queue-তে "আগে এলে আগে"। Priority Queue-তে **সবচেয়ে গুরুত্বপূর্ণ (highest/lowest priority)** আগে বের হয়, যেমন হাসপাতালের জরুরি রোগী আগে।
+
+দক্ষ বাস্তবায়ন হয় **Heap** দিয়ে (section 12), যেখানে insert ও extract O(log n)। এখানে শুধু ধারণাটা একটা সরল (কম-দক্ষ) version দিয়ে দেখছি।
+
+## কোড উদাহরণ
+
+```js
+class PriorityQueue {
+  constructor() { this.items = []; } // {value, priority}
+
+  enqueue(value, priority) {
+    this.items.push({ value, priority });
+    this.items.sort((a, b) => a.priority - b.priority); // ছোট priority আগে
+  }                                                     // sort, O(n log n)
+  dequeue() { return this.items.shift(); }              // সর্বোচ্চ অগ্রাধিকার বের
+}
+
+const pq = new PriorityQueue();
+pq.enqueue("সাধারণ রোগী", 5);
+pq.enqueue("জরুরি রোগী", 1);
+pq.enqueue("মাঝারি রোগী", 3);
+console.log(pq.dequeue().value); // জরুরি রোগী (priority 1)
+```
+
+## কোড ব্রেকডাউন
+
+- এই সরল version-এ প্রতিবার sort করায় enqueue O(n log n), শেখার জন্য ঠিক; বাস্তবে heap ব্যবহার করব।
+- section 12-এ heap দিয়ে দক্ষ version শিখব।
+
+## Complexity
+
+- এই version: enqueue O(n log n); heap version: O(log n)।
+
+## Animation Spec
+
+> **Animation Spec: Priority Line**
+>
+> - **দৃশ্য:** লাইন, প্রতিটা এলিমেন্টে priority ব্যাজ; ছোট priority সামনে।
+> - **ইনপুট:** value ও priority।
+> - **ধাপ:** নতুন জন ঢুকে নিজের priority অনুযায়ী সঠিক জায়গায় বসে; dequeue-তে সামনেরটা বের হয়।
+> - **লক্ষ্য:** "অগ্রাধিকার আগে" ধারণা; heap-এর দিকে সেতু।
+
+## অনুশীলন
+
+- ভাবো: কেন প্রতিবার sort না করে heap ভালো (section 12-এ মিলিয়ে নেবে)।

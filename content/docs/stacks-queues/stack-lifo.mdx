@@ -1,0 +1,56 @@
+---
+title: "Stack (LIFO): শেষে ঢোকা আগে বের হয়"
+description: Last In, First Out নীতির stack, push/pop/peek অপারেশন এবং JavaScript array দিয়ে বাস্তবায়ন।
+---
+
+## কী শিখব
+
+- Last In, First Out নীতির stack
+
+## ধারণা
+
+Stack হলো থালার স্তূপের মতো। যেটা **শেষে** রাখো, সেটাই **আগে** নাও (LIFO, Last In First Out)। দুটো মূল অপারেশন: `push` (উপরে রাখা), `pop` (উপর থেকে নেওয়া)।
+
+বাস্তব উদাহরণ: বইয়ের স্তূপ, undo (Ctrl+Z), ব্রাউজারের back button।
+
+## কোড উদাহরণ
+
+```js
+class Stack {
+  constructor() { this.items = []; }
+
+  push(x)  { this.items.push(x); }              // উপরে রাখি, O(1)
+  pop()    { return this.items.pop(); }         // উপর থেকে নিই, O(1)
+  peek()   { return this.items[this.items.length - 1]; } // উপরেরটা দেখি
+  isEmpty(){ return this.items.length === 0; }
+  size()   { return this.items.length; }
+}
+
+const s = new Stack();
+s.push(10); s.push(20); s.push(30);
+console.log(s.peek()); // 30 (সবার উপরে)
+console.log(s.pop());  // 30 (শেষে ঢুকেছিল, আগে বের)
+console.log(s.pop());  // 20
+```
+
+## কোড ব্রেকডাউন
+
+- JavaScript array-এর `push/pop` শেষ প্রান্তে কাজ করে, তাই O(1); stack বানাতে আদর্শ।
+- `peek` শুধু দেখে, বের করে না।
+
+## Complexity
+
+- push/pop/peek O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Plate Stack**
+>
+> - **দৃশ্য:** উল্লম্ব স্তূপ; উপরে top pointer।
+> - **ইনপুট:** মান; push/pop বাটন।
+> - **ধাপ:** push করলে নতুন plate উপরে নামে; pop করলে উপরের plate উঠে যায়। শুধু top-ই নাড়াচাড়া হয়।
+> - **লক্ষ্য:** LIFO নীতি চোখে দেখা।
+
+## অনুশীলন
+
+- একটা string-এর বন্ধনী `()[]{}` সঠিকভাবে balanced কিনা stack দিয়ে চেক করো।

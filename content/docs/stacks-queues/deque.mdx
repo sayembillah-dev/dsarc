@@ -1,0 +1,53 @@
+---
+title: "Deque: দুই মুখের queue"
+description: সামনে ও পেছনে দুই প্রান্তেই যোগ ও বাদ করা যায় এমন deque কাঠামো ও এর ব্যবহার।
+---
+
+## কী শিখব
+
+- দুই প্রান্তেই যোগ/বাদ করা যায় এমন কাঠামো
+
+## ধারণা
+
+Deque (Double-Ended Queue), সামনে ও পেছনে দুই দিকেই `add`/`remove` করা যায়। Sliding Window (section 16)-এর মতো সমস্যায় খুব দরকারি।
+
+## কোড উদাহরণ
+
+```js
+class Deque {
+  constructor() { this.items = []; }
+  addFront(x)  { this.items.unshift(x); }
+  addBack(x)   { this.items.push(x); }
+  removeFront(){ return this.items.shift(); }
+  removeBack() { return this.items.pop(); }
+  peekFront()  { return this.items[0]; }
+  peekBack()   { return this.items[this.items.length - 1]; }
+}
+
+const dq = new Deque();
+dq.addBack(1); dq.addBack(2); dq.addFront(0);
+console.log(dq.peekFront()); // 0
+console.log(dq.peekBack());  // 2
+```
+
+## কোড ব্রেকডাউন
+
+- চার প্রান্তিক অপারেশন: addFront/addBack/removeFront/removeBack।
+- array দিয়ে front অপারেশন O(n); performance-critical হলে doubly linked list দিয়ে O(1) করা যায়।
+
+## Complexity
+
+- array version: back O(1), front O(n); linked-list version: সব O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Two-Ended Queue**
+>
+> - **দৃশ্য:** লাইন; দুই প্রান্তে add/remove বাটন।
+> - **ইনপুট:** প্রান্ত ও মান নির্বাচন।
+> - **ধাপ:** নির্বাচিত প্রান্তে এলিমেন্ট ঢোকে বা বের হয়।
+> - **লক্ষ্য:** deque-এর নমনীয়তা।
+
+## অনুশীলন
+
+- deque দিয়ে একটা string palindrome কিনা চেক করো (দুই প্রান্ত মিলিয়ে)।
