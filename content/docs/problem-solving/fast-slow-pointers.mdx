@@ -9,7 +9,7 @@ description: দুই গতির pointer দিয়ে linked list-এ cycl
 
 ## ধারণা
 
-দুটো pointer - একটা এক ধাপে (slow), একটা দুই ধাপে (fast)। cycle থাকলে fast একসময় slow-কে ধরে ফেলে (দুজন একই node-এ মেলে)। [Linked List](../linked-lists/index.mdx)-এ cycle detection, মাঝের node খোঁজা, ইত্যাদিতে ক্লাসিক। Floyd's cycle detection নামেও পরিচিত।
+কচ্ছপ-খরগোশের গল্পটা মনে আছে? এখানেও দুজন দৌড়ায়, একটা এক ধাপে (slow), আরেকটা দুই ধাপে (fast)। এবার ভাবো, ট্র্যাকটা যদি গোল হয়, মানে cycle থাকে? fast তখন একসময় slow-কে পেছন থেকে ধরেই ফেলবে, দুজন একই node-এ গিয়ে মিলবে। মিললেই বুঝবে cycle আছে। এই সরল বুদ্ধিটাই [Linked List](../linked-lists/index.mdx)-এ cycle detection বা মাঝের node খোঁজার ক্লাসিক কৌশল। নাম Floyd's cycle detection।
 
 ## কোড উদাহরণ
 
@@ -42,7 +42,7 @@ console.log(hasCycle(n1));       // true
 ## কোড ব্রেকডাউন
 
 - cycle থাকলে fast "ল্যাপ" দিয়ে slow-কে ধরে (দৌড়ের ট্র্যাকের মতো)।
-- fast দ্বিগুণ গতিতে যায় বলে সে শেষে পৌঁছালে slow অর্ধেক পথে = মাঝ।
+- fast যখন শেষে পৌঁছায়, slow তখন ঠিক অর্ধেক পথে, মানে মাঝের node-এ।
 
 ## Complexity
 

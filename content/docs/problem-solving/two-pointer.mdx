@@ -9,7 +9,7 @@ description: sorted array-তে দুই pointer দিয়ে nested loop-�
 
 ## ধারণা
 
-sorted array বা string-এ দুটো pointer (সাধারণত দুই প্রান্ত থেকে, বা একই দিকে) একসাথে সরিয়ে অনেক nested-loop সমস্যা এক pass-এ সমাধান। "জোড়া খোঁজা", palindrome, sorted-এ pair-sum - সব এতে। array sorted না থাকলে আগে [Sorting](../sorting/index.mdx) chapter-এর কোনো sort চালাও।
+ধরো, sorted একটা array থেকে এমন দুটো সংখ্যা খুঁজতে হবে যাদের যোগফল target। সব জোড়া মেলালে O(n²)। কিন্তু একটা pointer বাঁ প্রান্তে, আরেকটা ডান প্রান্তে রেখে দুজনকে কাছাকাছি আনলে? একটাই pass, O(n)। এইটাই **two pointer**: sorted array বা string-এ দুটো pointer (বেশিরভাগ সময় দুই প্রান্ত থেকে, কখনো একই দিকে) একসাথে সরিয়ে nested-loop-এর কাজ এক pass-এ শেষ করা। "জোড়া খোঁজা", palindrome, sorted-এ pair-sum, সব এতে। array sorted না থাকলে আগে [Sorting](../sorting/index.mdx) chapter-এর কোনো sort চালিয়ে নাও।
 
 ## কোড উদাহরণ
 
@@ -30,7 +30,7 @@ console.log(pairSum([1, 3, 4, 6, 8, 11], 10)); // [2, 3]  (4+6=10)
 
 ## কোড ব্রেকডাউন
 
-- sorted বলে: sum ছোট হলে বড় মান দরকার -> left++; বড় হলে right--।
+- array sorted, তাই sum ছোট হলে বড় মান দরকার, left++; বড় হলে right--।
 - প্রতিটা pointer সর্বোচ্চ একবার পুরো array পার হয় -> O(n)।
 
 ## Complexity

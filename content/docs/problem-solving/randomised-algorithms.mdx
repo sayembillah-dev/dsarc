@@ -9,7 +9,7 @@ description: এলোমেলো পছন্দ দিয়ে adversarial i
 
 ## ধারণা
 
-এলোমেলো পছন্দ ব্যবহার করে এমন algorithm, যার গতি/ফল খারাপ-ইচ্ছুক ইনপুটের (adversarial) হাতে ধরা পড়ে না। দুই ধরনের: **Las Vegas** - ফল সবসময় সঠিক, সময় এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort.mdx)); **Monte Carlo** - সময় নিশ্চিত, ফলে ছোট ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায় - তাই quicksort/[quickselect](./kth-element.mdx)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
+ধরো, কেউ ইচ্ছা করে তোমার quick sort-কে worst case-এ ফেলতে চাইছে। pivot বাছাইয়ের নিয়ম জানা থাকলে প্রতিপক্ষ এমন ইনপুট বানাতেই পারে। কিন্তু pivot-টা যদি তুমি এলোমেলোভাবে বাছো? তখন ওর কোনো ফন্দি কাজ করে না। এই যে এলোমেলো পছন্দ দিয়ে নিজেকে রক্ষা করা, এটাই **randomised algorithm**। দুই রকমের: **Las Vegas** - ফল সবসময় সঠিক, শুধু সময়টা এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort.mdx)); আর **Monte Carlo** - সময় নিশ্চিত, ফলে ক্ষুদ্র ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায়, তাই quicksort বা [quickselect](./kth-element.mdx)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
 
 ## কোড উদাহরণ
 

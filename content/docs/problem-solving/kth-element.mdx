@@ -9,7 +9,7 @@ description: quickselect partition দিয়ে পুরো sort না ক�
 
 ## ধারণা
 
-"k-তম বৃহত্তম" চাইলে পুরো array sort করা অপচয়। **Quickselect** [Quick Sort](../sorting/quick-sort.mdx)-এর partition-ই ব্যবহার করে: pivot একটা ঠিক ঘরে বসে গেলে দেখা যায় উত্তর কোন ভাগে - অন্য ভাগ ফেলে দিই (পুরো sort নয়, এক ভাগেই খোঁজ)। বিকল্প: k-আকারের একটা **heap** রেখে সবাইকে একবার ঢুকালে top-k আয়ত্তে (stream-এ এটাই ভালো, দেখো [Heaps](../heaps/index.mdx) chapter)।
+ধরো, লক্ষ লক্ষ সংখ্যা থেকে শুধু ৩য় বৃহত্তমটা চাই। পুরো array-টা sort করা মানে কতটা অকাজের কাজ, ভাবো তো! **Quickselect** ঠিক এখানেই বুদ্ধি খাটায়। [Quick Sort](../sorting/quick-sort.mdx)-এর partition-ই ব্যবহার করে: একটা pivot তার ঠিক ঘরে বসে গেলেই দেখা যায় উত্তর কোন ভাগে পড়বে। অন্য ভাগটা ফেলে দাও; পুরো sort নয়, শুধু এক ভাগে খোঁজ চলে। আরেকটা পথ আছে: k-আকারের একটা **heap** রেখে সবাইকে একবার ঢুকিয়ে দিলেই top-k হাতে (stream-এ এটাই ভালো, দেখো [Heaps](../heaps/index.mdx) chapter)।
 
 ## কোড উদাহরণ
 
@@ -45,7 +45,7 @@ console.log(kthLargest([3, 2, 1, 5, 6, 4], 2)); // 5
 
 ## Complexity
 
-- গড়ে O(n), worst O(n²) (দুর্ভাগ্যজনক pivot); heap-পথ O(n log k)।
+- গড়ে O(n), worst case O(n²) (খারাপ pivot পড়লে); heap-পথে O(n log k)।
 
 ## Animation Spec
 

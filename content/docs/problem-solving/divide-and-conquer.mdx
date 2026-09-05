@@ -9,7 +9,7 @@ description: সমস্যা ভাগ করে, উপ-সমস্যা �
 
 ## ধারণা
 
-তিন ধাপ: (১) **Divide** - সমস্যাকে ছোট উপ-সমস্যায় ভাগ, (২) **Conquer** - উপ-সমস্যা recursively সমাধান, (৩) **Combine** - ফলাফল জোড়া। [Merge Sort](../sorting/merge-sort.mdx), [Binary Search](../searching/binary-search.mdx) এর উদাহরণ।
+ভাবো তো, ১০০ পৃষ্ঠার বইয়ে একটা শব্দ খুঁজতে বললে পুরো বই কি এক ধাক্কায় দেখবে? না, আগে ভাগ করে ফেলো। বড় সমস্যার ক্ষেত্রেও একই কথা। তিনটা ধাপ: (১) **Divide** - সমস্যাকে ছোট ছোট উপ-সমস্যায় ভাগ করো, (২) **Conquer** - উপ-সমস্যাগুলো recursively solve করো, (৩) **Combine** - ফলাফল জোড়া লাগাও। [Merge Sort](../sorting/merge-sort.mdx) আর [Binary Search](../searching/binary-search.mdx)-ই এই ছাঁচের চমৎকার উদাহরণ।
 
 ## কোড উদাহরণ
 
@@ -28,11 +28,11 @@ console.log(maxDC([3, 7, 2, 9, 4])); // 9
 ## কোড ব্রেকডাউন
 
 - মাঝ থেকে দুই ভাগ, প্রতি ভাগে recursion, শেষে দুই ফল থেকে সেরা।
-- অনেক D&C algorithm-এর complexity **Master Theorem** দিয়ে বের হয় (যেমন merge sort O(n log n))।
+- অনেক D&C algorithm-এর complexity **Master Theorem** দিয়ে বের করা যায় (যেমন merge sort-এ O(n log n))।
 
 ## Complexity
 
-- সমস্যাভেদে; এখানে O(n)।
+- সমস্যাভেদে বদলায়; এখানে O(n)।
 
 ## Animation Spec
 

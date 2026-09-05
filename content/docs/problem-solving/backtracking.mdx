@@ -1,15 +1,15 @@
 ---
 title: "Backtracking: চেষ্টা করো, না হলে ফিরে এসো"
-description: choose - explore - un-choose; pruning সহ সম্ভাবনা-গাছ অন্বেষণ।
+description: চেষ্টা করো, না মিললে ফিরে এসো; অসম্ভব পথ আগেই কেটে ফেলা (pruning)।
 ---
 
 ## কী শিখব
 
-- সম্ভাবনা "চেষ্টা করো, না হলে ফিরে এসো"
+- সম্ভাবনার গাছে ঘুরে বেড়ানো: চেষ্টা করো, না হলে ফিরে এসো
 
 ## ধারণা
 
-Backtracking = সম্ভাব্য সমাধান ধাপে ধাপে বানানো; কোনো ধাপ ভুল বুঝলে **ফিরে গিয়ে (backtrack)** অন্য পথ চেষ্টা। brute force-এর "চালাক" রূপ - অসম্ভব শাখা আগেই ছেঁটে ফেলে (pruning)। permutations, N-Queens, Sudoku, subset - সব এতে। ভিত্তিটা [Recursion](../recursion/index.mdx) chapter-এর।
+ধরো, Sudoku solve করছো। একটা ঘরে একটা সংখ্যা বসালে, এগিয়ে গেলে, কোথাও আটকে গেলে মুছে দিয়ে ফিরে এলে, অন্য সংখ্যা বসালে। এই যে চেষ্টা-আর-পশ্চাৎপথ খেলা, এটাই **backtracking**। সমাধান ধাপে ধাপে বানাও; কোনো ধাপ ভুল বুঝলে ফিরে গিয়ে (backtrack) অন্য পথ ধরো। সহজ কথায়, brute force-এরই চালাক রূপ: অসম্ভব শাখা আগেই ছেঁটে ফেলে (এই ছাঁটাইয়ের নাম pruning), তাই সব পথ ঘোরা লাগে না। permutations, N-Queens, Sudoku, subset, সব এতে ভাসে। ভিত্তিটা [Recursion](../recursion/index.mdx) chapter-এর, ওটা পড়ে এলে মজা পাবে।
 
 ## কোড উদাহরণ
 
@@ -40,7 +40,7 @@ console.log(permutations([1, 2, 3]));
 
 ## Complexity
 
-- সমস্যাভেদে (permutation O(n * n!)); pruning অনেক কমায়।
+- সমস্যাভেদে বদলায় (permutation-এ O(n * n!)); তবে pruning প্রচুর কাজ কমিয়ে দেয়।
 
 ## Animation Spec
 

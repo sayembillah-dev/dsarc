@@ -1,9 +1,9 @@
 ---
 title: Problem Solving Techniques
-description: Interview ও বাস্তব সমস্যায় বারবার ফিরে আসা ১৫টা প্যাটার্ন - brute force থেকে DP, two pointer থেকে two heaps পর্যন্ত।
+description: Interview হোক বা বাস্তব সমস্যা, যে ১৫টা প্যাটার্ন বারবার ঘুরেফিরে আসে - brute force থেকে DP, two pointer থেকে two heaps পর্যন্ত।
 ---
 
-কাঠামো শেখা শেষ; এবার **প্যাটার্ন**-এর পালা। এই chapter-এর প্রতিটা কৌশল interview ও বাস্তব সমস্যায় বারবার ঘুরেফিরে আসে। প্যাটার্ন চিনতে পারলে অচেনা সমস্যাও চেনা লাগবে, আর সমাধানের পথ দ্রুত খুঁজে পাবে। Recursion-এর ভিত্তি ধরে নেওয়া হয়েছে - দরকার হলে আগে [Recursion](../recursion/index.mdx) chapter দেখে নাও।
+কাঠামো শেখা শেষ, এবার **প্যাটার্ন**-এর পালা। ভাবো তো, interview-তে একদম নতুন সমস্যা পড়েছে, আর তুমি দেখামাত্র বুঝে গেলে "এই তো ওই প্যাটার্ন!" এই chapter-এর কৌশলগুলো ঠিক সেই কাজটাই করবে। প্যাটার্ন চিনতে পারলে অচেনা সমস্যাও চেনা লাগবে, সমাধানের পথও দ্রুত খুঁজে পাবে। তবে Recursion-টা জানা থাকা দরকার; লাগলে আগে [Recursion](../recursion/index.mdx) chapter-টা ঝালিয়ে নাও।
 
 **Section Roadmap:** Brute Force, Divide & Conquer, Greedy, Backtracking, Dynamic Programming, Two Pointer, Fast & Slow Pointer, Sliding Window, Merge Intervals, Cyclic Sort, Kth Element, Two Heaps, Island (Grid) Traversal, Randomised, Multi-threaded।
 
@@ -27,6 +27,6 @@ description: Interview ও বাস্তব সমস্যায় বার
 
 ## সারাংশ
 
-Brute force সবসময় বেসলাইন; আগে সেটা ভাবো, তারপর optimize। Divide & Conquer অর্থাৎ ভাগ-জয়-জোড়া। Greedy প্রতি ধাপে সেরা বাছে, তবে সব সমস্যায় কাজ করে না। Backtracking অর্থাৎ choose-explore-unchoose, pruning সহ। DP অর্থাৎ overlapping subproblem-এর ফল জমিয়ে optimize (memoization বা tabulation)। Two Pointer sorted-এ জোড়ায়, Fast & Slow cycle/মাঝে, Sliding Window টানা অংশে O(n) দেয়। Merge Intervals = sort + sweep, Cyclic Sort = 1..n রেঞ্জে নিজের ঘরে, Kth Element = quickselect বা heap, Two Heaps = চলমান median, Island = grid-এ flood fill, Randomised = এলোমেলো প্রতিরোধ, Multi-threaded = সমান্তরাল ভাগ-করা। কোন ইঙ্গিতে কোন প্যাটার্ন লাগবে - তার চিটশিট পরের chapter-এ।
+চলো এক নিঃশ্বাসে ঝালিয়ে নিই। Brute force-ই সবসময় বেসলাইন, আগে সেটা ভাবো তারপর optimize। Divide & Conquer মানেই ভাগ-জয়-জোড়া। Greedy প্রতি ধাপে সেরাটা বাছে, কিন্তু সব সমস্যায় কাজ করে না। Backtracking হলো choose-explore-unchoose, সাথে pruning। DP মানে overlapping subproblem-এর ফল জমিয়ে রাখা, memoization হোক বা tabulation। Two Pointer sorted জিনিসে জোড়া খোঁজে, Fast & Slow cycle বা মাঝখান ধরে, Sliding Window টানা অংশে O(n) দেয়। Merge Intervals হলো sort তারপর sweep, Cyclic Sort-এ 1..n রেঞ্জে প্রত্যেকে নিজের ঘরে, Kth Element-এ quickselect না হলে heap, Two Heaps দিয়ে চলমান median, Island-এ grid-এ flood fill, Randomised মানে এলোমেলো দিয়ে প্রতিরোধ, আর Multi-threaded হলো ভাগ করে সমান্তরালে চালানো। কোন ইঙ্গিতে কোন প্যাটার্ন লাগবে, সেই চিটশিট পরের chapter-এ।
 
 **পরবর্তী:** [Practice & Roadmap to Expertise](../practice-roadmap/index.mdx) - শেখা প্যাটার্নগুলো প্র্যাকটিসে রূপান্তরের পথ।
