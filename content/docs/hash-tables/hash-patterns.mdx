@@ -1,19 +1,19 @@
 ---
 title: "Hash Patterns: Frequency, Seen-set, Complement"
-description: frequency counting, seen-set ও complement lookup প্যাটার্ন দিয়ে O(n²) সমস্যা O(n)-এ নামানো, Two Sum সহ।
+description: frequency counting, seen-set আর complement lookup প্যাটার্ন দিয়ে O(n²) সমস্যা O(n)-এ নামানো, Two Sum সহ।
 ---
 
 ## কী শিখব
 
-- interview-তে বারবার আসা hash প্যাটার্ন
+- interview-তে বারবার আসা hash প্যাটার্নগুলো
 
 ## ধারণা
 
-Hash Table দিয়ে অনেক O(n²) সমস্যা O(n)-এ নামে। তিনটা ক্লাসিক প্যাটার্ন:
+এখানেই আসল জিনিস। Hash Table দিয়ে অনেক O(n²) সমস্যা O(n)-এ নামিয়ে ফেলা যায়। interview-তে তিনটা প্যাটার্ন ঘুরেফিরে আসেই:
 
-1. **Frequency counting** (আগের পাতায় দেখেছি)
-2. **Seen-set** (আগে দেখেছি কিনা)
-3. **Complement lookup** (Two Sum)
+1. **Frequency counting** (আগের পাতায় দেখে এসেছি)
+2. **Seen-set** (এটা আগে দেখেছি কিনা)
+3. **Complement lookup** (Two Sum-এর সেই কায়দা)
 
 ## কোড উদাহরণ
 
@@ -34,9 +34,9 @@ console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]  (2+7=9)
 
 ## কোড ব্রেকডাউন
 
-- naive হতো nested loop, O(n²)।
-- এখানে প্রতিটা সংখ্যার "প্রয়োজনীয় জোড়া" (complement) আগে দেখেছি কিনা map-এ চেক করি, তাই O(n)।
-- এক pass, এক map, hash-এর শক্তির সেরা উদাহরণ।
+- naive উপায়টা কী হতো? nested loop, মানে O(n²)।
+- এখানে কী করছি? প্রতিটা সংখ্যার "প্রয়োজনীয় জোড়া" (complement) আগে দেখা গেছে কিনা, সেটা map-এ চেক করছি। তাই পুরো কাজ O(n)-এ শেষ।
+- একটা pass, একটা map। hash-এর শক্তির চেয়ে ভালো উদাহরণ কমই আছে।
 
 ## Complexity
 
@@ -47,10 +47,10 @@ console.log(twoSum([2, 7, 11, 15], 9)); // [0, 1]  (2+7=9)
 > **Animation Spec: Two Sum Lookup**
 >
 > - **দৃশ্য:** array; নিচে একটা map (value থেকে index); উপরে target।
-> - **ইনপুট:** array ও target।
-> - **ধাপ:** প্রতিটা সংখ্যায় complement হিসাব করে map-এ আছে কিনা চেক (হলুদ), পেলে দুই index সবুজ; না পেলে map-এ যোগ।
-> - **লক্ষ্য:** complement-lookup প্যাটার্ন আত্মস্থ করা।
+> - **ইনপুট:** array আর target।
+> - **ধাপ:** প্রতিটা সংখ্যায় complement হিসাব করে map-এ আছে কিনা চেক (হলুদ), পেলে দুই index সবুজ; না পেলে map-এ যোগ হবে।
+> - **লক্ষ্য:** complement-lookup প্যাটার্নটা আত্মস্থ করা।
 
 ## অনুশীলন
 
-- দুটো array-এর common উপাদান O(n)-এ বের করো (Set ব্যবহার করে)।
+- দুটো array-এর common উপাদানগুলো O(n)-এ বের করো (Set ব্যবহার করে)।

@@ -1,21 +1,21 @@
 ---
-title: "Map ও Set: বাস্তবে যা ব্যবহার করব"
-description: JavaScript-এর built-in Map ও Set-এর দক্ষ ব্যবহার, frequency counting, duplicate সরানো ও iteration কৌশল।
+title: "Map আর Set: বাস্তবে যেটা ব্যবহার করবে"
+description: JavaScript-এর built-in Map আর Set-এর দক্ষ ব্যবহার, frequency counting, duplicate সরানো, আর iteration-এর কায়দা।
 ---
 
 ## কী শিখব
 
-- built-in `Map` ও `Set`-এর দক্ষ ব্যবহার
+- built-in `Map` আর `Set`-এর দক্ষ ব্যবহার
 
 ## ধারণা
 
-বাস্তব কোডে আমরা নিজে hash table বানাই না, JavaScript-এর দক্ষ `Map` ও `Set` ব্যবহার করি।
+সত্যি কথা বলতে, বাস্তব কোডে নিজে hash table কেউ বানায় না। JavaScript নিজেই দিয়ে দিয়েছে দুটো দারুণ জিনিস, `Map` আর `Set`।
 
-- **Map**: key-value; যেকোনো টাইপ key হতে পারে; ক্রম বজায় থাকে
-- **Set**: শুধু ইউনিক মান; দ্রুত membership চেক
+- **Map**: key-value জোড়া রাখে। key যেকোনো টাইপেরই হতে পারে, আর ঢোকানোর ক্রমটাও বজায় থাকে।
+- **Set**: শুধু ইউনিক মান রাখে। কোনো মান আছে কিনা, সেটা চেক করা একদম দ্রুত।
 
 <Callout type="info" title="object না Map?">
-object-ও ব্যবহার করা যায় (`{}`), তবে DSA-তে `Map`/`Set` বেশি নিরাপদ ও দ্রুত (বিশেষত অনেক ডেটায়)।
+object দিয়েও (`{}`) কাজ চালানো যায়। তবে DSA-তে `Map`/`Set` অনেক বেশি নিরাপদ আর দ্রুত, বিশেষ করে ডেটা বেশি হলে।
 </Callout>
 
 ## কোড উদাহরণ
@@ -39,9 +39,9 @@ for (const [key, count] of freq) console.log(key, count);
 
 ## কোড ব্রেকডাউন
 
-- `map.get(k) || 0` মানে না থাকলে 0 ধরে গণনা শুরুর প্রচলিত কৌশল।
-- `Set` দিয়ে duplicate সরানো এক লাইনে: `[...new Set(arr)]`।
-- `Map`/`Set`-এর `get/set/has/add` সবই গড়ে O(1)।
+- `map.get(k) || 0` মানে কী? মান না থাকলে 0 ধরে নেওয়া। গণনা শুরু করার জন্য এটা খুব চেনা কৌশল।
+- `Set` দিয়ে duplicate সরানো যায় মাত্র এক লাইনে: `[...new Set(arr)]`।
+- `Map`/`Set`-এর `get`, `set`, `has`, `add`, সবই গড়ে O(1)।
 
 ## Complexity
 
@@ -53,9 +53,9 @@ for (const [key, count] of freq) console.log(key, count);
 >
 > - **দৃশ্য:** উপরে input string, নিচে Map entries (key থেকে count) বার সহ।
 > - **ইনপুট:** string।
-> - **ধাপ:** প্রতিটা অক্ষরে সংশ্লিষ্ট count বার এক ধাপ বাড়বে।
-> - **লক্ষ্য:** frequency counting প্যাটার্ন (interview-তে অতি প্রচলিত)।
+> - **ধাপ:** প্রতিটা অক্ষরে সংশ্লিষ্ট count-এর বার এক ধাপ বাড়বে।
+> - **লক্ষ্য:** frequency counting প্যাটার্নটা আত্মস্থ করা (interview-তে অতি প্রচলিত)।
 
 ## অনুশীলন
 
-- একটা string-এ সবচেয়ে বেশি আসা অক্ষরটি বের করো।
+- একটা string-এ সবচেয়ে বেশি বার আসা অক্ষরটা বের করো।
