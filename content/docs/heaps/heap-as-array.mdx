@@ -1,19 +1,21 @@
 ---
 title: "Array-তে Heap: index গণিত"
-description: complete binary tree তাই pointer লাগে না; সাধারণ array-তেই parent-child সম্পর্ক।
+description: pointer-এর ঝামেলা নেই; সাধারণ array আর index-এর ছোট্ট অঙ্ক দিয়েই পুরো tree।
 ---
 
 ## কী শিখব
 
-- কেন heap array দিয়ে বানানো হয়
+- heap কেন array দিয়ে বানানো হয়, আর index-এর সূত্রগুলো কী
 
 ## ধারণা
 
-Complete binary tree হওয়ায় heap-এ pointer লাগে না, একটা সাধারণ **array**-ই যথেষ্ট! index দিয়েই parent-child সম্পর্ক বের হয়:
+Tree বানাতে গেলে সাধারণত node, pointer, left, right এই সব লাগে, তাই না? কিন্তু heap তো একটা **complete binary tree**; কোথাও ফাঁকা ঘর থাকে না। এই একটা গুণের জন্যেই দারুণ সুবিধা মেলে: কোনো pointer ছাড়াই পুরো tree-টা একটা সাধারণ **array**-তে গুঁজে ফেলা যায়। শুধু index-এর একটু অঙ্ক জানলেই চলবে:
 
 - index `i`-এর **বাঁ চাইল্ড:** `2i + 1`
 - index `i`-এর **ডান চাইল্ড:** `2i + 2`
 - index `i`-এর **parent:** `Math.floor((i - 1) / 2)`
+
+সহজ কথায়, কোনো node কোন ঘরে বসে আছে জানলেই তার parent আর চাইল্ডরা কোথায় আছে, সেটা হিসাব করেই বের হয়ে যায়।
 
 ```
 array:  [1, 3, 6, 5, 9]
@@ -37,22 +39,22 @@ console.log(heap[Math.floor((i - 1) / 2)]); // parent: 1
 
 ## কোড ব্রেকডাউন
 
-- array-তে থাকায় memory ধারাবাহিক ও cache-friendly।
-- index গণিত দিয়ে tree navigation, pointer-এর দরকার নেই।
+- array-তে উপাদানগুলো memory-তে পাশাপাশি বসে থাকে, তাই cache-এর জন্যেও দারুণ।
+- আর tree-এ উপরে-নিচে ঘোরা হয় শুধু index-এর অঙ্ক দিয়ে; pointer রেখে দেওয়ার ঝামেলাই নেই।
 
 ## Complexity
 
-- parent/child বের করা: O(1), শুধু index গণিত।
+- parent বা child বের করতে যা লাগে, তা দুটো গুণ-ভাগ, মানে O(1)।
 
 ## Animation Spec
 
 > **Animation Spec: Array-Tree Sync**
 >
-> - **দৃশ্য:** উপরে tree, নিচে array; একটা index hover করলে দুই জায়গাতেই highlight, সাথে চাইল্ড/parent সূত্র দেখানো।
+> - **দৃশ্য:** উপরে tree, নিচে array; একটা index-এ hover করলে দুই জায়গাতেই highlight, সাথে চাইল্ড/parent-এর সূত্রটাও দেখা যায়।
 > - **ইনপুট:** index নির্বাচন।
-> - **ধাপ:** সূত্র প্রয়োগ করে চাইল্ড/parent সেল চিহ্নিত হয়।
-> - **লক্ষ্য:** array-heap দ্বৈততা।
+> - **ধাপ:** সূত্র বসিয়ে চাইল্ড/parent-এর সেল চিহ্নিত হয়।
+> - **লক্ষ্য:** array আর tree আসলে একই জিনিস, এই দ্বৈততাটা ধরা।
 
 ## অনুশীলন
 
-- index 3-এর parent ও চাইল্ড সূত্র দিয়ে বের করো।
+- index 3-এর node-টা নাও। সূত্র দিয়ে তার parent আর দুই চাইল্ড বের করো, তারপর ডায়াগ্রামের সাথে মিলিয়ে দেখো।

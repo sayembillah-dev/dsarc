@@ -1,15 +1,15 @@
 ---
 title: "MinHeap ক্লাস: সম্পূর্ণ ইমপ্লিমেন্টেশন"
-description: bubble up/down লজিক এক ক্লাসে; push/pop O(log n), peek O(1)।
+description: bubble up আর bubble down মিলিয়ে একটা পুরো reusable ক্লাস; push/pop O(log n), peek O(1)।
 ---
 
 ## কী শিখব
 
-- পুনর্ব্যবহারযোগ্য heap class
+- একবার লিখে বারবার ব্যবহার করা যায় এমন একটা heap class
 
 ## ধারণা
 
-আগের দুই পাতার insert আর extractMin লজিক একটা class-এ গুছিয়ে নিলেই পুনর্ব্যবহারযোগ্য **MinHeap**। ভেতরে থাকে একটা array, আর `push`, `pop`, `peek` মেথড।
+চলো এবার আগের দুই পাতার জিনিস দুটো, মানে insert-এর bubble up আর extractMin-এর bubble down, একটা class-এ গুছিয়ে ফেলি। ব্যাপারটা হলো, আলাদা আলাদা function ছড়িয়ে না রেখে একটা পুরো **MinHeap** বানিয়ে নিলে যেকোনো জায়গায় যতবার খুশি ব্যবহার করা যাবে। ভেতরে থাকবে একটা array, আর বাইরে থেকে তুমি শুধু `push`, `pop`, `peek` ডাকবে।
 
 ## কোড উদাহরণ
 
@@ -58,23 +58,23 @@ console.log(mh.pop(), mh.pop(), mh.pop()); // 1 2 3
 
 ## কোড ব্রেকডাউন
 
-- `push` মানে insert (bubble up), `pop` মানে extract-min (bubble down)।
-- `(i-1) >> 1` হলো `Math.floor((i-1)/2)`-এর দ্রুত রূপ।
-- Max-heap চাইলে সব তুলনায় `<` কে `>` করলেই হয়।
+- `push` মানেই তো insert, ভেতরে আগের সেই bubble up-ই ঘটে। আর `pop` মানে extract-min, সেখানে ঘটে bubble down।
+- একটা জিনিস লক্ষ করো: `(i-1) >> 1` লেখা হয়েছে। এটা আসলে `Math.floor((i-1)/2)`-এরই কাজ, শুধু bit operation দিয়ে, তাই একটু দ্রুত।
+- Max-heap দরকার হলে? সব তুলনার `<` গুলোকে `>` বানিয়ে দিলেই হলো।
 
 ## Complexity
 
-- push/pop: O(log n), peek: O(1)।
+- push আর pop দুটোই O(log n)। peek শুধু root-এ তাকানো, O(1)।
 
 ## Animation Spec
 
 > **Animation Spec: Full Heap Ops**
 >
-> - **দৃশ্য:** array+tree সিঙ্ক; push/pop বাটন।
-> - **ইনপুট:** মান; heap type।
-> - **ধাপ:** push হলে bubble up, pop হলে bubble down; প্রতিটা swap গোনা হয়।
-> - **লক্ষ্য:** সম্পূর্ণ heap lifecycle।
+> - **দৃশ্য:** array আর tree পাশাপাশি সিঙ্কে; push আর pop বাটন।
+> - **ইনপুট:** মান, আর heap type।
+> - **ধাপ:** push দিলে bubble up, pop দিলে bubble down; প্রতিটা swap গোনা হয়।
+> - **লক্ষ্য:** একটা heap-এর পুরো lifecycle একসাথে দেখা।
 
 ## অনুশীলন
 
-- এই class-কে MaxHeap-এ রূপান্তর করো।
+- এই class-টাকেই এবার MaxHeap বানিয়ে ফেলো। ঠিক কোথায় কী বদলাবে, আগে ভেবে নাও।
