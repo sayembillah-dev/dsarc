@@ -1,19 +1,21 @@
 ---
 title: "Queue (FIFO): আগে আসা আগে যায়"
-description: First In, First Out নীতির queue, naive বনাম দক্ষ বাস্তবায়ন এবং front/back pointer কৌশল।
+description: টিকিট লাইনের মতো queue-তে যে আগে আসে সে আগে যায়। naive বনাম দক্ষ বাস্তবায়ন আর front/back pointer-এর কৌশল দেখি।
 ---
 
 ## কী শিখব
 
-- First In, First Out নীতির queue
+- FIFO (First In, First Out) নীতির queue
 
 ## ধারণা
 
-Queue হলো লাইনে দাঁড়ানোর মতো। যে **আগে** আসে, সে **আগে** যায় (FIFO)। `enqueue` (পেছনে যোগ), `dequeue` (সামনে থেকে বের)।
+টিকিট কাউন্টারের লাইনটা ভাবো। যে আগে দাঁড়িয়েছে, সে-ই আগে টিকিট পাবে। নতুন কেউ এলে পেছনে দাঁড়াবে, মাঝখানে ঢোকার সুযোগ নেই। এটাই হলো Queue।
 
-বাস্তব উদাহরণ: টিকিট কাউন্টারের লাইন, printer queue, BFS (section 13)।
+এই নীতির নাম FIFO (First In, First Out): যে আগে আসে, সে আগে যায়। অপারেশন দুটো: `enqueue` (পেছনে যোগ করা), `dequeue` (সামনে থেকে বের করা)।
 
-সহজ version হলো `arr.push()` + `arr.shift()`, কিন্তু `shift()` O(n)। তাই দক্ষ version-এ object আর দুটো pointer (front/back) ব্যবহার করি।
+Printer queue, call center-এর অপেক্ষমাণ কল, BFS (section 13), সব জায়গায় এই একই লাইন চলে।
+
+এখানেই আসল জিনিস। `arr.push()` আর `arr.shift()` দিয়েও queue চলে, কিন্তু `shift()` হলো O(n), বড় queue-তে এটা ধীর হয়ে যায়। তাই object আর দুটো pointer (front/back) দিয়ে এমন version বানাই যেখানে সব অপারেশন O(1)।
 
 ## কোড উদাহরণ
 
@@ -45,8 +47,8 @@ console.log(q.peek());    // C
 
 ## কোড ব্রেকডাউন
 
-- সহজ version: `arr.push()` + `arr.shift()`; কিন্তু `shift()` O(n)।
-- দক্ষ version: object + front/back pointer, ফলে enqueue ও dequeue দুটোই O(1)।
+- সহজ version-এ `arr.push()` আর `arr.shift()`-ই যথেষ্ট, কিন্তু `shift()` প্রতিবার সব এলিমেন্টকে এক ঘর সরায়, তাই O(n)।
+- দক্ষ version-এ object আর front/back pointer থাকে, ফলে enqueue আর dequeue দুটোই O(1)।
 
 ## Complexity
 
@@ -59,8 +61,8 @@ console.log(q.peek());    // C
 > - **দৃশ্য:** অনুভূমিক লাইন; বাঁয়ে front, ডানে back।
 > - **ইনপুট:** enqueue মান; dequeue বাটন।
 > - **ধাপ:** enqueue করলে ডানে নতুন জন যোগ হয়; dequeue করলে বাম থেকে একজন বেরিয়ে যায়, front pointer এগোয়।
-> - **লক্ষ্য:** FIFO ও front/back pointer বোঝা।
+> - **লক্ষ্য:** FIFO আর front/back pointer বোঝা।
 
 ## অনুশীলন
 
-- একটা queue দিয়ে একটা "call center" simulation ভাবো (কে আগে সেবা পাবে)।
+- একটা queue দিয়ে "call center" simulation-এর কথা ভাবো: কে আগে সেবা পাবে?

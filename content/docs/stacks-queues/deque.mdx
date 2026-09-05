@@ -1,6 +1,6 @@
 ---
 title: "Deque: দুই মুখের queue"
-description: সামনে ও পেছনে দুই প্রান্তেই যোগ ও বাদ করা যায় এমন deque কাঠামো ও এর ব্যবহার।
+description: সামনে-পেছনে দুই প্রান্তেই যোগ-বাদ করা যায় এমন deque কাঠামো আর এর ব্যবহার।
 ---
 
 ## কী শিখব
@@ -9,7 +9,9 @@ description: সামনে ও পেছনে দুই প্রান্ত
 
 ## ধারণা
 
-Deque (Double-Ended Queue), সামনে ও পেছনে দুই দিকেই `add`/`remove` করা যায়। Sliding Window (section 16)-এর মতো সমস্যায় খুব দরকারি।
+Queue-তে তো দেখলে, ঢোকা এক প্রান্তে, বের হওয়া আরেক প্রান্তে। এবার ভাবো, দুই প্রান্তেই যদি দুটো কাজই করা যায়? সামনে থেকেও যোগ-বাদ, পেছন থেকেও যোগ-বাদ।
+
+এই নমনীয় কাঠামোটার নাম Deque (Double-Ended Queue)। Sliding Window (section 16)-এর মতো সমস্যায় এটা দারুণ কাজে লাগে।
 
 ## কোড উদাহরণ
 
@@ -32,8 +34,8 @@ console.log(dq.peekBack());  // 2
 
 ## কোড ব্রেকডাউন
 
-- চার প্রান্তিক অপারেশন: addFront/addBack/removeFront/removeBack।
-- array দিয়ে front অপারেশন O(n); performance-critical হলে doubly linked list দিয়ে O(1) করা যায়।
+- চারটা প্রান্তিক অপারেশন আছে: addFront/addBack/removeFront/removeBack।
+- Array দিয়ে বানালে front-এর অপারেশন O(n), কারণ সব এলিমেন্ট সরে যায়। Performance-critical কাজ হলে doubly linked list দিয়ে সব O(1) করা যায়।
 
 ## Complexity
 
@@ -50,4 +52,4 @@ console.log(dq.peekBack());  // 2
 
 ## অনুশীলন
 
-- deque দিয়ে একটা string palindrome কিনা চেক করো (দুই প্রান্ত মিলিয়ে)।
+- deque দিয়ে একটা string palindrome কিনা চেক করো (দুই প্রান্ত থেকে মিলিয়ে)।
