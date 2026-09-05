@@ -1,9 +1,9 @@
 ---
 title: Complex & Disk-based Structures
-description: 2-3 Tree, B-Tree ও B+ Tree, Skip List, ISAM আর Indexing, বড় ডেটা ও disk/database-এর প্রেক্ষাপটে।
+description: ডেটা যখন memory-তে আঁটে না, তখন কোন কাঠামো কাজে লাগে। 2-3 Tree, B-Tree ও B+ Tree, Skip List, ISAM আর Indexing, সবাই disk read কমানোর খেলায়।
 ---
 
-এই chapter-এর কাঠামোগুলো মূলত **বড় ডেটা ও disk/database**-এর প্রেক্ষাপটে গুরুত্বপূর্ণ, যেখানে ডেটা memory-তে আঁটে না এবং disk read কমানোই আসল লক্ষ্য। এরা তত্ত্বীয় ও ব্যবহারিক, দুই দিক থেকেই মূল্যবান। আগের section-এর বিশেষায়িত কাঠামোগুলো memory-তে কাজ করত; এখানে কাঠামোগুলোকে disk-বান্ধব করাই আসল চ্যালেঞ্জ।
+ভাবো তো, তোমার হাতে এমন ডেটা এসেছে যেটা পুরোটা memory-তেই ঢোকে না। তখন কী করবে? এই chapter-এর কাঠামোগুলো ঠিক সেই পরিস্থিতির জন্যই বানানো। এখানে লক্ষ্য একটাই: disk থেকে যত কম পড়া যায়। আগের section-গুলোর বিশেষায়িত কাঠামো memory-তে দারুণ চলত, কিন্তু ডেটা disk-এ চলে গেলে খেলাটাই বদলে যায়। প্রতিটা disk read দামি, তাই কাঠামোকেই disk-বান্ধব ভাবতে হয়। আর এরা শুধু তত্ত্বের জন্য নয়, তোমার চেনা MySQL, Redis সবাই এদেরই উপর দাঁড়িয়ে।
 
 **Section Roadmap:** 2-3 Tree, B-Tree/B+ Tree, Skip List, ISAM, Indexing (Linear, Tree-Based)।
 
@@ -17,6 +17,6 @@ description: 2-3 Tree, B-Tree ও B+ Tree, Skip List, ISAM আর Indexing, ব�
 
 ## সারাংশ
 
-2-3 Tree অর্থাৎ split/merge-ভিত্তিক balanced tree (B-Tree-র বীজ)। B/B+ Tree অর্থাৎ কম-height, disk-বান্ধব; B+ Tree-র linked leaf range query-তে সেরা (database default)। Skip List অর্থাৎ express-lane linked list, গড়ে O(log n)। ISAM অর্থাৎ static index (read-heavy-তে ভালো, write-heavy-তে দুর্বল)। Indexing: hash (equality O(1)) বনাম tree (equality+range)।
+ধরো পুরো chapter-টা এক নিঃশ্বাসে। 2-3 Tree হলো split/merge দিয়ে balanced থাকা গাছ, B-Tree-র বীজ এটাই। B/B+ Tree height কম রাখে, মানে কম disk read; B+ Tree-র leaf গুলো পরস্পর linked, তাই range query-তে ওটাই database-এর default। Skip List? linked list-এ express lane বসিয়ে দাও, গড়ে O(log n)। ISAM হলো static index, read-heavy কাজে দারুণ কিন্তু write-heavy-তে পড়ে যায়। আর Indexing-এ আসল প্রশ্ন একটাই: hash নাকি tree? equality-তে hash O(1), কিন্তু equality আর range দুটোই চাইলে tree।
 
 **পরবর্তী:** [Problem Solving Techniques (Patterns)](../problem-solving/index.mdx) - কাঠামো শেখা শেষ, এবার সমস্যা-সমাধানের প্যাটার্ন।

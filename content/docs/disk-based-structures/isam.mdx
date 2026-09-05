@@ -1,21 +1,21 @@
 ---
 title: "ISAM: static index-ভিত্তিক disk indexing"
-description: স্থির index, sequential data page আর overflow area; read-heavy কাজে ভালো, write-heavy-তে দুর্বল।
+description: একবার বানানো static index, sequential data page, আর নতুন record-এর overflow area। read-heavy কাজে দারুণ, write-heavy-তে পড়ে যায়।
 ---
 
 ## কী শিখব
 
-- পুরনো কিন্তু শিক্ষণীয় disk index পদ্ধতি
+- B+ Tree-র আগে কী চলত, আর static index কেন আর টেকে নি
 
 ## ধারণা
 
-ISAM (Indexed Sequential Access Method) একটা পুরনো disk-based indexing পদ্ধতি (B+ Tree-র পূর্বসূরি ভাবা যায়)। ডেটা **sequential**-ভাবে (sorted) disk-এ রাখা হয়, আর তার উপরে একটা **static (স্থির) index** বসানো হয় যা দ্রুত মোটামুটি জায়গায় পৌঁছে দেয়, তারপর sequential পড়া হয়।
+ধরো একটা বড় অফিসের ফাইল ক্যাবিনেট। ফাইলগুলো বর্ণানুক্রমে সাজানো, আর সামনে ঝুলছে একটা ছোট্ট তালিকা: "A শুরু এই ড্রয়ারে, F শুরু ওই ড্রয়ারে"। "G" খুঁজতে গিয়ে তুমি পুরো ক্যাবিনেট নাড়ো না। তালিকা দেখে F-এর ড্রয়ারে গিয়ে একটু হাতড়ালেই পেয়ে যাও। ISAM (Indexed Sequential Access Method) ঠিক এভাবেই কাজ করে। B+ Tree আসার আগে disk indexing মানে এটাই ছিল, তাই B+ Tree-র পূর্বসূরি বললে ভুল হবে না।
 
-মূল বৈশিষ্ট্য:
+কাঠামোটা সরল। ডেটা থাকে sorted, sequential page-এ। তার উপর বসে একটা **static (স্থির) index**, যেটা তোমাকে দ্রুত মোটামুটি page-এ পৌঁছে দেয়, তারপর সেই page ধরে sequential খোঁজো। মূল বৈশিষ্ট্য তিনটা:
 
-- **index স্থির:** একবার বানানো, ডেটা বদলালেও index কাঠামো বদলায় না
-- নতুন record-এর জন্য **overflow area** ব্যবহার হয়
-- বেশি insert হলে overflow বড় হয়ে performance পড়ে যায়, তাই periodic **reorganization** লাগে
+- **index একদম স্থির।** একবার বানালেই শেষ, ডেটা বদলালেও ও নড়ে না।
+- নতুন record? index-এ জায়গা নেই, সোজা **overflow area**-তে।
+- insert বেশি হলে overflow ফুলে যায়, performance পড়ে যায়। তাই মাঝে মাঝে পুরোটা নতুন করে সাজাতে (periodic **reorganization**) হয়।
 
 ```text
 Index:   [A -> page1] [F -> page2] [M -> page3]   (স্থির, sorted key থেকে page)
@@ -53,23 +53,23 @@ console.log(isamSearch("Z"));      // পাওয়া যায়নি
 
 ## কোড ব্রেকডাউন
 
-- static index-এর সুবিধা: সরল, দ্রুত পঠনভিত্তিক (read-heavy) কাজে ভালো।
-- অসুবিধা: বেশি লেখালেখি (write-heavy)-তে overflow জমে ধীর হয়ে যায়; এই সমস্যাই B+ Tree (dynamic, self-balancing) সমাধান করেছে।
-- তাই আধুনিক DBMS-এ ISAM প্রায় নেই, কিন্তু "কেন dynamic index দরকার" বুঝতে এটা শেখা মূল্যবান।
+- static index-এর জোর: সরল, আর read-heavy কাজে দ্রুত।
+- দুর্বলতা: write-heavy হলেই overflow জমতে থাকে, search ধীর হয়ে পড়ে। এই সমস্যাটাই পরে B+ Tree সমাধান করেছে, dynamic আর self-balancing হয়ে।
+- তাই আধুনিক DBMS-এ ISAM প্রায় দেখাই পাওয়া যায় না। তবু "dynamic index কেন দরকার" বুঝতে এর চেয়ে ভালো গল্প আর নেই।
 
 ## Complexity
 
-- ভালো অবস্থায় O(log n)-এর কাছাকাছি; overflow বাড়লে খারাপ।
+- সব ঠিকঠাক থাকলে O(log n)-এর কাছাকাছি; overflow বাড়লেই অবস্থা খারাপ।
 
 ## Animation Spec
 
 > **Animation Spec: Static Index + Overflow**
 >
-> - **দৃশ্য:** স্থির index টেবিল ও sequential data page ও overflow area।
+> - **দৃশ্য:** স্থির index টেবিল, sequential data page, আর overflow area।
 > - **ইনপুট:** search key; নতুন record insert।
-> - **ধাপ:** search হলো index, তারপর page, তারপর scan; insert বারবার করলে overflow বাড়া ও performance পড়া দেখানো।
-> - **লক্ষ্য:** static বনাম dynamic index-এর trade-off (B+ Tree-র প্রেরণা)।
+> - **ধাপ:** search হলো আগে index, তারপর page, তারপর scan; insert বারবার করলে overflow বাড়তে থাকা আর performance পড়ে যাওয়া দেখানো।
+> - **লক্ষ্য:** static বনাম dynamic index-এর trade-off (B+ Tree-র জন্মের কারণ)।
 
 ## অনুশীলন
 
-- ISAM বনাম B+ Tree: read-heavy বনাম write-heavy-তে কোনটা ভালো, ব্যাখ্যা করো।
+- ISAM বনাম B+ Tree: read-heavy আর write-heavy কাজে কে জিতে, কেন, নিজের ভাষায় লেখো।

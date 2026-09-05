@@ -1,27 +1,27 @@
 ---
 title: "Indexing: Linear (Hash) বনাম Tree-Based"
-description: equality query-তে hash index O(1), range-এ B+ Tree; query-প্যাটার্ন অনুযায়ী index বাছাই।
+description: কখন hash index, কখন B+ Tree? equality query-তে hash O(1), range-এ জিতে tree। query-প্যাটার্ন দেখেই index বাছতে হয়।
 ---
 
 ## কী শিখব
 
-- database কীভাবে দ্রুত খোঁজে, indexing-এর দুই ঘরানা
+- database এত দ্রুত খুঁজে পায় কীভাবে, আর indexing-এর দুই ঘরানায় কোনটা কখন
 
 ## ধারণা
 
-**Index** মানে ডেটার উপর একটা অতিরিক্ত কাঠামো যা খোঁজা দ্রুত করে (বইয়ের পেছনের index-এর মতো)। মূল দুই ঘরানা:
+ভাবো তো, লাখ লাখ row-এর টেবিলে `WHERE id = 42` লিখলেই মুহূর্তে উত্তর চলে আসে। database কি প্রতিবার পুরো টেবিল খাঁজে? না। ওর কাছে বইয়ের পেছনের index-এর মতো একটা আলাদা কাঠামো থাকে, যেটা দেখে সোজা সঠিক জায়গায় পৌঁছে যায়। এই কাঠামোটাই **Index**। ব্যাপারটা হলো, index মূলত দুই ঘরানার হয়।
 
 **১) Linear / Hash-based Indexing**
 
-- key থেকে সরাসরি জায়গা (hash table-এর মতো)
-- **সমতা (equality) query**-তে দুর্দান্ত: `WHERE id = 42`, O(1)
-- কিন্তু **range query**-তে অকার্যকর (`WHERE id > 42`, hash-এ ক্রম নেই)
+- key থেকে সরাসরি জায়গা বের করে, ঠিক hash table-এর মতো
+- **equality query**-তে ওস্তাদ: `WHERE id = 42` মানেই O(1)
+- কিন্তু **range query** দিলেই অসহায়: `WHERE id > 42`? hash-এ তো কোনো ক্রমই নেই
 
 **২) Tree-based Indexing (B/B+ Tree)**
 
-- key গুলো sorted কাঠামোতে
-- equality **ও** range, দুটোই ভালো: `WHERE age BETWEEN 20 AND 30`
-- এজন্য বেশিরভাগ database-এর default index tree-based (B+ Tree)
+- key গুলো থাকে sorted কাঠামোতে
+- equality-ও পারে, **range-ও** পারে: `WHERE age BETWEEN 20 AND 30` আর কোনো ব্যাপারই না
+- এই বহুমুখিতার জন্যই প্রায় সব database-এর default index tree-based, ঠিক করে বললে B+ Tree
 
 ## কোড উদাহরণ
 
@@ -52,23 +52,23 @@ console.log(nameIndex.map(u => u.name));   // [ 'Ana', 'Mim', 'Rafi', 'Raju' ]
 
 ## কোড ব্রেকডাউন
 
-- Hash: দ্রুততম equality, কিন্তু ক্রম/range নেই।
-- Tree (B+): সামান্য ধীর equality, কিন্তু range/sort/prefix সবই ভালো, তাই বেশি বহুমুখী।
-- বাস্তবে DBA কোন column-এ কোন ধরনের index দেবে, তা query-প্যাটার্ন দেখে ঠিক করে।
+- Hash: equality-তে সবচেয়ে দ্রুত, কিন্তু ক্রম বা range কিছুই জানে না।
+- Tree (B+): equality-তে একটু ধীর, কিন্তু range, sort, prefix সব পারে। তাই অনেক বেশি বহুমুখী।
+- বাস্তবে DBA-রা query-প্যাটার্ন দেখেই ঠিক করে কোন column-এ কোন ধরনের index বসাবে।
 
 ## Complexity
 
-- Hash: equality O(1); Tree: O(log n) কিন্তু range-সক্ষম।
+- Hash: equality O(1)। Tree: O(log n), কিন্তু range চালাতে পারে।
 
 ## Animation Spec
 
 > **Animation Spec: Query অনুযায়ী Index Choice**
 >
-> - **দৃশ্য:** একটা query; বাঁয়ে hash index, ডানে tree index; কোনটা কীভাবে সাড়া দেয়।
+> - **দৃশ্য:** একটা query; বাঁয়ে hash index, ডানে tree index; কে কীভাবে সাড়া দেয়।
 > - **ইনপুট:** query type (equality / range / sort)।
-> - **ধাপ:** equality-তে hash ঝলসে ওঠে; range-এ tree leaf-scan করে; hash "পারছি না" দেখায়।
-> - **লক্ষ্য:** index বাছাই query-প্যাটার্নের উপর নির্ভরশীল।
+> - **ধাপ:** equality-তে hash ঝলসে ওঠে; range-এ tree leaf-scan করে যায়; আর hash শুধু "আমি পারব না" দেখায়।
+> - **লক্ষ্য:** index বাছাই পুরোপুরি query-প্যাটার্নের ব্যাপার।
 
 ## অনুশীলন
 
-- তোমার একটা টেবিলে কোন column-এ hash, কোনটায় B+ Tree index দেবে, যুক্তিসহ ভাবো।
+- নিজের একটা টেবিল ভাবো। কোন column-এ hash দেবে, কোনটায় B+ Tree? যুক্তিসহ বলো।

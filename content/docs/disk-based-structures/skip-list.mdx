@@ -1,15 +1,17 @@
 ---
 title: "Skip List: linked list-এ express lane"
-description: বহু-স্তর pointer দিয়ে sorted linked list-এ গড়ে O(log n) search, randomness-ভিত্তিক সহজ ভারসাম্য।
+description: sorted linked list-এ কয়েকটা express lane বসিয়ে দিলেই গড়ে O(log n) search। ভারসাম্যের দায়িত্বে rotation নয়, শুধু coin-flip randomness।
 ---
 
 ## কী শিখব
 
-- linked list-এ "express lane" বসিয়ে O(log n) search
+- linked list-এ express lane বসিয়ে O(log n) search কীভাবে সম্ভব
 
 ## ধারণা
 
-সাধারণ sorted linked list-এ search O(n) (index নেই)। **Skip List** কয়েকটা অতিরিক্ত স্তর (express lane) যোগ করে: উপরের স্তরে কম node (কিছু "লাফিয়ে" যায়), নিচের স্তরে সব node। খোঁজার সময় উপরে দ্রুত এগিয়ে দরকারমতো নিচে নামা, ফলে গড়ে **O(log n)**। randomness দিয়ে স্তর ঠিক হয়, তাই এটা সহজ, balanced tree-র বিকল্প।
+ভাবো তো লোকাল আর এক্সপ্রেস ট্রেনের ব্যাপারটা। লোকাল ট্রেন সব স্টেশনে থামে, এক্সপ্রেস অনেকগুলো স্টেশন লাফ দিয়ে চলে যায়। দূরে যেতে হলে তুমি আগে এক্সপ্রেসে ওঠো, গন্তব্য কাছাকাছি এলে লোকালে নেমে যাও। **Skip List** sorted linked list-এ ঠিক এই কায়দা করে।
+
+sorted linked list-এ search মানে একটা একটা করে হাঁটা, O(n)। Skip List তার উপর কয়েকটা অতিরিক্ত স্তর (express lane) বসিয়ে দেয়। উপরের স্তরে কম node, ওরা দূর দূর লাফায়; নিচের স্তরে সব node। খোঁজার সময় উপর দিয়ে দ্রুত এগোও, দরকারমতো নিচে নামো। ফলে গড়ে **O(log n)**। আর সবচেয়ে মজার ব্যাপার: কোন node কত উপরে উঠবে, সেটা ঠিক হয় coin-flip টাইপ randomness দিয়ে। rotation-এর কোনো ঝামেলা নেই, তবু balanced tree-র কাছাকাছি পৌঁছে যায়।
 
 ```text
 L2:  1 --------> 9 --------> 25
@@ -63,14 +65,14 @@ console.log(search(head, 15, 2));     // false
 
 ## কোড ব্রেকডাউন
 
-- উপরের স্তর "দূরপাল্লার" লাফ; নিচের স্তর "লোকাল"।
-- `search` প্রতি স্তরে যতদূর সম্ভব এগোয়, পরেরটা বড় হলেই এক স্তর নামে।
-- নতুন node-এর স্তর সাধারণত coin-flip (random) দিয়ে ঠিক হয়, ফলে গড়ে ভারসাম্য থাকে।
-- Redis-এর sorted set (ZSET) skip list ব্যবহার করে।
+- উপরের স্তর মানে দূরপাল্লার লাফ, নিচের স্তর মানে লোকাল।
+- `search` প্রতি স্তরে যতদূর সম্ভব এগিয়ে যায়; পরের node বড় দেখলেই এক স্তর নেমে আসে।
+- নতুন node-এর স্তর ঠিক হয় coin-flip (random) দিয়ে, তাই গড়ে ভারসাম্য থেকেই যায়।
+- Redis-এর sorted set (ZSET) আসলে skip list দিয়েই বানানো।
 
 ## Complexity
 
-- গড় search/insert/delete O(log n); space O(n)।
+- গড়ে search/insert/delete O(log n); space O(n)।
 
 ## Animation Spec
 
@@ -78,9 +80,9 @@ console.log(search(head, 15, 2));     // false
 >
 > - **দৃশ্য:** বহু-স্তর linked list; search-এ pointer উপরে দ্রুত এগোয়, দরকারে নিচে নামে।
 > - **ইনপুট:** target; insert (random level সহ)।
-> - **ধাপ:** "সামনে নাকি নিচে" সিদ্ধান্ত highlight; পথ ট্রেস।
-> - **লক্ষ্য:** কেন express lane search দ্রুত করে।
+> - **ধাপ:** "সামনে নাকি নিচে" সিদ্ধান্তটা highlight; পুরো পথ ট্রেস।
+> - **লক্ষ্য:** express lane বসালেই search দ্রুত হয় কেন।
 
 ## অনুশীলন
 
-- coin-flip স্তর কেন ভারসাম্য দেয়, সম্ভাবনার দিক থেকে ভাবো।
+- coin-flip দিয়ে স্তর ঠিক করলে ভারসাম্য আসে কীভাবে, সম্ভাবনার হিসেব করে ভাবো।

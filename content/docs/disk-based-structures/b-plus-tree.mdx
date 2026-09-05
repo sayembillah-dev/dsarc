@@ -1,20 +1,20 @@
 ---
 title: "B-Tree ও B+ Tree: database-এর মূল index কাঠামো"
-description: বড় fan-out ও কম height; B+ Tree-এর linked leaf-এ দ্রুত range query, database-এর default index।
+description: fan-out বড়, height ছোট, তাই disk read কম। B+ Tree-র linked leaf-এ range query উড়ে যায়; এই জন্যই database-এর default index ওটাই।
 ---
 
 ## কী শিখব
 
-- database ও file system-এর মূল index কাঠামো
+- database আর file system-এর index আসলে কী দিয়ে দাঁড়িয়ে
 
 ## ধারণা
 
-2-3 Tree-কে সাধারণীকরণ করলেই **B-Tree** (section 11.6-এ পরিচয় হয়েছে): প্রতিটা node-এ **অনেক key ও অনেক চাইল্ড** (order m)। উদ্দেশ্য: গাছ যতটা সম্ভব **কম গভীর** রাখা, কারণ disk থেকে প্রতিটা node পড়া ব্যয়বহুল; কম height মানে কম disk read।
+ধরো বিশাল একটা গ্রন্থাগারে তোমাকে একটা বই খুঁজতে হবে, আর প্রতিটা তাক খুলতে (disk read) মিনিটখানেক লেগে যায়। তুমি কি চাবে তাকগুলো লম্বা সিঁড়ির মতো একটার উপর একটা সাজানো থাকুক? নাকি চওড়া কক্ষ, যেখানে এক ঘড়িতে হাজারটা তাক চোখে পড়ে? অবশ্যই চওড়া। B-Tree ঠিক এই বুদ্ধিতেই বানানো। আগের পাতার 2-3 Tree-কেই আরও চওড়া করলেই পাও **B-Tree** (section 11.6-এ পরিচয় হয়েছে): প্রতিটা node-এ **অনেক key, অনেক চাইল্ড** (order m)। লক্ষ্য একটাই, গাছের **height যত কম** রাখা যায়। কম height মানে কম disk read, আর disk-এর জগতে এটাই আসল খরচ।
 
-**B+ Tree** (বাস্তবে database index যা ব্যবহার করে) হলো B-Tree-র উন্নত রূপ:
+**B+ Tree** হলো B-Tree-র আরেকটু ঝকঝকে সংস্করণ, আর বাস্তবে database index মানে এটাই। পার্থক্য দুটো:
 
-- **সব actual data শুধু leaf-এ** থাকে (internal node শুধু "রাস্তা দেখানোর" key)
-- **সব leaf একটা linked list-এ জোড়া**, তাই range query (`WHERE age BETWEEN 20 AND 30`) খুব দ্রুত (এক leaf থেকে পরের leaf-এ হাঁটা)
+- **আসল ডেটা থাকে শুধু leaf-এ।** internal node গুলো শুধু রাস্তা দেখায় (guide key)।
+- **সব leaf পরস্পর linked list দিয়ে জোড়া।** ফলে range query (`WHERE age BETWEEN 20 AND 30`) মানে এক leaf-এ নেমে পরের leaf গুলোতে হেঁটে যাওয়া, ব্যাস।
 
 ```text
 B+ Tree:
@@ -72,24 +72,24 @@ console.log(tree.rangeQuery(10, 70));   // [ 10, 20, 30, 40, 50, 60, 70 ]
 
 ## কোড ব্রেকডাউন
 
-- `_findLeaf` guide key দিয়ে সঠিক leaf-এ নামে; বাস্তব B+ Tree-এ এটাই O(log n) অংশ।
-- `rangeQuery` 25-এর leaf খুঁজে (O(log n)), তারপর leaf-linked-list ধরে 40 পর্যন্ত sequential পড়ে; খুবই দক্ষ range scan।
-- বড় fan-out (অনেক চাইল্ড): লাখো row-এও height মাত্র ৩-৪, তাই ৩-৪ disk read-এ যেকোনো row।
-- B+ Tree-এর linked leaf sorted scan ও range query সহজ করে; এজন্য MySQL (InnoDB), PostgreSQL সবই B+ Tree index ব্যবহার করে।
+- `_findLeaf` guide key দেখে সঠিক leaf-এ নেমে যায়; আসল B+ Tree-এ এই অংশটাই O(log n)।
+- `rangeQuery` আগে 25-এর leaf খোঁজে (O(log n)), তারপর leaf-এর linked list ধরে 40 পর্যন্ত হেঁটে যায়। range scan-এর চেয়ে দক্ষ জিনিস আর কী হতে পারে?
+- fan-out বড় মানে প্রচুর চাইল্ড। লাখ লাখ row থাকলেও height মাত্র ৩-৪, তাই যেকোনো row পেতে ৩-৪টা disk read-ই যথেষ্ট।
+- এই linked leaf-ই sorted scan আর range query-কে এত সহজ করে দেয়। তাই MySQL (InnoDB) হোক বা PostgreSQL, সবাই B+ Tree index-ই ব্যবহার করে।
 
 ## Complexity
 
-- search/insert/delete O(log n); disk-access-এ বিশাল সুবিধা।
+- search/insert/delete সব O(log n); আর disk-access-এ বাড়তি বিশাল জিত।
 
 ## Animation Spec
 
 > **Animation Spec: B+ Tree Range Scan**
 >
-> - **দৃশ্য:** B+ tree; internal node "guide", leaf-এ data ও leaf-লিঙ্ক তীর।
+> - **দৃশ্য:** B+ tree; internal node "guide", leaf-এ data আর leaf-লিঙ্কের তীর।
 > - **ইনপুট:** range query [lo, hi]।
 > - **ধাপ:** lo খুঁজে নামা, তারপর leaf-linked-list ধরে hi পর্যন্ত হাঁটা (সবুজ)।
-> - **লক্ষ্য:** কেন database index-এ B+ Tree, binary tree নয়।
+> - **লক্ষ্য:** database index-এ কেন B+ Tree, binary tree কেন নয়।
 
 ## অনুশীলন
 
-- কেন range query-তে B+ Tree, B-Tree-র চেয়ে ভালো, নিজের ভাষায় লেখো।
+- range query-তে B+ Tree, B-Tree-কে হারায় কেন, নিজের ভাষায় লেখো।

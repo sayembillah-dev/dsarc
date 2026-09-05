@@ -1,20 +1,22 @@
 ---
 title: "2-3 Tree: split/merge দিয়ে সবসময় balanced tree"
-description: প্রতিটা node-এ ১-২টা key ও ২-৩টা চাইল্ড; split/merge দিয়ে ভারসাম্য, উচ্চতা সবসময় O(log n)।
+description: প্রতিটা node-এ ১-২টা key আর ২-৩টা চাইল্ড। ভারসাম্য আসে split/merge দিয়ে, তাই উচ্চতা কখনো O(log n)-এর বাইরে যায় না।
 ---
 
 ## কী শিখব
 
-- সবসময় balanced থাকা multi-way search tree-র ধারণা
+- যে multi-way search tree কখনো হেলে পড়ে না, সে কীভাবে সম্ভব
 
 ## ধারণা
 
-2-3 Tree একটা balanced search tree যেখানে প্রতিটা internal node হয়:
+ভাবো তো, sorted ডেটা (১, ২, ৩, ৪...) একটা সাধারণ binary search tree-তে ঢোকালে কী হয়। গাছটা একপাশে হেলে লম্বা লাঠি হয়ে যায়, search আর O(log n) থাকে না। AVL এই সমস্যা মেটে rotation দিয়ে। 2-3 Tree মেটে একদম অন্য কায়দায়: node-কে একটু বেশি key ধরতে দাও, ভরে গেলে **ভেঙে ফেলো (split)**, দরকারে আবার **জোড়া লাগাও (merge)**।
 
-- **2-node:** ১টা key, ২টা চাইল্ড, অথবা
+নিয়মটা সরল। প্রতিটা internal node দুই রকমের একটা হবেই:
+
+- **2-node:** ১টা key, ২টা চাইল্ড
 - **3-node:** ২টা key, ৩টা চাইল্ড
 
-**সব leaf সবসময় একই স্তরে** থাকে, তাই tree perfectly balanced, উচ্চতা সবসময় O(log n)। AVL-এর মতোই লক্ষ্য (ভারসাম্য), কিন্তু rotation-এর বদলে node **split/merge** দিয়ে ভারসাম্য রাখে। এটাই B-Tree-র (পরের পাতায় বিস্তারিত) সরলতম রূপ।
+আর সবচেয়ে গুরুত্বপূর্ণ শর্ত: **সব leaf সবসময় একই স্তরে থাকে।** গাছ হেলে যাওয়ার সুযোগই নেই, তাই উচ্চতা guaranteed O(log n)। লক্ষ্য AVL-এর মতোই, শুধু পথটা আলাদা। আর মজার কথা, এটাই B-Tree-র (পরের পাতায় বিস্তারিত) সবচেয়ে সরল রূপ।
 
 ```text
 2-node:  [10]        3-node:  [10 | 20]
@@ -93,14 +95,14 @@ console.log("height:", tree.height());      // height: 3 (সব leaf একই 
 
 ## কোড ব্রেকডাউন
 
-- insert-এ সঠিক leaf খুঁজে key বসায়; node-এ 3টা key হয়ে গেলে **split** হয়, মাঝেরটা parent-এ তুলে দেওয়া হয়।
-- split উপরের দিকে ছড়াতে পারে; root split হলে height বাড়ে, আর সেটা সবার জন্য সমান।
-- `is3Node()` দিয়ে চেনা যায় node-এ ২টা key (৩টা চাইল্ড) আছে কি না।
-- গাছ কখনো একপাশে হেলে যায় না, তাই worst case-ও O(log n)।
+- insert হলে আগে সঠিক leaf খুঁজে key বসায়। node-এ ৩টা key জমে গেলেই **split**: মাঝের key-টা parent-এ উঠে যায়।
+- split উপরের দিকে ছড়াতে পারে। root-ও split হলে height বাড়ে, কিন্তু সবার জন্য সমানভাবে।
+- `is3Node()` দিয়ে বোঝা যায় node-এ ২টা key (মানে ৩টা চাইল্ড) আছে কি না।
+- গাছ কখনো একপাশে হেলে যায় না, তাই worst case-ও চোখ বন্ধ করে O(log n) বলতে পারো।
 
 ## Complexity
 
-- search/insert/delete O(log n) নিশ্চিত।
+- search/insert/delete: O(log n), guaranteed।
 
 ## Animation Spec
 
@@ -108,8 +110,8 @@ console.log("height:", tree.height());      // height: 3 (সব leaf একই 
 >
 > - **দৃশ্য:** 2-3 tree; একটা full (3-key) node-এ insert করলে split হয়ে মাঝের key উপরে ওঠে।
 > - **ইনপুট:** insert sequence।
-> - **ধাপ:** node overflow, তারপর split animation; height সমানভাবে বাড়া।
-> - **লক্ষ্য:** rotation-হীন ভারসাম্য (split/merge) বোঝা।
+> - **ধাপ:** node overflow, তারপর split animation; height সমানভাবে বাড়ছে দেখা।
+> - **লক্ষ্য:** rotation ছাড়াই ভারসাম্য, শুধু split/merge দিয়ে।
 
 ## অনুশীলন
 
