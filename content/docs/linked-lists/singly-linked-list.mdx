@@ -9,7 +9,7 @@ description: head ধরে রেখে prepend, append, find ও print সহ 
 
 ## ধারণা
 
-`head` (প্রথম node) ধরে রাখলে পুরো তালিকায় পৌঁছানো যায়। আমরা `prepend` (শুরুতে), `append` (শেষে), `print`, `find` যোগ করব।
+`head` (প্রথম node) ধরে রাখলে পুরো লিস্টে পৌঁছানো যায়। আমরা `prepend` (শুরুতে), `append` (শেষে), `print`, `find` যোগ করব।
 
 ## কোড উদাহরণ
 
@@ -67,7 +67,7 @@ console.log(list.size);     // 3
 ## কোড ব্রেকডাউন
 
 - `prepend`: নতুন node-কে head বানায়, পুরনো head-কে তার next বানায়। কাউকে সরাতে হয় না, তাই O(1)।
-- `append`: শেষ node খুঁজতে পুরো তালিকা হাঁটতে হয়, তাই O(n)।
+- `append`: শেষ node খুঁজতে পুরো লিস্ট হাঁটতে হয়, তাই O(n)।
 - traversal প্যাটার্ন মনে রাখো: `current = head; while (current) current = current.next;`
 
 ## Complexity

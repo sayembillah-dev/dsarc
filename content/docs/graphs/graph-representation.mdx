@@ -11,7 +11,7 @@ description: graph কোডে রাখার দুই প্রধান উ
 
 দুই প্রধান উপায়:
 
-- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের তালিকা (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V + E)।
+- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের লিস্ট (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V + E)।
 - **Adjacency Matrix:** V×V গ্রিড; `matrix[i][j] = 1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V²), dense graph-এ ভালো।
 
 বাস্তবে বেশিরভাগ সমস্যায় **adjacency list** ব্যবহার হয়।
@@ -41,7 +41,7 @@ console.log(g.neighbors("A")); // ['B','C']
 
 ## কোড ব্রেকডাউন
 
-- `Map<vertex, neighbors[]>`: প্রতিটা vertex-এর সরাসরি প্রতিবেশীর তালিকা।
+- `Map<vertex, neighbors[]>`: প্রতিটা vertex-এর সরাসরি প্রতিবেশীর লিস্ট।
 - undirected-এ দুই দিকেই edge যোগ; directed-এ এক দিকে।
 
 ## Complexity

@@ -13,8 +13,8 @@
 
 **ধারণা**
 2-3 Tree একটা balanced search tree যেখানে প্রতিটা internal node হয়:
-- **2-node:** ১টা key, ২টা সন্তান, অথবা
-- **3-node:** ২টা key, ৩টা সন্তান
+- **2-node:** ১টা key, ২টা চাইল্ড, অথবা
+- **3-node:** ২টা key, ৩টা চাইল্ড
 
 **সব leaf সবসময় একই স্তরে**, তাই perfectly balanced, উচ্চতা সবসময় O(log n)। AVL-এর মতোই লক্ষ্য (ভারসাম্য), কিন্তু rotation-এর বদলে node **split/merge** দিয়ে ভারসাম্য রাখে। এটাই B-Tree-র (নিচে) সরলতম রূপ।
 
@@ -29,7 +29,7 @@
 class TwoThreeNode {
   constructor() {
     this.keys = [];       // 1 বা 2 টা key (sorted)
-    this.children = [];   // 2 বা 3 টা সন্তান
+    this.children = [];   // 2 বা 3 টা চাইল্ড
   }
   isLeaf() { return this.children.length === 0; }
   is3Node() { return this.keys.length === 2; }
@@ -62,7 +62,7 @@ class TwoThreeNode {
 - database ও file system-এর মূল index কাঠামো
 
 **ধারণা**
-2-3 Tree-কে সাধারণীকরণ করলেই **B-Tree** (section 11.6-এ পরিচয়): প্রতিটা node-এ **অনেক key ও অনেক সন্তান** (order m)। উদ্দেশ্য: গাছ যতটা সম্ভব **কম গভীর** রাখা, কারণ disk থেকে প্রতিটা node পড়া ব্যয়বহুল; কম height = কম disk read।
+2-3 Tree-কে সাধারণীকরণ করলেই **B-Tree** (section 11.6-এ পরিচয়): প্রতিটা node-এ **অনেক key ও অনেক চাইল্ড** (order m)। উদ্দেশ্য: গাছ যতটা সম্ভব **কম গভীর** রাখা, কারণ disk থেকে প্রতিটা node পড়া ব্যয়বহুল; কম height = কম disk read।
 
 **B+ Tree** (বাস্তবে database index যা ব্যবহার করে): B-Tree-র উন্নত রূপ।
 - **সব actual data শুধু leaf-এ** থাকে (internal node শুধু "রাস্তা দেখানোর" key)
@@ -83,7 +83,7 @@ B+ Tree:
 ```
 
 **ব্রেকডাউন**
-- বড় fan-out (অনেক সন্তান): লাখো row-এও height মাত্র ৩-৪, তাই ৩-৪ disk read-এ যেকোনো row।
+- বড় fan-out (অনেক চাইল্ড): লাখো row-এও height মাত্র ৩-৪, তাই ৩-৪ disk read-এ যেকোনো row।
 - B+ Tree-এর linked leaf sorted scan ও range query সহজ করে; এজন্য MySQL (InnoDB), PostgreSQL সবই B+ Tree index ব্যবহার করে।
 
 **Complexity:** search/insert/delete O(log n); disk-access-এ বিশাল সুবিধা।

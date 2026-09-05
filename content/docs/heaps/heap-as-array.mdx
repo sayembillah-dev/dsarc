@@ -11,8 +11,8 @@ description: complete binary tree তাই pointer লাগে না; সা�
 
 Complete binary tree হওয়ায় heap-এ pointer লাগে না, একটা সাধারণ **array**-ই যথেষ্ট! index দিয়েই parent-child সম্পর্ক বের হয়:
 
-- index `i`-এর **বাঁ সন্তান:** `2i + 1`
-- index `i`-এর **ডান সন্তান:** `2i + 2`
+- index `i`-এর **বাঁ চাইল্ড:** `2i + 1`
+- index `i`-এর **ডান চাইল্ড:** `2i + 2`
 - index `i`-এর **parent:** `Math.floor((i - 1) / 2)`
 
 ```
@@ -30,8 +30,8 @@ tree:        1(0)
 ```js
 const heap = [1, 3, 6, 5, 9];
 const i = 1;                       // মান 3
-console.log(heap[2 * i + 1]);      // বাঁ সন্তান: 5
-console.log(heap[2 * i + 2]);      // ডান সন্তান: 9
+console.log(heap[2 * i + 1]);      // বাঁ চাইল্ড: 5
+console.log(heap[2 * i + 2]);      // ডান চাইল্ড: 9
 console.log(heap[Math.floor((i - 1) / 2)]); // parent: 1
 ```
 
@@ -48,11 +48,11 @@ console.log(heap[Math.floor((i - 1) / 2)]); // parent: 1
 
 > **Animation Spec: Array-Tree Sync**
 >
-> - **দৃশ্য:** উপরে tree, নিচে array; একটা index hover করলে দুই জায়গাতেই highlight, সাথে সন্তান/parent সূত্র দেখানো।
+> - **দৃশ্য:** উপরে tree, নিচে array; একটা index hover করলে দুই জায়গাতেই highlight, সাথে চাইল্ড/parent সূত্র দেখানো।
 > - **ইনপুট:** index নির্বাচন।
-> - **ধাপ:** সূত্র প্রয়োগ করে সন্তান/parent সেল চিহ্নিত হয়।
+> - **ধাপ:** সূত্র প্রয়োগ করে চাইল্ড/parent সেল চিহ্নিত হয়।
 > - **লক্ষ্য:** array-heap দ্বৈততা।
 
 ## অনুশীলন
 
-- index 3-এর parent ও সন্তান সূত্র দিয়ে বের করো।
+- index 3-এর parent ও চাইল্ড সূত্র দিয়ে বের করো।

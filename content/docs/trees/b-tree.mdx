@@ -1,19 +1,19 @@
 ---
 title: "B-Tree: পরিচিতি"
-description: database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree; কম height মানে কম disk read।
+description: database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree; কম height মানে কম disk read।
 ---
 
 ## কী শিখব
 
-- database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree
+- database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree
 
 ## ধারণা
 
-Binary tree-র প্রতিটা node-এ ১টা key, ২টা সন্তান। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক সন্তান** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
+Binary tree-র প্রতিটা node-এ ১টা key, ২টা চাইল্ড। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক চাইল্ড** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
 
 মূল ধর্ম (order m-এর B-Tree):
 
-- প্রতিটা node-এ সর্বোচ্চ m-1 key, m সন্তান
+- প্রতিটা node-এ সর্বোচ্চ m-1 key, m চাইল্ড
 - সব leaf একই স্তরে (perfectly balanced)
 - node-এর key গুলো sorted
 
@@ -30,8 +30,8 @@ node গঠন (ধারণা):
 ```js
 class BTreeNode {
   constructor(isLeaf = true) {
-    this.keys = [];      // sorted key তালিকা (একাধিক)
-    this.children = [];  // সন্তান তালিকা (keys+1 টা)
+    this.keys = [];      // sorted key লিস্ট (একাধিক)
+    this.children = [];  // চাইল্ড লিস্ট (keys+1 টা)
     this.isLeaf = isLeaf;
   }
 }
@@ -44,7 +44,7 @@ console.log(node.keys, node.isLeaf); // [10, 20] true
 
 ## কোড ব্রেকডাউন
 
-- অনেক key/সন্তান মানে কম height, মানে disk read কম।
+- অনেক key/চাইল্ড মানে কম height, মানে disk read কম।
 - "node full হলে split", এই কৌশলে সবসময় balanced থাকে।
 - বাস্তবে disk-page-এর আকারের সাথে node আকার মেলানো হয়।
 

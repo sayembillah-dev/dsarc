@@ -64,7 +64,7 @@ console.log(a.next.next.value); // 30
 - একটা কাজের singly linked list class বানানো
 
 **ধারণা**
-`head` (প্রথম node) ধরে রাখলে পুরো তালিকায় পৌঁছানো যায়। আমরা `prepend` (শুরুতে), `append` (শেষে), `print`, `find` যোগ করব।
+`head` (প্রথম node) ধরে রাখলে পুরো লিস্টে পৌঁছানো যায়। আমরা `prepend` (শুরুতে), `append` (শেষে), `print`, `find` যোগ করব।
 
 **কোড উদাহরণ**
 ```js
@@ -119,7 +119,7 @@ console.log(list.find(20)); // Node { value: 20, ... }
 
 **ব্রেকডাউন**
 - `prepend`: নতুন node-কে head বানায়, পুরনো head-কে তার next বানায়। কাউকে সরাতে হয় না, তাই O(1)।
-- `append`: শেষ node খুঁজতে পুরো তালিকা হাঁটতে হয়, তাই O(n)।
+- `append`: শেষ node খুঁজতে পুরো লিস্ট হাঁটতে হয়, তাই O(n)।
 - traversal প্যাটার্ন মনে রাখো: `current = head; while (current) current = current.next;`
 
 **Complexity:** prepend O(1); append, find, print O(n); space O(n)।
@@ -182,14 +182,14 @@ remove(value) {
 > - **লক্ষ্য:** deletion অর্থাৎ pointer rewiring।
 
 **অনুশীলন**
-- একটা মান তালিকায় না থাকলে remove কী করবে, টেস্ট করো।
+- একটা মান লিস্টে না থাকলে remove কী করবে, টেস্ট করো।
 
 ---
 
 ## 5.4: Doubly Linked List
 
 **কী শিখব**
-- সামনে ও পেছনে, দুই দিকে চলা যায় এমন তালিকা
+- সামনে ও পেছনে, দুই দিকে চলা যায় এমন লিস্ট
 
 **ধারণা**
 প্রতিটা node-এ `next`-এর পাশাপাশি `prev` (আগের node-এর তীর) থাকে। ফলে দুই দিকে যাওয়া যায়, আর কোনো node পেলে তাকে O(1)-এ মুছে ফেলা যায় (আগেরটা `prev` দিয়ে জানা)।
@@ -254,7 +254,7 @@ dll.printBackward(); // 30 <-> 20 <-> 10
 ## 5.5: Circular Linked List
 
 **কী শিখব**
-- শেষ node আবার প্রথমকে দেখায়, এমন বৃত্তাকার তালিকা
+- শেষ node আবার প্রথমকে দেখায়, এমন বৃত্তাকার লিস্ট
 
 **ধারণা**
 সাধারণ list-এ শেষ node-এর next = null। Circular-এ শেষ node-এর next = **head** (প্রথম)। ফলে অবিরাম ঘোরা যায়; round-robin scheduling, buffer ইত্যাদিতে কাজে লাগে।

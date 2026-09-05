@@ -30,7 +30,7 @@ function levelOrder(root) {
     for (let i = 0; i < levelSize; i++) {
       const node = queue.shift();       // সামনেরটা বের
       level.push(node.value);
-      if (node.left) queue.push(node.left);   // সন্তানদের পেছনে যোগ
+      if (node.left) queue.push(node.left);   // চাইল্ডদের পেছনে যোগ
       if (node.right) queue.push(node.right);
     }
     result.push(level);
@@ -46,7 +46,7 @@ console.log(levelOrder(r)); // [[1],[2,3],[4,5]]
 
 ## কোড ব্রেকডাউন
 
-- queue-তে root দিয়ে শুরু; প্রতিবার সামনেরটা বের করে তার সন্তান পেছনে যোগ।
+- queue-তে root দিয়ে শুরু; প্রতিবার সামনেরটা বের করে তার চাইল্ড পেছনে যোগ।
 - `levelSize` ধরে রাখায় প্রতিটা স্তর আলাদা করা যায়।
 
 ## Complexity

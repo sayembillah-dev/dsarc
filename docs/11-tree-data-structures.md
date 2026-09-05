@@ -16,7 +16,7 @@ Tree = নোডের একটা শ্রেণিবদ্ধ (hierarchical
 
 - **Root:** সবার উপরের node
 - **Parent / Child:** উপর-নিচ সম্পর্ক
-- **Leaf:** সন্তানহীন node
+- **Leaf:** চাইল্ডহীন node
 - **Edge:** দুই node-এর সংযোগ
 - **Height:** root থেকে সবচেয়ে দূরের leaf পর্যন্ত edge সংখ্যা
 - **Depth:** কোনো node root থেকে কত দূরে
@@ -35,8 +35,8 @@ Tree = নোডের একটা শ্রেণিবদ্ধ (hierarchical
 class TreeNode {
   constructor(value) {
     this.value = value;
-    this.left = null;    // বাঁ সন্তান
-    this.right = null;   // ডান সন্তান
+    this.left = null;    // বাঁ চাইল্ড
+    this.right = null;   // ডান চাইল্ড
   }
 }
 const root = new TreeNode("A");
@@ -45,8 +45,8 @@ root.right = new TreeNode("C");
 ```
 
 **ব্রেকডাউন**
-- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা সন্তান (`left`, `right`)।
-- `null` মানে সেদিকে সন্তান নেই।
+- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা চাইল্ড (`left`, `right`)।
+- `null` মানে সেদিকে চাইল্ড নেই।
 
 > **Animation Spec: Tree Anatomy**
 > - **দৃশ্য:** একটা tree; hover করলে প্রতিটা অংশের লেবেল (root/leaf/height) দেখা যায়।
@@ -144,7 +144,7 @@ function levelOrder(root) {
     for (let i = 0; i < levelSize; i++) {
       const node = queue.shift();       // সামনেরটা বের
       level.push(node.value);
-      if (node.left) queue.push(node.left);   // সন্তানদের পেছনে যোগ
+      if (node.left) queue.push(node.left);   // চাইল্ডদের পেছনে যোগ
       if (node.right) queue.push(node.right);
     }
     result.push(level);
@@ -155,7 +155,7 @@ console.log(levelOrder(r)); // [[1],[2,3],[4,5]]
 ```
 
 **ব্রেকডাউন**
-- queue-তে root দিয়ে শুরু; প্রতিবার সামনেরটা বের করে তার সন্তান পেছনে যোগ।
+- queue-তে root দিয়ে শুরু; প্রতিবার সামনেরটা বের করে তার চাইল্ড পেছনে যোগ।
 - `levelSize` ধরে রাখায় প্রতিটা স্তর আলাদা করা যায়।
 
 **Complexity:** O(n) time; space O(n) (queue)।
@@ -311,13 +311,13 @@ function rebalance(node) {
 ## 11.6: B-Tree (পরিচিতি)
 
 **কী শিখব**
-- database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree
+- database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree
 
 **ধারণা**
-Binary tree-র প্রতিটা node-এ ১টা key, ২টা সন্তান। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক সন্তান** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
+Binary tree-র প্রতিটা node-এ ১টা key, ২টা চাইল্ড। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক চাইল্ড** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
 
 মূল ধর্ম (order m-এর B-Tree):
-- প্রতিটা node-এ সর্বোচ্চ m-1 key, m সন্তান
+- প্রতিটা node-এ সর্বোচ্চ m-1 key, m চাইল্ড
 - সব leaf একই স্তরে (perfectly balanced)
 - node-এর key গুলো sorted
 
@@ -331,8 +331,8 @@ Binary tree-র প্রতিটা node-এ ১টা key, ২টা সন�
 ```js
 class BTreeNode {
   constructor(isLeaf = true) {
-    this.keys = [];      // sorted key তালিকা (একাধিক)
-    this.children = [];  // সন্তান তালিকা (keys+1 টা)
+    this.keys = [];      // sorted key লিস্ট (একাধিক)
+    this.children = [];  // চাইল্ড লিস্ট (keys+1 টা)
     this.isLeaf = isLeaf;
   }
 }
@@ -341,7 +341,7 @@ class BTreeNode {
 ```
 
 **ব্রেকডাউন**
-- অনেক key/সন্তান মানে কম height, মানে disk read কম।
+- অনেক key/চাইল্ড মানে কম height, মানে disk read কম।
 - "node full হলে split", এই কৌশলে সবসময় balanced থাকে।
 - বাস্তবে disk-page-এর আকারের সাথে node আকার মেলানো হয়।
 

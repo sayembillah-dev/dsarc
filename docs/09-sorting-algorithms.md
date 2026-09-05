@@ -305,8 +305,8 @@ console.log(heapSort([4, 10, 3, 5, 1])); // [1,3,4,5,10]
 ```
 
 **ব্রেকডাউন**
-- heap array-তে: parent `i`-এর সন্তান `2i+1`, `2i+2`।
-- `heapify` root-কে তার সন্তানদের সাথে তুলনা করে বড়টা উপরে তোলে।
+- heap array-তে: parent `i`-এর চাইল্ড `2i+1`, `2i+2`।
+- `heapify` root-কে তার চাইল্ডদের সাথে তুলনা করে বড়টা উপরে তোলে।
 - বারবার root (max) শেষে সরিয়ে sorted অংশ বাড়ে।
 
 **Complexity:** সব ক্ষেত্রে O(n log n); space O(1); unstable।

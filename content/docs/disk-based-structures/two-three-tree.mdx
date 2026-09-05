@@ -1,6 +1,6 @@
 ---
 title: "2-3 Tree: split/merge দিয়ে সবসময় balanced tree"
-description: প্রতিটা node-এ ১-২টা key ও ২-৩টা সন্তান; split/merge দিয়ে ভারসাম্য, উচ্চতা সবসময় O(log n)।
+description: প্রতিটা node-এ ১-২টা key ও ২-৩টা চাইল্ড; split/merge দিয়ে ভারসাম্য, উচ্চতা সবসময় O(log n)।
 ---
 
 ## কী শিখব
@@ -11,8 +11,8 @@ description: প্রতিটা node-এ ১-২টা key ও ২-৩টা 
 
 2-3 Tree একটা balanced search tree যেখানে প্রতিটা internal node হয়:
 
-- **2-node:** ১টা key, ২টা সন্তান, অথবা
-- **3-node:** ২টা key, ৩টা সন্তান
+- **2-node:** ১টা key, ২টা চাইল্ড, অথবা
+- **3-node:** ২টা key, ৩টা চাইল্ড
 
 **সব leaf সবসময় একই স্তরে** থাকে, তাই tree perfectly balanced, উচ্চতা সবসময় O(log n)। AVL-এর মতোই লক্ষ্য (ভারসাম্য), কিন্তু rotation-এর বদলে node **split/merge** দিয়ে ভারসাম্য রাখে। এটাই B-Tree-র (পরের পাতায় বিস্তারিত) সরলতম রূপ।
 
@@ -28,7 +28,7 @@ description: প্রতিটা node-এ ১-২টা key ও ২-৩টা 
 class TwoThreeNode {
   constructor() {
     this.keys = [];       // 1 বা 2 টা key (sorted)
-    this.children = [];   // 2 বা 3 টা সন্তান
+    this.children = [];   // 2 বা 3 টা চাইল্ড
   }
   isLeaf() { return this.children.length === 0; }
   is3Node() { return this.keys.length === 2; }
@@ -95,7 +95,7 @@ console.log("height:", tree.height());      // height: 3 (সব leaf একই 
 
 - insert-এ সঠিক leaf খুঁজে key বসায়; node-এ 3টা key হয়ে গেলে **split** হয়, মাঝেরটা parent-এ তুলে দেওয়া হয়।
 - split উপরের দিকে ছড়াতে পারে; root split হলে height বাড়ে, আর সেটা সবার জন্য সমান।
-- `is3Node()` দিয়ে চেনা যায় node-এ ২টা key (৩টা সন্তান) আছে কি না।
+- `is3Node()` দিয়ে চেনা যায় node-এ ২টা key (৩টা চাইল্ড) আছে কি না।
 - গাছ কখনো একপাশে হেলে যায় না, তাই worst case-ও O(log n)।
 
 ## Complexity

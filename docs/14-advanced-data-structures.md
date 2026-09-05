@@ -76,7 +76,7 @@ console.log(trie.startsWith("ca"));   // true
 > **Animation Spec: Autocomplete Trie**
 > - **দৃশ্য:** trie গাছ; একটা prefix টাইপ করলে সেই পথ আলোকিত হয়ে নিচের সব সম্ভাব্য শব্দ (suggestions) দেখায়।
 > - **ইনপুট:** শব্দ insert; prefix টাইপ।
-> - **ধাপ:** টাইপের সাথে সাথে পথ highlight; matching subtree-র শব্দগুলো তালিকায়।
+> - **ধাপ:** টাইপের সাথে সাথে পথ highlight; matching subtree-র শব্দগুলো লিস্টে।
 > - **লক্ষ্য:** কেন autocomplete-এ Trie আদর্শ।
 
 **অনুশীলন**
@@ -315,7 +315,7 @@ console.log(contains("banana", "xyz"));  // false
 **Complexity:** সরল build O(n² log n); খোঁজা O(m log n)। (উন্নত build O(n log n)।)
 
 > **Animation Spec: Suffix Sort & Search**
-> - **দৃশ্য:** string-এর সব suffix তালিকা; sort হয়ে বর্ণানুক্রমে সাজে; pattern binary search-এ highlight।
+> - **দৃশ্য:** string-এর সব suffix লিস্ট; sort হয়ে বর্ণানুক্রমে সাজে; pattern binary search-এ highlight।
 > - **ইনপুট:** string ও pattern।
 > - **ধাপ:** suffix গুলো sort animate; খোঁজার সময় অর্ধেক-অর্ধেক বাদ।
 > - **লক্ষ্য:** সব suffix গুছিয়ে রাখলে string search কেন সহজ হয়।

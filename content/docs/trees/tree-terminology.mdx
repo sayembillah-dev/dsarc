@@ -13,7 +13,7 @@ Tree অর্থাৎ নোডের একটা শ্রেণিবদ্
 
 - **Root:** সবার উপরের node
 - **Parent / Child:** উপর-নিচ সম্পর্ক
-- **Leaf:** সন্তানহীন node
+- **Leaf:** চাইল্ডহীন node
 - **Edge:** দুই node-এর সংযোগ
 - **Height:** root থেকে সবচেয়ে দূরের leaf পর্যন্ত edge সংখ্যা
 - **Depth:** কোনো node root থেকে কত দূরে
@@ -35,21 +35,21 @@ binary tree node-এর গঠন:
 class TreeNode {
   constructor(value) {
     this.value = value;
-    this.left = null;    // বাঁ সন্তান
-    this.right = null;   // ডান সন্তান
+    this.left = null;    // বাঁ চাইল্ড
+    this.right = null;   // ডান চাইল্ড
   }
 }
 const root = new TreeNode("A");
 root.left = new TreeNode("B");
 root.right = new TreeNode("C");
 console.log(root.value, root.left.value, root.right.value); // A B C
-console.log(root.left.left); // null (B-এর কোনো সন্তান নেই)
+console.log(root.left.left); // null (B-এর কোনো চাইল্ড নেই)
 ```
 
 ## কোড ব্রেকডাউন
 
-- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা সন্তান (`left`, `right`)।
-- `null` মানে সেদিকে সন্তান নেই।
+- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা চাইল্ড (`left`, `right`)।
+- `null` মানে সেদিকে চাইল্ড নেই।
 
 ## Complexity
 

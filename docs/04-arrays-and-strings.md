@@ -12,7 +12,7 @@ Array হলো সবচেয়ে মৌলিক ও সবচেয়ে 
 - Array-এর গঠন ও কেন index access এত দ্রুত
 
 **ধারণা**
-Array হলো একই ধরনের ডেটার একটা ধারাবাহিক (contiguous) তালিকা, যেখানে প্রতিটা উপাদানের একটা **index** (অবস্থান নম্বর) আছে, শুরু হয় **0** থেকে।
+Array হলো একই ধরনের ডেটার একটা ধারাবাহিক (contiguous) লিস্ট, যেখানে প্রতিটা উপাদানের একটা **index** (অবস্থান নম্বর) আছে, শুরু হয় **0** থেকে।
 
 মেমরিতে array-এর উপাদানগুলো **পাশাপাশি** থাকে। তাই index দিলে কম্পিউটার সরাসরি হিসাব করে ঠিক জায়গায় পৌঁছায়, এজন্যই index access **O(1)**।
 
@@ -249,6 +249,6 @@ console.log(reversed);
 
 ## Section সারাংশ
 
-Array অর্থাৎ ধারাবাহিক index-ভিত্তিক তালিকা; access O(1), শুরুতে বা মাঝে insert/delete O(n)। 2D array অর্থাৎ গ্রিড, পুরোটা ঘুরলে O(m·n)। String অর্থাৎ immutable char array; বদলাতে split/join। Two-pointer ও single-pass প্যাটার্ন এখানেই শুরু।
+Array অর্থাৎ ধারাবাহিক index-ভিত্তিক লিস্ট; access O(1), শুরুতে বা মাঝে insert/delete O(n)। 2D array অর্থাৎ গ্রিড, পুরোটা ঘুরলে O(m·n)। String অর্থাৎ immutable char array; বদলাতে split/join। Two-pointer ও single-pass প্যাটার্ন এখানেই শুরু।
 
 **পরবর্তী:** [05: Linked Lists](05-linked-lists.md)

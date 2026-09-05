@@ -43,7 +43,7 @@ Undirected:  A - B        Directed:  A -> B
 > - **লক্ষ্য:** graph-এর ধরন ও পরিভাষা চেনা।
 
 **অনুশীলন**
-- তোমার বন্ধু-তালিকা directed না undirected graph, যুক্তি দাও।
+- তোমার বন্ধু-লিস্ট directed না undirected graph, যুক্তি দাও।
 
 ---
 
@@ -54,7 +54,7 @@ Undirected:  A - B        Directed:  A -> B
 
 **ধারণা**
 দুই প্রধান উপায়:
-- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের তালিকা (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V+E)।
+- **Adjacency List:** প্রতিটা vertex-এর প্রতিবেশীদের লিস্ট (`Map`)। কম edge (sparse) হলে দক্ষ, জায়গা O(V+E)।
 - **Adjacency Matrix:** VxV গ্রিড; `matrix[i][j]=1` মানে edge আছে। edge চেক O(1), কিন্তু জায়গা O(V^2) (dense-এ ভালো)।
 
 বাস্তবে বেশিরভাগ সমস্যায় **adjacency list** ব্যবহার হয়।
@@ -321,7 +321,7 @@ console.log(bellmanFord(
 > - **লক্ষ্য:** Dijkstra-র সাথে trade-off ও negative weight।
 
 **অনুশীলন**
-- Dijkstra vs Bellman-Ford: কখন কোনটা, তালিকা করো।
+- Dijkstra vs Bellman-Ford: কখন কোনটা, লিস্ট করো।
 
 ---
 

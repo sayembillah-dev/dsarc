@@ -66,7 +66,7 @@ console.log("আসসালামু আলাইকুম, DSA শুরু �
 | null | `null` | ইচ্ছাকৃত খালি |
 | undefined | `undefined` | মান দেওয়া হয়নি |
 | Object | `{ }` | key-value জোড়া |
-| Array | `[ ]` | তালিকা |
+| Array | `[ ]` | লিস্ট |
 
 **কোড উদাহরণ**
 ```js
@@ -75,7 +75,7 @@ let age = 20;              // number: বদলাতে পারে
 age = 21;                 // ঠিক আছে, let বলে বদলানো গেল
 
 const isStudent = true;    // boolean
-const marks = [80, 75, 90]; // array (তালিকা)
+const marks = [80, 75, 90]; // array (লিস্ট)
 const student = { name: "Rahim", age: 21 }; // object
 
 console.log(typeof name);   // "string"
@@ -292,7 +292,7 @@ console.log(greet("Karim")); // হ্যালো, Karim!
 - Array ও Object-এর মূল অপারেশন (DSA-র বেসিক building block)
 
 **ধারণা**
-- **Array**: ক্রমানুসারে সাজানো তালিকা, index দিয়ে অ্যাক্সেস (`arr[0]`)।
+- **Array**: ক্রমানুসারে সাজানো লিস্ট, index দিয়ে অ্যাক্সেস (`arr[0]`)।
 - **Object**: key দিয়ে মান খোঁজা যায় (`student.name`)।
 
 **কোড উদাহরণ**
