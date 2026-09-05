@@ -1,0 +1,58 @@
+---
+title: "Merge Sort: ভাগ করো, সাজাও, মেলাও"
+description: divide and conquer দিয়ে নিশ্চিত O(n log n), stable, বড় ডেটায় নির্ভরযোগ্য।
+---
+
+## কী শিখব
+
+- ভাগ করো, সাজাও, মেলাও: O(n log n)
+
+## ধারণা
+
+Array-কে বারবার অর্ধেক ভাগ করি যতক্ষণ প্রতিটা টুকরো ১টা উপাদান (তা তো sorted!); তারপর টুকরোগুলো **merge** করে সাজিয়ে জোড়া লাগাই। recursion-এর সুন্দর প্রয়োগ। বড় ডেটায় নির্ভরযোগ্য।
+
+## কোড উদাহরণ
+
+```js
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;                 // base: একটা অর্থাৎ sorted
+  const mid = Math.floor(arr.length / 2);
+  const left  = mergeSort(arr.slice(0, mid));      // বাঁ অর্ধেক sort
+  const right = mergeSort(arr.slice(mid));         // ডান অর্ধেক sort
+  return merge(left, right);                       // দুটো sorted জোড়া
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]); // ছোটটা আগে
+    else result.push(right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j)); // বাকি জুড়ে দাও
+}
+console.log(mergeSort([5, 2, 9, 1, 7])); // [1,2,5,7,9]
+```
+
+## কোড ব্রেকডাউন
+
+- **Divide:** মাঝ থেকে দুই ভাগ, recursive sort।
+- **Conquer/merge:** দুটো sorted array-কে দুই pointer দিয়ে O(n)-এ মেলানো।
+- log n স্তর ভাগ × প্রতি স্তরে O(n) merge = O(n log n)।
+
+## Complexity
+
+- সব ক্ষেত্রে O(n log n); space O(n); stable।
+
+## Animation Spec
+
+> **Animation Spec: Divide & Merge Tree**
+>
+> - **দৃশ্য:** array উপরে; নিচে নামতে নামতে ভাগ হয়ে ছোট টুকরো; তারপর নিচ থেকে উপরে merge।
+> - **ইনপুট:** array, speed।
+> - **ধাপ:** ভাগের সময় টুকরো আলাদা হয়; merge-এ দুই টুকরো তুলনা করে sorted হয়ে উপরে ওঠে।
+> - **লক্ষ্য:** divide-and-conquer ও O(n log n) স্তর-অনুভূতি।
+
+## অনুশীলন
+
+- `merge` function আলাদা করে দুটো sorted array মেলাও।

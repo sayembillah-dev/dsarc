@@ -1,0 +1,54 @@
+---
+title: "Selection Sort: ছোটটা সামনে বসানো"
+description: প্রতিবার বাকি অংশ থেকে সবচেয়ে ছোট উপাদান খুঁজে সঠিক জায়গায় একবার swap করা।
+---
+
+## কী শিখব
+
+- প্রতিবার সবচেয়ে ছোটটা খুঁজে সামনে বসানো
+
+## ধারণা
+
+বাকি অংশ থেকে সবচেয়ে ছোট উপাদান খুঁজি, তারপর সেটা সঠিক জায়গায় (সামনে) একবার swap করি। swap সংখ্যা কম, কিন্তু তুলনা বেশি।
+
+## কোড উদাহরণ
+
+```js
+function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
+
+function selectionSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let minIndex = i;
+    for (let j = i + 1; j < n; j++) {
+      if (arr[j] < arr[minIndex]) minIndex = j;  // ছোটতম খুঁজি
+    }
+    if (minIndex !== i) swap(arr, i, minIndex);  // একবার swap
+  }
+  return arr;
+}
+console.log(selectionSort([64, 25, 12, 22, 11])); // [11,12,22,25,64]
+```
+
+## কোড ব্রেকডাউন
+
+- বাইরের loop = কোন জায়গা পূরণ করছি।
+- ভেতরের loop = বাকির মধ্যে ছোটতম খুঁজে minIndex।
+- প্রতি pass-এ মাত্র একটা swap, তাই swap ব্যয়বহুল হলে ভালো।
+
+## Complexity
+
+- সব ক্ষেত্রে O(n²); space O(1); unstable।
+
+## Animation Spec
+
+> **Animation Spec: Find-Min & Place**
+>
+> - **দৃশ্য:** bar; বর্তমান minimum tracker (কমলা) বাকির উপর হাঁটে।
+> - **ইনপুট:** array, speed।
+> - **ধাপ:** ছোটতম খুঁজে সেটা সামনের অবস্থানে swap; সামনের অংশ সবুজ (sorted) হতে থাকে।
+> - **লক্ষ্য:** "খুঁজি একবার, swap একবার" প্যাটার্ন।
+
+## অনুশীলন
+
+- selection sort-এ সর্বোচ্চ কতটা swap হয় ভাবো।

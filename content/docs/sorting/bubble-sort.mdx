@@ -1,0 +1,57 @@
+---
+title: "Bubble Sort: বড়টা শেষে ঠেলা"
+description: পাশাপাশি তুলনা করে প্রতি pass-এ সবচেয়ে বড় উপাদান শেষে পাঠানো; সহজ, কিন্তু ধীর।
+---
+
+## কী শিখব
+
+- পাশাপাশি তুলনা করে বড়টা ধীরে ধীরে শেষে ঠেলা
+
+## ধারণা
+
+পাশাপাশি দুটো উপাদান তুলনা করি; বাঁ-টা বড় হলে swap। প্রতিটা pass-এ সবচেয়ে বড় উপাদান "bubble" হয়ে শেষে চলে যায়। সহজ, কিন্তু ধীর।
+
+## কোড উদাহরণ
+
+```js
+function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
+
+function bubbleSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - 1 - i; j++) {   // -i: শেষেরগুলো ইতিমধ্যে sorted
+      if (arr[j] > arr[j + 1]) {
+        swap(arr, j, j + 1);
+        swapped = true;
+      }
+    }
+    if (!swapped) break;                     // কোনো swap নেই অর্থাৎ sorted, থামি
+  }
+  return arr;
+}
+console.log(bubbleSort([5, 1, 4, 2, 8])); // [1,2,4,5,8]
+```
+
+## কোড ব্রেকডাউন
+
+- ভেতরের loop পাশাপাশি জোড়া তুলনা করে swap।
+- `swapped` flag: ইতিমধ্যে sorted হলে আগেভাগে থামা (best case O(n))।
+- `n-1-i`: প্রতি pass-এ শেষের অংশ নিশ্চিত sorted।
+
+## Complexity
+
+- worst/avg O(n²); best O(n); space O(1); stable।
+
+## Animation Spec
+
+> **Animation Spec: Bubbling Up**
+>
+> - **দৃশ্য:** bar; পাশাপাশি জোড়া হলুদ, swap হলে লাল, প্রতি pass শেষে ডান প্রান্তের bar সবুজ।
+> - **ইনপুট:** array, speed।
+> - **ধাপ:** বড় bar ধাপে ধাপে ডানে "ভেসে" যাবে।
+> - **লক্ষ্য:** কেন O(n²): অনেক তুলনা/swap।
+
+## অনুশীলন
+
+- `swapped` flag ছাড়া ও সহ, best case-এ পার্থক্য observe করো।

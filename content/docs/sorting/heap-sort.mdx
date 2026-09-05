@@ -1,0 +1,62 @@
+---
+title: "Heap Sort: heap দিয়ে সাজানো"
+description: max-heap বানিয়ে বারবার root শেষে সরানো; নিশ্চিত O(n log n), in-place।
+---
+
+## কী শিখব
+
+- heap দিয়ে সাজানো: O(n log n), in-place
+
+## ধারণা
+
+প্রথমে array-কে একটা **max-heap**-এ রূপ দিই (সবচেয়ে বড় উপরে)। তারপর বারবার উপরের (সবচেয়ে বড়) উপাদান শেষে সরিয়ে heap ছোট করি ও ঠিক করি (**heapify**)। heap সম্পর্কে বিস্তারিত section 12-এ।
+
+## কোড উদাহরণ
+
+```js
+function swap(arr, i, j) { [arr[i], arr[j]] = [arr[j], arr[i]]; }
+
+function heapSort(arr) {
+  const n = arr.length;
+  // ১) max-heap বানাই (শেষ parent থেকে শুরু)
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) heapify(arr, n, i);
+  // ২) একে একে বড়টা শেষে সরাই
+  for (let end = n - 1; end > 0; end--) {
+    swap(arr, 0, end);           // সবচেয়ে বড় (root) শেষে
+    heapify(arr, end, 0);        // ছোট-হওয়া heap ঠিক করি
+  }
+  return arr;
+}
+
+function heapify(arr, size, root) {
+  let largest = root;
+  const left = 2 * root + 1, right = 2 * root + 2;
+  if (left < size && arr[left] > arr[largest]) largest = left;
+  if (right < size && arr[right] > arr[largest]) largest = right;
+  if (largest !== root) { swap(arr, root, largest); heapify(arr, size, largest); }
+}
+console.log(heapSort([4, 10, 3, 5, 1])); // [1,3,4,5,10]
+```
+
+## কোড ব্রেকডাউন
+
+- heap array-তে: parent `i`-এর সন্তান `2i+1`, `2i+2`।
+- `heapify` root-কে তার সন্তানদের সাথে তুলনা করে বড়টা উপরে তোলে।
+- বারবার root (max) শেষে সরিয়ে sorted অংশ বাড়ে।
+
+## Complexity
+
+- সব ক্ষেত্রে O(n log n); space O(1); unstable।
+
+## Animation Spec
+
+> **Animation Spec: Heapify & Extract**
+>
+> - **দৃশ্য:** উপরে গাছ (heap), নিচে array, দুটো সিঙ্ক।
+> - **ইনপুট:** array, speed।
+> - **ধাপ:** build-heap পর্বে node উপরে ওঠে; extract পর্বে root শেষে যায়, heapify পুনর্গঠন করে।
+> - **লক্ষ্য:** array-heap দ্বৈততা ও heapify বোঝা।
+
+## অনুশীলন
+
+- min-heap দিয়ে বড় থেকে ছোট sort করতে কী বদলাতে হবে ভাবো।
