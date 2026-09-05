@@ -1,21 +1,21 @@
 ---
 title: Searching Algorithms
-description: Linear ও Binary Search, lower/upper bound variant, আর monotonic শর্তে binary search on answer ধারণা, সব একসাথে।
+description: Linear আর Binary Search শেখা, তারপর lower/upper bound variant আর monotonic শর্তে binary search on answer, সব একসাথে।
 ---
 
-কোনো ডেটা খুঁজে বের করা প্রায় প্রতিটা প্রোগ্রামে লাগে। এখানে দুটো মৌলিক search, Linear ও Binary, শিখব, আর Binary Search-এর শক্তিশালী প্রয়োগ দেখব।
+ধরো, ফোনের contact list-এ কারো নাম খুঁজছো। কিংবা বইয়ের সারি থেকে তোমার প্রিয় বইটা। প্রোগ্রামের জগতেও এই কাজটা প্রায় প্রতিটা জায়গায় লাগে। এই chapter-এ দুটো মূল search, Linear আর Binary, শিখব। তারপর দেখব Binary Search শুধু array-র গণ্ডি পেরিয়েও কীভাবে দারুণ কাজে লাগে।
 
 **Section Roadmap:** Linear Search, Binary Search, Binary Search variants, Binary Search on Answer (intro)।
 
 ## এই Chapter-এ যা যা আছে
 
-1. [Linear Search](./linear-search.mdx): একটা একটা করে খোঁজা, কোনো পূর্বশর্ত ছাড়া
+1. [Linear Search](./linear-search.mdx): একটার পর একটা দেখে খোঁজা, কোনো পূর্বশর্ত লাগে না
 2. [Binary Search](./binary-search.mdx): sorted ডেটায় প্রতি ধাপে অর্ধেক বাদ, O(log n)
-3. [Binary Search Variants](./binary-search-variants.mdx): lower/upper bound দিয়ে প্রথম-শেষ অবস্থান, range ও count
+3. [Binary Search Variants](./binary-search-variants.mdx): lower আর upper bound দিয়ে প্রথম-শেষ অবস্থান, range ও count
 4. [Binary Search on Answer](./binary-search-on-answer.mdx): monotonic শর্তে উত্তরের পরিসরে খোঁজা (পরিচিতি)
 
 ## সারাংশ
 
-Linear search O(n), sorted না হলেও চলে। Binary search O(log n), কিন্তু sorted দরকার, প্রতি ধাপে অর্ধেক বাদ। lower/upper bound দিয়ে range/count। Binary search on answer monotonic শর্তে সর্বোত্তম উত্তর দেয়।
+সহজ কথায়, linear search O(n), sorted না হলেও চলে। Binary search O(log n), কিন্তু array sorted চাই, প্রতি ধাপে অর্ধেক বাদ। lower আর upper bound মিলে range বা count বের করা যায়। আর binary search on answer monotonic শর্তে সেরা উত্তরটা খুঁজে দেয়।
 
 **পরবর্তী:** [Tree Data Structures](/docs/trees)।
