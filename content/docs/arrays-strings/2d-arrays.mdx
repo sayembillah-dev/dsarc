@@ -1,0 +1,62 @@
+---
+title: "2D Arrays: Matrix ও Grid"
+description: Array-এর ভেতরে array, সারি-কলামের গ্রিড যা image, game, graph-এ লাগে।
+---
+
+## কী শিখব
+
+- সারি-কলামের গ্রিড, যা image, game, graph-এ লাগে
+
+## ধারণা
+
+2D array হলো array-এর ভেতরে array, একটা টেবিল বা গ্রিড। `matrix[row][col]` দিয়ে অ্যাক্সেস করা যায়।
+
+## কোড উদাহরণ
+
+```js
+// 3×3 গ্রিড
+const grid = [
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9],
+];
+
+console.log(grid[1][2]); // 6 (২য় সারি, ৩য় কলাম)
+
+// প্রতিটা ঘরে ঘোরা
+for (let r = 0; r < grid.length; r++) {
+  let line = "";
+  for (let c = 0; c < grid[r].length; c++) {
+    line += grid[r][c] + " ";
+  }
+  console.log(line);
+}
+
+// খালি m×n গ্রিড বানানো (সব 0)
+const rows = 2, cols = 3;
+const empty = Array.from({ length: rows }, () => Array(cols).fill(0));
+console.log(empty); // [ [0, 0, 0], [0, 0, 0] ]
+```
+
+## কোড ব্রেকডাউন
+
+- `grid[row][col]` অর্থাৎ আগে সারি, পরে কলাম।
+- নেস্টেড loop অর্থাৎ m×n ঘর, তাই **O(m·n)**।
+- `Array.from({ length }, () => Array(cols).fill(0))` হলো নিরাপদভাবে খালি গ্রিড বানানোর নিয়ম (একই array শেয়ার এড়াতে)।
+
+## Complexity
+
+- পুরো গ্রিড ঘুরলে Time: O(m·n)।
+
+## Animation Spec
+
+> **Animation Spec: Grid Walker**
+>
+> - **দৃশ্য:** m×n রঙিন গ্রিড; একটা কমলা highlight ঘর ঘর সরে।
+> - **ইনপুট:** rows, cols; traversal order (row-wise / column-wise)।
+> - **ধাপ:** নির্বাচিত ক্রমে ঘর highlight হবে, visited ঘর হালকা রঙে।
+> - **লক্ষ্য:** 2D indexing ও O(m·n) বোঝা; পরে island/graph সমস্যায় কাজে দেবে।
+
+## অনুশীলন
+
+- একটা 3×3 grid-এর মূল কর্ণ (diagonal) উপাদানগুলোর যোগফল বের করো।

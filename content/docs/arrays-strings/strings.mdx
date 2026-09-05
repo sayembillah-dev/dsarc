@@ -1,0 +1,55 @@
+---
+title: "Strings: character-এর array"
+description: String অপারেশন, immutability, এবং split/join দিয়ে string ও array-র মধ্যে রূপান্তর।
+---
+
+## কী শিখব
+
+- String অপারেশন ও অপরিবর্তনীয়তা (immutability)
+
+## ধারণা
+
+String হলো character-এর ক্রম। JavaScript-এ string **immutable**, একবার বানালে ভেতরের character বদলানো যায় না; বদলাতে হলে নতুন string বানাতে হয়।
+
+## কোড উদাহরণ
+
+```js
+const s = "hello";
+
+console.log(s[0]);            // "h"
+console.log(s.length);        // 5
+console.log(s.toUpperCase()); // "HELLO" (নতুন string)
+console.log(s.slice(1, 4));   // "ell"
+console.log(s.includes("ell")); // true
+
+// string থেকে array, আবার array থেকে string (খুব দরকারি)
+const arr = s.split("");    // ['h','e','l','l','o']
+const back = arr.join("");  // "hello"
+
+// string উল্টানো
+const reversed = s.split("").reverse().join(""); // "olleh"
+console.log(reversed);
+```
+
+## কোড ব্রেকডাউন
+
+- `s[0]` পড়া যায়, কিন্তু `s[0] = "H"` কাজ করবে না (immutable)।
+- বদলানোর কাজে: string থেকে array, তারপর পরিবর্তন, তারপর আবার array থেকে string।
+- `split`/`join` জোড়া string সমস্যায় বারবার লাগবে।
+
+## Complexity
+
+- বেশিরভাগ string অপারেশন O(n) (n = দৈর্ঘ্য); concatenation-এ সাবধান, বারবার করলে O(n²) হতে পারে।
+
+## Animation Spec
+
+> **Animation Spec: String as Char Boxes**
+>
+> - **দৃশ্য:** প্রতিটা character আলাদা box-এ, নিচে index।
+> - **ইনপুট:** string টাইপ; অপারেশন (reverse / slice / uppercase)।
+> - **ধাপ:** reverse করলে box গুলো animation-এ জায়গা বদলাবে; immutable বোঝাতে "নতুন string তৈরি হচ্ছে" লেবেল।
+> - **লক্ষ্য:** string = char array; পরিবর্তন = নতুন কপি।
+
+## অনুশীলন
+
+- একটা string palindrome কিনা two-pointer দিয়ে চেক করো।

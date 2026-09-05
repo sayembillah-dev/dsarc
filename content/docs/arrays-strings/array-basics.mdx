@@ -1,0 +1,54 @@
+---
+title: "Array Basics: Array কী ও Memory-তে কীভাবে থাকে"
+description: Array-এর গঠন, contiguous memory layout, এবং index দিয়ে O(1) access কেন সম্ভব হয়।
+---
+
+## কী শিখব
+
+- Array-এর গঠন ও কেন index access এত দ্রুত
+
+## ধারণা
+
+Array হলো একই ধরনের ডেটার একটা ধারাবাহিক (contiguous) তালিকা, যেখানে প্রতিটা উপাদানের একটা **index** (অবস্থান নম্বর) আছে, শুরু হয় **0** থেকে।
+
+মেমরিতে array-এর উপাদানগুলো **পাশাপাশি** থাকে। তাই index দিলে কম্পিউটার সরাসরি হিসাব করে ঠিক জায়গায় পৌঁছায়, এজন্যই index access **O(1)**।
+
+```text
+index:   0    1    2    3
+value: [ 10 , 20 , 30 , 40 ]
+```
+
+## কোড উদাহরণ
+
+```js
+const arr = [10, 20, 30, 40];
+
+console.log(arr[0]);       // 10, সরাসরি, O(1)
+console.log(arr[2]);       // 30
+console.log(arr.length);   // 4
+
+arr[1] = 99;               // মান বদলানো, O(1)
+console.log(arr);          // [10, 99, 30, 40]
+```
+
+## কোড ব্রেকডাউন
+
+- `arr[2]` অর্থাৎ শুরুর ঠিকানা + (2 × প্রতি উপাদানের আকার) = সরাসরি জায়গা, তাই O(1)।
+- index সবসময় 0 থেকে শুরু, তাই শেষ index = `length - 1`।
+
+## Complexity
+
+- Access ও update, দুটোই O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Memory Layout**
+>
+> - **দৃশ্য:** পাশাপাশি মেমরি সেল, প্রতিটার নিচে address ও index।
+> - **ইনপুট:** index টাইপ করে "access" চাপা।
+> - **ধাপ:** address গণনা (base + index × size) দেখিয়ে সরাসরি সেল highlight, কোনো scan ছাড়াই।
+> - **লক্ষ্য:** কেন index access O(1) তা বোঝা।
+
+## অনুশীলন
+
+- একটা array-এর শেষ উপাদান length ব্যবহার করে বের করো।
