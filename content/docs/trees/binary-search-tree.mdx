@@ -1,0 +1,101 @@
+---
+title: "Binary Search Tree (BST): সাজানো tree-তে দ্রুত খোঁজা"
+description: বাঁ subtree-এ ছোট, ডান subtree-এ বড়; এই নিয়মে search/insert গড়ে O(log n)।
+---
+
+## কী শিখব
+
+- সাজানো tree, দ্রুত search/insert/delete
+
+## ধারণা
+
+BST অর্থাৎ এমন binary tree যেখানে প্রতিটা node-এর জন্য: **বাঁ subtree-র সব ছোট, ডান subtree-র সব বড়**। এই নিয়মে search/insert গড়ে O(log n), কারণ প্রতি ধাপে অর্ধেক বাদ (binary search-এর মতো)।
+
+```
+       8
+      / \
+     3   10
+    / \    \
+   1   6    14
+```
+
+## কোড উদাহরণ
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+class BST {
+  constructor() { this.root = null; }
+
+  insert(value) {
+    const node = new TreeNode(value);
+    if (!this.root) { this.root = node; return; }
+    let current = this.root;
+    while (true) {
+      if (value < current.value) {              // বাঁয়ে যাও
+        if (!current.left) { current.left = node; return; }
+        current = current.left;
+      } else {                                  // ডানে যাও
+        if (!current.right) { current.right = node; return; }
+        current = current.right;
+      }
+    }
+  }
+
+  search(value) {
+    let current = this.root;
+    while (current) {
+      if (value === current.value) return true;
+      current = value < current.value ? current.left : current.right;
+    }
+    return false;
+  }
+}
+
+// in-order helper (আগের পাতার মতোই)
+function inOrder(node, out = []) {
+  if (!node) return out;
+  inOrder(node.left, out);
+  out.push(node.value);
+  inOrder(node.right, out);
+  return out;
+}
+
+const bst = new BST();
+[8, 3, 10, 1, 6, 14].forEach(v => bst.insert(v));
+console.log(bst.search(6));  // true
+console.log(bst.search(7));  // false
+console.log(inOrder(bst.root)); // [1,3,6,8,10,14] sorted!
+```
+
+## কোড ব্রেকডাউন
+
+- insert/search-এ ছোট হলে বাঁয়ে, বড় হলে ডানে, প্রতি ধাপে অর্ধেক বাদ।
+- **in-order traversal সবসময় sorted ক্রম দেয়**, BST-র চমৎকার ধর্ম।
+
+<Callout type="warn" title="সতর্কতা: skewed tree">
+sorted ডেটা insert করলে গাছ একপাশে হেলে যায় (linked list-এর মতো) আর complexity হয়ে যায় O(n)। সমাধান balancing, পরের পাতায় AVL Tree দেখব।
+</Callout>
+
+## Complexity
+
+- গড় O(log n); worst (skewed) O(n)।
+
+## Animation Spec
+
+> **Animation Spec: BST Insert & Search**
+>
+> - **দৃশ্য:** tree; নতুন মান root থেকে বাঁ/ডান সিদ্ধান্ত নিয়ে নিচে নামে।
+> - **ইনপুট:** insert/search মান।
+> - **ধাপ:** প্রতিটা তুলনায় ছোট না বড় দেখিয়ে পথ highlight; জায়গা পেলে বসে।
+> - **লক্ষ্য:** BST নিয়ম ও কেন গড়ে O(log n)।
+
+## অনুশীলন
+
+- BST-তে সর্বনিম্ন মান খোঁজার মেথড লেখো (সবসময় বাঁয়ে যাও)।

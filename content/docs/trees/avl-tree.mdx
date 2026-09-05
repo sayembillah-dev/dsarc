@@ -1,0 +1,79 @@
+---
+title: "AVL Tree: Self-Balancing BST"
+description: rotation দিয়ে গাছ ভারসাম্যে রেখে worst case এড়ানো, সবসময় O(log n) নিশ্চিত।
+---
+
+## কী শিখব
+
+- গাছ ভারসাম্যে রেখে worst case এড়ানো
+
+## ধারণা
+
+BST একপাশে হেললে O(n)। **AVL Tree** প্রতিটা insert/delete-এর পর নিশ্চিত করে যে কোনো node-এর বাঁ ও ডান subtree-র height-এর পার্থক্য (**balance factor**) সর্বোচ্চ 1। বেশি হলে **rotation** দিয়ে ঠিক করে, ফলে সবসময় O(log n)।
+
+**চার ধরনের ভারসাম্যহীনতা ও সমাধান:**
+
+- LL: ডানে rotate (right rotation)
+- RR: বাঁয়ে rotate (left rotation)
+- LR: বাঁয়ে তারপর ডানে
+- RL: ডানে তারপর বাঁয়ে
+
+## কোড উদাহরণ
+
+rotation-এর মূল অংশ:
+
+```js
+function height(node) { return node ? node.height : 0; }
+function balanceFactor(node) { return node ? height(node.left) - height(node.right) : 0; }
+function update(node) { node.height = 1 + Math.max(height(node.left), height(node.right)); }
+
+// right rotation (LL ঠিক করে)
+function rotateRight(y) {
+  const x = y.left;
+  y.left = x.right;      // x-এর ডান subtree y-এর বাঁয়ে
+  x.right = y;           // y এখন x-এর ডানে
+  update(y); update(x);
+  return x;             // নতুন root
+}
+// left rotation (RR ঠিক করে)
+function rotateLeft(x) {
+  const y = x.right;
+  x.right = y.left;
+  y.left = x;
+  update(x); update(y);
+  return y;
+}
+// insert-এর পর balance:
+function rebalance(node) {
+  update(node);
+  const bf = balanceFactor(node);
+  if (bf > 1 && balanceFactor(node.left) >= 0) return rotateRight(node);        // LL
+  if (bf > 1 && balanceFactor(node.left) < 0) { node.left = rotateLeft(node.left); return rotateRight(node); }  // LR
+  if (bf < -1 && balanceFactor(node.right) <= 0) return rotateLeft(node);       // RR
+  if (bf < -1 && balanceFactor(node.right) > 0) { node.right = rotateRight(node.right); return rotateLeft(node); } // RL
+  return node;
+}
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিটা node তার height মনে রাখে; balance factor অর্থাৎ বাঁ height বিয়োগ ডান height।
+- balance factor-এর পরম মান ১-এর বেশি হলে rotation দিয়ে পুনর্বিন্যাস, মান ও BST-নিয়ম অক্ষুণ্ণ রেখে।
+- rotation একটা O(1) pointer-পুনর্বিন্যাস।
+
+## Complexity
+
+- insert/search/delete সব O(log n) নিশ্চিত।
+
+## Animation Spec
+
+> **Animation Spec: Rotation Fixer**
+>
+> - **দৃশ্য:** unbalanced tree; হেলে-পড়া অংশ লাল।
+> - **ইনপুট:** insert sequence; rotation type auto-detect।
+> - **ধাপ:** insert-এর পর ভারসাম্য মাপা হয়; দরকারে rotation animation-এ node গুলো ঘুরে balanced হয় (সবুজ)।
+> - **লক্ষ্য:** rotation কীভাবে height নিয়ন্ত্রণে রাখে।
+
+## অনুশীলন
+
+- 1,2,3 ক্রমে insert করলে কোন rotation লাগবে ভাবো (RR, অর্থাৎ left rotation)।

@@ -1,0 +1,67 @@
+---
+title: "Level-Order Traversal: BFS on Tree"
+description: queue দিয়ে স্তরে স্তরে, বাঁ থেকে ডানে tree ঘোরা।
+---
+
+## কী শিখব
+
+- স্তরে স্তরে (queue দিয়ে) ঘোরা
+
+## ধারণা
+
+DFS গভীরে নামে; **BFS (level-order)** স্তরে স্তরে বাঁ থেকে ডানে ঘোরে, **queue** ব্যবহার করে (section 06)। "প্রতিটা স্তরে কী আছে" জাতীয় সমস্যায় লাগে।
+
+## কোড উদাহরণ
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+function levelOrder(root) {
+  if (!root) return [];
+  const result = [], queue = [root];
+  while (queue.length) {
+    const levelSize = queue.length, level = [];
+    for (let i = 0; i < levelSize; i++) {
+      const node = queue.shift();       // সামনেরটা বের
+      level.push(node.value);
+      if (node.left) queue.push(node.left);   // সন্তানদের পেছনে যোগ
+      if (node.right) queue.push(node.right);
+    }
+    result.push(level);
+  }
+  return result;
+}
+
+const r = new TreeNode(1);
+r.left = new TreeNode(2); r.right = new TreeNode(3);
+r.left.left = new TreeNode(4); r.left.right = new TreeNode(5);
+console.log(levelOrder(r)); // [[1],[2,3],[4,5]]
+```
+
+## কোড ব্রেকডাউন
+
+- queue-তে root দিয়ে শুরু; প্রতিবার সামনেরটা বের করে তার সন্তান পেছনে যোগ।
+- `levelSize` ধরে রাখায় প্রতিটা স্তর আলাদা করা যায়।
+
+## Complexity
+
+- O(n) time; space O(n) (queue)।
+
+## Animation Spec
+
+> **Animation Spec: Level Sweep**
+>
+> - **দৃশ্য:** tree; একটা অনুভূমিক "স্ক্যান লাইন" উপর থেকে নিচে নামে; পাশে queue-এর অবস্থা।
+> - **ইনপুট:** speed।
+> - **ধাপ:** প্রতিটা স্তর বাঁ থেকে ডান visit; queue-তে enqueue/dequeue দেখা যায়।
+> - **লক্ষ্য:** BFS অর্থাৎ queue-ভিত্তিক স্তর-ভ্রমণ।
+
+## অনুশীলন
+
+- একটা tree-র সর্বোচ্চ height BFS দিয়ে বের করো।

@@ -1,0 +1,68 @@
+---
+title: "Tree-তে BFS ও DFS: সারসংক্ষেপ"
+description: stack দিয়ে DFS, queue দিয়ে BFS; দুই traversal কৌশল এক নজরে।
+---
+
+## কী শিখব
+
+- দুই traversal কৌশল এক নজরে
+
+## ধারণা
+
+- **DFS** (pre/in/post) চলে recursion বা **stack** দিয়ে; গভীরে আগে।
+- **BFS** (level-order) চলে **queue** দিয়ে; স্তরে স্তরে।
+
+দুটোই graph-এও (section 13) একই ধারণায় চলবে, tree আসলে graph-এরই বিশেষ রূপ (cycle-হীন)।
+
+## কোড উদাহরণ
+
+DFS iterative (stack দিয়ে):
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+function dfsIterative(root) {
+  if (!root) return [];
+  const stack = [root], out = [];
+  while (stack.length) {
+    const node = stack.pop();       // উপরেরটা নিই (LIFO, অর্থাৎ গভীরে আগে)
+    out.push(node.value);
+    if (node.right) stack.push(node.right); // ডান আগে push (বাঁ আগে বের হবে)
+    if (node.left) stack.push(node.left);
+  }
+  return out;
+}
+
+const r = new TreeNode(1);
+r.left = new TreeNode(2); r.right = new TreeNode(3);
+r.left.left = new TreeNode(4); r.left.right = new TreeNode(5);
+console.log(dfsIterative(r)); // [1,2,4,5,3] (pre-order)
+```
+
+## কোড ব্রেকডাউন
+
+- recursion-এর call stack-ই আসলে DFS-এর stack; এখানে হাতে stack দিয়ে করলাম।
+- stack মানে DFS, queue মানে BFS, এই জোড়া মনে রাখো।
+
+## Complexity
+
+- DFS ও BFS দুটোই O(n) time; space যথাক্রমে O(h) (stack) ও O(n) (queue), আগের পাতাগুলোর হিসাবই।
+
+## Animation Spec
+
+> **Animation Spec: Stack vs Queue Traversal**
+>
+> - **দৃশ্য:** একই tree, পাশে একবার stack (DFS), একবার queue (BFS)।
+> - **ইনপুট:** DFS/BFS toggle।
+> - **ধাপ:** data structure-এর push/pop অনুযায়ী node visit ক্রম আলাদা দেখা যাবে।
+> - **লক্ষ্য:** কাঠামো (stack/queue) কীভাবে traversal ক্রম ঠিক করে।
+
+## অনুশীলন
+
+- BFS iterative আর DFS iterative, কোনটায় কোন structure, মিলাও।

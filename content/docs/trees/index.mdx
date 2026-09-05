@@ -1,0 +1,24 @@
+---
+title: Tree Data Structures
+description: Tree পরিভাষা, DFS/BFS traversal, BST, AVL balancing আর B-Tree পরিচিতি, সব একসাথে।
+---
+
+এতক্ষণ ছিল রৈখিক (linear) কাঠামো। এবার শাখা-প্রশাখাওয়ালা **Tree**, যা file system, DOM, database index, decision-making, সব জায়গায়। recursion (section 08) এখানে দারুণ কাজে লাগবে।
+
+**Section Roadmap:** পরিভাষা, Binary Tree Traversal (Pre/In/Post), Level-Order (BFS), BST, AVL (balanced), B-Tree (intro), BFS/DFS on tree।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Tree পরিভাষা](./tree-terminology): root, node, child, leaf, height ইত্যাদি
+2. [Binary Tree Traversal](./binary-tree-traversal): Pre / In / Post-Order, recursion দিয়ে তিন DFS রূপ
+3. [Level-Order Traversal](./level-order-traversal): queue দিয়ে স্তরে স্তরে ঘোরা (BFS)
+4. [Binary Search Tree (BST)](./binary-search-tree): সাজানো tree, দ্রুত search/insert/delete
+5. [AVL Tree](./avl-tree): rotation দিয়ে self-balancing BST
+6. [B-Tree](./b-tree): database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree (পরিচিতি)
+7. [Tree-তে BFS ও DFS](./bfs-dfs-on-tree): দুই traversal কৌশল এক নজরে
+
+## সারাংশ
+
+Tree অর্থাৎ শ্রেণিবদ্ধ কাঠামো (root/leaf/height)। DFS: pre/in/post (recursion/stack), in-order BST-তে sorted দেয়। BFS: level-order (queue)। BST গড়ে O(log n) কিন্তু skew হলে O(n); AVL rotation দিয়ে সবসময় O(log n)। B-Tree বহু-key, database/disk-এর জন্য। stack মানে DFS, queue মানে BFS।
+
+**পরবর্তী:** Heaps & Priority Queues (শীঘ্রই আসছে)।

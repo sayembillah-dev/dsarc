@@ -1,0 +1,69 @@
+---
+title: "Tree পরিভাষা: root, child, leaf, height"
+description: শ্রেণিবদ্ধ tree কাঠামোর মৌলিক পরিভাষা, root, leaf, height, depth, subtree।
+---
+
+## কী শিখব
+
+- root, node, child, leaf, height ইত্যাদি
+
+## ধারণা
+
+Tree অর্থাৎ নোডের একটা শ্রেণিবদ্ধ (hierarchical) কাঠামো, উল্টো গাছের মতো, **root** উপরে, **leaf** নিচে।
+
+- **Root:** সবার উপরের node
+- **Parent / Child:** উপর-নিচ সম্পর্ক
+- **Leaf:** সন্তানহীন node
+- **Edge:** দুই node-এর সংযোগ
+- **Height:** root থেকে সবচেয়ে দূরের leaf পর্যন্ত edge সংখ্যা
+- **Depth:** কোনো node root থেকে কত দূরে
+- **Subtree:** কোনো node ও তার নিচের সব
+
+```
+        A          <- root (depth 0)
+       / \
+      B   C        <- depth 1
+     / \
+    D   E          <- leaf (depth 2)
+```
+
+## কোড উদাহরণ
+
+binary tree node-এর গঠন:
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;    // বাঁ সন্তান
+    this.right = null;   // ডান সন্তান
+  }
+}
+const root = new TreeNode("A");
+root.left = new TreeNode("B");
+root.right = new TreeNode("C");
+console.log(root.value, root.left.value, root.right.value); // A B C
+console.log(root.left.left); // null (B-এর কোনো সন্তান নেই)
+```
+
+## কোড ব্রেকডাউন
+
+- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা সন্তান (`left`, `right`)।
+- `null` মানে সেদিকে সন্তান নেই।
+
+## Complexity
+
+- একটা node তৈরি O(1); এই পাতায় শুধু গঠন, traversal পরের পাতাগুলোয়।
+
+## Animation Spec
+
+> **Animation Spec: Tree Anatomy**
+>
+> - **দৃশ্য:** একটা tree; hover করলে প্রতিটা অংশের লেবেল (root/leaf/height) দেখা যায়।
+> - **ইনপুট:** node নির্বাচন।
+> - **ধাপ:** নির্বাচিত node-এর depth, subtree, ancestors highlight।
+> - **লক্ষ্য:** পরিভাষা ভিজ্যুয়ালি চেনা।
+
+## অনুশীলন
+
+- উপরের গাছের height কত? leaf ক'টা?

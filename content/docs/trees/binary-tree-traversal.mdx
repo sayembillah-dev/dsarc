@@ -1,0 +1,85 @@
+---
+title: "Binary Tree Traversal: Pre / In / Post-Order"
+description: Depth-First traversal-এর তিন রূপ recursion দিয়ে; পার্থক্য শুধু কখন root প্রসেস করি।
+---
+
+## কী শিখব
+
+- Depth-First traversal-এর তিন রূপ (recursion)
+
+## ধারণা
+
+Tree-র সব node ঘুরে দেখার (traversal) তিনটা DFS রূপ, পার্থক্য শুধু **কখন root প্রসেস করি**:
+
+- **Pre-order:** Root, Left, Right (কপি/prefix-এ)
+- **In-order:** Left, Root, Right (BST-তে sorted ক্রম দেয়!)
+- **Post-order:** Left, Right, Root (delete/subtree হিসাবে)
+
+## কোড উদাহরণ
+
+```js
+class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+function preOrder(node, out = []) {
+  if (!node) return out;
+  out.push(node.value);        // root আগে
+  preOrder(node.left, out);
+  preOrder(node.right, out);
+  return out;
+}
+function inOrder(node, out = []) {
+  if (!node) return out;
+  inOrder(node.left, out);
+  out.push(node.value);        // root মাঝে
+  inOrder(node.right, out);
+  return out;
+}
+function postOrder(node, out = []) {
+  if (!node) return out;
+  postOrder(node.left, out);
+  postOrder(node.right, out);
+  out.push(node.value);        // root শেষে
+  return out;
+}
+
+//        1
+//       / \
+//      2   3
+//     / \
+//    4   5
+const r = new TreeNode(1);
+r.left = new TreeNode(2); r.right = new TreeNode(3);
+r.left.left = new TreeNode(4); r.left.right = new TreeNode(5);
+
+console.log(preOrder(r));  // [1,2,4,5,3]
+console.log(inOrder(r));   // [4,2,5,1,3]
+console.log(postOrder(r)); // [4,5,2,3,1]
+```
+
+## কোড ব্রেকডাউন
+
+- তিনটার গঠন প্রায় এক; শুধু `push` কোথায় বসছে সেটাই পার্থক্য।
+- recursion call stack tree-র গভীরতা অনুসরণ করে।
+
+## Complexity
+
+- O(n) time; space O(h) (h = height, stack)।
+
+## Animation Spec
+
+> **Animation Spec: DFS Order Player**
+>
+> - **দৃশ্য:** tree; একটা "visitor" node ধরে ধরে ঘোরে; নিচে output list তৈরি হয়।
+> - **ইনপুট:** traversal type (pre/in/post), speed।
+> - **ধাপ:** নির্বাচিত ক্রমে node visit ও output-এ যোগ; visited node রঙ বদলায়।
+> - **লক্ষ্য:** তিন order-এর পার্থক্য একই গাছে দেখা।
+
+## অনুশীলন
+
+- একই গাছে in-order কেন 4,2,5,1,3, হাতে মিলাও।

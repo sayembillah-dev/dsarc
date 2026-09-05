@@ -1,0 +1,66 @@
+---
+title: "B-Tree: পরিচিতি"
+description: database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree; কম height মানে কম disk read।
+---
+
+## কী শিখব
+
+- database/disk-এর জন্য বহু-সন্তানওয়ালা balanced tree
+
+## ধারণা
+
+Binary tree-র প্রতিটা node-এ ১টা key, ২টা সন্তান। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক সন্তান** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
+
+মূল ধর্ম (order m-এর B-Tree):
+
+- প্রতিটা node-এ সর্বোচ্চ m-1 key, m সন্তান
+- সব leaf একই স্তরে (perfectly balanced)
+- node-এর key গুলো sorted
+
+```
+        [ 10 | 20 ]
+       /     |     \
+   [<10]  [10-20]  [>20]
+```
+
+## কোড উদাহরণ
+
+node গঠন (ধারণা):
+
+```js
+class BTreeNode {
+  constructor(isLeaf = true) {
+    this.keys = [];      // sorted key তালিকা (একাধিক)
+    this.children = [];  // সন্তান তালিকা (keys+1 টা)
+    this.isLeaf = isLeaf;
+  }
+}
+const node = new BTreeNode();
+node.keys = [10, 20];
+console.log(node.keys, node.isLeaf); // [10, 20] true
+// খোঁজা: node-এর keys-এ কোথায় fit করে দেখে সঠিক child-এ নামা
+// (পূর্ণ insert/split বাস্তবায়ন advanced, section 15-এ B+ Tree বিস্তারিত)
+```
+
+## কোড ব্রেকডাউন
+
+- অনেক key/সন্তান মানে কম height, মানে disk read কম।
+- "node full হলে split", এই কৌশলে সবসময় balanced থাকে।
+- বাস্তবে disk-page-এর আকারের সাথে node আকার মেলানো হয়।
+
+## Complexity
+
+- search/insert/delete O(log n); কিন্তু disk-access-এ বিশাল সুবিধা।
+
+## Animation Spec
+
+> **Animation Spec: Multi-key Node & Split**
+>
+> - **দৃশ্য:** প্রতিটা node-এ একাধিক key; একটা full node-এ insert করলে **split** হয়ে মাঝের key উপরে ওঠে।
+> - **ইনপুট:** order m; insert sequence।
+> - **ধাপ:** node full হলে split animation; height কীভাবে কম থাকে দেখা।
+> - **লক্ষ্য:** কেন database-এ B-Tree, binary tree নয়।
+
+## অনুশীলন
+
+- কেন কম height মানে কম disk read, নিজের ভাষায় লেখো।
