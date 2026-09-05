@@ -1,0 +1,200 @@
+---
+title: "Strings: character-দের array"
+description: String কেন array-এর আত্মীয়, immutability-র আসল দাম, split/join-এর যাতায়াত, char code-এর হিসাব, আর palindrome-এর dry run।
+---
+
+## কী শিখব
+
+- String আর array-র সম্পর্ক: পড়া যায় array-এর মতো, বদলানো যায় না
+- Immutability আসলে কী বোঝায়, আর এটা খরচের হিসাব কীভাবে বদলে দেয়
+- লুপে `+` দিয়ে string জোড়া কেন O(n²) পর্যন্ত যায়, আর পাল্টা কী
+- `split` / `join` দিয়ে array-র সব কৌশল string-এ লাগানো
+- `charCodeAt` দিয়ে অক্ষর নিয়ে অংক করা
+- Palindrome চেকের পুরো dry run, two-pointer দিয়ে
+
+## ধারণা
+
+তুমি বন্ধুকে যে মেসেজটা পাঠালে, ওটাই একটা string: একদল character পাশাপাশি বসে আছে। দেখতে অনেকটা array-এর মতোই, index আছে, length আছে, `s[0]` চালালে প্রথম অক্ষর পাওয়া যায়।
+
+কিন্তু একটা ভারী পার্থক্য আছে: JavaScript-এ string **immutable**। একবার বানিয়ে ফেললে ভেতরের কোনো character আর বদলানো যায় না। `s[0] = "H"` লিখলে কোনো error আসবে না, কিন্তু কিছুই হবে না। বদলাতে চাইলে **নতুন একটা string** বানাতেই হবে।
+
+এই একটা নিয়ম পুরো string handling-এর ধরন বদলে দেয়। Array-এ মাঝখানের ঘরে লিখে দিলেই হলো, string-এ প্রতিটা "পরিবর্তন" আসলে নতুন কপি বানানো। তাই string-এর সমস্যায় আমাদের স্ট্যান্ডার্ড কায়দা: **array-তে ভাঙো, সেখানে খেলো, আবার জুড়ে দাও**।
+
+## কোড: প্রথম যাত্রা
+
+```js
+const s = "hello";
+
+console.log(s[0]);              // "h": পড়া যায়, O(1)
+console.log(s.length);          // 5
+console.log(s.toUpperCase());   // "HELLO": নতুন string, s অটুট
+console.log(s.slice(1, 4));     // "ell": নতুন string
+console.log(s.includes("ell")); // true
+
+s[0] = "H";                     // নিরবে ব্যর্থ, s এখনও "hello"
+console.log(s);                 // "hello"
+```
+
+প্রতিটা method যে নতুন string ফেরায়, সেটা বারবার চোখে পড়বে। `toUpperCase`, `slice`, `replace`, `trim`: কেউই আসল string ছোঁয় না।
+
+## যাতায়াতের সেতু: split আর join
+
+```js
+const s = "hello";
+
+// string থেকে array: প্রতি character আলাদা ঘরে
+const arr = s.split("");        // ['h', 'e', 'l', 'l', 'o']
+
+arr.reverse();                  // array-তে যা খুশি করা যায়
+
+const back = arr.join("");      // "olleh": আবার string
+```
+
+এই `split("")` ... কাজ ... `join("")` জোড়া string সমস্যার সবচেয়ে বেশি ব্যবহৃত আস্ত্র। Array-র সব শক্তি (`reverse`, `sort`, `map`, `filter`, splice-কৌশল) string-এ সরাসরি নেই, কিন্তু array-তে ভাঙলেই সব হাতের কাছে।
+
+```js
+// এক লাইনে উল্টানো
+const reversed = "bangla".split("").reverse().join("");
+console.log(reversed); // "algnab"
+```
+
+## Dry run: palindrome চেক, two-pointer দিয়ে
+
+Palindrome মানে উল্টোদিক থেকে পড়লেও একই, যেমন `"madam"`। পুরো string-টা উল্টিয়ে নতুন string বানিয়েও চেক করা যায়, কিন্তু দুই প্রান্ত থেকে pointer এগিয়ে আনলে বাড়তি string-ই লাগে না:
+
+| ধাপ | left | right | s[left] | s[right] | মিলল? |
+|-----|------|-------|---------|----------|-------|
+| 1 | 0 | 4 | m | m | হ্যাঁ |
+| 2 | 1 | 3 | a | a | হ্যাঁ |
+| 3 | 2 | 2 | d | d | একই ঘর, থামো |
+
+```js
+function isPalindrome(s) {
+  let left = 0;
+  let right = s.length - 1;
+
+  while (left < right) {
+    if (s[left] !== s[right]) return false; // একটা অমিলই যথেষ্ট
+    left++;
+    right--;
+  }
+  return true;
+}
+
+console.log(isPalindrome("madam"));  // true
+console.log(isPalindrome("hello"));  // false
+```
+
+খেয়াল করো, এটা হুবহু [Traversal](./traversal.mdx)-এর reverse প্যাটার্ন, শুধু swap-এর জায়গায় তুলনা। প্যাটার্ন একবার শিখলে যে বারবার ফিরে আসে, এর চেয়ে ভালো উদাহরণ আর নেই।
+
+## লুকানো ফাঁদ: লুপে `+` দিয়ে জোড়া
+
+ধরো তুমি n-টা অক্ষর জোড়াতে চাও, এক লুপে:
+
+```js
+let s = "";
+for (let i = 0; i < 5; i++) {
+  s += "a"; // প্রতিবার নতুন string!
+}
+```
+
+Immutable string-এ `s += "a"` মানে পুরানো s-এর পুরোটা কপি করে নতুন string বানানো। প্রথমবার ১ অক্ষর কপি, দ্বিতীয়বার ২, তৃতীয়বার ৩... মোট কপি প্রায় 1+2+3+...+n = n(n+1)/2, মানে **O(n²)** কাজ। দেখতে নির্দোষ এক লাইন, ভেতরে চৌকো খরচ।
+
+পাল্টা রাস্তা: array-তে জমাও, শেষে একবার join করো:
+
+```js
+const parts = [];
+for (let i = 0; i < 5; i++) {
+  parts.push("a");        // push amortized O(1)
+}
+const s = parts.join(""); // শেষে একবারই কপি, O(n)
+```
+
+নিয়মটা সরল: **লুপের ভেতরে string জোড়া না, array-তে জমাও**।
+
+## charCodeAt: অক্ষর দিয়ে অংক
+
+প্রতিটা character-এর ভেতরে একটা সংখ্যা বসে আছে (UTF-16 code)। `'a'` হলো 97, `'b'` হলো 98। এই হিসাবটা লাগে যখন অক্ষরকে index-এ বা সংখ্যায় বদলাতে হয়:
+
+```js
+console.log("a".charCodeAt(0));       // 97
+console.log("c".charCodeAt(0) - 97);  // 2: 'c' হলো ২ নম্বর ছোট হাতের অক্ষর
+
+// 'a' থেকে 'z' পর্যন্ত frequency গোনার ভিত্তি
+const freq = Array(26).fill(0);
+for (const ch of "ball") {
+  freq[ch.charCodeAt(0) - 97]++;
+}
+console.log(freq[11]); // 2: 'l' দুইবার
+```
+
+এই `charCodeAt(0) - 97` কৌশলটা পরে [Hash Tables](../hash-tables/hash-table-intro.mdx) আর anagram ঘরানার সমস্যায় বারবার কাজে লাগবে।
+
+## কোড ব্রেকডাউন: isPalindrome, লাইনে লাইনে
+
+1. `let left = 0` আর `let right = s.length - 1` : দুই প্রান্তে দুই প্রহরী।
+2. `while (left < right)` : মাঝে এসে মিললেই থামো। বিজোড় দৈর্ঘ্যের মাঝের অক্ষরটা নিজে নিজেই palindrome, তাকে আলাদা করে দেখা লাগে না।
+3. `if (s[left] !== s[right]) return false` : একটা জোড়াও না মিললে আর দেখার দরকার নেই, সাথে সাথে বেরিয়ে আসো। এই early exit-ই খারাপ সময়ে অর্ধেক তুলনায় থামার কারণ।
+4. `left++; right--` : জোড়া মিললে দুজন এক ঘর ভেতরে।
+5. `return true` : শেষ পর্যন্ত বেঁচে গেলে সব জোড়া মিলেছে, palindrome।
+
+## Complexity
+
+| অপারেশন | Complexity | কেন |
+|---------|-----------|-----|
+| `s[i]` পড়া | O(1) | index দিয়ে সরাসরি |
+| `s.length` | O(1) | আগে থেকেই গোনা |
+| `slice(a, b)` | O(k) | k অক্ষর কপি হয়ে নতুন string |
+| `includes` / `indexOf` | খারাপ সময়ে O(n·m) | খোঁজার প্যাটার্ন m অক্ষরের হলে প্রতি অবস্থানে মেলানো লাগতে পারে |
+| `s1 + s2` | O(n + m) | দুটোই কপি হয়ে নতুন string |
+| লুপে `s += x`, n বার | O(n²) | প্রতিবার পুরো string আবার কপি |
+| `split("")` / `join("")` | O(n) | পুরোটা একবার ভাঙা / জোড়া |
+| `isPalindrome` | O(n) সময়, O(1) জায়গা | সর্বোচ্চ অর্ধেক তুলনা, বাড়তি কিছু না |
+
+## সাধারণ ভুল আর edge case
+
+**১. `s[0] = "H"` দিয়ে বদলানোর চেষ্টা।**
+Immutable, তাই নিরবে ব্যর্থ, কোনো error-ও আসে না। Error না আসায় bug ধরা কঠিন। বদলাতে হলে আলাদা করে ভাঙো-জোড়ো করো:
+
+```js
+const a = s.split("");
+a[0] = "H";
+const t = a.join(""); // "Hello"
+```
+
+**২. Case ভুলে তুলনা।**
+`"Hello" === "hello"` দেয় false। ব্যবহারকারীর ইনপুট তুলনার আগে দুটোকেই এক রূপে আনো: `a.toLowerCase() === b.toLowerCase()`। Palindrome জাতীয় সমস্যায়ও এই ঝামেলা আসে।
+
+**৩. লুপে `s +=` করে O(n²) বানানো।**
+উপরের ফাঁদটাই। হাজারটা অক্ষরে চোখে পড়বে না, লক্ষটায় পড়বে। জমাও array-তে, জুড়ো শেষে।
+
+**৪. `split()` আর `split("")` গুলানো।**
+`"hello".split("")` দেয় পাঁচ অক্ষরের array, কিন্তু `"hello".split()` দেয় `["hello"]`, পুরোটা এক ঘরে। আর শব্দ ভাঙতে চাইলে delimiter দাও: `"a b c".split(" ")` দেয় `['a', 'b', 'c']`।
+
+**৫. Unicode-এ `length`-এর ধোঁকা।**
+JavaScript অক্ষর গোনে UTF-16 code unit দিয়ে। অনেক emoji আসলে কয়েকটা unit মিলে একটা, তাই `length` চোখের দেখার চেয়ে বড় আসে। বাংলা যুক্তাক্ষরেও মিলতে পারে। আসল অক্ষর (code point) ধরতে চাইলে `[...s]` বা `Array.from(s)` দিয়ে ভাঙো, তাহলে গোনাটা মানুষের গোনার সঙ্গে মিলে যায়।
+
+## Animation Spec
+
+> **Animation Spec: String as Char Boxes**
+>
+> - **দৃশ্য:** প্রতিটা character আলাদা box-এ, নিচে index; পাশে "নতুন string" জন্ম নেওয়ার জায়গা।
+> - **ইনপুট:** string টাইপ করা; অপারেশন নির্বাচন (reverse / palindrome / concat-in-loop বনাম array-join)।
+> - **ধাপ:** reverse-এ box জোড়ায় জোড়ায় বদলাবে; palindrome-এ দুই প্রান্তের pointer প্রতি জোড়ার মিল-অমিল দেখাবে; concat মোডে প্রতি ধাপে পুরানো string পুরোটা কপি হয়ে নতুন row-তে বসবে, কপি কাউন্টার চৌকো হারে বাড়বে; array-join মোডে একই কাজ সরলরেখায় বাড়বে।
+> - **লক্ষ্য:** immutable মানে "পরিবর্তন = নতুন কপি", আর সেই কপির বিল কখন চৌকো হয়, চোখে দেখা।
+
+## অনুশীলন
+
+- **সহজ ১:** একটা string-এ কতগুলো vowel আছে গুনো। (হিন্ট: `for..of` দিয়ে ঘোরো, `"aeiou".includes(ch)` দিয়ে চেক করো।)
+- **সহজ ২:** বাক্যের প্রতিটা শব্দ উল্টে দাও, শব্দের ক্রম ঠিক রেখে: `"ami tomake bhalobashi"` → `"ima ekamot ihsabolahb"`। (হিন্ট: আগে space দিয়ে ভাঙো, প্রতি শব্দ উল্টাও, আবার জোড়ো।)
+- **মাঝারি ১:** `isPalindrome`-কে বাড়িয়ে দাও যাতে space, কমা, বড়-ছোট হাত উপেক্ষা করে: `"A man, a plan, a canal: Panama"` true আসবে। (হিন্ট: আগে শুধু অক্ষর রেখে সব ছোট হাতের করো, তারপর পুরানো কোড।)
+- **মাঝারি ২:** দুটো string anagram কিনা চেক করো (একই অক্ষর, ভিন্ন ক্রম: `"listen"` আর `"silent"`)। (হিন্ট: `charCodeAt(0) - 97` দিয়ে ২৬ ঘরের frequency array, দুটো string-এর জন্য বানিয়ে তুলনা। আরেক রাস্তা: দুটোকেই sort করা।)
+- **কঠিন:** Run-length encoding লেখো: `"aaabbbbcaaa"` → `"a3b4c1a3"`। (হিন্ট: এক pointer দিয়ে চলো, একই অক্ষর যতক্ষণ, গুনতে থাকো; বদলালে ফলাফলে push করো। ফলাফল কোথায় জমাচ্ছ, মনে আছে তো?)
+
+## সারসংক্ষেপ
+
+- String = immutable character array: পড়া O(1), "বদলানো" মানে নতুন কপি।
+- খেলার কায়দা: `split("")` দিয়ে ভাঙো, array-র কৌশল লাগাও, `join("")` দিয়ে জোড়ো।
+- লুপে `s +=` চৌকো খরচ, array-তে জমিয়ে শেষে `join` করো।
+- `charCodeAt(0) - 97` দিয়ে অক্ষর সরাসরি index হয়, frequency গোনার ভিত্তি।
+- Palindrome-এর two-pointer আসলে traversal-এর reverse প্যাটার্নই, নতুন কিছু না।
