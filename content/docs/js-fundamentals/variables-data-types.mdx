@@ -1,0 +1,65 @@
+---
+title: ভেরিয়েবল ও Data Types
+description: let আর const দিয়ে ডেটা জমা রাখা, সঙ্গে JavaScript-এর প্রধান data type-গুলোর পরিচয়।
+---
+
+## কী শিখব
+
+- ডেটা কোথায় জমা রাখব (`let`, `const`)
+- প্রধান data type গুলো
+
+## ধারণা
+
+ধরো, তোমার পড়ার টেবিলে কয়েকটা বাক্স আছে। একটায় কলম, একটায় খাতা, প্রতিটার গায়ে নাম লেখা। কিছু লাগলে নাম দেখেই তুলে নাও। প্রোগ্রামেও ডেটা এভাবেই রাখা হয়, আর এই নামওয়ালা বাক্সের নামই **variable**। নাম ধরে ডাকলেই ভেতরের ডেটা হাজির।
+
+- `const`: এমন বাক্স, একবার মান দিলে আর বদলাবে না (constant)
+- `let`: যার মান পরে বদলানো যায়
+
+**প্রধান Data Type:**
+
+| Type | উদাহরণ | মানে |
+|------|--------|------|
+| Number | `42`, `3.14` | সংখ্যা |
+| String | `"hello"` | লেখা |
+| Boolean | `true`, `false` | হ্যাঁ/না |
+| null | `null` | ইচ্ছাকৃত খালি |
+| undefined | `undefined` | মান দেওয়া হয়নি |
+| Object | `{ }` | key-value জোড়া |
+| Array | `[ ]` | লিস্ট |
+
+## কোড উদাহরণ
+
+```js
+const name = "Rahim";      // string: বদলাবে না
+let age = 20;              // number: বদলাতে পারে
+age = 21;                 // ঠিক আছে, let বলে বদলানো গেল
+
+const isStudent = true;    // boolean
+const marks = [80, 75, 90]; // array (লিস্ট)
+const student = { name: "Rahim", age: 21 }; // object
+
+console.log(typeof name);   // "string"
+console.log(typeof age);    // "number"
+console.log(typeof marks);  // "object" (array-ও object)
+```
+
+## কোড ব্রেকডাউন
+
+- `const name = "Rahim"`: `name` বাক্সে "Rahim" রেখে দিলাম, আর বদলাবে না।
+- `let age = 20; age = 21;`: `let` বলে মান বদলানো গেল।
+- `typeof x`: `x`-এর type কী, সেটা বলে দেয়।
+
+## Complexity
+
+variable-এ মান রাখা বা পড়া, দুটোই O(1)।
+
+> **Animation Spec: Variable Boxes**
+>
+> - **দৃশ্য:** কয়েকটা লেবেলযুক্ত box (name, age...)। প্রতিটার ভেতরে বর্তমান মান।
+> - **ইনপুট:** ইউজার মান টাইপ করে box-এ "assign" করতে পারবে।
+> - **ধাপ:** assign করলে মান box-এ উড়ে ঢুকবে; `const` box-এ বদলাতে চাইলে লাল "locked" দেখাবে।
+> - **লক্ষ্য:** `const` vs `let`-এর পার্থক্য, আর variable মানে named box এই ধারণা।
+
+## অনুশীলন
+
+- একটা `const` দিয়ে তোমার জন্মসাল রাখো, `let` দিয়ে বয়স।

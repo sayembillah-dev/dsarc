@@ -1,0 +1,56 @@
+---
+title: Functions
+description: কোড একবার লিখে বারবার ব্যবহার, parameter, return আর arrow function।
+---
+
+## কী শিখব
+
+- কোড পুনর্ব্যবহারযোগ্য করা, parameter ও return
+
+## ধারণা
+
+ধরো, বাসায় মেহমান এলে তুমি চা বানাও। চায়ের প্রতিটা ধাপ তুমি জানো, তাই কাউকে বারবার বুঝিয়ে বলতে হয় না। কেউ শুধু বলল "চা বানাও", তুমি পুরো কাজটা করে ফেলো। প্রোগ্রামেও কিছু কোডকে একটা নাম দিয়ে বন্দি করে রাখা যায়, পরে নাম ধরে ডাকলেই পুরো কাজটা চলে। এই নামওয়ালা কোড-প্যাকেটের নামই **function**। একবার লিখলে বারবার ব্যবহার করা যায়। DSA-তে প্রতিটা অ্যালগরিদম আমরা function হিসেবেই লিখব।
+
+## কোড উদাহরণ
+
+```js
+// declaration
+function add(a, b) {
+  return a + b;   // ফলাফল ফেরত পাঠায়
+}
+
+// arrow function (আধুনিক, সংক্ষিপ্ত)
+const multiply = (a, b) => a * b;
+
+console.log(add(3, 4));       // 7
+console.log(multiply(3, 4));  // 12
+
+// default parameter
+function greet(name = "বন্ধু") {
+  return `হ্যালো, ${name}!`;
+}
+console.log(greet());        // হ্যালো, বন্ধু!
+console.log(greet("Karim")); // হ্যালো, Karim!
+```
+
+## কোড ব্রেকডাউন
+
+- `function add(a, b)`: `a`, `b` হলো **parameter** (input)।
+- `return`: ফলাফল ফেরত দেয়; `return`-এর পরের কোড আর চলে না।
+- Arrow function `(a,b) => a*b`: এক লাইনের হলে `{}` আর `return` লাগে না।
+- `` `হ্যালো, ${name}!` ``: **template literal**, backtick-এর ভেতরে `${}` দিয়ে variable বসানো যায়।
+
+## Complexity
+
+function-এর ভেতরে কী কাজ হচ্ছে, তার উপর নির্ভর করে।
+
+> **Animation Spec: Function Machine**
+>
+> - **দৃশ্য:** একটা "মেশিন" box; বাঁয়ে input ঢোকে, ভেতরে প্রসেস হয়, ডানে output বের হয়।
+> - **ইনপুট:** ইউজার parameter মান দেবে।
+> - **ধাপ:** input মেশিনে ঢুকবে, ভেতরে গণনা highlight, return মান বেরিয়ে আসবে।
+> - **লক্ষ্য:** input, process, output ধারণা।
+
+## অনুশীলন
+
+- এমন একটা function লেখো যা দুটো সংখ্যার মধ্যে বড়টা return করে।
