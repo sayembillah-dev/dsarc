@@ -1,24 +1,24 @@
 ---
 title: Tree Data Structures
-description: Tree পরিভাষা, DFS/BFS traversal, BST, AVL balancing আর B-Tree পরিচিতি, সব একসাথে।
+description: root, leaf, traversal, BST, AVL, B-Tree, শাখা-প্রশাখাওয়ালা কাঠামোর সবকিছু একসাথে।
 ---
 
-এতক্ষণ ছিল রৈখিক (linear) কাঠামো। এবার শাখা-প্রশাখাওয়ালা **Tree**, যা file system, DOM, database index, decision-making, সব জায়গায়। recursion (section 08) এখানে দারুণ কাজে লাগবে।
+এতক্ষণ যা পড়লে, array, linked list, stack, queue, সব এক লাইনে সাজানো রৈখিক (linear) কাঠামো। এবার একটু শাখা-প্রশাখা করি। **Tree**-র কথা বলছি, যেটা ছাড়া file system, DOM, database index, decision-making, কিছুই চলে না। আর section 08-এর recursion এখানে দারুণ কাজে লাগবে।
 
-**Section Roadmap:** পরিভাষা, Binary Tree Traversal (Pre/In/Post), Level-Order (BFS), BST, AVL (balanced), B-Tree (intro), BFS/DFS on tree।
+**Section Roadmap:** আগে পরিভাষা, তারপর traversal (Pre/In/Post আর Level-Order), এরপর BST, তারপর নিজে ভারসাম্য রাখা AVL, শেষে database-এর B-Tree পরিচিতি আর BFS/DFS-এর সারসংক্ষেপ।
 
 ## এই Chapter-এ যা যা আছে
 
-1. [Tree পরিভাষা](./tree-terminology.mdx): root, node, child, leaf, height ইত্যাদি
+1. [Tree পরিভাষা](./tree-terminology.mdx): root, node, child, leaf, height, সব চেনা
 2. [Binary Tree Traversal](./binary-tree-traversal.mdx): Pre / In / Post-Order, recursion দিয়ে তিন DFS রূপ
 3. [Level-Order Traversal](./level-order-traversal.mdx): queue দিয়ে স্তরে স্তরে ঘোরা (BFS)
-4. [Binary Search Tree (BST)](./binary-search-tree.mdx): সাজানো tree, দ্রুত search/insert/delete
-5. [AVL Tree](./avl-tree.mdx): rotation দিয়ে self-balancing BST
-6. [B-Tree](./b-tree.mdx): database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree (পরিচিতি)
+4. [Binary Search Tree (BST)](./binary-search-tree.mdx): সাজানো গাছ, দ্রুত search/insert/delete
+5. [AVL Tree](./avl-tree.mdx): rotation দিয়ে নিজেই ভারসাম্য রাখা BST
+6. [B-Tree](./b-tree.mdx): database আর disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree (পরিচিতি)
 7. [Tree-তে BFS ও DFS](./bfs-dfs-on-tree.mdx): দুই traversal কৌশল এক নজরে
 
 ## সারাংশ
 
-Tree অর্থাৎ শ্রেণিবদ্ধ কাঠামো (root/leaf/height)। DFS: pre/in/post (recursion/stack), in-order BST-তে sorted দেয়। BFS: level-order (queue)। BST গড়ে O(log n) কিন্তু skew হলে O(n); AVL rotation দিয়ে সবসময় O(log n)। B-Tree বহু-key, database/disk-এর জন্য। stack মানে DFS, queue মানে BFS।
+tree মানে শ্রেণিবদ্ধ কাঠামো (root/leaf/height)। DFS-এর তিন রূপ: pre/in/post (recursion বা stack), আর in-order BST-তে sorted ক্রম দেয়। BFS মানে level-order, চলে queue দিয়ে। BST গড়ে O(log n), কিন্তু skew হলে O(n); AVL rotation দিয়ে সবসময় O(log n) রাখে। B-Tree-তে এক node-এ অনেক key, database আর disk-এর জন্য। শেষ কথা: stack মানে DFS, queue মানে BFS।
 
 **পরবর্তী:** [Heaps & Priority Queues](/docs/heaps)।

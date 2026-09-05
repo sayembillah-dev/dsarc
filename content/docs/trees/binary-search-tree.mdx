@@ -1,6 +1,6 @@
 ---
-title: "Binary Search Tree (BST): সাজানো tree-তে দ্রুত খোঁজা"
-description: বাঁ subtree-এ ছোট, ডান subtree-এ বড়; এই নিয়মে search/insert গড়ে O(log n)।
+title: "Binary Search Tree (BST): সাজানো গাছে দ্রুত খোঁজা"
+description: বাঁয়ে ছোট, ডানে বড়। এই এক নিয়মেই search/insert গড়ে O(log n)।
 ---
 
 ## কী শিখব
@@ -9,7 +9,9 @@ description: বাঁ subtree-এ ছোট, ডান subtree-এ বড়; �
 
 ## ধারণা
 
-BST অর্থাৎ এমন binary tree যেখানে প্রতিটা node-এর জন্য: **বাঁ subtree-র সব ছোট, ডান subtree-র সব বড়**। এই নিয়মে search/insert গড়ে O(log n), কারণ প্রতি ধাপে অর্ধেক বাদ (binary search-এর মতো)।
+ধরো, তোমার হাতে একটা সাজানো ফোনবুক। কারো নাম খুঁজতে মাঝখান থেকে খোলো, দেখো নামটা এর আগে না পরে। অর্ধেক বাদ, আবার অর্ধেক বাদ। **BST** ঠিক এই খেলাটাই খেলে, শুধু tree-র গায়ে।
+
+নিয়ম একটাই: প্রতিটা node-এর জন্য **বাঁ subtree-র সব ছোট, ডান subtree-র সব বড়**। এই নিয়মে search/insert গড়ে O(log n), কারণ প্রতি ধাপে অর্ধেক বাদ পড়ে যায়, binary search-এর মতোই।
 
 ```
        8
@@ -76,26 +78,26 @@ console.log(inOrder(bst.root)); // [1,3,6,8,10,14] sorted!
 
 ## কোড ব্রেকডাউন
 
-- insert/search-এ ছোট হলে বাঁয়ে, বড় হলে ডানে, প্রতি ধাপে অর্ধেক বাদ।
-- **in-order traversal সবসময় sorted ক্রম দেয়**, BST-র চমৎকার ধর্ম।
+- insert হোক বা search, নিয়ম একই: ছোট হলে বাঁয়ে, বড় হলে ডানে। প্রতি ধাপে অর্ধেক বাদ।
+- আর **in-order traversal সবসময় sorted ক্রম দেয়**, BST-র সবচেয়ে সুন্দর ধর্ম এটাই।
 
 <Callout type="warn" title="সতর্কতা: skewed tree">
-sorted ডেটা insert করলে গাছ একপাশে হেলে যায় (linked list-এর মতো) আর complexity হয়ে যায় O(n)। সমাধান balancing, পরের পাতায় AVL Tree দেখব।
+sorted ডেটা insert করলে গাছ একপাশে হেলে যায় (linked list-এর মতো), আর complexity ঘটে যায় O(n)। সমাধান? balancing। পরের পাতায় AVL Tree দেখব।
 </Callout>
 
 ## Complexity
 
-- গড় O(log n); worst (skewed) O(n)।
+- গড়ে O(log n); worst case (skewed গাছ) O(n)।
 
 ## Animation Spec
 
 > **Animation Spec: BST Insert & Search**
 >
-> - **দৃশ্য:** tree; নতুন মান root থেকে বাঁ/ডান সিদ্ধান্ত নিয়ে নিচে নামে।
-> - **ইনপুট:** insert/search মান।
-> - **ধাপ:** প্রতিটা তুলনায় ছোট না বড় দেখিয়ে পথ highlight; জায়গা পেলে বসে।
-> - **লক্ষ্য:** BST নিয়ম ও কেন গড়ে O(log n)।
+> - **দৃশ্য:** tree; নতুন মান root থেকে শুরু করে বাঁ/ডান সিদ্ধান্ত নিতে নিতে নিচে নামে।
+> - **ইনপুট:** insert/search-এর মান।
+> - **ধাপ:** প্রতিটা তুলনায় ছোট না বড়, সেটা দেখিয়ে পথ highlight হয়; জায়গা পেলে মানটা বসে যায়।
+> - **লক্ষ্য:** BST-র নিয়মটা, আর কেন গড়ে O(log n) হয়।
 
 ## অনুশীলন
 
-- BST-তে সর্বনিম্ন মান খোঁজার মেথড লেখো (সবসময় বাঁয়ে যাও)।
+- BST-তে সবচেয়ে ছোট মান খোঁজার মেথড লেখো। (hint: শুধু বাঁয়ে যেতে থাকো।)

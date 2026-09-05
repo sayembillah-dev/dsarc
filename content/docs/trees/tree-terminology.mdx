@@ -1,23 +1,25 @@
 ---
-title: "Tree পরিভাষা: root, child, leaf, height"
-description: শ্রেণিবদ্ধ tree কাঠামোর মৌলিক পরিভাষা, root, leaf, height, depth, subtree।
+title: "Tree পরিভাষা: root থেকে height পর্যন্ত"
+description: ফোল্ডারের মতো শ্রেণিবদ্ধ কাঠামো। root, leaf, height, depth, subtree, সব একসাথে চেনা।
 ---
 
 ## কী শিখব
 
-- root, node, child, leaf, height ইত্যাদি
+- root, node, child, leaf, height, মোটামুটি সব পরিভাষা
 
 ## ধারণা
 
-Tree অর্থাৎ নোডের একটা শ্রেণিবদ্ধ (hierarchical) কাঠামো, উল্টো গাছের মতো, **root** উপরে, **leaf** নিচে।
+তোমার ফোনের ফোল্ডারের কথা ভাবো। একটা ফোল্ডারের ভিতরে আবার ফোল্ডার, তার ভিতরে আবার ফোল্ডার বা ফাইল। উপর থেকে নিচে, একটা শ্রেণিবদ্ধ (hierarchical) বিন্যাস। **Tree** হুবহু এমনই একটা কাঠামো, শুধু উল্টো গাছের মতো আঁকা হয়: **root** থাকে একদম উপরে, **leaf** গুলো নিচে।
 
-- **Root:** সবার উপরের node
-- **Parent / Child:** উপর-নিচ সম্পর্ক
-- **Leaf:** চাইল্ডহীন node
-- **Edge:** দুই node-এর সংযোগ
-- **Height:** root থেকে সবচেয়ে দূরের leaf পর্যন্ত edge সংখ্যা
-- **Depth:** কোনো node root থেকে কত দূরে
-- **Subtree:** কোনো node ও তার নিচের সব
+পরিভাষাগুলো একবার চিনে নাও, পুরো section জুড়ে লাগবে:
+
+- **Root:** সবার উপরের node, গাছের শুরু
+- **Parent / Child:** উপর-নিচের সম্পর্ক
+- **Leaf:** যার কোনো চাইল্ড নেই
+- **Edge:** দুই node-এর সংযোগরেখা
+- **Height:** root থেকে সবচেয়ে দূরের leaf পর্যন্ত ক'টা edge
+- **Depth:** কোনো node root থেকে কত নিচে
+- **Subtree:** কোনো node আর তার নিচের সবাই মিলে
 
 ```
         A          <- root (depth 0)
@@ -29,7 +31,7 @@ Tree অর্থাৎ নোডের একটা শ্রেণিবদ্
 
 ## কোড উদাহরণ
 
-binary tree node-এর গঠন:
+binary tree-র node-টা দেখতে কেমন:
 
 ```js
 class TreeNode {
@@ -48,22 +50,22 @@ console.log(root.left.left); // null (B-এর কোনো চাইল্ড �
 
 ## কোড ব্রেকডাউন
 
-- এখানে **binary tree**, প্রতিটা node-এর সর্বোচ্চ ২টা চাইল্ড (`left`, `right`)।
-- `null` মানে সেদিকে চাইল্ড নেই।
+- এটা **binary tree**, মানে প্রতিটা node-এর সর্বোচ্চ ২টা চাইল্ড (`left`, `right`)।
+- `null` মানে সেদিকে কোনো চাইল্ড নেই।
 
 ## Complexity
 
-- একটা node তৈরি O(1); এই পাতায় শুধু গঠন, traversal পরের পাতাগুলোয়।
+- একটা node তৈরি করতে O(1)। এই পাতায় শুধু গঠন; ঘোরাঘুরি পরের পাতাগুলোয়।
 
 ## Animation Spec
 
 > **Animation Spec: Tree Anatomy**
 >
-> - **দৃশ্য:** একটা tree; hover করলে প্রতিটা অংশের লেবেল (root/leaf/height) দেখা যায়।
+> - **দৃশ্য:** একটা tree; hover করলেই প্রতিটা অংশের লেবেল (root/leaf/height) ভেসে ওঠে।
 > - **ইনপুট:** node নির্বাচন।
-> - **ধাপ:** নির্বাচিত node-এর depth, subtree, ancestors highlight।
-> - **লক্ষ্য:** পরিভাষা ভিজ্যুয়ালি চেনা।
+> - **ধাপ:** নির্বাচিত node-এর depth, subtree, ancestors highlight হয়।
+> - **লক্ষ্য:** পরিভাষাগুলো ভিজ্যুয়ালি চিনে নেওয়া।
 
 ## অনুশীলন
 
-- উপরের গাছের height কত? leaf ক'টা?
+- উপরের গাছটার height কত? leaf ক'টা?

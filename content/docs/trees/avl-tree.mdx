@@ -1,22 +1,24 @@
 ---
-title: "AVL Tree: Self-Balancing BST"
-description: rotation দিয়ে গাছ ভারসাম্যে রেখে worst case এড়ানো, সবসময় O(log n) নিশ্চিত।
+title: "AVL Tree: নিজেই ভারসাম্য রাখা BST"
+description: BST হেলে গেলে O(n), তাই AVL প্রতিটা insert/delete-এর পর rotation দিয়ে গাছ ঠিক রাখে, সবসময় O(log n)।
 ---
 
 ## কী শিখব
 
-- গাছ ভারসাম্যে রেখে worst case এড়ানো
+- rotation দিয়ে গাছ ভারসাম্যে রাখা, যাতে worst case কখনোই না আসে
 
 ## ধারণা
 
-BST একপাশে হেললে O(n)। **AVL Tree** প্রতিটা insert/delete-এর পর নিশ্চিত করে যে কোনো node-এর বাঁ ও ডান subtree-র height-এর পার্থক্য (**balance factor**) সর্বোচ্চ 1। বেশি হলে **rotation** দিয়ে ঠিক করে, ফলে সবসময় O(log n)।
+ধরো, BST-তে 1, 2, 3, 4, 5 ক্রমে insert করলে। প্রতিটা নতুন মান আগেরটার ডানেই বসতে থাকবে, আর গাছটা হয়ে যাবে লম্বা এক দণ্ড, প্রায় linked list। তখন search করতে O(n) লাগবে, BST-র সব সুবিধা জলে।
 
-**চার ধরনের ভারসাম্যহীনতা ও সমাধান:**
+এখানেই আসল জিনিস। **AVL Tree** কিন্তু হেলে পড়তে দেয় না। প্রতিটা insert/delete-এর পর ও নিজে চেক করে নেয়, কোনো node-এর বাঁ আর ডান subtree-র height-এর পার্থক্য যেন সর্বোচ্চ ১ থাকে। এই পার্থক্যের নাম **balance factor**। পার্থক্য বাড়িয়ে দিলে **rotation** দিয়ে ঘুরিয়ে সোজা করে ফেলে। ফলে height সবসময় নিয়ন্ত্রণে থাকে, আর search/insert সবসময় O(log n)।
+
+ভারসাম্যহীনতা চার রকম হতে পারে, প্রতিটার নিজের ফিক্স আছে:
 
 - LL: ডানে rotate (right rotation)
 - RR: বাঁয়ে rotate (left rotation)
-- LR: বাঁয়ে তারপর ডানে
-- RL: ডানে তারপর বাঁয়ে
+- LR: আগে বাঁয়ে, তারপর ডানে
+- RL: আগে ডানে, তারপর বাঁয়ে
 
 ## কোড উদাহরণ
 
@@ -57,23 +59,23 @@ function rebalance(node) {
 
 ## কোড ব্রেকডাউন
 
-- প্রতিটা node তার height মনে রাখে; balance factor অর্থাৎ বাঁ height বিয়োগ ডান height।
-- balance factor-এর পরম মান ১-এর বেশি হলে rotation দিয়ে পুনর্বিন্যাস, মান ও BST-নিয়ম অক্ষুণ্ণ রেখে।
-- rotation একটা O(1) pointer-পুনর্বিন্যাস।
+- প্রতিটা node নিজের height মনে রাখে। balance factor মানে বাঁ height বিয়োগ ডান height।
+- এই মান ১-এর বেশি বা -১-এর কম হলেই rotation। শুধু pointer গুলো ঘোরে, মান বা BST-র নিয়ম কিছুই নষ্ট হয় না।
+- rotation আসলে কয়েকটা pointer বদলানো, মানে O(1) কাজ।
 
 ## Complexity
 
-- insert/search/delete সব O(log n) নিশ্চিত।
+- insert, search, delete, তিনটাই সবসময় O(log n) নিশ্চিত। skewed হওয়ার ভয় নেই।
 
 ## Animation Spec
 
 > **Animation Spec: Rotation Fixer**
 >
-> - **দৃশ্য:** unbalanced tree; হেলে-পড়া অংশ লাল।
+> - **দৃশ্য:** unbalanced tree; হেলে-পড়া অংশ লাল রঙে।
 > - **ইনপুট:** insert sequence; rotation type auto-detect।
-> - **ধাপ:** insert-এর পর ভারসাম্য মাপা হয়; দরকারে rotation animation-এ node গুলো ঘুরে balanced হয় (সবুজ)।
-> - **লক্ষ্য:** rotation কীভাবে height নিয়ন্ত্রণে রাখে।
+> - **ধাপ:** insert-এর পর ভারসাম্য মাপা হয়; দরকার হলে rotation animation-এ node গুলো ঘুরে balanced হয় (সবুজ)।
+> - **লক্ষ্য:** rotation ঠিক কীভাবে height নিয়ন্ত্রণে রাখে, সেটা চোখে দেখা।
 
 ## অনুশীলন
 
-- 1,2,3 ক্রমে insert করলে কোন rotation লাগবে ভাবো (RR, অর্থাৎ left rotation)।
+- ভাবো তো, 1, 2, 3 ক্রমে insert করলে কোন rotation লাগবে? (RR, মানে left rotation।)

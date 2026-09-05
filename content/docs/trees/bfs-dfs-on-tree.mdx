@@ -1,6 +1,6 @@
 ---
-title: "Tree-তে BFS ও DFS: সারসংক্ষেপ"
-description: stack দিয়ে DFS, queue দিয়ে BFS; দুই traversal কৌশল এক নজরে।
+title: "Tree-তে BFS আর DFS: এক নজরে"
+description: stack দিলে DFS, queue দিলে BFS। দুটো কৌশলই আসলে তুমি আগেই শিখে ফেলেছ।
 ---
 
 ## কী শিখব
@@ -9,14 +9,16 @@ description: stack দিয়ে DFS, queue দিয়ে BFS; দুই tra
 
 ## ধারণা
 
-- **DFS** (pre/in/post) চলে recursion বা **stack** দিয়ে; গভীরে আগে।
-- **BFS** (level-order) চলে **queue** দিয়ে; স্তরে স্তরে।
+আগের দুই পাতায় যা করলে, তারই নামকরণ এই পাতায়:
 
-দুটোই graph-এও (section 13) একই ধারণায় চলবে, tree আসলে graph-এরই বিশেষ রূপ (cycle-হীন)।
+- **DFS** (pre/in/post) আগে গভীরে ঢোকে। চলে recursion বা **stack** দিয়ে।
+- **BFS** (level-order) স্তরে স্তরে এগোয়। চলে **queue** দিয়ে।
+
+ব্যাপারটা হলো, পরে graph (section 13) পড়লেও এই একই দুটো ধারণা লাগবে। tree আসলে graph-এরই বিশেষ রূপ, শুধু cycle নেই।
 
 ## কোড উদাহরণ
 
-DFS iterative (stack দিয়ে):
+DFS-টা এবার recursion ছাড়া, হাতে stack দিয়ে:
 
 ```js
 class TreeNode {
@@ -47,12 +49,12 @@ console.log(dfsIterative(r)); // [1,2,4,5,3] (pre-order)
 
 ## কোড ব্রেকডাউন
 
-- recursion-এর call stack-ই আসলে DFS-এর stack; এখানে হাতে stack দিয়ে করলাম।
-- stack মানে DFS, queue মানে BFS, এই জোড়া মনে রাখো।
+- recursion-এর call stack-ই আসলে DFS-এর stack। এখানে শুধু সেটা হাতে বানিয়ে করলাম।
+- এক লাইনে মনে রাখো: stack মানে DFS, queue মানে BFS।
 
 ## Complexity
 
-- DFS ও BFS দুটোই O(n) time; space যথাক্রমে O(h) (stack) ও O(n) (queue), আগের পাতাগুলোর হিসাবই।
+- DFS, BFS দুটোই O(n) time। space যথাক্রমে O(h) (stack) আর O(n) (queue), আগের পাতাগুলোর হিসাবই।
 
 ## Animation Spec
 
@@ -60,9 +62,9 @@ console.log(dfsIterative(r)); // [1,2,4,5,3] (pre-order)
 >
 > - **দৃশ্য:** একই tree, পাশে একবার stack (DFS), একবার queue (BFS)।
 > - **ইনপুট:** DFS/BFS toggle।
-> - **ধাপ:** data structure-এর push/pop অনুযায়ী node visit ক্রম আলাদা দেখা যাবে।
-> - **লক্ষ্য:** কাঠামো (stack/queue) কীভাবে traversal ক্রম ঠিক করে।
+> - **ধাপ:** data structure-এর push/pop অনুযায়ী visit-এর ক্রম কীভাবে বদলায়, সরাসরি দেখা যাবে।
+> - **লক্ষ্য:** কাঠামো (stack/queue) কীভাবে traversal-এর ক্রম ঠিক করে দেয়।
 
 ## অনুশীলন
 
-- BFS iterative আর DFS iterative, কোনটায় কোন structure, মিলাও।
+- BFS iterative আর DFS iterative, কোনটায় কোন structure লাগে, মিলাও।

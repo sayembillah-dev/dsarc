@@ -1,21 +1,23 @@
 ---
-title: "B-Tree: পরিচিতি"
-description: database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree; কম height মানে কম disk read।
+title: "B-Tree: database-এর চওড়া গাছ"
+description: এক node-এ অনেক key, অনেক চাইল্ড। গাছ কম গভীর, তাই disk-ও কম বার পড়তে হয়।
 ---
 
 ## কী শিখব
 
-- database/disk-এর জন্য বহু-চাইল্ডওয়ালা balanced tree
+- database আর disk-এর জন্য বানানো বহু-চাইল্ডওয়ালা balanced tree
 
 ## ধারণা
 
-Binary tree-র প্রতিটা node-এ ১টা key, ২টা চাইল্ড। **B-Tree**-তে প্রতিটা node-এ **অনেক key ও অনেক চাইল্ড** থাকতে পারে। এতে গাছ কম গভীর হয়, ফলে disk থেকে কম বার পড়তে হয়। এজন্য database index ও file system (section 15-এ B+ Tree) এতে দাঁড়িয়ে।
+disk থেকে ডেটা পড়া ভয়ংকর ধীর কাজ, RAM-এর তুলনায় হাজার গুণ slow। তাই database-এর কাছে গাছের height-ই সব। height কম মানে কম বার disk পড়া, মানে দ্রুত কাজ।
 
-মূল ধর্ম (order m-এর B-Tree):
+এই চিন্তা থেকেই **B-Tree**। binary tree-র প্রতিটা node-এ ১টা key, ২টা চাইল্ড। B-Tree-তে প্রতিটা node-এ **অনেক key আর অনেক চাইল্ড** থাকে। ফলে গাছ চওড়া হয়, গভীর হয় না। এজন্যই database index আর file system এই কাঠামোর ওপর দাঁড়িয়ে (section 15-এ এর আত্মীয় B+ Tree নিয়ে বিস্তারিত পড়বে)।
+
+মূল ধর্ম (order m-এর B-Tree ধরো):
 
 - প্রতিটা node-এ সর্বোচ্চ m-1 key, m চাইল্ড
-- সব leaf একই স্তরে (perfectly balanced)
-- node-এর key গুলো sorted
+- সব leaf একই স্তরে, মানে perfectly balanced
+- node-এর ভিতরে key গুলো sorted
 
 ```
         [ 10 | 20 ]
@@ -25,7 +27,7 @@ Binary tree-র প্রতিটা node-এ ১টা key, ২টা চা�
 
 ## কোড উদাহরণ
 
-node গঠন (ধারণা):
+node-এর গঠনটা দেখো (ধারণা):
 
 ```js
 class BTreeNode {
@@ -44,23 +46,23 @@ console.log(node.keys, node.isLeaf); // [10, 20] true
 
 ## কোড ব্রেকডাউন
 
-- অনেক key/চাইল্ড মানে কম height, মানে disk read কম।
-- "node full হলে split", এই কৌশলে সবসময় balanced থাকে।
-- বাস্তবে disk-page-এর আকারের সাথে node আকার মেলানো হয়।
+- অনেক key মানে অনেক চাইল্ড, অনেক চাইল্ড মানে কম height, আর কম height মানে কম disk read।
+- "node full হলে split", এই এক কৌশলেই গাছ সবসময় balanced থাকে।
+- বাস্তবে node-এর আকার disk-page-এর আকারের সাথে মেলানো হয়, যেন একবার পড়লেই পুরো node পাওয়া যায়।
 
 ## Complexity
 
-- search/insert/delete O(log n); কিন্তু disk-access-এ বিশাল সুবিধা।
+- search/insert/delete সব O(log n); তবে আসল জয়টা disk-access-এ, সেখানে পার্থক্য বিশাল।
 
 ## Animation Spec
 
 > **Animation Spec: Multi-key Node & Split**
 >
-> - **দৃশ্য:** প্রতিটা node-এ একাধিক key; একটা full node-এ insert করলে **split** হয়ে মাঝের key উপরে ওঠে।
+> - **দৃশ্য:** প্রতিটা node-এ একাধিক key; full node-এ insert করলেই **split**, মাঝের key উপরে উঠে যায়।
 > - **ইনপুট:** order m; insert sequence।
-> - **ধাপ:** node full হলে split animation; height কীভাবে কম থাকে দেখা।
-> - **লক্ষ্য:** কেন database-এ B-Tree, binary tree নয়।
+> - **ধাপ:** node ভরলেই split animation; height কত কম থাকে সেটা দেখা।
+> - **লক্ষ্য:** কেন database-এ binary tree নয়, B-Tree।
 
 ## অনুশীলন
 
-- কেন কম height মানে কম disk read, নিজের ভাষায় লেখো।
+- কেন কম height মানে কম disk read, নিজের ভাষায় লিখে দেখো।
