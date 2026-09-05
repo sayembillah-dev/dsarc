@@ -1,15 +1,17 @@
 ---
-title: "Singly Linked List: পূর্ণ ক্লাস"
-description: head ধরে রেখে prepend, append, find ও print সহ একটা কাজের singly linked list class বানানো।
+title: "Singly Linked List: পুরো একটা class বানাই"
+description: head থেকে শুরু করে prepend, append, find আর print, সব মিলিয়ে একটা সত্যি চলমান singly linked list class।
 ---
 
 ## কী শিখব
 
-- একটা কাজের singly linked list class বানানো
+- একটা সত্যি চলমান singly linked list class বানানো
 
 ## ধারণা
 
-`head` (প্রথম node) ধরে রাখলে পুরো লিস্টে পৌঁছানো যায়। আমরা `prepend` (শুরুতে), `append` (শেষে), `print`, `find` যোগ করব।
+রশির প্রথম প্রান্তটা ধরে রাখলে পুরো রশিই তোমার হাতে, তাই না? Linked list-এও তাই। শুধু প্রথম node-টা, অর্থাৎ `head`, ধরে রাখলেই পুরো লিস্টে পৌঁছে যাওয়া যায়।
+
+এখন এই আইডিয়ার উপর দাঁড় করিয়ে চারটা জরুরি কাজ যোগ করব: `prepend` (শুরুতে ঢোকানো), `append` (শেষে ঢোকানো), `find` (মান খোঁজা) আর `print`। চলো দেখি।
 
 ## কোড উদাহরণ
 
@@ -66,9 +68,9 @@ console.log(list.size);     // 3
 
 ## কোড ব্রেকডাউন
 
-- `prepend`: নতুন node-কে head বানায়, পুরনো head-কে তার next বানায়। কাউকে সরাতে হয় না, তাই O(1)।
-- `append`: শেষ node খুঁজতে পুরো লিস্ট হাঁটতে হয়, তাই O(n)।
-- traversal প্যাটার্ন মনে রাখো: `current = head; while (current) current = current.next;`
+- `prepend`-এ কাউকে সরে যেতে হয় না। নতুন node আগে পুরনো head-কে দেখায়, তারপর নিজেই head হয়ে যায়। তাই O(1)।
+- `append`-এ আগে শেষ node-টা খুঁজতে হয়, সেজন্য পুরো লিস্ট হাঁটা লাগে। তাই O(n)।
+- traversal-এর ছকটা মুখস্থ রাখো: `current = head; while (current) current = current.next;` পরের প্রতিটা অপারেশনেই এটা লাগবে।
 
 ## Complexity
 
@@ -78,11 +80,11 @@ console.log(list.size);     // 3
 
 > **Animation Spec: Prepend vs Append**
 >
-> - **দৃশ্য:** node শৃঙ্খল, head লেবেল।
-> - **ইনপুট:** মান; prepend/append নির্বাচন।
-> - **ধাপ:** prepend করলে নতুন node সামনে বসে head তীর ঘুরে যায় (এক ধাপ); append করলে pointer শেষ পর্যন্ত হেঁটে তারপর জোড়া লাগে (n ধাপ)।
-> - **লক্ষ্য:** কেন prepend O(1) আর append O(n)।
+> - **দৃশ্য:** node শৃঙ্খল, আর head লেবেল।
+> - **ইনপুট:** একটা মান; সাথে prepend নাকি append, সেটা নির্বাচন।
+> - **ধাপ:** prepend করলে নতুন node সামনে বসে যাবে আর head-এর তীর ঘুরে যাবে, মাত্র এক ধাপ। append করলে pointer আগে শেষ পর্যন্ত হেঁটে যাবে, তারপর জোড়া লাগবে, পুরো n ধাপ।
+> - **লক্ষ্য:** কেন prepend O(1) আর append O(n), সেটা চোখে দেখা।
 
 ## অনুশীলন
 
-- `insertAt(index, value)` মেথড যোগ করো।
+- `insertAt(index, value)` মেথডটা নিজে যোগ করো।

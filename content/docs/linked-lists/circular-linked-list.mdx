@@ -1,15 +1,17 @@
 ---
-title: "Circular Linked List: বৃত্তাকার লিস্ট"
-description: শেষ node আবার head-কে দেখায় এমন circular linked list, এর append ও নিরাপদ traversal।
+title: "Circular Linked List: লিস্ট যখন বৃত্ত"
+description: শেষ node-এর next আবার head-কেই দেখায়। Circular linked list-এ append আর নিরাপদ traversal শেখা যাক।
 ---
 
 ## কী শিখব
 
-- শেষ node আবার প্রথমকে দেখায়, এমন বৃত্তাকার লিস্ট
+- শেষ node আবার প্রথম node-কেই দেখায়, এমন বৃত্তাকার লিস্ট
 
 ## ধারণা
 
-সাধারণ list-এ শেষ node-এর next = null। Circular-এ শেষ node-এর next = **head** (প্রথম)। ফলে অবিরাম ঘোরা যায়; round-robin scheduling, buffer ইত্যাদিতে কাজে লাগে।
+Round-robin খেলা দেখেছ? সারির শেষ জনের পর আবার প্রথম জনের পালা, কেউ বাদ পড়ে না। Circular Linked List ঠিক সেরকম।
+
+সাধারণ list-এ শেষ node-এর next থাকে `null`, মানে "এখানেই থাম"। Circular-এ শেষ node-এর next আবার **head**-কেই দেখায়। ফলে যত খুশি ঘোরা যায়, থামার জায়গা নেই। এই কারণেই round-robin scheduling বা buffer-এ এটা খুব কাজে লাগে। তবে সাবধানতা একটাই: traversal-এ থামার শর্ত না দিলে loop চিরকাল ঘুরবেই।
 
 ```
 [10] -> [20] -> [30] --.
@@ -52,9 +54,9 @@ cll.printOnce(); // 10 -> 20 -> 30 -> (back to head)
 
 ## কোড ব্রেকডাউন
 
-- একটামাত্র node হলে সে নিজেকেই next হিসেবে দেখায়।
-- traversal-এ শর্ত `c !== this.head`, নাহলে infinite loop।
-- `do...while` ব্যবহার করলাম যাতে প্রথম node অন্তত একবার ছাপে।
+- একটাই node থাকলে সে নিজেকেই next হিসেবে দেখায়।
+- traversal-এর শর্ত হলো `c !== this.head`। এটা ভুললে infinite loop, আর বের হওয়া যাবে না।
+- `do...while` নিয়েছি যাতে প্রথম node-টা অন্তত একবার তো ছাপেই।
 
 ## Complexity
 
@@ -64,11 +66,11 @@ cll.printOnce(); // 10 -> 20 -> 30 -> (back to head)
 
 > **Animation Spec: The Loop**
 >
-> - **দৃশ্য:** node গুলো বৃত্তে সাজানো; শেষ থেকে head-এ তীর।
-> - **ইনপুট:** কতবার ঘুরবে (rounds)।
-> - **ধাপ:** একটা pointer বৃত্ত ধরে ঘুরবে; head পেরোলে "round complete" গোনা হবে।
-> - **লক্ষ্য:** circularity ও কেন থামার শর্ত দরকার।
+> - **দৃশ্য:** node গুলো একটা বৃত্তে সাজানো; শেষ node থেকে head-এ তীর।
+> - **ইনপুট:** কত পাক ঘুরবে (rounds)।
+> - **ধাপ:** একটা pointer বৃত্ত ধরে ঘুরতে থাকবে; head পেরোলেই "round complete" গোনা হবে।
+> - **লক্ষ্য:** circularity আর কেন থামার শর্ত দরকার, সেটা বোঝা।
 
 ## অনুশীলন
 
-- circular list-এ node সংখ্যা গোনার মেথড লেখো।
+- circular list-এ মোট কতটা node আছে, সেটা গোনার মেথড লেখো।

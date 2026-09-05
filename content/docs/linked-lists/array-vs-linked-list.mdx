@@ -1,13 +1,15 @@
 ---
-title: "Array vs Linked List: কখন কোনটা"
-description: access pattern অনুযায়ী array ও linked list-এর trade-off বোঝা এবং সঠিক কাঠামো বাছাই।
+title: "Array vs Linked List: কোনটা কখন"
+description: তোমার কাজে random access বেশি, নাকি insert-delete বেশি? এই এক প্রশ্নের উত্তরেই array আর linked list-এর বাছাই হয়ে যায়।
 ---
 
 ## কী শিখব
 
-- সঠিক কাঠামো বাছাই
+- পরিস্থিতি দেখে সঠিক কাঠামো বাছাই
 
 ## ধারণা
+
+এই লড়াইয়ের ফয়সালা আসলে একটাই প্রশ্নে: তুমি বেশি করবে কী? ঘন ঘন random access, নাকি ঘন ঘন শুরুতে-মাঝে insert-delete? আগে টেবিলটা দেখে নাও:
 
 | দিক | Array | Linked List |
 |-----|-------|-------------|
@@ -17,7 +19,7 @@ description: access pattern অনুযায়ী array ও linked list-এ�
 | Cache-friendly | হ্যাঁ | না |
 | আকার | সাধারণত fixed-ভিত্তিক | সহজে বাড়ে |
 
-**নিয়ম:** বেশি **random access** লাগলে Array; বেশি **শুরুতে বা মাঝে insert-delete** লাগলে Linked List।
+সহজ কথায়, random access বেশি লাগলে Array, আর শুরুতে বা মাঝে ঘন ঘন insert-delete লাগলে Linked List।
 
 ## কোড উদাহরণ
 
@@ -38,9 +40,9 @@ console.log(arr[2]); // 3
 
 ## কোড ব্রেকডাউন
 
-- `unshift` শুরুতে বসাতে গিয়ে সব উপাদান সরায়, তাই O(n)।
-- linked list-এ নতুন node-এর `next`-কে পুরনো `head` বানালেই insert শেষ, তাই O(1)।
-- তবে linked list-এ তৃতীয় উপাদান পেতে head থেকে হেঁটে যেতে হয়, তাই access O(n); array-তে `arr[2]` সরাসরি, O(1)।
+- `unshift` করলে শুরুতে জায়গা বানাতে গিয়ে সব উপাদান সরে যায়, তাই O(n)।
+- linked list-এ নতুন node-এর `next`-এ পুরনো `head` বসালেই insert শেষ, তাই O(1)।
+- কিন্তু তৃতীয় উপাদানটা চাইলে? array-তে `arr[2]` লিখেই পেয়ে গেলে, O(1)। linked list-এ head থেকে হেঁটে যেতে হয়, তাই O(n)।
 
 ## Complexity
 
@@ -50,11 +52,11 @@ console.log(arr[2]); // 3
 
 > **Animation Spec: Side-by-side Decision**
 >
-> - **দৃশ্য:** বাঁয়ে array, ডানে linked list; একই অপারেশন দুদিকে চালানো।
-> - **ইনপুট:** অপারেশন (access i / insert front / delete front)।
-> - **ধাপ:** দুই কাঠামোয় step-counter চলবে; কে কম ধাপে করল highlight।
-> - **লক্ষ্য:** কাঠামো-ভিত্তিক trade-off আত্মস্থ করা।
+> - **দৃশ্য:** বাঁয়ে array, ডানে linked list; একই অপারেশন দুই দিকে চলবে।
+> - **ইনপুট:** অপারেশন বেছে নেওয়া (access i / insert front / delete front)।
+> - **ধাপ:** দুই কাঠামোয় step-counter চলবে; কে কম ধাপে কাজটা সারল, সে highlight হবে।
+> - **লক্ষ্য:** কাঠামোভেদে trade-offটা আত্মস্থ করা।
 
 ## অনুশীলন
 
-- একটা "playlist" অ্যাপে গান আগে-পরে সরানো দরকার, কোন কাঠামো ভালো? যুক্তি দাও।
+- ধরো, একটা "playlist" অ্যাপে গান আগে-পরে সরানোর দরকার। কোন কাঠামো ভালো হবে? যুক্তি দাও।
