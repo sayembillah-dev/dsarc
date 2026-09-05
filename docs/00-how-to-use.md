@@ -1,0 +1,128 @@
+# ০০ — কোর্স গাইড ও কনভেনশন
+
+এই ফাইলটা কোর্সের "নিয়মকানুন"। এখানে বলা আছে কীভাবে প্রতিটা টপিক সাজানো, কোড কীভাবে লেখা, আর ভবিষ্যতের web app-এর জন্য Animation Spec কীভাবে লিখতে হবে।
+
+---
+
+## ১. প্রতিটা Subsection-এর স্ট্যান্ডার্ড টেমপ্লেট
+
+প্রতিটা টপিক নিচের ৭টা অংশে ভাগ করা থাকবে। এই কাঠামো কখনো পরিবর্তন হবে না — তাই তুমি সহজে অভ্যস্ত হয়ে যাবে।
+
+```markdown
+### X.Y — টপিকের নাম (English Term)
+
+**🎯 কী শিখব**
+- সংক্ষিপ্ত লক্ষ্য
+
+**💡 ধারণা**
+সহজ বাংলায় ব্যাখ্যা + বাস্তব জীবনের উদাহরণ (analogy)।
+
+**💻 কোড উদাহরণ**
+​```js
+// runnable JavaScript
+​```
+
+**🔍 কোড ব্রেকডাউন**
+- লাইন ধরে ধরে ব্যাখ্যা
+
+**⏱️ Complexity**
+- Time: O(?)
+- Space: O(?)
+
+**🎬 Animation Spec**
+> (নিচের ফরম্যাট দেখো)
+
+**📝 অনুশীলন**
+- প্র্যাকটিস সমস্যা
+```
+
+---
+
+## ২. কোড লেখার কনভেনশন
+
+- **ভাষা:** আধুনিক JavaScript (ES2020+) — `const`/`let`, arrow function, `class`, `Map`, `Set`
+- **`var` ব্যবহার করব না** (পুরনো ও সমস্যাজনক)
+- **কমেন্ট বাংলা + English মিশিয়ে** — টেকনিক্যাল টার্ম English-এ, ব্যাখ্যা বাংলায়
+- **ভেরিয়েবল নাম English-এ**, অর্থপূর্ণ (`i`, `temp` নয় — `index`, `current`)
+- প্রতিটা কোড **কপি করে সরাসরি রান করা যাবে**
+
+উদাহরণ:
+```js
+// একটি array-এর সব সংখ্যার যোগফল বের করি
+function sum(numbers) {
+  let total = 0;                    // যোগফল জমা রাখার box
+  for (const n of numbers) {        // প্রতিটা সংখ্যার উপর loop
+    total += n;                     // total-এর সাথে যোগ করি
+  }
+  return total;
+}
+
+console.log(sum([1, 2, 3, 4])); // 10
+```
+
+---
+
+## ৩. 🎬 Animation Spec — বিস্তারিত ফরম্যাট
+
+ভবিষ্যতে web app-এ প্রতিটা টপিকের জন্য একটা **interactive animation** থাকবে, যেখানে ইউজার ইনপুট পাল্টে দেখতে পারবে অ্যালগরিদম কীভাবে কাজ করে। প্রতিটা subsection-এ তাই একটা spec দেওয়া থাকবে এই ফরম্যাটে:
+
+```markdown
+> **🎬 Animation Spec: <নাম>**
+>
+> - **দৃশ্য (Visual):** স্ক্রিনে কী দেখা যাবে — যেমন বার, নোড, তীর, গ্রিড।
+> - **ইনপুট (Configurable Inputs):** ইউজার কী কী নিয়ন্ত্রণ করতে পারবে —
+>   যেমন array-এর মান, speed slider, target সংখ্যা, node সংখ্যা।
+> - **ধাপ (Animation Steps):** প্রতিটা ফ্রেমে কী হবে, কোন এলিমেন্ট highlight হবে,
+>   কোন রঙে (compare = হলুদ, swap = লাল, done = সবুজ)।
+> - **নিয়ন্ত্রণ (Controls):** Play / Pause / Step-forward / Step-back / Reset / Speed।
+> - **লক্ষ্য (What to observe):** এই অ্যানিমেশন দেখে শিক্ষার্থী কী উপলব্ধি করবে।
+```
+
+### রঙের স্ট্যান্ডার্ড (সব অ্যানিমেশনে এক)
+
+| অবস্থা | রঙ | মানে |
+|--------|-----|------|
+| Default | নীল/ধূসর | সাধারণ এলিমেন্ট |
+| Comparing | হলুদ | এখন তুলনা হচ্ছে |
+| Active/Pointer | কমলা | বর্তমান pointer/index |
+| Swapping | লাল | জায়গা বদল হচ্ছে |
+| Sorted/Done | সবুজ | চূড়ান্ত/সম্পন্ন |
+| Visited | বেগুনি | আগে দেখা হয়েছে (graph/tree) |
+
+### একটা নমুনা Animation Spec (Linear Search)
+
+> **🎬 Animation Spec: Linear Search**
+>
+> - **দৃশ্য:** একসারি box, প্রতিটাতে একটা সংখ্যা। উপরে target দেখানো।
+> - **ইনপুট:** array-এর মান (editable), target সংখ্যা।
+> - **ধাপ:** বাম থেকে ডানে একটা কমলা pointer সরবে; প্রতিটা box-এ থামলে হলুদ (comparing); মিলে গেলে সবুজ; না মিললে ধূসর করে পরের box-এ।
+> - **নিয়ন্ত্রণ:** Play/Pause, Step, Speed, Reset।
+> - **লক্ষ্য:** কেন worst case-এ পুরো array দেখতে হয় → O(n) অনুভব করা।
+
+---
+
+## ৪. Complexity নোটেশন (দ্রুত রেফারেন্স)
+
+| নোটেশন | নাম | উদাহরণ |
+|--------|-----|--------|
+| O(1) | Constant | array index access |
+| O(log n) | Logarithmic | binary search |
+| O(n) | Linear | একবার loop |
+| O(n log n) | Linearithmic | merge/quick sort |
+| O(n²) | Quadratic | nested loop |
+| O(2ⁿ) | Exponential | naive recursion |
+| O(n!) | Factorial | permutation |
+
+বিস্তারিত: [03-algorithmic-complexity.md](03-algorithmic-complexity.md)
+
+---
+
+## ৫. পড়ার পরামর্শ
+
+1. **ধারাবাহিকভাবে পড়ো** — Section 01 থেকে শুরু করো, লাফ দিও না
+2. প্রতিটা কোড **নিজে টাইপ করে রান করো** — শুধু পড়লে হবে না
+3. Animation Spec **কল্পনা করো** — মাথায় ভিজ্যুয়ালাইজ করার চেষ্টা করো
+4. প্রতিটা section শেষে **অনুশীলন সমস্যা** সমাধান করো
+5. আটকে গেলে আগের section আবার দেখো
+
+চলো শুরু করি! → [01-javascript-fundamentals.md](01-javascript-fundamentals.md)
