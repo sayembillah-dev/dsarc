@@ -1,0 +1,275 @@
+---
+title: "Merge Intervals: overlap জোড়া লাগানো"
+description: "শুরু দিয়ে sort করে এক pass-এ overlapping রেঞ্জ একত্র করার ছাঁচ; insert, intersection আর greedy ভ্যারিয়েন্টসহ পুরো dry run।"
+---
+
+## কী শিখব
+
+- কেন প্রথম কাজটাই sort: শুরু অনুযায়ী সাজালেই overlap এক পাশে জড়ো হয়
+- এক pass-এ sweep করে শেষ merged interval-এর সাথে তুলনা করার ছাঁচ
+- হাতে হাতে পুরো dry run: কখন জোড়া লাগে, কখন নতুন দ্বীপ শুরু হয়
+- তিনটা জরুরি ভ্যারিয়েন্ট: meeting rooms, ছেদ বের করা, greedy তীর ছোড়া
+- Complexity O(n log n) কেন, আর sort না করলে কী দুর্ঘটনা ঘটে
+
+## ধারণা
+
+ভাবো তো, কলেজের রুটিন হাতে পেয়েছ। ক্লাসগুলো এলোমেলোভাবে লেখা: ৮টা-১০টা ডাটা স্ট্রাকচার, ৯টা-১১টা গণিত, দুপুর ২টা-৪টা ল্যাব। এখন কেউ জিজ্ঞেস করল, "সারাদিনে আসলে কতটা সময় ব্যস্ত থাকবে?" ডাটা স্ট্রাকচার আর গণিত তো overlap করছে, মানে ৮টা থেকে ১১টা পর্যন্ত টানা ব্যস্ত। তুমি মাথায় মাথায় যা করো, দুটো overlap-কারী ক্লাসকে একটা করে বড় ব্লক বানানো। সেটাই merge intervals।
+
+কাজটা সহজ হয়ে যায় একটা চালাকি দিয়ে: **আগে সব interval-কে শুরুর সময় অনুযায়ী sort করে ফেলো।** তারপর বাঁ থেকে ডানে একবার হেঁটে যাও। প্রতিটা interval-এর কাছে প্রশ্ন একটাই: "তুমি কি সবচেয়ে ডানের ব্লকের সাথে লেগে আছ?" লেগে থাকলে ব্লকটাকে লম্বা করো, না থাকলে নতুন ব্লক শুরু করো।
+
+কেন sort করলেই এত সহজ? কারণ sort-এর পর কোনো interval-এর শুরু আগেরগুলোর শুরুর চেয়ে ছোট হতেই পারে না। তাই overlap আছে কিনা ঠিক করতে একটা জিনিস দেখলেই চলে: বর্তমান interval-এর **শুরু** কি শেষ merged-এর **শেষের** মধ্যে পড়ে কিনা। sort ছাড়া প্রতিটা জোড়াকে সবার সাথে মেলাতে হতো, O(n²) ঘাম। sort-এর গল্পটা [কেন sort করি](../sorting/why-sorting.mdx)-এ আছে।
+
+এই ছাঁচটা দিয়ে মিটিং রুম, ক্যালেন্ডার merge, রেঞ্জ কভারেজ, এমনকি বেলুনে তীর ছোড়ার মতো [greedy](./greedy.mdx) সমস্যাও ফুটে ওঠে। নিচে সব দেখাবো।
+
+## ধাপে ধাপে ড্রাই রান
+
+ইনপুট ধরো: `[[1,3],[8,10],[2,6],[15,18]]`
+
+আগে সংখ্যারেখায় দেখি interval-গুলো কেমন দেখায়:
+
+```
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18
+A   [=======]
+B                           [=======]
+C       [===============]
+D                                               [==========]
+```
+
+(A = [1,3], B = [8,10], C = [2,6], D = [15,18])
+
+ধাপ ০: **শুরু অনুযায়ী sort।** সাজানোর পর পাবো: `[[1,3],[2,6],[8,10],[15,18]]`
+
+ধাপ ১: প্রথমটাকে merged list-এ ঢুকাও: `[[1,3]]`।
+
+এখন থেকে নিয়ম একটাই: বর্তমান interval-এর শুরু যদি শেষ merged-এর শেষের ভেতর বা সমান হয়, জোড়া লাগাও; নাহলে আলাদা push করো।
+
+| ধাপ | বর্তমান interval | শেষ merged | overlap? (start &lt;= শেষ) | করণী | merged list |
+|-----|------------------|------------|--------------------------|------|-------------|
+| শুরু | - | - | - | প্রথমটা ঢোকাও | [[1,3]] |
+| 1 | [2,6] | [1,3] | হ্যাঁ, 2 &lt;= 3 | জোড়া: শেষ = max(3,6) = 6 | [[1,6]] |
+| 2 | [8,10] | [1,6] | না, 8 > 6 | নতুন দ্বীপ, push | [[1,6],[8,10]] |
+| 3 | [15,18] | [8,10] | না, 15 > 10 | নতুন দ্বীপ, push | [[1,6],[8,10],[15,18]] |
+
+ফলাফল: **`[[1,6],[8,10],[15,18]]`**।
+
+দুটো জিনিস চোখে পড়ল?
+
+- ধাপ ১-এ জোড়া লাগানোর সময় শেষ হিসেবে `max(3, 6)` নিলাম। শুধু বর্তমানটার শেষ রাখলে `[1,10],[2,3]`-এর মতো কেসে (একটা আরেকটাকে পুরো গিলে ফেলে) ভুল হতো।
+- প্রতিটা interval ঠিক একবারই দেখা হলো। sort-এর পর আর পেছনে ফিরে তাকানোর দরকার হয় না, এইটাই ছাঁচটার শক্তি।
+
+## কোড
+
+পুরো runnable ফাইল: মূল merge, তারপর insert, তারপর দুটো তালিকার ছেদ। নিচে console.log দিয়ে সব demo:
+
+```js
+// ============================================
+// Merge Intervals: পুরো runnable ফাইল
+// চালাও: node merge-intervals.js
+// ============================================
+
+// ---------- মূল ছাঁচ: merge intervals (LeetCode 56) ----------
+function mergeIntervals(intervals) {
+  if (intervals.length === 0) return [];
+
+  // ইনপুট array নষ্ট না করতে কপি, তারপর শুরু অনুযায়ী sort
+  const sorted = intervals.map(iv => [...iv]).sort((a, b) => a[0] - b[0]);
+
+  const merged = [sorted[0]];               // প্রথমটা দিয়ে শুরু
+
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1]; // সবচেয়ে ডানের ব্লক
+    const [start, end] = sorted[i];
+
+    if (start <= last[1]) {
+      last[1] = Math.max(last[1], end);     // overlap: ব্লকটা লম্বা করো
+    } else {
+      merged.push([start, end]);            // লেগে নেই: নতুন দ্বীপ
+    }
+  }
+  return merged;
+}
+
+// ---------- insert interval (LeetCode 57) ----------
+// শর্ত: intervals আগে থেকেই sorted আর non-overlapping
+function insertInterval(intervals, newInterval) {
+  const result = [];
+  let i = 0;
+  const n = intervals.length;
+  let curS = newInterval[0];
+  let curE = newInterval[1];
+
+  // ১) যেগুলো পুরোপুরি বামে, overlap অসম্ভব
+  while (i < n && intervals[i][1] < curS) {
+    result.push(intervals[i]);
+    i++;
+  }
+  // ২) যেগুলোর সাথে overlap, সবগুলো গিলে একটা বড় interval বানাও
+  while (i < n && intervals[i][0] <= curE) {
+    curS = Math.min(curS, intervals[i][0]);
+    curE = Math.max(curE, intervals[i][1]);
+    i++;
+  }
+  result.push([curS, curE]);
+  // ৩) বাকিগুলো পুরোপুরি ডানে
+  while (i < n) {
+    result.push(intervals[i]);
+    i++;
+  }
+  return result;
+}
+
+// ---------- interval intersection (LeetCode 986, teaser) ----------
+// দুটো sorted, non-overlapping তালিকার ছেদ; দুটো pointer দিয়ে
+function intervalIntersection(firstList, secondList) {
+  const result = [];
+  let i = 0, j = 0;
+
+  while (i < firstList.length && j < secondList.length) {
+    const lo = Math.max(firstList[i][0], secondList[j][0]); // ছেদের শুরু
+    const hi = Math.min(firstList[i][1], secondList[j][1]); // ছেদের শেষ
+
+    if (lo <= hi) result.push([lo, hi]);    // সত্যিই ছেদ আছে
+
+    // যার শেষ আগে, সে পরেরটার সাথে আর ছেদ করতে পারবে না
+    if (firstList[i][1] < secondList[j][1]) i++;
+    else j++;
+  }
+  return result;
+}
+
+// ---------- demo ----------
+console.log("merge:", mergeIntervals([[1, 3], [8, 10], [2, 6], [15, 18]]));
+// [[1,6],[8,10],[15,18]]
+
+console.log("merge (touching):", mergeIntervals([[1, 4], [4, 5]]));
+// [[1,5]]  (LC 56-এ শেষ আর শুরু মিললেও জোড়া লাগে)
+
+console.log("merge (contained):", mergeIntervals([[1, 10], [2, 3], [4, 5]]));
+// [[1,10]]
+
+console.log("insert:", insertInterval([[1, 3], [6, 9]], [2, 5]));
+// [[1,5],[6,9]]
+
+console.log("insert (big):",
+  insertInterval([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8]));
+// [[1,2],[3,10],[12,16]]
+
+console.log("intersection:", intervalIntersection(
+  [[0, 2], [5, 10], [13, 23], [24, 25]],
+  [[1, 5], [8, 12], [15, 24], [25, 26]]
+));
+// [[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]]
+```
+
+## ভ্যারিয়েন্ট
+
+### ভ্যারিয়েন্ট ১: meeting rooms (সব মিটিংয়ে যাওয়া যাবে?)
+
+প্রশ্নটা উল্টো: একজন মানুষ সব মিটিংয়ে হাজির থাকতে পারবে কিনা? পারবে না যদি কোনো দুটো overlap করে। মানে merge করার দরকারই নেই, sort করে পাশাপাশি দুটোর তুলনাই যথেষ্ট:
+
+```js
+function canAttendMeetings(intervals) {   // LeetCode 252
+  const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i][0] < sorted[i - 1][1]) return false; // আগেরটা শেষের আগেই শুরু
+  }
+  return true;
+}
+
+console.log(canAttendMeetings([[0, 30], [5, 10], [15, 20]])); // false
+console.log(canAttendMeetings([[7, 10], [2, 4]]));            // true
+```
+
+একটু কঠিন আত্মীয়: **employee free time** (LeetCode 759)। সবার ক্যালেন্ডার একসাথে ভাবো: সব interval এক তালিকায় ফেলে merge করো, তারপর যে ফাঁকগুলো merged ব্লকগুলোর মাঝে থেকে যায়, সেগুলোই সবার common ফাকা সময়। ছাঁচ এক, হাত বাড়ানো মাত্র।
+
+### ভ্যারিয়েন্ট ২: বেলুনে সর্বনিম্ন তীর (LeetCode 452)
+
+বেলুনগুলো সংখ্যারেখায় interval হিসেবে শুয়ে আছে। এক তীর এক x-স্থানে গেলে যেসব বেলুন সেটাকে ঢাকে, সব ফাটে। সর্বনিম্ন কয়টা তীর লাগবে? এবার কিন্তু শুরু দিয়ে নয়, **শেষ দিয়ে sort** করো। প্রথম বেলুনের শেষ প্রান্তেই তীর ছোড়ো (এর চেয়ে ডানে ছুড়লে অবশ্যই ক্ষতি), তারপর যে বেলুনে এই তীর পড়ে না, তার শেষে পরের তীর:
+
+```js
+function findMinArrowShots(points) {
+  if (points.length === 0) return 0;
+  points.sort((a, b) => a[1] - b[1]);     // শেষ অনুযায়ী sort
+  let arrows = 1;
+  let arrowAt = points[0][1];             // প্রথম বেলুনের শেষে তীর
+  for (let i = 1; i < points.length; i++) {
+    if (points[i][0] > arrowAt) {         // এই বেলুনে তীর পড়ে না
+      arrows++;
+      arrowAt = points[i][1];             // নতুন তীর
+    }
+  }
+  return arrows;
+}
+
+console.log(findMinArrowShots([[10, 16], [2, 8], [1, 6], [7, 12]])); // 2
+```
+
+আলগা নজরে দেখলে এটা merge-ই: overlap-কারী বেলুনগুলো এক তীরে জোড়া লেগে যাচ্ছে। এই "শেষ দিয়ে sort করে greedy নেওয়া" কৌশলটা [Greedy](./greedy.mdx) chapter-এর প্রাণ।
+
+## কোড ব্রেকডাউন: মূল mergeIntervals, লাইনে লাইনে
+
+1. `if (intervals.length === 0) return []` : খালি ইনপুট। এটা না দিলে পরের লাইনে `sorted[0]` হবে `undefined`, আর পরে `last[1]` পড়তে গিয়ে crash।
+2. `intervals.map(iv => [...iv])` : গভীর কপি। কারণ `sort()` in-place, ইনপুট array-টাই বদলে দেয়; আর ভেতরের interval-গুলোও কপি না করলে `last[1] = ...` লিখতে গিয়ে caller-এর ডেটা নষ্ট হয়ে যাবে।
+3. `.sort((a, b) => a[0] - b[0])` : শুরু অনুযায়ী ascending। comparator না দিলে JavaScript string হিসেবে সাজায়, `[10, ...]` আবার `[9, ...]`-এর আগে চলে আসে।
+4. `const merged = [sorted[0]]` : প্রথম interval দিয়ে শুরু। এখন থেকে `merged`-এর শেষটাই "বর্তমানে বাড়তে থাকা ব্লক"।
+5. `const last = merged[merged.length - 1]` : শেষ merged-এর রেফারেন্স। নতুন array বানানো নয়, সরাসরি ওটাকেই লম্বা করবো।
+6. `if (start <= last[1])` : overlap-এর সংজ্ঞা। sort-এর কারণে `start` কখনোই `last`-এর শুরুর বামে হতে পারে না, তাই এই একটাই শর্ত যথেষ্ট।
+7. `last[1] = Math.max(last[1], end)` : কেন max? কারণ বর্তমান interval পুরোপুরি last-এর ভেতরে থাকতে পারে (`[1,10]` আর `[2,3]`), তখন শেষ একচুলও বাড়ে না।
+8. `else merged.push([start, end])` : ফাঁক পেলে বর্তমান ব্লক শেষ, নতুন ব্লক শুরু।
+9. লুপ শেষে `merged`-ই উত্তর। প্রতিটা interval একবারই ছোঁয়া হয়েছে।
+
+## Complexity
+
+হিসাবটা দুই টুকরো:
+
+- **Sort: O(n log n)।** n-টা interval সাজাতে comparison sort-এর দাম এটুকুই। কেন log n আসে, সেটা [Merge Sort](../sorting/merge-sort.mdx)-এর পাতায় গোনা আছে।
+- **Sweep: O(n)।** লুপ চলে n-1 বার, ভেতরের কাজ প্রতিবার O(1)। প্রতিটা interval হয় merge হয়, নয়তো push হয়, তৃতীয় কিছু নেই।
+
+দুটো মিলে **O(n log n) + O(n) = O(n log n)**। sort-ই dominate করে। যদি প্রশ্নে বলে দেয় ইনপুট আগে থেকেই sorted (যেমন LC 57-এ), sort-টা বাদ পড়ে, তখন পুরোটা O(n)।
+
+**Space: O(n)।** কপি নেওয়া `sorted` নেয় O(n), উত্তরের `merged` সবচেয়ে খারাপ ক্ষেত্রে n-টা interval (কোনো overlap-ই না থাকলে)। sort-এর ভেতরের স্ট্যাক O(log n), সেটা হারিয়ে যায়। ইনপুটটাই in-place বদলাতে রাজি থাকলে কপির খরচ বাঁচে, তবে merged তো লাগবেই।
+
+এক নজরে: sort না করলে তুলনা O(n²)। মানে sort-এর O(n log n) বিনিয়োগটা সস্তায় sweep কিনে দেয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. sort-টাই ভুলে যাওয়া।**
+ইনপুট sorted ধরে নেওয়া সবচেয়ে বিপজ্জনক ভুল। `[[8,10],[1,3]]`-এ sort ছাড়া sweep চালালে [1,3] কখনোই [8,10]-এর সাথে জোড়া লাগবে না, উত্তর নিঃশব্দে ভুল আসবে। টেস্টেও ধরা নাও পড়তে পারে, যদি টেস্ট কেস কাকতালে sorted থাকে।
+
+**২. sort করলে ইনপুটটাই বদলে যায়।**
+`Array.prototype.sort` in-place। উপরের কোডে কপি নিয়েছি এই কারণে। ইন্টারভিউতে জিজ্ঞেস করে নাও: "ইনপুট array modify করা যাবে?" আরেক কথা, comparator ছাড়া sort করলে সংখ্যা string হয়ে যায়: `[10, 9]` থেকে `[10, 9]`-ই থাকবে, কারণ "10" < "9"।
+
+**৩. merge-এর সময় শেষ হিসেবে বর্তমানটার end বসিয়ে দেওয়া।**
+`last[1] = end` লিখলে `[[1,10],[2,3]]` থেকে `[[1,3]]` বেরোবে। একটা interval আরেকটাকে পুরো ঢেকে থাকতে পারে, তাই সবসময় `Math.max(last[1], end)`।
+
+**৪. `<=` নাকি `<`, প্রশ্ন না পড়ে ঠিক করা।**
+LC 56 অনুযায়ী `[1,4]` আর `[4,5]` জোড়া লাগে (উত্তর `[[1,5]]`), কিন্তু LC 452-তে বেলুনের প্রান্তে তীর পড়লেই ফাটে, সেখানে শর্তটা অন্যরকম বসে। প্রতিবার প্রশ্নের উদাহরণ মিলিয়ে শর্ত লেখো, অনুমানে নয়।
+
+**৫. খালি ইনপুট বা একটাই interval।**
+`[]` দিলে `sorted[0]` হলো `undefined`, `merged`-এ ঢুকিয়ে পরে `last[1]` পড়তে গিয়ে `TypeError`। প্রথম লাইনেই guard রাখো। একটাই interval থাকলে লুপ চলেই না, সেটা ঠিকই আছে, কিন্তু জেনে থাকো।
+
+## Animation Spec
+
+> **Animation Spec: Interval Merger**
+>
+> - **দৃশ্য:** সংখ্যারেখায় রঙিন interval বার; sort-এর পর সব বার সারিবদ্ধ; একটা sweep cursor বাঁ থেকে ডানে এগোয়।
+> - **ইনপুট:** interval সেট (preset / কাস্টম যোগ করা); টগল: "sort বন্ধ", ভুলটা কেমন দেখায় তা দেখানোর জন্য।
+> - **ধাপ:** sort হওয়া দৃশ্য; cursor প্রতিটা interval-এ গিয়ে শেষ merged বারের সাথে তুলনা করে; overlap-এ দুটো বার মিলে সবুজ লম্বা বার; ফাঁক পেলে নতুন রঙের বার।
+> - **নিয়ন্ত্রণ:** speed, step, reset; interval যোগ/বাদ; `<=` বনাম `<` টগল।
+> - **লক্ষ্য:** দৃষ্টিতে দেখা যাক, sort করলেই জটিল সমস্যা এক pass-এ নেমে আসে।
+
+## অনুশীলন
+
+- **সহজ ১:** Meeting Rooms (LeetCode 252): সব মিটিংয়ে যাওয়া যাবে কিনা। হিন্ট: sort করে প্রতিটার শুরু আগেরটার শেষের সাথে তুলনা করো, merge-ই লাগবে না।
+- **সহজ ২:** Merge Intervals (LeetCode 56) নিজে লিখে, এই পাতার কোড না দেখে। হিন্ট: sort + এক pointer দিয়ে শেষ merged-কে লম্বা করা।
+- **মাঝারি ১:** Insert Interval (LeetCode 57)। হিন্ট: তিন ভাগে ভাবো: পুরো বামে থাকা, overlap-কারী (সব গিলে একটা বানাও), পুরো ডানে থাকা। ইনপুট sorted, তাই sort লাগবে না।
+- **মাঝারি ২:** Interval List Intersections (LeetCode 986)। হিন্ট: দুটো pointer; ছেদের শুরু max(দুটোর শুরু), শেষ min(দুটোর শেষ); যার শেষ আগে তাকে এগিয়ে দাও। [Two Pointer](./two-pointer.mdx)-এর ধারণা সরাসরি লাগবে।
+- **কঠিন:** Minimum Number of Arrows to Burst Balloons (LeetCode 452)। হিন্ট: শেষ অনুযায়ী sort, প্রথম বেলুনের শেষেই তীর; overlap না করলেই নতুন তীর। খাঁটি [Greedy](./greedy.mdx) ভাবনা।
+
+## সারসংক্ষেপ
+
+- মন্ত্র একটাই: আগে শুরু অনুযায়ী sort, তারপর এক pass-এ শেষ merged-এর সাথে তুলনা।
+- Overlap মানে বর্তমানটার শুরু &lt;= শেষ merged-এর শেষ; merge-এ শেষ = max(দুটোর শেষ)।
+- Time O(n log n), sort-ই dominate করে; ইনপুট sorted থাকলে পুরোটা O(n)।
+- ছাঁচ এক, রূপ অনেক: meeting rooms, insert, ছেদ, এমনকি greedy তীর।
+- দুটো ভুল থেকে সাবধান: sort ভুলে যাওয়া, আর merge-এ Math.max না নেওয়া।

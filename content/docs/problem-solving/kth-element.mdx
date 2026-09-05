@@ -1,0 +1,263 @@
+---
+title: "Kth Element: পুরো sort ছাড়াই k-তম"
+description: "sort, heap আর QuickSelect - তিন পথে k-তম বড় উপাদান; পুরো dry run, দুটো ভ্যারিয়েন্ট, complexity-এর হাতে-করা হিসাব, আর কখন কোন পথ।"
+---
+
+## কী শিখব
+
+- k-তম বড় (বা ছোট) উপাদান বের করার তিনটা পথ: sort, heap, QuickSelect
+- কোন পথ কখন জেতে, একদম সৎভাবে তুলনা করে
+- Lomuto partition-এর একটা পুরো dry run: pivot কীভাবে তার চূড়ান্ত ঘরে বসে
+- দুটো ভ্যারিয়েন্ট: k closest points, top k frequent
+- QuickSelect-এর worst case O(n^2) কেন, আর random pivot কীভাবে expectation বাঁচায়
+
+## ধারণা
+
+ভাবো তো, পরীক্ষার ফল বেরিয়েছে। ক্লাসের সবার নম্বর একটা array-তে এলোমেলো পড়ে আছে। প্রশ্নটা ছোট: তৃতীয় সেরা নম্বরটা কে পেল? পুরো merit list সাজিয়ে তারপর তিন নম্বর ঘরে তাকানো - এটা কি আদৌ দরকার ছিল? বাকি সবার ক্রম ঠিক করতে তোমার কোনো আগ্রহ নেই, তবু sort করাতে গিয়ে সেই কাজটাও পুরো করে ফেলছ। n-টা নম্বর sort করতে O(n log n); অথচ উত্তরটা একটাই সংখ্যা।
+
+এই অযথা কাজটা কমানোই আজকের খেলা। তিনটা পথ শিখব, সৎভাবে তুলনা সহ:
+
+1. **Sort করে index:** সাজাও, তারপর সরাসরি ঘরে যাও। O(n log n)। সবচেয়ে সহজ, প্রায় এক লাইনের।
+2. **k-আকারের heap:** একটা ছোট min-heap রাখো, সবাইকে একবার ঢোকাও, বাড়তি ফেলে দাও। O(n log k)।
+3. **QuickSelect:** [Quick Sort](../sorting/quick-sort.mdx)-এর partition ধার করো, কিন্তু দুই ভাগে recursion না চালিয়ে শুধু দরকারি ভাগে ঢোকো। গড়ে O(n)।
+
+প্রথম পথটা বোঝার কিছু নেই। দ্বিতীয়টার জাদুটা দেখো: k-তম **বড়** চাইলে রাখবে k-আকারের একটা **min-heap**। প্রতিটা সংখ্যা ঢোকাও; heap k-এর বড় হলেই শীর্ষ (সবচেয়ে ছোট) ফেলে দাও। শেষে heap-এ টিকে থাকবে সবচেয়ে বড় k-জন, আর তাদের মধ্যে সবচেয়ে ছোটটা, মানে k-তম বড়টা, বসে আছে একদম মাথায়। শুধু peek করলেই উত্তর। heap কীভাবে কাজ করে, তা [Heaps](../heaps/index.mdx) chapter-এ দেখেছো; বিশেষ করে [MinHeap class](../heaps/minheap-class.mdx)।
+
+তৃতীয় পথটা আরও সাহসী। partition চালালে pivot তার **চূড়ান্ত ঘরে** বসে যায়: বাঁয়ে সব ছোট-সমান, ডানে সব বড়। এবার ভাবো, পুরো array sort হলে k-তম বড়টা থাকত index `n - k`-এ। pivot-এর চূড়ান্ত index যদি `n - k`-এর ডানে পড়ে, উত্তর বাঁ ভাগে; বাঁয়ে পড়লে ডান ভাগে। অন্য ভাগটা পুরো ফেলে দাও। প্রতি রাউন্ডে খোঁজার এলাকা গড়ে অর্ধেক হয়ে যায়। এটা আসলে [Divide and Conquer](./divide-and-conquer.mdx)-এর এক পায়ে দাঁড়িয়ে থাকা ভাই: ভাগ করে দুটোই না নিয়ে একটাই নেয়।
+
+## ধাপে ধাপে ড্রাই রান
+
+কোডে যাওয়ার আগে হাতে হাতে একবার চালাই। Array: `[3, 2, 1, 5, 6, 4]`, k = 2, মানে দ্বিতীয় বৃহত্তম চাই। Sorted হলে সে থাকত index `n - k = 6 - 2 = 4`-এ। **target = 4**। Lomuto partition-এ pivot হিসেবে নিচ্ছি ডানদিকের উপাদান।
+
+```
+শুরু:  [3, 2, 1, 5, 6, 4]     target index = 4
+                       ^
+                     pivot = 4
+
+partition-এর নিয়ম: pivot-এর চেয়ে ছোট-সমান যা পাই,
+                    সব বাঁ পাশে জমিয়ে রাখি, শেষে pivot মাঝে বসে
+```
+
+| রাউন্ড | এলাকা left..right | pivot | partition-এর পরে array | pivot-এর চূড়ান্ত index | সিদ্ধান্ত |
+|--------|-------------------|-------|------------------------|--------------------------|----------|
+| 1 | 0..5 | 4 | [3, 2, 1, 4, 6, 5] | 3 | 3 < 4, উত্তর ডান ভাগে; left = 4 |
+| 2 | 4..5 | 5 | [3, 2, 1, 4, 5, 6] | 4 | 4 == target, উত্তর 5 |
+
+রাউন্ড ১-টা আস্তে দেখো। pivot = 4। জাবানি স্ক্যানে 3, 2, 1 বাঁয়ে জমল (তারা &lt;= 4), 5 আর 6 বাদ গেল। শেষে pivot-কে জমানো অংশের পরে বসালাম: `[3, 2, 1, 4, 6, 5]`, pivot বসল index 3-এ। এই মুহূর্তে একটা জিনিস **চিরকালের জন্য** নিশ্চিত: sorted array-তে 4 থাকবে index 3-এই। target 4 তার ডানে, তাই `[6, 5]` অংশেই খোঁজ চলবে; বাঁয়ের চারটা উপাদানকে আর কখনো ছুঁই না।
+
+রাউন্ড ২: এলাকা 4..5, pivot = 5। 6 বড়, বাঁয়ে জমল না; pivot বসল index 4-এ। target-এর সাথে মিল, উত্তর `arr[4] = 5`। সত্যিই তো, দ্বিতীয় বৃহত্তম 5।
+
+খেয়াল করো, পুরো array কখনো sort হয়নি। শুধু দুটো partition। অথচ উত্তর নিশ্চিত, কারণ pivot প্রতিবার তার চূড়ান্ত ঘরে বসে যাচ্ছে।
+
+## কোড
+
+একটা পুরো runnable ফাইল: ছোট MinHeap, তারপর তিনটাই পথ, নিচে console.log demo:
+
+```js
+// ছোট min-heap; comparator চাইলে দেওয়া যায়
+class MinHeap {
+  constructor(cmp = (a, b) => a - b) { this.a = []; this.cmp = cmp; }
+  size() { return this.a.length; }
+  peek() { return this.a[0]; }
+  push(x) {
+    this.a.push(x);
+    let i = this.a.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (this.cmp(this.a[i], this.a[p]) < 0) {
+        [this.a[i], this.a[p]] = [this.a[p], this.a[i]];
+        i = p;
+      } else break;
+    }
+  }
+  pop() {
+    const top = this.a[0];
+    const last = this.a.pop();
+    if (this.a.length > 0) {
+      this.a[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1;
+        let m = i;
+        if (l < this.a.length && this.cmp(this.a[l], this.a[m]) < 0) m = l;
+        if (r < this.a.length && this.cmp(this.a[r], this.a[m]) < 0) m = r;
+        if (m === i) break;
+        [this.a[i], this.a[m]] = [this.a[m], this.a[i]];
+        i = m;
+      }
+    }
+    return top;
+  }
+}
+
+// পথ ১: sort করে index
+function sortApproach(nums, k) {
+  const arr = [...nums].sort((a, b) => a - b);
+  return arr[arr.length - k];
+}
+
+// পথ ২: k-আকারের min-heap
+function heapApproach(nums, k) {
+  const h = new MinHeap();
+  for (const x of nums) {
+    h.push(x);
+    if (h.size() > k) h.pop(); // ছোটটা বের করে দাও, বড় k-জন টিকে থাক
+  }
+  return h.peek();
+}
+
+// পথ ৩: QuickSelect (iterative)
+function quickSelect(nums, k) {
+  const arr = [...nums];             // মূল array বাঁচাতে copy
+  const target = arr.length - k;     // sorted হলে k-তম বড় এখানে থাকত
+  let left = 0, right = arr.length - 1;
+
+  while (left <= right) {
+    // প্রডাকশনে random pivot নাও: নিচের দুই লাইন uncomment করো
+    // const r = left + Math.floor(Math.random() * (right - left + 1));
+    // [arr[r], arr[right]] = [arr[right], arr[r]];
+    const p = partition(arr, left, right);
+    if (p === target) return arr[p];
+    else if (p < target) left = p + 1;  // উত্তর ডান ভাগে
+    else right = p - 1;                 // উত্তর বাঁ ভাগে
+  }
+}
+
+// Lomuto partition: pivot = ডানদিকের উপাদান
+function partition(arr, left, right) {
+  const pivot = arr[right];
+  let i = left;                        // ছোট-সমানদের সীমানা
+  for (let j = left; j < right; j++) {
+    if (arr[j] <= pivot) {
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      i++;
+    }
+  }
+  [arr[i], arr[right]] = [arr[right], arr[i]]; // pivot তার চূড়ান্ত ঘরে
+  return i;
+}
+
+// demo: তিন পথেই একই উত্তর
+const nums = [3, 2, 1, 5, 6, 4];
+console.log(sortApproach(nums, 2)); // 5
+console.log(heapApproach(nums, 2)); // 5
+console.log(quickSelect(nums, 2));  // 5
+
+const nums2 = [3, 2, 3, 1, 2, 4, 5, 5, 6];
+console.log(sortApproach(nums2, 4)); // 4
+console.log(heapApproach(nums2, 4)); // 4
+console.log(quickSelect(nums2, 4));  // 4
+```
+
+## ভ্যারিয়েন্ট
+
+**ভ্যারিয়েন্ট ১: k closest points to origin (LC 973)।** কথা বদলালেও খেলা সেই: "সবচেয়ে কাছের k-টা" মানে দূরত্বের ভাষায় k-তম ছোটদের দল। এবার k-আকারের **max-heap** রাখি (মাথায় থাকবে সবচেয়ে দূরেরটা), নতুন পয়েন্ট এলে সেটাকেই ফেলে দিই। দূরত্বের বর্গই যথেষ্ট, sqrt টানার দরকার নেই:
+
+```js
+function kClosest(points, k) {
+  // max-heap on distance: ওপরের MinHeap-এ comparator উল্টে দিলেই
+  const h = new MinHeap((p, q) => q[0] - p[0]); // [দূরত্ব, x, y]
+  for (const [x, y] of points) {
+    h.push([x * x + y * y, x, y]);
+    if (h.size() > k) h.pop(); // সবচেয়ে দূরেরটা বাদ
+  }
+  return h.a.map(([, x, y]) => [x, y]);
+}
+
+console.log(kClosest([[1, 3], [-2, 2], [5, 8], [0, 1]], 2));
+// [[0, 1], [-2, 2]] (ক্রম যেকোনো হতে পারে)
+```
+
+**ভ্যারিয়েন্ট ২: top k frequent (LC 347)।** আগে frequency গোনো, তারপর k-আকারের min-heap count-এর ওপর। frequency map-এর ধরনটা [Hash Patterns](../hash-tables/hash-patterns.mdx)-এ দেখেছো:
+
+```js
+function topKFrequent(nums, k) {
+  const freq = new Map();
+  for (const x of nums) freq.set(x, (freq.get(x) || 0) + 1);
+
+  const h = new MinHeap((p, q) => p[0] - q[0]); // [count, সংখ্যা]
+  for (const [num, count] of freq) {
+    h.push([count, num]);
+    if (h.size() > k) h.pop();
+  }
+  return h.a.map(([, num]) => num);
+}
+
+console.log(topKFrequent([1, 1, 1, 2, 2, 3], 2)); // [2, 1] বা [1, 2]
+```
+
+আরেকটা ছোট ভ্যারিয়েন্ট মাথায় রাখো: দুটো sorted array মিলিয়ে k-তম ছোট। সেটা partition-এর আইডিয়া binary search-এর ওপর চাপায়, কঠিন তবে মজার। ইচ্ছা হলে [Binary Search](../searching/binary-search.mdx) পড়ে চেষ্টা করো।
+
+## কোড ব্রেকডাউন
+
+মূল `quickSelect` আর `partition`, কোন লাইন কেন আছে:
+
+1. `const arr = [...nums]` : partition in-place কাজ করে, মানে ইনপুট array-টাকে এদিক-সেদিক করে ফেলবে। caller-এর ডেটা বাঁচাতে copy।
+2. `const target = arr.length - k` : sorted ascending হলে k-তম বড়টা এই index-এই থাকত। পুরো অ্যালগরিদম এই একটা index খুঁজছে, sort নয়।
+3. `let left = 0, right = arr.length - 1` : খোঁজার এলাকা। প্রতি রাউন্ডে এটা সঙ্কুচিত হবে।
+4. `while (left <= right)` : এলাকা শূন্য না হওয়া পর্যন্ত।
+5. মন্তব্য করা দুই লাইন: random pivot। `[left, right]`-এর যেকোনো একটা উপাদান তুলে ডান প্রান্তে swap করে নিলে partition একই থাকে, কিন্তু ভাগ্য বসায় কোনটা pivot। নিচে complexity-তে এর দাম দেখবে।
+6. `const p = partition(arr, left, right)` : pivot তার চূড়ান্ত ঘরে বসল, সেই index ফিরল।
+7. `if (p === target) return arr[p]` : পেয়ে গেছি।
+8. `else if (p < target) left = p + 1` : pivot বাঁয়ে পড়েছে, মানে বাঁ ভাগে সবাই target-এর আগে বসে যাবে; ডানে খোঁজো।
+9. `else right = p - 1` : উল্টোটা।
+10. `partition`-এর ভেতরে `i` হলো সীমানা: `left..i-1` পর্যন্ত সব &lt;= pivot। `j` স্ক্যান করতে করতে ছোট-সমান পেলেই সীমানার পরের ঘরে swap করে সীমানা সরায়। শেষে pivot নিজে `i`-তে বসে।
+
+## Complexity
+
+**পথ ১, sort: O(n log n)।** JS-এর sort comparison-based, নিচের সীমানা n log n-এর নিচে নামে না। space O(n) (copy-সহ)।
+
+**পথ ২, heap: O(n log k)।** হিসাবটা সরল: n-টা উপাদানের প্রত্যেকটা heap-এ একবার ঢোকে, একবার বের হতে পারে। heap-এ থাকে সর্বোচ্চ k-টা, তাই প্রতি push/pop চলে O(log k)-এ (উচ্চতা log k, bubble সেই পথে)। মোট n * 2 * log k = O(n log k)। space O(k)। k ছোট হলে এটা প্রায় O(n); k = n হলে O(n log n), মানে sort-এর সমানেই।
+
+**পথ ৩, QuickSelect গড়ে O(n)।** ধরো প্রতি রাউন্ডে pivot এলাকাটাকে মাঝবরাবর ভাগ করে। প্রথম partition n-টা দেখে, পরেরটা n/2, তারপর n/4:
+
+```
+n + n/2 + n/4 + ... = n * (1 + 1/2 + 1/4 + ...) = n * 2 = O(n)
+```
+
+geometric series-এর যোগফল ২-এর বেশি হয় না, এটাই পুরো রহস্য। space O(1) (iterative, copy বাদে)।
+
+**কিন্তু worst case O(n^2), আর এটা লুকানোর কিছু নেই।** ধরো input-টা আগে থেকেই sorted: `[1, 2, 3, 4, 5]`। ডানদিকের উপাদান pivot নিলে প্রতিবার pivot সবচেয়ে বড় হয়, এলাকা মাত্র ১ করে কমে: n + (n-1) + (n-2) + ... = n(n+1)/2 = O(n^2)। মিলিয়ন উপাদানে এটা মৃত্যু। এখানেই **random pivot** আসে: প্রতিবার ভাগ্যক্রমে সবচেয়ে খারাপ উপাদানটাই pivot হওয়ার probability গুণতে গেলে নগণ্য হয়ে যায়। গাণিতিক expectation-এ runtime O(n)-ই থাকে, input যেমনই হোক। এজন্যই কোডে সেই দুই লাইন রেখেছি। এমন randomized কৌশল নিয়ে আরও আছে [Randomised Algorithms](./randomised-algorithms.mdx)-এ।
+
+## সাধারণ ভুল আর edge case
+
+**১. JS-এর default sort-এ বিশ্বাস রাখা।**
+`[10, 9, 80].sort()` দেয় `[10, 80, 9]`, কারণ comparator না দিলে JS সংখ্যাগুলোকে string বানিয়ে তুলনা করে। সংখ্যা sort মানে সবসময় `.sort((a, b) => a - b)`। এই ভুলটা interview-তে চুপচাপ খায়।
+
+**২. k-তম বড় আর ছোট গুলিয়ে ফেলা।**
+"২য় বৃহত্তম" মানে sorted-এ index `n - 2`, `k - 1 = 1` নয়। মাথা গরমে `arr[k - 1]` লিখে ফেললে পেয়ে যাবে k-তম **ছোট**। মনে রাখার সহজ উপায়: বড় গুনলে শেষ থেকে গোনো, তাই `n - k`।
+
+**৩. মূল array-টাকে নষ্ট করে ফেলা।**
+partition in-place। ইনপুট array পরে লাগলে বিপদ। তাই copy `[...nums]`। Interview-তে জিজ্ঞেস করো: "input modify করা যাবে?" উত্তর অনুযায়ী copy বাদ দিলে space O(1)।
+
+**৪. sorted input-এ last-element pivot।**
+ওপরে দেখলে, এটা worst case O(n^2)-এর দরজা খুলে দেয়। প্রডাকশন কোডে random pivot না নিলে adversarial input-এ (বা দুর্ভাগ্যক্রমে sorted data-তে) পড়ে যাবে। demo-তে deterministic রাখলাম যাতে dry run-এর সাথে মেলে, কিন্তু বাস্তবে ওই দুই লাইন uncomment করো।
+
+**৫. heap-এর দিক উল্টে দেওয়া, আর k-এর guard।**
+k-তম **বড়** চাইলে লাগবে min-heap (ছোটগুলো বেরিয়ে যায়, বড়রা টিকে থাকে)। max-heap নিলে পেয়ে যাবে k-তম ছোট। আর edge case: `k <= 0` বা `k > n` হলে কী হবে, আগেই ঠিক করো; নাহলে `peek()` ফেরত দেবে `undefined`, আর সেটা চুপচাপ বসে থাকবে। ডুপ্লিকেট থাকা সমস্যা নয়, `[3, 3]`-এর ২য় বৃহত্তম 3-ই।
+
+## Animation Spec
+
+> **Animation Spec: QuickSelect Shrink**
+>
+> - **দৃশ্য:** bar array; pivot হলুদ; partition-এর পর ছোট-সমান নীলে বাঁয়ে, বড়গুলো সবুজে ডানে; ফেলে-দেওয়া ভাগ ধুসর হয়ে ম্লান।
+> - **ইনপুট:** array (random / sorted / custom), k-এর slider; পাশে heap-পথ toggle।
+> - **ধাপ:** প্রতি রাউন্ডে pivot তার চূড়ান্ত ঘরে লাল ফ্রেমে বসে; target index-এর দাগ নিচে দেখা; এলাকা কোন দিকে সঙ্কুচিত হলো সেটা তীর দিয়ে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "random pivot" on/off সুইচ, sorted input-এ off করলে O(n^2) কেমন দেখায় তা অনুভব করার জন্য।
+> - **লক্ষ্য:** পুরো sort নয়, এক ভাগে খোঁজ; কাজ কমানোই গতি।
+
+## অনুশীলন
+
+- **সহজ ১:** Kth Largest Element in an Array (LeetCode 215)। হিন্ট: আগে sort পথে solve করো (দুই লাইন), তারপর একই টেস্টে quickSelect বসাও। দুটোর runtime তুলনা করো।
+- **সহজ ২:** Kth Largest Element in a Stream (LeetCode 703)। হিন্ট: k-আকারের min-heap-ই পুরো উত্তর; `add`-এ নতুনটা ঢোকাও, size বাড়লে শীর্ষ ফেলো। stream-এ এটাই জেতে, quickSelect নয়, কারণ বলো তো কেন?
+- **মাঝারি ১:** K Closest Points to Origin (LeetCode 973)। হিন্ট: দূরত্বের বর্গ নেও, sqrt নয়; heap পথেও quickSelect পথেও (দূরত্বের array-তে partition) দুটোই চলে।
+- **মাঝারি ২:** Top K Frequent Elements (LeetCode 347)। হিন্ট: আগে frequency map, তারপর k-আকারের min-heap count-এর ওপর। Map-এর entry-গুলো iterate করতে `for (const [num, count] of freq)`।
+- **কঠিন:** Find Median from Data Stream (LeetCode 295)। হিন্ট: একটা heap দিয়ে হবে না; লাগবে দুটো, মাঝখানটা সবসময় দুই শীর্ষে। এই সমস্যাটাই পরের পাতার বিষয়, দেখো [Two Heaps](./two-heaps.mdx)।
+
+## সারসংক্ষেপ
+
+- তিন পথ: sort O(n log n), heap O(n log k), QuickSelect গড়ে O(n)।
+- heap পথের কৌশল: k-তম বড় চাইলে min-heap, দিকটা উল্টিও না।
+- QuickSelect = partition + এক ভাগে খোঁজ; প্রতি রাউন্ডে এলাকা গড়ে অর্ধেক।
+- worst case O(n^2) সত্যি, random pivot-ই expectation বাঁচায়।
+- stream-এ heap, এককালীন array-তে QuickSelect, তাড়াতাড়ি দরকার হলে sort; এই তিনটা বেছে নিতে শেখাটাই আসল।

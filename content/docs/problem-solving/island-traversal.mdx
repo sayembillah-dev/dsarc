@@ -1,0 +1,277 @@
+---
+title: "Island Traversal: grid-এ flood fill দিয়ে দ্বীপ গোনা"
+description: "2D grid-কেই implicit graph ভেবে DFS/BFS flood fill; Number of Islands থেকে area, perimeter, surrounded regions; পুরো dry run, দুই implementation, আর পাঁচটা ভুল।"
+---
+
+## কী শিখব
+
+- কেন grid আসলে লুকানো graph, আর চার প্রতিবেশীই edge
+- flood fill কী: একটা '1' থেকে পুরো island-টা এক ঝটকায় visited করা
+- হাতে হাতে পুরো dry run: কোন ঘরে count বাড়লো, কোন ঘরগুলো ডুবলো
+- দুই রকম implementation: in-place DFS (ডুবিয়ে দেওয়া) আর queue দিয়ে BFS
+- তিনটা ভ্যারিয়েন্ট: আয়তন, perimeter, boundary-ঘেঁষা island
+- Complexity O(R * C) কেন, আর input mutate করার দাম-সুবিধা
+
+## ধারণা
+
+ভাবো তো, গুগল ম্যাপে স্যাটেলাইট ভিউ খুলেছো। সবুজ দাগ মানে জমি, নীল মানে পানি। কেউ জিজ্ঞেস করলো: এই ছবিতে কয়টা দ্বীপ আছে? চোখে গুনতে গেলে মিনিটখানেক যাবে। কম্পিউটারের কাছে ছবিটা একটা 2D grid: '1' মানে জমি, '0' মানে পানি। উপর-নিচ-বাঁ-ডানে যুক্ত '1'-গুলো মিলে একটা দ্বীপ। প্রশ্ন হলো, মোট কয়টা?
+
+একটু থামো। grid-টাকে অন্য চোখে দেখো। প্রতিটা ঘর একটা **node**, প্রতিটা ঘরের সাথে চারদিকের প্রতিবেশীর একটা করে **edge**। এটা তাহলে আসলে একটা graph, শুধু adjacency list আলাদা করে লেখা নেই; ঘরের সূচক থেকেই neighbor বেরিয়ে আসে। একে বলে **implicit graph**। আর "কয়টা দ্বীপ" প্রশ্নটা তখন আর নতুন কিছু নয়: graph-এ কয়টা [connected component](../graphs/connected-components.mdx), সেটাই গোনা। grid নিয়ে বেসিক কাজ [2D Arrays](../arrays-strings/2d-arrays.mdx)-এ দেখেছোই।
+
+কৌশলটা এক লাইনে: যেকোনো না-ঘোরা '1' পেলেই সেখান থেকে [DFS](../graphs/dfs.mdx) বা [BFS](../graphs/bfs.mdx) চালিয়ে পুরো island-টা visited করে ফেলো। পুরো জমিনভাগটাকে এক ঝটকায় "ডুবিয়ে" দাও, এটাই visited-এর দাগ। এরপর scan চলতে থাকবে; ডুবে যাওয়া ঘর আর নতুন island ধরবে না। এই ছড়িয়ে পড়া পদ্ধতির নাম **flood fill**: রং ঢালার মতো, এক ফোঁটা পড়লে পুরো সংযুক্ত অংশ ভিজে যায়।
+
+লাগবে তিনটা জিনিস:
+
+1. grid-এর প্রতি ঘরে যাওয়ার দুইটা loop (এটাই scan)
+2. একটা flood রুটিন: এক ঘর থেকে চারদিকে ছড়ানো, recursion দিয়ে বা queue দিয়ে
+3. visited-এর হিসাব: হয় grid-কেই বদলে দাও ('1' থেকে '0'), নয়তো আলাদা visited set রাখো
+
+## ধাপে ধাপে ড্রাই রান
+
+LeetCode 200-এরই উদাহরণ নিই, 4 x 5 grid:
+
+```
+সূচক:   0 1 2 3 4
+      +-----------
+   0  | 1 1 0 0 0
+   1  | 1 1 0 0 0
+   2  | 0 0 1 0 0
+   3  | 0 0 0 1 1
+```
+
+scan চলবে row-major ক্রমে: (0,0) থেকে শুরু, ডানে ডানে, সারি শেষে নিচের সারিতে। flood-এর দিক-ক্রম ধরি: নিচ, উপর, ডান, বাঁ।
+
+| ধাপ | scan-এর cursor | কী দেখা গেল | island count | flood-এ ডুবানো হলো |
+|-----|----------------|-------------|--------------|---------------------|
+| শুরু | - | পুরো grid অক্ষত | 0 | - |
+| 1 | (0,0) | '1', নতুন island | 1 | (0,0) → (1,0) → (1,1) → (0,1) |
+| 2 | (0,1) থেকে (2,1) | সব '0' (কোনোটা মূলই পানি, কোনোটা এইমাত্র ডুবানো) | 1 | - |
+| 3 | (2,2) | '1', নতুন island | 2 | (2,2), একঘরের island |
+| 4 | (2,3) থেকে (3,2) | সব '0' | 2 | - |
+| 5 | (3,3) | '1', নতুন island | 3 | (3,3) → (3,4) |
+| 6 | (3,4) | আগেই ডুবে গেছে | 3 | - |
+
+উত্তর: **3 টা island**।
+
+খেয়াল করো ধাপ ১-এ। scan মাত্র প্রথম ঘরেই থামল, কিন্তু flood চারটা ঘর ঘুরে এলো। এরপর ধাপ ২-তে cursor সেই (0,1), (1,0), (1,1) ঘরগুলোতেই গেল, কিন্তু সেগুলো ততক্ষণে '0', তাই কিছুই ঘটল না। flood-এর দাগপড়া ঘর দ্বিতীয়বার island গোনায় ঢুকতে পারে না; পুরো অ্যালগরিদমের প্রাণ এই এক লাইন।
+
+ধাপ ৩-এর island-টা দেখো, একটাই ঘর, তবু পুরোপুরি island। আর ধাপ ৫-এ flood (3,3) থেকে ডানদিকে (3,4)-এ গেল, কিন্তু (2,3)-এ যায়নি, কারণ সেটা '0'। মনে রেখো, তির্যকে যুক্ত গোনা হয় না, খালি উপর-নিচ-বাঁ-ডান।
+
+## কোড
+
+একটাই ফাইল, DFS আর BFS দুইটা উপায়, নিচে demo:
+
+```js
+// grid ছাপার সাহায্যকারী
+function printGrid(grid) {
+  for (const row of grid) console.log(row.join(" "));
+}
+
+// input বাঁচাতে কপি
+function copyGrid(grid) {
+  return grid.map((row) => [...row]);
+}
+
+// --- উপায় ১: in-place DFS, visited ঘর ডুবিয়ে '0' বানাই ---
+function numIslandsDFS(grid) {
+  if (grid.length === 0) return 0;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  let count = 0;
+
+  function sink(r, c) {
+    // বাইরে গেলে বা জমি না হলে থাম (ক্রমটা গুরুত্বপূর্ণ)
+    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== "1") return;
+    grid[r][c] = "0";   // ডুবিয়ে দিলাম = visited-এর দাগ
+    sink(r + 1, c);     // নিচ
+    sink(r - 1, c);     // উপর
+    sink(r, c + 1);     // ডান
+    sink(r, c - 1);     // বাঁ
+  }
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] === "1") { // না-ডুবা জমি মানেই নতুন island
+        count++;
+        sink(r, c);             // পুরোটা ডুবাও
+      }
+    }
+  }
+  return count;
+}
+
+// --- উপায় ২: BFS, queue দিয়ে স্তরে স্তরে flood ---
+function numIslandsBFS(grid) {
+  if (grid.length === 0) return 0;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  let count = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] !== "1") continue;
+      count++;
+      const queue = [[r, c]];
+      let head = 0;
+      grid[r][c] = "0";         // queue-তে ঢোকানোর মুহূর্তেই দাগ
+      while (head < queue.length) {
+        const [cr, cc] = queue[head++];
+        for (const [dr, dc] of dirs) {
+          const nr = cr + dr;
+          const nc = cc + dc;
+          if (nr < 0 || nc < 0 || nr >= rows || nc >= cols) continue;
+          if (grid[nr][nc] !== "1") continue;
+          grid[nr][nc] = "0";   // ঢোকানোর সাথে সাথেই ডুবাও
+          queue.push([nr, nc]);
+        }
+      }
+    }
+  }
+  return count;
+}
+
+// --- demo ---
+const grid1 = [
+  ["1", "1", "0", "0", "0"],
+  ["1", "1", "0", "0", "0"],
+  ["0", "0", "1", "0", "0"],
+  ["0", "0", "0", "1", "1"],
+];
+
+console.log("শুরুর grid:");
+printGrid(grid1);
+console.log("DFS দিয়ে island:", numIslandsDFS(copyGrid(grid1))); // 3
+console.log("BFS দিয়ে island:", numIslandsBFS(copyGrid(grid1))); // 3
+
+// in-place চালালে মূল grid-টাই বদলে যায়
+numIslandsDFS(grid1);
+console.log("flood-এর পরের grid:");
+printGrid(grid1);
+
+console.log("সব পানি:", numIslandsDFS([["0", "0"], ["0", "0"]])); // 0
+console.log("সব জমি:", numIslandsBFS([["1", "1"], ["1", "1"]])); // 1
+```
+
+## ভ্যারিয়েন্ট
+
+একই flood fill ঘুরিয়ে কতকগুলো সমস্যা মিলে যায়, দেখো।
+
+### ১. সবচেয়ে বড় island-এর আয়তন (LeetCode 695)
+
+একই flood, শুধু ডুবানোর সময় ঘর গুনতে হবে। `sink` যত ঘর ডুবায়, রিটার্ন করুক তত:
+
+```js
+function maxAreaOfIsland(grid) {
+  const rows = grid.length, cols = grid[0].length;
+  let best = 0;
+
+  function sink(r, c) {
+    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== 1) return 0;
+    grid[r][c] = 0;
+    return 1 + sink(r + 1, c) + sink(r - 1, c) + sink(r, c + 1) + sink(r, c - 1);
+  }
+
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      if (grid[r][c] === 1) best = Math.max(best, sink(r, c));
+  return best;
+}
+```
+
+এইবার গোনা হয় island-এর সংখ্যা না, প্রতি flood-এর আকার। recursion-এর রিটার্ন মান জোগ হয়ে ঠিক island-টার আয়তন দেয়।
+
+### ২. island-এর perimeter (LeetCode 463)
+
+ধরো grid-এ ঠিক একটাই island আছে, কিনার দৈর্ঘ্য কত? চমৎকার একটা লক্ষ্য: প্রতিটা জমি-ঘরে 4 ধরো, তারপর ভাগ করা প্রতিটা দেয়ালের জন্য 2 করে বাদ দাও (দেয়ালটা দুই পক্ষেরই একটা করে পাশ খায়)। শুধু উপর আর বাম দিকে তাকালে প্রতিটা দেয়াল ঠিক একবারই ধরা পড়ে:
+
+```js
+function islandPerimeter(grid) {
+  let perimeter = 0;
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[0].length; c++) {
+      if (grid[r][c] !== 1) continue;
+      perimeter += 4;                                    // চার পাশ ধরে শুরু
+      if (r > 0 && grid[r - 1][c] === 1) perimeter -= 2; // উপরে জমি: দেয়াল দুই পক্ষের
+      if (c > 0 && grid[r][c - 1] === 1) perimeter -= 2; // বামে জমি: একই কথা
+    }
+  }
+  return perimeter;
+}
+```
+
+নিচ আর ডান চেক করা হয় না; সেই দেয়ালগুলো ঐ পাশের ঘরের পালায় উপর-বাম চেকেই ধরা পড়ে যায়। এভাবেই দ্বিগুণ গোনা এড়ানো।
+
+### ৩. boundary-ঘেঁষা island আর surrounded regions
+
+প্রশ্নটা উল্টে দিলে নতুন রকম সমস্যা: যে island-গুলো grid-এর কিনার ছুঁয়েছে তারা "বন্দী" নয়, বাকিরা বন্দী (LeetCode 130 Surrounded Regions, LeetCode 1254 Number of Closed Islands)। কৌশল: আগে **চার কিনার বরাবর সব জমি-ঘর থেকে flood** চালিয়ে ওগুলোকে মুক্ত বলে দাগ দাও। তারপর ভেতরে যে জমি-ঘরগুলো টিকে রইল, তারাই বন্দী island। মানে একই flood fill, শুধু শুরুর জায়গাটা কিনার থেকে। বাকিটা তোমার অনুশীলন।
+
+## কোড ব্রেকডাউন
+
+মূল `numIslandsDFS` ফাংশনটা আবার দেখি, কোন লাইন কেন আছে:
+
+1. `if (grid.length === 0) return 0;` : খালি grid-এ নিচের `grid[0]` লিখতেই crash। প্রথম লাইনেই প্রতিরক্ষা।
+2. `const rows = grid.length; const cols = grid[0].length;` : মাপ একবারই তুলে রাখা, প্রতি বাউন্ডারি চেকে লাগবে।
+3. `let count = 0;` : এখন পর্যন্ত যত island শুরু হয়েছে, তার রেজিস্ট্রি।
+4. `function sink(r, c) {` : flood-এর ইঞ্জিন। এক ঘর ধরে তার পুরো island ডুবিয়ে দেয়।
+5. `if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== "1") return;` : থামার দুই রকম শর্ত এক লাইনে: grid-এর বাইরে চলে গেলে, অথবা ঘরটা জমি না হলে (পানি বা আগেই ডুবানো)। ক্রমটা জরুরি: আগে সূচক valid কিনা, তারপর ঘরে কী আছে।
+6. `grid[r][c] = "0";` : visited-এর দাগ। আলাদা set না রেখে grid-কেই বদলে দিচ্ছি, তাই বাড়তি মেমরি প্রায় শূন্য।
+7. চারটা `sink(...)` call : চার প্রতিবেশীতে ছড়ানো। recursion-ই এখানে stack-এর কাজ করছে, [DFS](../graphs/dfs.mdx)-এরই মূল রূপ।
+8. বাইরের দুই `for` loop : এটাই scan, প্রতিটা ঘরে cursor যায় ঠিক একবার।
+9. `if (grid[r][c] === "1") { count++; sink(r, c); }` : না-ডুবা জমি মানেই নতুন island-এর প্রথম ঘর। পুরানো island-এর ঘর হলে flood সেটা আগেই ডুবিয়ে ফেলত। count বাড়াও, পুরোটা ডুবাও, scan চালিয়ে যাও।
+10. `return count;` : scan শেষে রেজিস্ট্রির সংখ্যাটাই উত্তর।
+
+## Complexity
+
+**Time: O(R * C)।** হিসাবটা সোজা:
+
+- বাইরের দুই loop প্রতিটা ঘরে যায় একবার: R * C বার চেক।
+- flood মিলে প্রতিটা জমি-ঘরে ঢোকে সর্বোচ্চ একবার, কারণ ঢুকেই সেটা '0' হয়ে যায়। প্রতি ঢোকায় চারটা neighbor চেক: মোট 4 * (জমি-ঘরের সংখ্যা) ≤ 4 * R * C।
+- scan আর flood মিলে ধরো 5 * R * C কাজ; constant গুনে O(R * C)।
+
+**Space: O(R * C), সবচেয়ে খারাপ ক্ষেত্রে।** in-place DFS-এ বাড়তি মেমরি লাগে শুধু recursion stack-এর জন্য। grid পুরোটা জমি হলে আর flood সাপের মতো এক লাইনে এগোলে stack-এ একবারে R * C-টা frame জমতে পারে। BFS-এর queue-তেও খারাপ মুহূর্তে প্রায় সব ঘর একসাথে অপেক্ষা করতে পারে। আলাদা visited set নিলে সেটারও O(R * C) জায়গা লাগত; in-place পদ্ধতির জয় এখানেই।
+
+তবে একটা সতর্কতা: বহু লক্ষ ঘরের grid-এ recursion stack overflow করতে পারে। সেক্ষেত্রে BFS নিরাপদ পছন্দ।
+
+## সাধারণ ভুল আর edge case
+
+**১. বাউন্ডারি চেকের ক্রম উল্টে দেওয়া।**
+`grid[r][c] !== "1"` চেকটা যদি `r >= rows`-এর আগে লেখো, grid-এর বাইরের সূচকে ঢুকে যাবে। JavaScript চুপচাপ undefined দেয় বলে ভুলটা চোখে পড়ে না, ফল ভুল আসে; অনেক ভাষায় সরাসরি crash। নিয়ম একটাই: আগে সূচক valid কিনা, তারপর ঘরে কী আছে।
+
+**২. তির্যককেও প্রতিবেশী ধরে ফেলা।**
+প্রশ্নে স্পষ্ট না থাকলেও ডিফল্ট চার দিক। আট দিক ধরলে উত্তর পুরোপুরি বদলে যায়: উপরের উদাহরণে (2,2) আর (3,3) তির্যকে যুক্ত, তখন count 3-এর জায়গায় 2 হয়ে যেত। প্রশ্ন পড়ে দিক-সংখ্যা ঠিক করো।
+
+**৩. input mutate করা আলোচনা না করে।**
+in-place ডুবানো মানে caller-এর grid চিরকালের জন্য বদলে গেল। ইন্টারভিউতে জিজ্ঞেস করো: input বদলাতে পারি? না পারলে হয় কপি নাও (O(R * C) জায়গা), নয়তো visited set রাখো। production কোডে এই ভুলটা অন্য ফাংশনকে নিঃশব্দে ভেঙে দেয়।
+
+**৪. খালি grid বা সব পানি।**
+`grid = []` হলে `grid[0].length` লিখতেই crash, তাই শুরুতেই guard। সব-পানি grid-এ সঠিক উত্তর 0, সব-জমিতে 1। দুটোই test করে দেখো, একঘরের gridও।
+
+**৫. BFS-এ দাগ দেওয়া হয় dequeue-এর সময়।**
+[BFS](../graphs/bfs.mdx)-এর সেই বিখ্যাত ভুলটা grid-এও ফিরে আসে। ঘরটাকে queue-তে **ঢোকানোর মুহূর্তেই** '0' করো। বের করার সময় করলে একই ঘর চার প্রতিবেশীর কাছ থেকে চারবার queue-তে ঢুকবে; কাজ চারগুণ, খারাপ দিনে মেমরি বিস্ফোরণ।
+
+## Animation Spec
+
+> **Animation Spec: Island Flood Fill**
+>
+> - **দৃশ্য:** 2D grid; জমি সবুজ, পানি নীল; scan cursor হলুদ ঘরে; flood বেগুনি ঢেউয়ে ছড়ায়; প্রতিটা island শেষে তার নম্বর পায়।
+> - **ইনপুট:** grid preset (উপরের 4 x 5 টাসহ) বা ক্লিকে ঘর টগল করে নিজের grid; DFS/BFS পছন্দ।
+> - **ধাপ:** cursor ঘরে ঘরে; নতুন '1' পেলে count বাড়ে আর flood শুরু; ডুবে যাওয়া ঘর নীল হয়ে যায়; BFS হলে queue-এর অবস্থা পাশে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; flood-এর দিক-ক্রম বদলে দেখা (ঘোরার ক্রম বদলায়, উত্তর নয়)।
+> - **লক্ষ্য:** grid = implicit graph, flood fill = component গোনা; এক ছাঁচে নাকি LC 200, 695, 463, 130 সব মিলে যায়।
+
+## অনুশীলন
+
+- **সহজ ১:** Number of Islands (LeetCode 200) নিজে বানাও, আগে DFS দিয়ে, তারপর একই ফাইলে BFS দিয়ে। হিন্ট: কোড না দেখে লেখার চেষ্টা করো; আটকালে শুধু dry run-এর টেবিলটা আবার দেখো।
+- **সহজ ২:** Island Perimeter (LeetCode 463)। হিন্ট: প্রতি জমি-ঘরে 4 যোগ করো, ভাগ করা প্রতি দেয়ালের জন্য 2 বাদ; উপর-বাম চেক করলে প্রতি দেয়াল ঠিক একবার ধরা পড়ে।
+- **মাঝারি ১:** Max Area of Island (LeetCode 695)। হিন্ট: `sink`-কে সংখ্যা রিটার্ন করতে বলো; প্রতি flood-এর রিটার্নের সর্বোচ্চটা রাখো।
+- **মাঝারি ২:** Surrounded Regions (LeetCode 130)। হিন্ট: আগে চার কিনারের সব 'O' থেকে flood চালিয়ে ওগুলোকে অস্থায়ী চিহ্ন দাও (যেমন '#'); তারপর বাকি 'O' গুলো 'X' বানাও, '#' গুলো ফিরিয়ে 'O' করো।
+- **কঠিন:** Rotting Oranges (LeetCode 994)। প্রতি মিনিটে পচা কমলা চারপাশের টাটকাগুলো পচায়; সব পচতে কত মিনিট? হিন্ট: এটা island গোনা না, **multi-source BFS**: শুরুতেই সব পচা কমলা একসাথে queue-তে ঢুকাও, প্রতি রাউন্ড এক মিনিট। ভেতরের গল্প [BFS](../graphs/bfs.mdx) পাতায় আছে।
+
+## সারসংক্ষেপ
+
+- grid = implicit graph; চার প্রতিবেশী = চার edge; island = connected component।
+- flood fill: নতুন '1' পেলেই count বাড়াও, পুরো island ডুবিয়ে দাও, scan চালিয়ে যাও।
+- in-place DFS মেমরি বাঁচায়, BFS গভীর recursion-এর ঝুঁকি এড়ায়; দুটোই O(R * C)।
+- একই ছাঁচ ঘুরিয়ে দাড়ায়: আয়তন, perimeter, closed island, rotting oranges।
+- দুটো কথা ভুলো না: বাউন্ডারি চেক সবার আগে, আর BFS-এ ঢোকানোর মুহূর্তেই দাগ।

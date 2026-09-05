@@ -1,0 +1,251 @@
+---
+title: "Sliding Window: চলমান জানালা"
+description: "টানা subarray বা substring-এর হিসাব জানালা সরিয়ে O(n)-এ। fixed আর variable window, last-seen map, আর কেন প্রতিটা index সর্বোচ্চ দুইবার দেখা হয়।"
+---
+
+## কী শিখব
+
+- sliding window কী আর কখন লাগে: টানা (contiguous) subarray বা substring নিয়ে প্রশ্ন দেখলেই
+- fixed window আর variable window-এর পার্থক্য আর দুটোর template
+- right বাড়ায়, left শুধু window invalid হলে সরে: এই ছন্দটা কেন O(n)
+- last-seen index দিয়ে duplicate এড়ানো (longest substring without repeating)
+- কোথায় sliding window থামে আর deque দরকার হয় (sliding window maximum)
+
+## ধারণা
+
+ভাবো তো, ট্রেনে বসে জানালা দিয়ে বাইরের ধানক্ষেত দেখছো। ট্রেন এগোচ্ছে, জানালার ফ্রেমটা স্থির, কিন্তু ফ্রেমের ভেতরের দৃশ্যটা বদলাচ্ছে: পেছনের অংশ আড়াল হচ্ছে, সামনে নতুন অংশ ঢুকছে। পুরো রাস্তাটা কি প্রতি মুহূর্তে নতুন করে দেখতে হচ্ছে? না। শুধু যা বেরিয়ে গেল তা ভুলে যাও, যা ঢুকল তা যোগ করো।
+
+Array-এর উপর **sliding window** ঠিক এই কাজটাই করে। একটা window, মানে দুটো সীমানা `left` আর `right`, array-এর উপর দিয়ে সরে যায়। প্রতিবার সরানোতে পুরো window-টা আবার হিসাব না করে শুধু **পরিবর্তনটা** হিসাব করো: বাঁ দিকে যা বেরোল বিয়োগ, ডান দিকে যা ঢুকল যোগ।
+
+Window দুই রকমের হয়:
+
+- **Fixed window:** আকার আগে থেকেই ঠিক, যেমন "k-আকারের subarray-এর সর্বোচ্চ যোগফল"। জানালাটা ট্রেনের জানালার মতোই স্থির আকারের, শুধু সরে।
+- **Variable window:** আকার ঠিক নেই, একটা শর্ত আছে, যেমন "এমন সবচেয়ে লম্বা substring যেখানে কোনো অক্ষর repeat হয়নি"। এখানে `right` সবসময় এগোয়, আর `left` শুধু তখনই সরে যখন window-টা invalid হয়ে যায়।
+
+দ্বিতীয়টার ছন্দটা মাথায় গেঁথে রাখো: **right expands, left contracts only when invalid।** এই এক লাইনের ছন্দই পরের সব কোডের প্রাণ। [Two Pointer](./two-pointer.mdx) প্যাটার্নের সাথে মিল আছে, কিন্তু সেখানে pointer-দুটো সাধারণত দুই প্রান্ত থেকে ভেতরে আসে; এখানে দুটোই একই দিকে এগোয়, মাঝখানের টানা অংশটাই window।
+
+## ধাপে ধাপে ড্রাই রান
+
+প্রশ্ন: `[2, 1, 5, 1, 3, 2]` array-এর ঠিক 3 আকারের subarray-গুলোর মধ্যে সর্বোচ্চ যোগফল কত?
+
+Naive উপায়ে প্রতিটা window-এর তিনটা উপাদান আবার আবার যোগ করতে হতো, 4টা window মানে 12টা যোগ। Sliding window-তে প্রথম window-টা পুরো যোগ করি (8), তারপর প্রতি সরানোতে একটা যোগ আর একটা বিয়োগ:
+
+```
+[ 2  1  5 ] 1  3  2     sum = 8
+ 2 [ 1  5  1 ] 3  2     sum = 7   (2 বেরোল, 1 ঢুকল)
+ 2  1 [ 5  1  3 ] 2     sum = 9   (2 বেরোল, 3 ঢুকল)
+ 2  1  5 [ 1  3  2 ]    sum = 6   (5 বেরোল, 2 ঢুকল)
+```
+
+| ধাপ | window | বের হলো | ঢুকল | sum | max |
+|-----|--------|---------|------|-----|-----|
+| শুরু | [2, 1, 5] | - | - | 8 | 8 |
+| 1 | [1, 5, 1] | 2 | 1 | 7 | 8 |
+| 2 | [5, 1, 3] | 2 | 3 | 9 | 9 |
+| 3 | [1, 3, 2] | 5 | 2 | 6 | 9 |
+
+উত্তর **9**, window `[5, 1, 3]`। লক্ষ্য করো, প্রতি ধাপে আমরা পুরো তিনটা সংখ্যা যোগ করিনি; শুধু বেরিয়ে যাওয়াটা বাদ দিয়েছি, নতুনটা যোগ করেছি। Window-এর আকার যত বড়ই হোক, প্রতি সরানোতে কাজ ঠিক দুটো।
+
+## কোড
+
+একটাই ফাইল, তিনটা ফাংশন: fixed window, variable window, আর শেষে একটা কঠিন teaser। নিচে ডেমো:
+
+```js
+// ১) Fixed window: k-আকারের সর্বোচ্চ যোগফল
+function maxSumFixedWindow(arr, k) {
+  if (k <= 0 || k > arr.length) return null;        // অসম্ভব window
+  let windowSum = 0;
+  for (let i = 0; i < k; i++) windowSum += arr[i];  // প্রথম window পুরো যোগ
+  let maxSum = windowSum;
+  for (let right = k; right < arr.length; right++) {
+    windowSum += arr[right] - arr[right - k];       // ডানে ঢুকল, বাঁয়ে বেরোল
+    if (windowSum > maxSum) maxSum = windowSum;
+  }
+  return maxSum;
+}
+
+// ২) Variable window: repeat-হীন সবচেয়ে লম্বা substring (LeetCode 3)
+function lengthOfLongestSubstring(s) {
+  const lastSeen = new Map();   // অক্ষর -> শেষ কোন index-এ দেখেছি
+  let left = 0, best = 0;
+  for (let right = 0; right < s.length; right++) {
+    const ch = s[right];
+    if (lastSeen.has(ch) && lastSeen.get(ch) >= left) {
+      left = lastSeen.get(ch) + 1;   // window-এর ভেতরে repeat -> left সরাও
+    }
+    lastSeen.set(ch, right);
+    const len = right - left + 1;
+    if (len > best) best = len;
+  }
+  return best;
+}
+
+// ৩) Teaser: minimum window substring (LeetCode 76)
+// s-এর সবচেয়ে ছোট substring যাতে t-এর সব অক্ষর (সংখ্যাসহ) আছে
+function minWindow(s, t) {
+  const need = new Map();
+  for (const ch of t) need.set(ch, (need.get(ch) || 0) + 1);
+  let missing = t.length;       // আর কতগুলো অক্ষর এখনো দরকার
+  let left = 0, start = 0, bestLen = Infinity;
+  for (let right = 0; right < s.length; right++) {
+    const inch = s[right];
+    if (need.has(inch)) {
+      need.set(inch, need.get(inch) - 1);
+      if (need.get(inch) >= 0) missing--;    // দরকারি অক্ষর পেলাম
+    }
+    while (missing === 0) {                  // window valid -> shrink করো
+      if (right - left + 1 < bestLen) {
+        bestLen = right - left + 1;
+        start = left;
+      }
+      const out = s[left];
+      if (need.has(out)) {
+        need.set(out, need.get(out) + 1);
+        if (need.get(out) > 0) missing++;    // দরকারি অক্ষর হারালাম
+      }
+      left++;
+    }
+  }
+  return bestLen === Infinity ? "" : s.slice(start, start + bestLen);
+}
+
+// --- ডেমো ---
+console.log(maxSumFixedWindow([2, 1, 5, 1, 3, 2], 3)); // 9
+console.log(lengthOfLongestSubstring("abcabcbb"));     // 3 ("abc")
+console.log(lengthOfLongestSubstring("bbbbb"));        // 1
+console.log(lengthOfLongestSubstring("pwwkew"));       // 3 ("wke")
+console.log(minWindow("ADOBECODEBANC", "ABC"));        // "BANC"
+console.log(minWindow("a", "b"));                      // ""
+```
+
+`lengthOfLongestSubstring`-এ সেই `>= left` চেকটা গুরুত্বপূর্ণ। `"abba"`-র কথা ভাবো: শেষ `a` পেলে map-এ `a` আছে ঠিকই, কিন্তু তার index 0, যা এতক্ষণে window-এর বাইরে চলে গেছে। এই চেক না থাকলে `left` পেছনে লাফ দিয়ে পুরো হিসাব নষ্ট করত। কোন লাইন কেন, বিস্তারিত নিচে ব্রেকডাউনে।
+
+## ভ্যারিয়েন্ট ১: fruit into baskets (LeetCode 904)
+
+প্রশ্নটা সাজিয়ে বললে: টানা গাছের এক সারি, প্রতিটা গাছে এক রকম ফল; তোমার কাছে ঠিক দুটো ঝুড়ি, প্রতিটা ঝুড়িতে এক রকম ফলই রাখা যাবে। একটানা সবচেয়ে বেশি কতগুলো গাছ থেকে ফল তুলতে পারবে?
+
+মোড় উল্টে দিলে দাঁড়ায়: **সর্বোচ্চ দুই রকম distinct উপাদান নিয়ে সবচেয়ে লম্বা subarray।** এটা pure variable window: right বাড়াও, তিন রকম হয়ে গেলে left সরিয়ে এক রকম পুরো বের করে দাও:
+
+```js
+function totalFruit(fruits) {
+  const count = new Map();       // window-এর ভেতরে কোন ফল কতটা
+  let left = 0, best = 0;
+  for (let right = 0; right < fruits.length; right++) {
+    count.set(fruits[right], (count.get(fruits[right]) || 0) + 1);
+    while (count.size > 2) {     // তিন রকম = invalid window
+      const gone = fruits[left];
+      count.set(gone, count.get(gone) - 1);
+      if (count.get(gone) === 0) count.delete(gone);
+      left++;
+    }
+    best = Math.max(best, right - left + 1);
+  }
+  return best;
+}
+
+console.log(totalFruit([1, 2, 3, 2, 2])); // 4  ([2, 3, 2, 2])
+```
+
+লক্ষ্য করো, `left` সরার লুপটা `while`, `if` নয়। কারণ এক রকম ফল পুরো বেরিয়ে না গেলে window valid হয় না।
+
+## ভ্যারিয়েন্ট ২: permutation in string (LeetCode 567)
+
+প্রশ্ন: `s2`-এর কোনো substring কি `s1`-এর permutation, মানে একই অক্ষর একই সংখ্যায় আছে কিনা?
+
+এখানে window-এর আকার ঠিক: `s1.length`। তাই fixed window, আর প্রতি সরানোতে শুধু frequency তুলনা। অক্ষর 26টা, তাই দুটো ছোট array-ই যথেষ্ট:
+
+```js
+function checkInclusion(s1, s2) {
+  if (s1.length > s2.length) return false;
+  const need = new Array(26).fill(0);
+  const have = new Array(26).fill(0);
+  const a = "a".charCodeAt(0);
+  for (let i = 0; i < s1.length; i++) {
+    need[s1.charCodeAt(i) - a]++;
+    have[s2.charCodeAt(i) - a]++;
+  }
+  const same = () => need.every((v, i) => v === have[i]);
+  for (let right = s1.length; right < s2.length; right++) {
+    if (same()) return true;                      // আগের window-টা মিলেছিল?
+    have[s2.charCodeAt(right) - a]++;             // ডানে নতুন ঢুকল
+    have[s2.charCodeAt(right - s1.length) - a]--; // বাঁয়ে পুরনো বেরোল
+  }
+  return same();   // শেষ window-টা যেন বাদ না যায়
+}
+
+console.log(checkInclusion("ab", "eidbaooo")); // true  ("ba")
+console.log(checkInclusion("ab", "eidboaoo")); // false
+```
+
+অনেকেই frequency array-এর বদলে প্রতিবার substring sort করে তুলনা করে, সেটা প্রতি window-তে O(k log k)। Frequency array মানে তুলনাটা 26টা চেক, ধ্রুবক কাজ।
+
+## কোড ব্রেকডাউন: দুটো মূল ফাংশন, লাইনে লাইনে
+
+`maxSumFixedWindow`:
+
+1. `if (k <= 0 || k > arr.length) return null` : edge case আগেই সামলাও। k array-এর চেয়ে বড় হলে window-ই বসে না।
+2. প্রথম loop-এ প্রথম `k`টা পুরো যোগ: এটাই একমাত্র জায়গা যেখানে O(k) কাজ হয়।
+3. `windowSum += arr[right] - arr[right - k]` : পুরো প্যাটার্নের প্রাণ এই লাইন। ডান প্রান্তে যা ঢুকল যোগ, `k` ঘর পেছনে যা বেরিয়ে গেল বিয়োগ। প্রতি সরানোতে O(1)।
+4. প্রতি ধাপে `maxSum` আপডেট: উত্তরটা ধীরে ধীরে জমে।
+
+`lengthOfLongestSubstring`:
+
+1. `const lastSeen = new Map()` : প্রতিটা অক্ষর শেষ কোন index-এ দেখেছি। Map নেওয়ার কারণ lookup O(1)।
+2. `for (let right = 0; ...)` : `right` সবসময় এগোয়, কখনো পেছনে আসে না।
+3. `if (lastSeen.has(ch) && lastSeen.get(ch) >= left)` : repeat তো? কিন্তু শুধু তখনই সমস্যা যখন আগেরটা **এখনকার window-এর ভেতরে** আছে। বাইরে থাকলে বেমালুম উপেক্ষা।
+4. `left = lastSeen.get(ch) + 1` : আগের occurrence-এর ঠিক পরের ঘরে window-এর বাঁ প্রান্ত বসাও। এক লাফে সব সমস্যা কাটল, এক ঘর করে সরানোর দরকার নেই।
+5. `lastSeen.set(ch, right)` : এই অক্ষরের নতুন ঠিকানা লিখে রাখো।
+6. `best` আপডেট: এখনকার window `[left..right]` অবশ্যই valid, তাই দৈর্ঘ্যটা প্রার্থী।
+
+ছন্দটা আবার বলি: **right প্রতিবারই এক ঘর এগোয়, left শুধু window invalid হলে এগোয়।** Fruit-এর variant-এ left এক ঘর করে, এখানে এক লাফে; দুটোতেই left কখনো পেছনে যায় না।
+
+## Complexity
+
+হাতে হাতে গুনি:
+
+- **Fixed window:** প্রথম window-তে k-টা যোগ, তারপর `n - k` বার সরানো, প্রতিবার ঠিক দুটো অপারেশন। মোট `k + 2(n - k)`, মানে O(n)। Naive-এ প্রতি window আবার k-টা যোগ, মোট O(n * k)। k বড় হলে পার্থক্য বিশাল।
+- **Variable window:** এটা এক নজরে O(n^2) মনে হতে পারে, কারণ `for`-এর ভেতরে `while`। কিন্তু গুনে দেখো: `right` প্রতিটা index-এ **একবারই** থামে, আর `left` জীবনে সর্বোচ্চ `n` বার এগোতে পারে, কারণ সে কখনো পেছনে যায় না। মানে প্রতিটা index সর্বোচ্চ দুইবার ছোঁয়া হয়, একবার right-এর দ্বারা, একবার left-এর দ্বারা। মোট কাজ `2n`, মানে **O(n)**। ভেতরে while দেখলেই quadratic ধরে নেওয়ার ভুল এখানে করো না।
+- **Space:** `lastSeen` বা `count` map-এ সর্বোচ্চ যত রকম distinct উপাদান। অক্ষরের বেলায় সেটা ছোট ধ্রুবক (ইংরেজি ছোট হরফে 26), তাই কার্যত O(1); সাধারণ ক্ষেত্রে O(min(n, alphabet))।
+
+## সাধারণ ভুল আর edge case
+
+**১. প্রতি সরানোতে window-টা আবার পুরো হিসাব করা।**
+এটা করলে sliding window আর রইল না, হয়ে গেল সুন্দর পোশাক পরা brute force, O(n * k)। পুরো কৌশলটাই হলো পরিবর্তনটা হিসাব করা: একটা যোগ, একটা বিয়োগ।
+
+**২. Variable window-এ left সরানোর সময় map আপডেট ভুলে যাওয়া।**
+`left++` লিখে দিলে window থেকে উপাদানটা বেরিয়ে গেল, কিন্তু তুমি যদি তার count বা entry না সরাও, map চিরকাল মিথ্যা বলতে থাকবে। Fruit-এর variant-এ দেখেছো: count কমাও, শূন্য হলে delete করো, তারপর left সরাও। ক্রমটা গুরুত্বপূর্ণ।
+
+**৩. Last-seen চেকের সময় `>= left` ভুলে যাওয়া।**
+`"abba"`-তে শেষ `a` পেলে map বলবে `a` আছে, কিন্তু সেই index ততক্ষণে window-এর বাইরে। এই চেক ছাড়া `left` পেছনে লাফ দেয়, আর পেছনে যাওয়া মানেই উত্তর ভুল হওয়া, সাথে O(n) যুক্তিটাও ভেঙে যায়।
+
+**৪. `k > arr.length` বা খালি input চেক না করা।**
+Fixed window-এ k array-এর চেয়ে বড় হলে প্রথম loop-ই array ছাড়িয়ে `undefined` যোগ করবে, sum-এ NaN। আর `minWindow`-এর মতো সমস্যায় valid window পাওয়া না গেলে `bestLen` Infinity থেকে যায়, `slice` তখন এলোমেলো কিছু ফেরায়। দুটো ক্ষেত্রেই আগেই guard লেখো।
+
+**৫. Shrink লুপে `while` না লিখে `if` লেখা।**
+একবার left সরালেই যে window valid হয়ে যাবে, এমন নয়। Invalid condition যতক্ষণ সত্য, left সরতেই থাকবে। `if` লিখলে invalid window নিয়েই `best` আপডেট করে ফেলবে। নিয়ম: expand `for`, contract `while`।
+
+## Animation Spec
+
+> **Animation Spec: Sliding Window**
+>
+> - **দৃশ্য:** array-এর উপর একটা আধা-স্বচ্ছ রঙিন জানালা; বাঁ প্রান্ত লাল, ডান প্রান্ত সবুজ; নিচে running sum বা length-এর live মান।
+> - **ইনপুট:** array বা string, fixed হলে k, variable হলে শর্ত (যেমন "কোনো repeat নেই")।
+> - **ধাপ:** ডান প্রান্ত এগিয়ে নতুন উপাদান সবুজ হয়ে ঢুকে; invalid হলে বাঁ প্রান্ত এগিয়ে পুরনো উপাদান লাল হয়ে বেরিয়ে যায়; সেরা মানটা পাশে ট্র্যাক হয়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; fixed/variable টগল; naive mode টগল যাতে O(n * k) আর O(n)-এর পার্থক্য চোখে দেখা যায়।
+> - **লক্ষ্য:** পুরো নয়, শুধু পরিবর্তন হিসাব; right expands, left contracts only when invalid।
+
+## অনুশীলন
+
+- **সহজ ১:** Maximum Average Subarray I (LeetCode 643)। হিন্ট: এই পাতার fixed window-ই, শুধু ভাগফলটা একদম শেষে একবারই করো, প্রতি ধাপে নয়।
+- **সহজ ২:** Longest Substring Without Repeating Characters (LeetCode 3)। হিন্ট: last-seen index map আর `>= left` চেক; `left` কখনো পেছনে যাবে না।
+- **মাঝারি ১:** Longest Repeating Character Replacement (LeetCode 424)। হিন্ট: window valid যখন `দৈর্ঘ্য - সবচেয়ে বেশি বার আসা অক্ষরের সংখ্যা <= k`; invalid হলে left সরাও।
+- **মাঝারি ২:** Minimum Window Substring (LeetCode 76)। হিন্ট: উপরের teaser-টাই পুরো সমাধান; `need` map আর `missing` counter, valid হলেই `while` দিয়ে shrink।
+- **কঠিন:** Sliding Window Maximum (LeetCode 239)। হিন্ট: শুধু window সরালে হবে না, max দ্রুত পেতে একটা monotonic deque লাগবে; deque-এর সামনে সবসময় সেরা প্রার্থী, ছোট প্রার্থীরা পেছন থেকে বাদ পড়ে।
+
+## সারসংক্ষেপ
+
+- টানা subarray বা substring-এর প্রশ্ন দেখলেই আগে sliding window ভাবো।
+- Fixed window: আকার স্থির, প্রতি সরানোতে একটা যোগ একটা বিয়োগ।
+- Variable window: right সবসময় এগোয়, left শুধু invalid হলে; প্রতিটা index সর্বোচ্চ দুইবার ছোঁয়া হয়, তাই O(n)।
+- ভেতরে `while` দেখলেই O(n^2) নয়: left কখনো পেছনে যায় না, এই যুক্তিটাই আসল।
+- দুই প্রান্ত থেকে ভেতরে আসা pointer দরকার হলে সেটা [Two Pointer](./two-pointer.mdx); আর অক্ষর বা উপাদান গোনার কাজে map-set নিয়ে আরও প্যাটার্ন আছে [Hash Patterns](../hash-tables/hash-patterns.mdx)-এ।

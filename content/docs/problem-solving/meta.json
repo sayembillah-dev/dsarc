@@ -1,0 +1,4 @@
+{
+  "title": "Problem Solving Techniques",
+  "pages": ["index", "brute-force", "divide-and-conquer", "greedy", "backtracking", "dynamic-programming", "two-pointer", "fast-slow-pointers", "sliding-window", "prefix-sum", "merge-intervals", "cyclic-sort", "kth-element", "two-heaps", "island-traversal", "randomised-algorithms", "number-theory", "bit-manipulation", "multithreaded-algorithms"]
+}

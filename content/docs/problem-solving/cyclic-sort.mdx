@@ -1,0 +1,265 @@
+---
+title: "Cyclic Sort: প্রতিটা সংখ্যা নিজের ঘরে"
+description: "1..n রেঞ্জের সংখ্যাকে নিজের index-এ swap করে বসানো; তারপর এক pass-এ missing আর duplicate ধরার O(n) ছাঁচ।"
+---
+
+## কী শিখব
+
+- রেঞ্জ 1..n জানা থাকলে কেন তুলনা-ভিত্তিক sort লাগেই না
+- value v-এর ঘর index v-1: swap করে সবাইকে নিজের ঘরে বসানোর কৌশল
+- হাতে হাতে পুরো dry run: প্রতিটা swap-এ array কেমন দেখায়
+- তিনটা জরুরি ভ্যারিয়েন্ট: সব missing, সব duplicate, negative দাগ দেওয়ার বিকল্প
+- Complexity O(n) কেন, আর infinite loop-টা কোথা থেকে আসে
+
+## ধারণা
+
+ভাবো তো, পরীক্ষা শেষ। পরীক্ষকের টেবিলে খাতাগুলো এলোমেলোভাবে জমা পড়েছে, কিন্তু রোল নম্বর ঠিক ১ থেকে n পর্যন্ত, প্রতিটা রোল একবারই আছে। তোমাকে বলল খাতাগুলো সাজাতে। তুমি কি প্রতি জোড়া খাতা তুলনা করে bubble sort করবে? একদমই না। ৫ নম্বর রোলের খাতা হাতে পেলেই সোজা ৫ নম্বর স্থানে রেখে দেবে। যে খাতাটা ওখানে ছিল, তাকে তুলে তার সঠিক জায়গায় পাঠিয়ে দেবে। প্রতিটা খাতা এক ছোঁয়ায় নিজের ঘরে, কোনো তুলনাই লাগে না।
+
+এটাই cyclic sort। নিয়মটা এক লাইনে: **value v-এর সঠিক ঘর হলো index v-1** (index ০ থেকে শুরু বলে এক ঘর সরে)। প্রতিটা ঘরে গিয়ে দেখো, যে সংখ্যা আছে সে ঠিক ঘরে আছে কিনা। না থাকলে তার ঘরে swap করে পাঠিয়ে দাও। ঘরে থাকলে পরের ঘরে এগোও।
+
+আশ্চর্যের জায়গা হলো, এভাবে পুরো sort হয়ে যায় O(n) সময়ে, O(1) জায়গায়। [Comparison sort](../sorting/why-sorting.mdx)-এর O(n log n) দেয়াল এখানে ভেঙে যায়, কারণ আমাদের হাতে অতিরিক্ত তথ্য আছে: সংখ্যাগুলো কোন রেঞ্জের, সেটা আগেই জানা।
+
+আর সবাই নিজের ঘরে বসে গেলে যাদু শুরু হয়। এক pass ঘুরে দেখো যে ঘরে মিল নেই: সেই ঘরের অধিবাসী missing। আবার যে সংখ্যা তার ঘরে বসতে গিয়ে দেখল সে আগেই বসে আছে, সে-ই duplicate। missing-duplicate ধরার প্রায় সব সমস্যা এই এক ছাঁচে ঢুকে যায়।
+
+## ধাপে ধাপে ড্রাই রান
+
+ইনপুট: `[3, 5, 2, 1, 4]`, মানে n = 5, রেঞ্জ 1..5।
+
+```
+index:        0    1    2    3    4
+ঘরের মালিক:   1    2    3    4    5
+শুরু:         3    5    2    1    4
+```
+
+নিয়ম: index i-তে দাঁড়িয়ে দেখো nums[i] তার ঘরে (index nums[i]-1) আছে কিনা। না থাকলে swap, আর **i সরাস না**, কারণ swap-এ নতুন যে সংখ্যা এল সেও ভুল ঘরে থাকতে পারে। ঘরে থাকলে i++।
+
+| ধাপ | i | nums[i] | সঠিক ঘর | সেখানে আছে | কী হলো | array-এর অবস্থা |
+|-----|---|---------|----------|------------|--------|------------------|
+| শুরু | - | - | - | - | - | [3, 5, 2, 1, 4] |
+| 1 | 0 | 3 | 2 | 2 | swap ঘর 0 আর 2 | [2, 5, 3, 1, 4] |
+| 2 | 0 | 2 | 1 | 5 | swap ঘর 0 আর 1 | [5, 2, 3, 1, 4] |
+| 3 | 0 | 5 | 4 | 4 | swap ঘর 0 আর 4 | [4, 2, 3, 1, 5] |
+| 4 | 0 | 4 | 3 | 1 | swap ঘর 0 আর 3 | [1, 2, 3, 4, 5] |
+| 5 | 0 | 1 | 0 | 1 | নিজের ঘরে, i++ | [1, 2, 3, 4, 5] |
+| 6 | 1..4 | - | - | - | সব ঘরে মিল, শেষ | [1, 2, 3, 4, 5] |
+
+মাত্র চারটা swap-এ পুরো array সাজিয়ে ফেলেছি। খেয়াল করো, ধাপ ১ থেকে ৪ পর্যন্ত i একই জায়গায়, ঘর ০-এ, আটকে আছে। প্রতিবার নতুন কেউ এসে হাজির হচ্ছে, আমরা তাকেও ঘরে পাঠিয়ে দিচ্ছি। যখন ১ এল, তার ঘর তো এই ঘরটাই, তখনই i এগোল।
+
+## কোড
+
+পুরো runnable ফাইল: মূল cyclic sort, তারপর missing number, তারপর duplicate ধরা। নিচে console.log দিয়ে সব demo:
+
+```js
+// ============================================
+// Cyclic Sort: পুরো runnable ফাইল
+// চালাও: node cyclic-sort.js
+// ============================================
+
+// ---------- মূল ছাঁচ: cyclic sort ----------
+// শর্ত: সংখ্যাগুলো 1..n রেঞ্জে (n = array-এর দৈর্ঘ্য)
+function cyclicSort(nums) {
+  let i = 0;
+  const n = nums.length;
+
+  while (i < n) {
+    const correct = nums[i] - 1;      // value v-এর ঘর index v-1
+
+    if (nums[i] >= 1 && nums[i] <= n && nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]]; // ঘরে পাঠাই
+      // i++ হচ্ছে না: নতুন আসা সংখ্যাটাও ঠিক ঘরে আছে কিনা আগে দেখবো
+    } else {
+      i++;                            // ঠিক আছে (বা রেঞ্জের বাইরে), এগোই
+    }
+  }
+  return nums;
+}
+
+// ---------- find missing number (LeetCode 268) ----------
+// এবার রেঞ্জ 0..n, ঠিক একটা সংখ্যা missing
+// তাই value v-এর ঘর হলো index v (v-1 নয়)
+function findMissingNumber(nums) {
+  let i = 0;
+  const n = nums.length;
+
+  while (i < n) {
+    const correct = nums[i];          // 0..n রেঞ্জ: v-এর ঘর index v
+    if (nums[i] < n && nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]];
+    } else {
+      i++;                            // n-এর কোনো ঘর নেই, ও যেখানে আছে থাক
+    }
+  }
+
+  for (let j = 0; j < n; j++) {
+    if (nums[j] !== j) return j;      // যে ঘরে মিল নেই, সেই সংখ্যাই missing
+  }
+  return n;                           // সব মিলে গেলে missing হলো n
+}
+
+// ---------- find duplicate (LeetCode 287) ----------
+// সংখ্যা 1..n রেঞ্জে, ঠিক একটা সংখ্যা repeat হয়েছে
+function findDuplicate(nums) {
+  let i = 0;
+
+  while (i < nums.length) {
+    const correct = nums[i] - 1;
+
+    if (nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]];
+    } else if (correct !== i) {
+      return nums[i];   // যে ঘরে বসতে চায়, সেখানে সে আগেই: এটাই duplicate
+    } else {
+      i++;
+    }
+  }
+  return -1;
+}
+
+// ---------- demo ----------
+console.log("sort:", cyclicSort([3, 5, 2, 1, 4]));       // [1,2,3,4,5]
+console.log("sort:", cyclicSort([2, 4, 1, 3]));          // [1,2,3,4]
+
+console.log("missing:", findMissingNumber([3, 0, 1]));   // 2
+console.log("missing:", findMissingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1])); // 8
+
+console.log("duplicate:", findDuplicate([1, 3, 4, 2, 2])); // 2
+console.log("duplicate:", findDuplicate([3, 1, 3, 4, 2])); // 3
+```
+
+## ভ্যারিয়েন্ট
+
+### ভ্যারিয়েন্ট ১: সব missing একসাথে (LeetCode 448)
+
+একটা নয়, একাধিক সংখ্যা missing থাকতে পারে (আর ততগুলো duplicate ভরাট করছে)। ছাঁচ একই: placement, তারপর scan:
+
+```js
+function findAllMissing(nums) {
+  let i = 0;
+  while (i < nums.length) {
+    const correct = nums[i] - 1;
+    if (nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]];
+    } else {
+      i++;
+    }
+  }
+  const missing = [];
+  for (let j = 0; j < nums.length; j++) {
+    if (nums[j] !== j + 1) missing.push(j + 1); // যে ঘরে মিল নেই, সেই রোল absent
+  }
+  return missing;
+}
+console.log(findAllMissing([4, 3, 2, 7, 8, 2, 3, 1])); // [5, 6]
+```
+
+আরেকটা চমৎকার বিকল্প আছে, **negative দাগ দেওয়া।** array-কেই হাজিরা খাতা বানিয়ে ফেলো: সংখ্যা x পেলে index |x|-1-এ গিয়ে সেখানকারটাকে negative করে দাও। শেষে যে index-এ positive পড়ে রইল, কেউ সেই রোলে কখনো হাজিরা দেয়নি:
+
+```js
+function findAllMissingByMarking(nums) {
+  for (const x of nums) {
+    const idx = Math.abs(x) - 1;               // x-এর ঘরে গিয়ে
+    if (nums[idx] > 0) nums[idx] = -nums[idx]; // হাজিরার দাগ: negative
+  }
+  const missing = [];
+  for (let j = 0; j < nums.length; j++) {
+    if (nums[j] > 0) missing.push(j + 1);      // positive মানে কেউ আসেইনি
+  }
+  return missing;
+}
+console.log(findAllMissingByMarking([4, 3, 2, 7, 8, 2, 3, 1])); // [5, 6]
+```
+
+দুটোই O(n) সময়, O(1) অতিরিক্ত জায়গা (উত্তরের list বাদে)। placement-টা array সাজিয়ে ফেলে, marking-টা sign বদলে ফেলে: দুটোই ইনপুট নষ্ট করে, তাই আসলটা লাগলে আগে কপি নাও।
+
+### ভ্যারিয়েন্ট ২: সব duplicate একসাথে (LeetCode 442)
+
+placement-এর পর যে ঘরে ভুল মানুষ বসে আছে, সে-ই duplicate। scan-এর শর্তটা একটু বদলাও:
+
+```js
+function findAllDuplicates(nums) {
+  let i = 0;
+  while (i < nums.length) {
+    const correct = nums[i] - 1;
+    if (nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]];
+    } else {
+      i++;
+    }
+  }
+  const dups = [];
+  for (let j = 0; j < nums.length; j++) {
+    if (nums[j] !== j + 1) dups.push(nums[j]); // ভুল ঘরে যে বসেছে, সে-ই duplicate
+  }
+  return dups;
+}
+console.log(findAllDuplicates([4, 3, 2, 7, 8, 2, 3, 1])); // [3, 2] (ক্রম যেকোনো হতে পারে)
+```
+
+আরেকটা কঠিন আত্মীয় অনুশীলনে রেখে দিলাম: **first missing positive** (LeetCode 41)। সেখানে রেঞ্জের বাইরের মান (০, negative, n-এর বড়) থাকে, তাদের বসাতে যেও না, skip করে এগোও। একই ছাঁচ, একটা guard বেশি।
+
+## কোড ব্রেকডাউন: মূল cyclicSort, লাইনে লাইনে
+
+1. `let i = 0` : একটাই pointer। শুধু এগোয়, কখনো পিছোয় না।
+2. `while (i < n)` : প্রতিটা ঘর ঠিক একবারই সমাধান হবে।
+3. `const correct = nums[i] - 1` : হাতের সংখ্যাটার সঠিক ঘর কোনটা। ৫-এর ঘর index 4।
+4. `nums[i] >= 1 && nums[i] <= n` : রেঞ্জ চেক। missing/duplicate-ওয়ালা সমস্যায় রেঞ্জের বাইরের মান থাকতে পারে (যেমন LC 268-এ n, LC 41-এ negative), তাদের কোনো ঘর নেই।
+5. `nums[i] !== nums[correct]` : সবচেয়ে গুরুত্বপূর্ণ শর্ত। আমার ঘরে কি আমারই জামা আছে? থাকলে swap করলে দুটো একই সংখ্যা পরস্পরের ঘরে আজীবন দোল খাবে, infinite loop।
+6. `[nums[i], nums[correct]] = [nums[correct], nums[i]]` : destructuring দিয়ে swap, temp ভ্যারিয়েবল লাগে না।
+7. swap-এর পর `i++` **নেই** : নতুন আসা সংখ্যাটাও ভুল ঘরে থাকতে পারে, আগে ওকে পাঠাই।
+8. `else i++` : সংখ্যাটা ঠিক ঘরে আছে, অথবা তার ঘর বলে কিছু নেই। পরের ঘরে যাও।
+
+## Complexity
+
+সময়ের হিসাবটা একটু সূক্ষ্ম, হাতে গুনে দেখি। while লুপে দুই ধরনের পদক্ষেপ হয়: **i++**, আর **swap**।
+
+- `i++` হয় সর্বোচ্চ n বার। i কখনো কমে না।
+- swap কতবার? প্রতিটা swap অন্তত একটা সংখ্যাকে তার **সঠিক ঘরে** বসায়। আর যে সংখ্যা একবার সঠিক ঘরে বসেছে, সে আর কখনো swap-এর শিকার হয় না: তার ঘরে এখন সঠিক মান, তাই `nums[i] !== nums[correct]` শর্তটা আর সত্যি হতে পারে না। মানে swap সর্বোচ্চ n-1 বার (শেষ সংখ্যাটা আপনাআপনি ঠিক হয়ে যায়)।
+
+মোট সর্বোচ্চ n + (n-1) টা পদক্ষেপ, প্রতিটা O(1)। তাই **Time: O(n)**। n-টা সংখ্যা, প্রতিটা একবার দেখা আর সর্বোচ্চ একবার সরা, এই ছাড়া কিছুই হয় না।
+
+**Space: O(1)।** নতুন কোনো array নেই, swap হয় ইনপুটের ভেতরেই। এই in-place গুণটাই ছাঁচটার সৌন্দর্য, তবে দাম হিসেবে ইনপুটটা বদলে যায়।
+
+তুলনা করে দেখো: একই কাজ hash set দিয়ে করলে O(n) জায়গা লাগত, sort দিয়ে করলে O(n log n) সময়। রেঞ্জ জানা থাকাটা cyclic sort-কে দুটোই বাঁচিয়ে দেয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. swap-এর আগে `nums[i] !== nums[nums[i] - 1]` চেক না করা।**
+এই ছাঁচের সবচেয়ে বিখ্যাত ভুল। ধরো duplicate-ওয়ালা `[2, 2]`: index 0-এর 2 তার ঘর index 1-এ যেতে চায়, কিন্তু সেখানেও 2 বসে আছে। চেক ছাড়া swap করলে দুটো 2 পরস্পরের ঘরে বদলাতে থাকবে, array একই থাকবে, লুপ চলবে চিরকাল। শর্তটা মুখস্থ নয়, বুঝে রাখো: **ঘরে আগেই সঠিক মান বসে থাকলে swap নিষেধ।**
+
+**২. রেঞ্জের বাইরের মান বসাতে যাওয়া।**
+LC 268-এ সংখ্যা n থাকে, তার ঘর index n, যা array-তেই নেই। `nums[i] < n` চেক ছাড়া গেলে `nums[n]` হলো `undefined`, তার সাথে swap মানে তহবিল নষ্ট। LC 41-এ negative আর ০-ও যোগ হয়। রেঞ্জ চেক আগে, তারপর placement।
+
+**৩. swap-এর পর i++ করে ফেলা।**
+নতুন আসা সংখ্যাটা যে সঠিক ঘরে পড়েছে তার কোনো গ্যারান্টি নেই। ড্রাই রানেই দেখেছ, i ঘর ০-এ চার ধাপ আটকে ছিল। swap-এর পর i++ করলে ভুল ঘরের সংখ্যা পিছনে পড়ে থাকবে, আর scan-এ সেটা ভুল ফল দেবে।
+
+**৪. এটাকে সাধারণ উদ্দেশ্যের sort ভাবা।**
+cyclic sort চলে শুধু তখনই যখন রেঞ্জ 1..n (বা 0..n) আগে থেকে জানা। random সংখ্যার array, যেমন `[50, 7, 900]`, দিলে `nums[i] - 1` এমন index বানাবে যা array-এর বাইরে। সেই অবস্থায় ফিরে যাও [comparison sort](../sorting/why-sorting.mdx)-এ।
+
+**৫. ইনপুট array-টাই বদলে ফেলা।**
+পুরো কৌশলটা in-place। ফাংশন থেকে বেরিয়ে এসে দেখবে caller-এর array আর আগের মতো নেই। আসল ক্রম লাগলে `cyclicSort([...nums])` করে কপিতে কাজ করো। ইন্টারভিউতে প্রশ্নটা করে নিলে নম্বর পাবে: "ইনপুট modify করা যাবে?"
+
+## Animation Spec
+
+> **Animation Spec: Everyone Home**
+>
+> - **দৃশ্য:** index-চিহ্নিত ঘরের সারি, প্রতিটা ঘরে মালিকের নম্বর লেখা; ভুল ঘরের সংখ্যা লাল, ঠিক ঘরে বসলে সবুজ।
+> - **ইনপুট:** 1..n রেঞ্জের array (preset: শুদ্ধ sort / missing / duplicate); কাস্টম ইনপুটও নেয়।
+> - **ধাপ:** cursor i দেখায়; হাতের সংখ্যা থেকে তার ঘরে তীর; swap-এ দুটো সংখ্যার জায়গা বদলায়; শেষে এক scan-এ অমিলের ঘর ঝলকায়, missing বা duplicate প্রকাশ পায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; আর একটা টগল "সমতা চেক বন্ধ", infinite loop-টা কেমন দেখায় তা নিরাপদে দেখানোর জন্য।
+> - **লক্ষ্য:** রেঞ্জ জানা থাকলে তুলনা ছাড়াই O(n) সম্ভব, আর প্রতিটা swap চিরকালীন অগ্রগতি।
+
+## অনুশীলন
+
+- **সহজ ১:** Missing Number (LeetCode 268)। হিন্ট: রেঞ্জ 0..n, তাই value v-এর ঘর index v। placement-এর পর যে ঘরে মিল নেই সেটাই উত্তর। (যোগফলের সূত্র দিয়েও হয়, দুটোই করে দেখো।)
+- **সহজ ২:** Find All Numbers Disappeared in an Array (LeetCode 448)। হিন্ট: placement বা negative-marking, দুটোই এই পাতায় আছে। যে index-এ মিল নেই সেই index+1 missing।
+- **মাঝারি ১:** Find the Duplicate Number (LeetCode 287)। হিন্ট: যে সংখ্যা তার ঘরে বসতে গিয়ে দেখল সে আগেই আছে, সে-ই উত্তর। আরেকটা সুন্দর সমাধান আছে [Fast & Slow Pointers](./fast-slow-pointers.mdx) দিয়ে, array-কে linked list-এর cycle বানিয়ে। দুটোই শেখো।
+- **মাঝারি ২:** Set Mismatch (LeetCode 645)। হিন্ট: একটা সংখ্যা duplicate, একটা missing। cyclic placement-এর পর এক scan-এ দুটোই পাওয়া যায়: যে ঘরে মিল নেই সেটা missing, সেখানে যে বসে আছে সেটা duplicate।
+- **কঠিন:** First Missing Positive (LeetCode 41)। হিন্ট: রেঞ্জের বাইরের মান (০, negative, n-এর বড়) বসাতে যেও না, skip করো। সব বসানোর পর প্রথম mismatch-ই উত্তর, না পেলে n+1।
+
+## সারসংক্ষেপ
+
+- রেঞ্জ 1..n জানা থাকলে value v যায় index v-1-এ, swap করে সবাইকে ঘরে বসাও।
+- swap-এর পর i সরাস না; শর্ত `nums[i] !== nums[nums[i]-1]` না দিলে infinite loop।
+- Time O(n), space O(1), কিন্তু ইনপুট বদলে যায়।
+- সবাই ঘরে বসলে এক scan: যে ঘরে মিল নেই সেটা missing, ভুল ঘরে যে বসেছে সেটা duplicate।
+- রেঞ্জ জানা না থাকলে এই ছাঁচ নয়, ফিরে যাও comparison sort-এ।
