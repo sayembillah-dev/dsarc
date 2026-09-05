@@ -1,0 +1,139 @@
+---
+title: "Doubly Linked List: দুই দিকেই চলা"
+description: prev আর next, দুটো pointer-ই থাকে। ফলে দুই দিকে হাঁটা যায়, আর কোনো node পেলে তাকে O(1)-এ মুছে ফেলা যায়।
+---
+
+## কী শিখব
+
+- সামনে-পেছনে দুই দিকেই হাঁটা যায় এমন লিস্ট
+- `tail` pointer থাকলে append কীভাবে O(n) থেকে O(1) হয়ে যায়
+- node হাতে পেলে O(1) deletion, যেটা singly-তে অসম্ভব
+- বাড়তি সুবিধার বিনিময়ে কতটা memory আর কোড-জটিলতা দিতে হয়
+
+## ধারণা
+
+Singly list-এ একবার কোনো node পেরিয়ে গেলে আর ফিরে আসা যায় না। অনেকটা একমুখী রাস্তার মতো। ভাবো তো, পেছনের রাস্তাটাও যদি খোলা থাকত?
+
+Doubly Linked List-এ সেটাই করা হয়েছে। প্রতিটা node-এ `next`-এর পাশাপাশি `prev`ও থাকে, মানে আগের node-এর দিকেও তীর। এখন দুই দিকেই হাঁটা যায়।
+
+```
+null <- [10] <-> [20] <-> [30] -> null
+```
+
+আর সুবিধা শুধু হাঁটা নয়। মনে করো [deletion পেজের](./deletion.mdx) সবচেয়ে বড় কষ্টটা: টার্গেট node-এর **আগের** node খুঁজে বের করা। Singly-তে সেজন্য head থেকে হাঁটতে হয়। কিন্তু doubly-তে node হাতে পেলেই `node.prev` বলে দেয় আগেরটা কে। মানে কোনো node হাতে থাকলে তাকে O(1)-এ মুছে ফেলা যায়। এই একটা ক্ষমতেই doubly list-এর অস্তিত্ব।
+
+সাথে একটা ছোট্ট কিন্তু বড় সুবিধা: `tail` pointer ধরে রাখা। শেষ node-টা আগে থেকেই জানা, তাই append-এ আর হাঁটা লাগে না। [Singly list-এ](./singly-linked-list.mdx) append ছিল O(n), এখানে O(1)।
+
+## কোড উদাহরণ
+
+```js
+class DNode {
+  constructor(value) { this.value = value; this.prev = null; this.next = null; }
+}
+
+class DoublyLinkedList {
+  constructor() { this.head = null; this.tail = null; this.size = 0; }
+
+  append(value) {                  // শেষে যোগ, এখন O(1)! (tail আছে)
+    const node = new DNode(value);
+    if (!this.head) { this.head = this.tail = node; this.size++; return; }
+    node.prev = this.tail;         // ধাপ ১: নতুন node-এর prev = পুরনো tail
+    this.tail.next = node;         // ধাপ ২: পুরনো tail-এর next = নতুন node
+    this.tail = node;              // ধাপ ৩: tail লেবেল সরে গেল
+    this.size++;
+  }
+
+  // node হাতে পেলে O(1)-এ মোছা: doubly-র আসল শক্তি
+  removeNode(node) {
+    if (node.prev) node.prev.next = node.next;  // আগেরটার next ঘুরল
+    else this.head = node.next;                 // node-ই head ছিল
+    if (node.next) node.next.prev = node.prev;  // পরেরটার prev ঘুরল
+    else this.tail = node.prev;                 // node-ই tail ছিল
+    this.size--;
+  }
+
+  printForward() {
+    let c = this.head, out = [];
+    while (c) { out.push(c.value); c = c.next; }
+    console.log(out.join(" <-> "));
+  }
+  printBackward() {
+    let c = this.tail, out = [];
+    while (c) { out.push(c.value); c = c.prev; }
+    console.log(out.join(" <-> "));
+  }
+}
+
+const dll = new DoublyLinkedList();
+dll.append(10); dll.append(20); dll.append(30);
+dll.printForward();  // 10 <-> 20 <-> 30
+dll.printBackward(); // 30 <-> 20 <-> 10
+```
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `DNode`-এ তিনটা জিনিস: `value`, `prev`, `next`। শুরুতে দুই তীরই null।
+2. `DoublyLinkedList`-এ এবার দুটো লেবেল: `head` আর `tail`। শুরুতে দুটোই null।
+3. `append`-এ খালি লিস্টের কেস: প্রথম node-ই একসাথে head আর tail।
+4. খালি না হলে তিনটা কাজ ঠিকমতো ক্রমে: নতুন node-এর `prev` পুরনো tail-কে দেখায়, পুরনো tail-এর `next` নতুনটাকে দেখায়, তারপর `tail` লেবেল নতুনটার উপর উঠে আসে। কোনো হাঁটা নেই, তাই O(1)।
+5. `removeNode(node)`-এ চারটা লাইন, দুই জোড়া। প্রথম জোড়া আগের দিক সামলায়: আগেরটা থাকলে তার `next` ঘুরে টার্গেটকে লাফায়; আগেরটা না থাকলে মানে node-ই head, তাই `head` লেবেল সরে যায়। দ্বিতীয় জোড়া হুবহু একই কাজ পেছনের দিকে করে, tail-এর জন্য।
+6. `if/else` দুটোই লাগবে, একটাও বাদ দেওয়া যায় না। head বা tail আপডেট ভুললে পরের সব অপারেশন ভুল node দেখাবে।
+7. `printForward` হেড থেকে `next` ধরে, `printBackward` টেইল থেকে `prev` ধরে। একই লিস্ট, দুই দিকের হাঁটা, দুই রকম ছাপা। এই ছকটাই ব্রাউজারের Back/Forward বাটনের ভিত্তি।
+
+## Dry run: append(30) চালাই
+
+লিস্ট এখন `10 <-> 20`, tail দেখাচ্ছে 20-কে।
+
+| ধাপ | লাইন | আগে | পরে |
+|-----|------|-----|-----|
+| 1 | `node.prev = this.tail` | নতুন `[30]` একা ভাসছে | 30-এর `prev` তীর 20-এর দিকে |
+| 2 | `this.tail.next = node` | 20-এর `next` ছিল null | 20-এর `next` তীর 30-এর দিকে |
+| 3 | `this.tail = node` | tail 20-কে দেখাচ্ছিল | tail এখন 30-কে দেখায় |
+
+মোট তিনটা pointer বদল, n-এর উপর একদম নির্ভরশীল নয়। তুলনা করো: singly-তে এই একই append-এ n-1 ধাপ হাঁটা লাগত। শুধু একটা `tail` লেবেল ধরে রাখার পুরস্কার এটা।
+
+## Complexity: কোথায় কত দাম
+
+| কাজ | Singly | Doubly | কেন |
+|-----|--------|--------|-----|
+| append | O(n) | **O(1)** | tail pointer সরাসরি শেষে নিয়ে যায় |
+| prepend | O(1) | O(1) | দুটোতেই সোজা, doubly-তে শুধু একটা `prev` বাড়তি ঘোরাতে হয় |
+| node হাতে পেলে delete | O(n) | **O(1)** | `node.prev`-ই আগেরটা বলে দেয়, খোঁজার হাঁটা লাগে না |
+| search (value দিয়ে) | O(n) | O(n) | value খুঁজতে দুটোতেই হাঁটতেই হয় |
+| Space per node | 1 pointer | **2 pointer** | দামটা এখানেই: প্রতি node-এ বাড়তি একটা pointer |
+
+তাহলে হিসাব পরিষ্কার। দুটো pointer ঘোরানোর ঝামেলা আর বাড়তি memory দিয়ে কিনছ দ্রুত append আর দ্রুত delete। এই trade-off-ই মনে রাখবে, [Array vs Linked List](./array-vs-linked-list.mdx)-এ গিয়ে লাগবে।
+
+## সাধারণ ভুল আর edge case
+
+1. **`next` ঠিক করে `prev` ভুলে যাওয়া।** Doubly-তে প্রতিটা জোড়া **দুই দিকের** তীর। `tail.next = node` লিখে `node.prev = tail` ভুলে গেলে সামনে যাওয়া যায়, পেছনে আসতে গেলেই ভেঙে পড়বে।
+2. **`tail` আপডেট না করা।** Append বা শেষে delete-এর পর `tail` না সরালে সে পুরনো (এমনকি মুছে যাওয়া) node-কেই দেখিয়ে থাকে। পরের append সেই ভুল জায়গায় জুড়বে।
+3. **একটাই node থাকা অবস্থায় delete।** শেষ node মুছলে `head` আর `tail` **দুটোই** null করতে হয়। একটা ঠিক করে আরেকটা ভুললে লিস্ট "খালি নয়" ভাবতে থাকবে।
+4. **`removeNode`-এর চারটার মধ্যে একটা `if/else` বাদ দেওয়া।** মাঝের node-এ কোড ঠিক চলে, কিন্তু head বা tail মুছতে গেলে ভুল branch-এ গিয়ে crash। প্রতিটা কেস (মাঝে, head, tail, একাই node) আলাদা করে টেস্ট করো।
+5. **পেছনে হাঁটায় `c = c.next` লেখা অভ্যাসবশত।** `printBackward`-এ এমন ভুল করলে লুপ tail থেকে আবার সামনের দিকে যেতে চাইবে, আর tail-এর next তো null, সঙ্গে সঙ্গে শেষ। পেছনে হাঁটলে `c = c.prev`, সবসময়।
+
+## Animation Spec
+
+> **Animation Spec: Two-way Chain**
+>
+> - **দৃশ্য:** node শৃঙ্খল, প্রতিটার মাঝে দুমুখী তীর (prev আর next দুটোই ডিফল্ট #64748b); `head` আর `tail` দুটো লেবেল আলাদা করে দেখানো।
+> - **ইনপুট:** direction toggle (forward/backward); আর "delete this node" বাটন, যেখানে node-টা সরাসরি ক্লিক করে বেছে নেওয়া যায়।
+> - **ধাপ:** forward চালালে pointer (#eab308) বাঁ থেকে ডানে, backward-এ ডান থেকে বাঁয়ে হাঁটবে, পেরোনো node #a855f7। delete দেখালে চারটা তীর একে একে পুনঃসংযোগ হবে (#f97316 জ্বলে), তারপর টার্গেট node #ef4444 হয়ে উধাও। পাশে step counter থাকবে: "০ হাঁটা, শুধু rewiring"।
+> - **লক্ষ্য:** দুই জিনিস চোখে দেখা: দ্বিমুখী হাঁটা, আর node হাতে থাকলে একটাও খোঁজার হাঁটা ছাড়া delete।
+
+## অনুশীলন
+
+1. **সহজ:** এই class-এ `prepend(value)` মেথডটা নিজে লেখো। *Hint: append-এর আয়নার প্রতিবিম্ব। নতুন node-এর `next` পুরনো head-কে দেখাবে, পুরনো head-এর `prev` নতুনটাকে, তারপর `head` সরবে। খালি লিস্টের কেস আলাদা।*
+2. **সহজ:** tail থেকে শুরু করে পেছনে হেঁটে দ্বিতীয়-শেষ node-এর value ছাপাও। *Hint: সরাসরি `this.tail.prev` পড়লেই তো হয়! এক ধাপের কাজ, লুপই লাগে না।*
+3. **মাঝারি:** লিস্ট palindrome কিনা চেক করো। *Hint: একটা pointer head-এ, আরেকটা tail-এ। দুজনকে মাঝের দিকে এগিয়ে আনো, প্রতি ধাপে value মিলাও। doubly-র দ্বিমুখীতার সরাসরি ব্যবহার।*
+4. **মাঝারি:** `insertBefore(node, value)` লেখো, যেটা দেওয়া node-এর ঠিক আগে নতুন node ঢোকায়। *Hint: চারটা তীর ঠিক করতে হবে। node-ই head হলে prepend ডাকো।*
+5. **কঠিন:** LRU cache বানানো শুরু করো: `get(key)`-তে item-টা সবার সামনে তুলে আনো, `put(key)`-তে ভরা থাকলে সবার পেছনেরটা মুছো। *Hint: একটা [hash table](/docs/hash-tables)-এ key থেকে node-এর mapping রাখো, আর doubly list-এ সামনে-পেছনে সারণি। Hash table O(1)-এ node দেয়, doubly list O(1)-এ সরায়। দুটো মিললেই LRU।*
+
+## সারসংক্ষেপ
+
+- প্রতিটা node-এ `prev` আর `next`, দুই দিকেই হাঁটা যায়।
+- `tail` pointer ধরে রাখলে append O(1); node হাতে থাকলে delete-ও O(1)।
+- দাম: প্রতি node-এ বাড়তি pointer, আর প্রতিটা insert/delete-এ দ্বিগুণ তীর ঠিক করা। চারটা `if/else` মিস করলেই ভাঙন।
+- ব্রাউজার history, undo/redo, LRU cache, যেখানে দুই দিকে যাতায়াত আর দ্রুত delete দরকার, সেখানে doubly-ই পছন্দ।
+
+**পরের পেজ:** [Circular Linked List: লিস্ট যখন বৃত্ত](./circular-linked-list.mdx), যেখানে শেষ node আবার প্রথমকে দেখায়, আর থামার জায়গা বলে কিছু থাকে না।

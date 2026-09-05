@@ -1,0 +1,23 @@
+---
+title: Linked Lists
+description: Array-তে শুরুতে কিছু ঢোকাতে গেলে যে ঝামেলা, pointer দিয়ে জোড়া node-এর linked list সেটাই সহজ করে দেয়। ধারণা থেকে singly, doubly, circular, আর array-এর সাথে তুলনা, সবই আছে।
+---
+
+Array-এর একদম শুরুতে কিছু ঢোকাতে গেলে কী হয় মনে আছে? সবাইকে এক ঘর করে সরাতে হয়, O(n)। Linked List ঠিক এই জায়গাটাতেই জেতে। আর শুধু তাই নয়, এটাই pointer দিয়ে ভাবার প্রথম আসল ব্যায়াম, যেটা পরে Tree আর Graph-এ সোজাসুজি কাজে লাগবে।
+
+**Section Roadmap:** ধারণা, Node, Singly Linked List, অপারেশন, Doubly Linked List, Circular Linked List, আর শেষে Array vs Linked List।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Linked List কী](./what-is-linked-list.mdx): node আর pointer দিয়ে লিস্ট বানানোর মূল আইডিয়া
+2. [Singly Linked List](./singly-linked-list.mdx): একটা সত্যি চলমান singly linked list class বানাই
+3. [Node মুছে ফেলা (Deletion)](./deletion.mdx): pointer ঘুরিয়ে মাঝ থেকে node বাদ দেওয়া
+4. [Doubly Linked List](./doubly-linked-list.mdx): সামনে-পেছনে দুই দিকেই হাঁটা যায় এমন লিস্ট
+5. [Circular Linked List](./circular-linked-list.mdx): শেষ node আবার প্রথম node-কেই দেখায়, পুরোটা একটা বৃত্ত
+6. [Array vs Linked List](./array-vs-linked-list.mdx): কোনটা কখন নেবে, সেই সিদ্ধান্ত
+
+## সারাংশ
+
+Linked list মানে data আর next pointer নিয়ে node-দের একটা শৃঙ্খল। Prepend O(1), access O(n)। Doubly list-এ দুই দিকেই যাওয়া যায়, আর tail থাকলে append-ও O(1)। Circular-এ শেষ node থেকে আবার head-এ ফিরে আসা যায়। শেষ কথা, কোন কাঠামো নেবে তা ঠিক হয় তোমার access আর insert-এর প্যাটার্ন দেখেই।
+
+**পরবর্তী:** [Stacks & Queues](/docs/stacks-queues)।

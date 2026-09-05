@@ -1,0 +1,4 @@
+{
+  "title": "Linked Lists",
+  "pages": ["index", "what-is-linked-list", "singly-linked-list", "deletion", "doubly-linked-list", "circular-linked-list", "array-vs-linked-list"]
+}

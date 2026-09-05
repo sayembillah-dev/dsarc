@@ -1,0 +1,128 @@
+---
+title: "Array vs Linked List: কোনটা কখন"
+description: তোমার কাজে random access বেশি, নাকি insert-delete বেশি? এই এক প্রশ্নের উত্তরেই array আর linked list-এর বাছাই হয়ে যায়।
+---
+
+## কী শিখব
+
+- পরিস্থিতি দেখে সঠিক কাঠামো বাছাই
+- একই অপারেশন দুই কাঠামোয় কত ধাপে হয়, তা হাতে-কলমে হিসাব করা
+- শুধু Big-O নয়, cache আর memory-র আসল পার্থক্যও বোঝা
+- Linked list কেন "প্রথম আসল pointer-ব্যায়াম", এই ধারণা
+
+## ধারণা
+
+ভাবো তো, একই কাজ দুইভাবে করলে কোনটা সস্তা পড়ে, সেটা কি শুধু Big-O দেখে বোঝা যায়? না। Big-O বলে worst case-এ কত, কিন্তু বলে না তোমার কাজে ওই worst case-টা কতবার আসে।
+
+আসল লড়াইটা একটাই প্রশ্নে ফয়সালা হয়ে যায়: **তুমি বেশি করবে কী?** ঘন ঘন random access, নাকি ঘন ঘন শুরুতে-মাঝে insert-delete? আগে টেবিলটা দেখে নাও:
+
+| দিক | Array | Linked List |
+|-----|-------|-------------|
+| Index access | **O(1)** | O(n) |
+| শুরুতে insert/delete | O(n) | **O(1)** |
+| মাঝে insert/delete | O(n) | O(n) (খোঁজার হাঁটা) |
+| Memory per item | কম, শুধু data | বেশি, data + pointer |
+| Cache-friendly | হ্যাঁ (পাশাপাশি) | না (ছড়ানো) |
+| আকার | সাধারণত fixed বা resize | সহজে বাড়ে-কমে |
+
+সহজ কথায়, random access বেশি লাগলে Array, আর শুরুতে বা মাঝে ঘন ঘন insert-delete লাগলে Linked List। এই এক লাইনেই পুরো সিদ্ধান্ত।
+
+## কোড উদাহরণ: একই অপারেশন, দুই দাম
+
+```js
+// কাজ: শুরুতে ১ ঢোকানো
+
+// Array-এ: সবাইকে এক ঘর সরাতে হয়, O(n)
+const arr = [2, 3, 4];
+arr.unshift(1);
+console.log(arr); // [1, 2, 3, 4] (ভেতরে 4,3,2 সবাই সরে গেছে)
+
+// Linked List-এ: শুধু দুটো pointer বদল, O(1)
+const head = { value: 2, next: { value: 3, next: { value: 4, next: null } } };
+const newHead = { value: 1, next: head }; // এক ধাপেই শেষ
+console.log(newHead.next.value); // 2, আগের শৃঙ্খল অটুট
+
+// Array-এ index access সরাসরি, O(1)
+console.log(arr[2]); // 3
+
+// Linked list-এ "তৃতীয়টা" চাইলে হেঁটে যেতে হয়, O(n)
+// newHead.next.next.value -> 3, প্রতিবার head থেকে হাঁটা
+```
+
+## কোড ব্রেকডাউন: লাইনে লাইনে
+
+1. `arr.unshift(1)` করলে array-এর ভেতরে সব উপাদান এক ঘর ডানে সরে যায়। [Array Operations পেজে](../arrays-strings/array-operations.mdx) এই shift-এর dry-run দেখেছ। n টা উপাদান থাকলে n টা সরানো, তাই O(n)।
+2. Linked list-এ `{ value: 1, next: head }` লিখলেই নতুন node পুরনো head-কে দেখাচ্ছে। আগের শৃঙ্খল একটুও নড়েনি। দুটো pointer বদল, তাই O(1)।
+3. `arr[2]` মানে সরাসরি `base_address + 2 × size` হিসাব করে লাফানো, O(1)। [Array Basics-এ](../arrays-strings/array-basics.mdx) এই address-এর হিসাবটা দেখেছ।
+4. Linked list-এ তৃতীয়টা চাইলে `head.next.next` লিখতে হয়, মানে head থেকে দুই ধাপ হাঁটা। i-তমটা চাইলে i ধাপ, তাই worst case-এ O(n)।
+5. একই লিস্টে এখন দশ হাজার item ঢুকলে কী হবে ভাবো। Array-তে প্রতিবার unshift-এ পুরোটা সরবে। Linked list-এ প্রতিবার এক ধাপ। দশ হাজারবার এই কাজ করলে পার্থক্য চোখে পড়ার মতো।
+
+## Complexity: পাশাপাশি তুলনা
+
+| অপারেশন | Array | Linked List | মন্তব্য |
+|---------|-------|-------------|---------|
+| Access i-তম | **O(1)** | O(n) | Array-এর ছক direct address |
+| শুরুতে insert | O(n) | **O(1)** | Array-তে সবাই সরে যায় |
+| শেষে insert | O(1) amortized | O(n) (singly) / O(1) (tail থাকলে) | Array-এর capacity doubling, doubly-তে tail pointer |
+| মাঝে insert/delete | O(n) | O(n) | দুটোতেই আগে খুঁজতে হয় |
+| Search | O(n) | O(n) | sorted array-তে binary search O(log n) লাগানো যায়, linked list-এ না |
+
+তাহলে linked list কি সবসময় জিতে? না। মাঝে insert-ও আসলে O(n), কারণ আগে খুঁজতে হয়। Linked list-এর আসল জেতা শুধু **শুরুতে** insert/delete আর **node হাতে থাকলে** delete। এই দুটো কাজ যদি তোমার মূল কাজ হয়, তবেই linked list। নাহলে array-ই ঠিক।
+
+## কোনটা কখন: তিনটা বাস্তব দৃশ্য
+
+ধরো, তিনটা আলাদা আলাদা অ্যাপ বানাচ্ছ। প্রতিটার জন্য কোনটা নেবে, চলো ভাবি।
+
+**দৃশ্য ১: leaderboard।** একটা গেমের স্কোরবোর্ড, যেখানে র‍্যাংক অনুযায়ী খেলোয়াড়ের নাম দেখাতে হয়। প্রায়ই বলা হয় "৫ নম্বরে কে আছে?" এখানে random access-ই মূল কাজ, insert-delete কম। **Array** জেতে, কারণ `board[4]` সরাসরি O(1)।
+
+**দৃশ্য ২: print queue।** প্রিন্টারে ডকুমেন্ট আসছে আর সামনে থেকে প্রিন্ট হয়ে যাচ্ছে। নতুন ডকুমেন্ট পেছনে জুড়ছে, আর সামনেরটা প্রিন্ট হয়ে বাদ পড়ছে। এখানে সামনে-পেছনে insert-delete-ই মূল কাজ, index access প্রায় নেই। **Linked list** (বা queue) জেতে, কারণ দুই প্রান্তের অপারেশনই O(1)।
+
+**দৃশ্য ৩: photo gallery।** ছবির পর ছবি swipe করে দেখা, মাঝে মাঝে ছবি ডিলিট। এখানে আসলে দুটোই মোটামুটি চলে, কিন্তু ছবি ডিলিট ঘন ঘন হলে linked list-এর মাঝে-delete কষ্ট হয়, কারণ আগে খুঁজতে হয়। Array-র index access-এ সুবিধা, আর ডিলিট-এ shift-এর দাম। তাই এখানে **সিদ্ধান্ত নির্ভর করে** কোন কাজটা বেশি, সেটা গুনে।
+
+দেখো, একই "তালিকা রাখা" কাজটা তিনবার তিনরকম উত্তর দিল। এটাই আসল শিক্ষা: কাঠামো বাছাই কখনোই একটা সার্বজনীন উত্তর নয়, বরং তোমার **অপারেশনের প্যাটার্ন** দেখে নেওয়া সিদ্ধান্ত।
+
+## Memory আর cache: Big-O যা বলে না
+
+Big-O টেবিলে দুটোকে মাঝে মাঝে সমান দেখায়, কিন্তু বাস্তবে চালালে পার্থক্য চোখে পড়ে। কারণটা মেমরির গঠনে।
+
+Array-এর উপাদানগুলো মেমরিতে **পাশাপাশি** থাকে। CPU যখন একটা উপাদান আনে, সে সাথে সাথে পাশের কয়েকটাকেও cache-এ তুলে নেয়, কারণ ধারণা করে তুমি পাশেরটাও চাইবে। একে বলে **spatial locality**। ফলে array traversal-এ বেশিরভাগ read-ই cache থেকে আসে, খুব দ্রুত।
+
+Linked list-এর node গুলো **ছড়ানো**। একটা node-এ গেলে পরেরটা কোথায়, সেটা pointer বললে তবেই জানা যায়, আর সেই ঠিকানাটা cache-এ আগে থেকে থাকার কোনো কারণ নেই। প্রতিবার প্রায় cache miss, RAM-এ গিয়ে আনতে হয়। ফলে একই O(n) traversal-ও linked list-এ অনুভব হয় ধীর।
+
+তার উপর memory খরচ। ধরো প্রতিটা উপাদান ৪ byte-এর সংখ্যা। Array-তে n টা সংখ্যা রাখতে লাগে মোটামুটি `4n` byte। Linked list-এ প্রতি node-এ pointer-ও লাগে (৬৪-bit সিস্টেমে ৮ byte), তাই খরচ প্রায় `12n` byte, তিনগুণ। বড় ডেটাসেটে এই ফরক আসল।
+
+তাই সাক্ষ্য সব মিলিয়ে: **যখন সন্দেহ হয়, array নাও।** Linked list তখনই নাও, যখন তার স্পেসিফিক শক্তিটা (শুরুতে O(1) insert/delete, node হাতে থাকলে O(1) delete) তোমার কাজের একদম কেন্দ্রে।
+
+## সাধারণ ভুল আর edge case
+
+1. **"Linked list সবসময় দ্রুত" ভাবা।** শুধু শুরুতে insert/delete দ্রুত। মাঝে বা শেষে গেলে খোঁজার হাঁটা O(n), array-এর চেয়ে ভালো কিছু নয়।
+2. **append O(1) ভাবা singly-তে।** Tail pointer না থাকলে append পুরো লিস্ট হাঁটা, O(n)। Tail থাকলেই কেবল O(1), সেটা [doubly পেজে](./doubly-linked-list.mdx) দেখেছ।
+3. **Memory ফ্রি ভাবা।** প্রতিটা node-এ একটা বাড়তি pointer, আর node গুলো মেমরিতে ছড়ানো। Array-তে শুধু data-ই থাকে। বড় ডেটাসেটে এই পার্থক্য বাস্তব।
+4. **Cache-এর কথা না ভাবা।** CPU cache পাশাপাশি থাকা ডেটা পছন্দ করে, তাই array traversal আসলে Big-O-র চেয়েও দ্রুত অনুভব হয়। Linked list-এ প্রতিবার লাফিয়ে লাফিয়ে যেতে হয়, cache miss বেশি।
+5. **JS-এ linked list দরকার হয় না ভেবে উড়িয়ে দেওয়া।** সত্যি কথা, JavaScript-এ built-in array যথেষ্ট শক্তিশালী। কিন্তু linked list শেখা জরুরি, কারণ এটাই pointer দিয়ে ভাবার প্রথম আসল ব্যায়াম। [Tree](/docs/trees) আর [Graph](/docs/graphs)-এ এই একই pointer-ভাবনা সোজাসুজি লাগবে।
+
+## Animation Spec
+
+> **Animation Spec: Side-by-side Decision**
+>
+> - **দৃশ্য:** বাঁয়ে array (একটানা ব্লক), ডানে linked list (ছড়ানো node)। দুটোই ডিফল্ট #64748b।
+> - **ইনপুট:** অপারেশন বেছে নেওয়া: `access i` / `insert front` / `delete front`।
+> - **ধাপ:** একই অপারেশন দুই দিকে চলবে। Array-তে unshift হলে সব ব্লক ডানে সরতে দেখাবে (সব #f97316 জ্বলবে একসাথে), step counter বাড়বে n পর্যন্ত। Linked list-এ শুধু দুটো তীর জুড়বে, counter থামবে ২-এ। access-এ উল্টোটা, array-তে সরাসরি লাফ, list-এ হাঁটা #eab308 দিয়ে।
+> - **লক্ষ্য:** একই অপারেশনের step counter-এর পার্থক্য চোখে দেখা, আর কাঠামোভেদে trade-offটা আত্মস্থ করা।
+
+## অনুশীলন
+
+1. **সহজ:** তোমাকে ১০০০ বার একটা ডেটার **শুরুতে** insert করতে হবে। Array নাকি linked list, কেন? *Hint: প্রতিবার কত ধাপ, সেটা হিসাব করো।*
+2. **সহজ:** ব্রাউজারের Back/Forward history কোন কাঠামোয় রাখবে? *Hint: দুই দিকেই যাতায়াত লাগে, আর মাঝে insert/delete কম। কোনটা বেশি মানায়?*
+3. **মাঝারি:** একটা music playlist অ্যাপে গান আগে-পরে সরানো (reorder) লাগে। কোন কাঠামো ভালো, যুক্তি দাও। *Hint: "সরানো" মানে delete + insert। মাঝে এই কাজ কোনটায় সস্তা?*
+4. **মাঝারি:** undo/redo সিস্টেম বানাতে হবে। Array-based stack নাকি linked list-based, কেন? *Hint: push/pop শুধু একটাই প্রান্তে হয়। কোন প্রান্তটা, আর সেটা কোন কাঠামোয় সস্তা?*
+5. **কঠিন:** কেন CPU cache array-কে পছন্দ করে, সেটা locality দিয়ে ব্যাখ্যা করো। তারপর ছোট্ট একটা পরীক্ষার আইডিয়া লেখো: একই n জন্য array আর linked list-এ traversal করে সময় মাপলে কী দেখার আশা করছ? *Hint: contiguous memory pre-fetch হয়, scattered memory হয় না। ফলে Big-O এক হলেও আসল সময় আলাদা।*
+
+## সারসংক্ষেপ
+
+- Random access বেশি হলে array, শুরুতে/মাঝে ঘন ঘন insert-delete হলে linked list।
+- Linked list-এর আসল জেতা শুধু শুরুতে insert/delete আর node হাতে থাকলে delete; মাঝে insert-ও খোঁজার জন্য O(n)।
+- Array cache-friendly আর কম memory-তে চলে; linked list প্রতি node-এ বাড়তি pointer নেয় আর ছড়ানো থাকে।
+- Linked list শেখার আসল কারণ: pointer দিয়ে ভাবার ব্যায়াম, যেটা পরে Tree আর Graph-এ সরাসরি লাগবে।
+
+**পরের পেজ:** [Stacks & Queues](/docs/stacks-queues), যেখানে linked list-এর prepend/deleteFront দুটোই লাগবে, একটা নতুন কাঠামো বানাতে।
