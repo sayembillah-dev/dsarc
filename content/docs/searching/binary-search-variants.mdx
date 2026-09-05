@@ -1,0 +1,162 @@
+---
+title: "Binary Search Variants: Lower ও Upper Bound"
+description: "শুধু আছে কিনা নয়: প্রথম/শেষ অবস্থান, insert-পয়েন্ট, কতবার আছে। lower/upper bound-এর dry run, আর 'উত্তর হার্ডকোড না, শর্ত দিয়ে সরু করা' ভাবনা।"
+---
+
+## কী শিখব
+
+- কেন "আছে কিনা" যথেষ্ট না: duplicate-এর জগতে প্রথম/শেষ চাই
+- lower bound আর upper bound-এর সংজ্ঞা আর dry run
+- দুটো মিলিয়ে কী কী পাওয়া যায়: count, range, insert position
+- এই variant-গুলোর loop-চুক্তি কেন মূল search থেকে আলাদা
+- পুরো পরিবারের একটা মাস্টার-টেমপ্লেট
+
+## ধারণা
+
+ধরো sorted array `[1, 2, 2, 2, 3, 5]`। এবার প্রশ্নগুলো দেখো:
+
+- 2 **প্রথম** কোথায়? (index 1)
+- 2 **শেষ** কোথায়? (index 3)
+- 2 মোট কতবার? (3)
+- 4 ঢোকালে কোথায় বসবে? (index 5)
+
+[Binary Search](./binary-search.mdx)-এর সাধারণ রূপ প্রথম দুটোর কোনোটাই গ্যারান্টি দেয় না, কোনো একটা 2 ফেরায়, ব্যাস। এই চার প্রশ্নের উত্তর দেয় দুটো জুমআত্মীয়:
+
+- **lower bound:** প্রথম এমন index যেখানে `arr[i] >= target`
+- **upper bound:** প্রথম এমন index যেখানে `arr[i] > target`
+
+দুটো সংজ্ঞা এক লাইনে পড়লে গুলিয়ে যায়, তাই ছবিতে ভাবো: lower bound হলো target-এর জোড়ার **বাম দেয়াল**, upper bound **ডান দেয়ালের পরের ঘর**।
+
+```text
+array: [1, 2, 2, 2, 3, 5]
+index:  0  1  2  3  4  5
+              ↑        ↑
+         lower(2)  upper(2) = 4
+```
+
+## মূল চালাকি: উত্তর হার্ডকোড না, শর্ত সরু করা
+
+সাধারণ binary search-এ মিললেই থেমে যাই। এখানে মিলেও থামি না: মিলে গেলে mid **একটা প্রার্থী**, কিন্তু তার আগে আরও থাকতে পারে, তাই বামে খোঁজা চালিয়ে যাই। মানে প্রতি ধাপে শর্ত দুই দলে ভাগ করে পরিসর সরু করা:
+
+- `arr[mid] < target` → উত্তর এখানে হতেই পারে না, ডানে যাও: `low = mid + 1`
+- নইলে (`arr[mid] >= target`) → mid নিজেই প্রার্থী, কিন্তু বামে আরও ভালো থাকতে পারে: `high = mid`
+
+## Dry run: `[1, 2, 2, 2, 3, 5]`-এ lowerBound(2)
+
+| ধাপ | low | high | mid | arr[mid] | শর্ত | সিদ্ধান্ত |
+|-----|-----|------|-----|----------|------|-----------|
+| 1 | 0 | 6 | 3 | 2 | >= 2 | high = 3 |
+| 2 | 0 | 3 | 1 | 2 | >= 2 | high = 1 |
+| 3 | 0 | 1 | 0 | 1 | < 2 | low = 1 |
+| 4 | 1 | 1 | - | - | - | low === high, থামো, ফেরত 1 |
+
+দেখো, ধাপ ১ আর ২-তে মিলেও থামিনি, বামে ঢুকে গেছি, কারণ আরও বামে 2 থাকতে পারে। শেষে low = 1, যেখানে প্রথম 2।
+
+মজার ব্যাপার: lowerBound(4) দিলে ফেরত 5 আসে, অথচ 4 নেই। কারণ সংজ্ঞা ছিল "প্রথম যেখানে >= target", 4 না থাকলে সেটা 5-এর ঘর। অর্থাৎ lower bound একই সঙ্গে বলে দেয় **নতুন উপাদান কোথায় বসবে**, insert position। দুই পাখি এক পাথরে।
+
+## কোড: lowerBound, upperBound, আর তাদের ব্যুৎপন্ন
+
+```js
+// প্রথম index যেখানে arr[i] >= target
+function lowerBound(arr, target) {
+  let low = 0;
+  let high = arr.length;              // exclusive: high এক ঘর বাইরে পর্যন্ত
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (arr[mid] < target) {
+      low = mid + 1;
+    } else {
+      high = mid;                     // mid প্রার্থী, রেখে দাও
+    }
+  }
+  return low;
+}
+
+// প্রথম index যেখানে arr[i] > target: এক চিহ্নেরই পার্থক্য
+function upperBound(arr, target) {
+  let low = 0;
+  let high = arr.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (arr[mid] <= target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+const a = [1, 2, 2, 2, 3, 5];
+console.log(lowerBound(a, 2));  // 1: প্রথম 2
+console.log(upperBound(a, 2));  // 4: শেষ 2-এর পরের ঘর
+console.log(lowerBound(a, 4));  // 5: 4 বসত এখানে
+
+// কতবার আছে: দুই দেয়ালের দূরত্ব
+function countOccurrences(arr, target) {
+  return upperBound(arr, target) - lowerBound(arr, target);
+}
+console.log(countOccurrences(a, 2)); // 3
+console.log(countOccurrences(a, 9)); // 0: না থাকলে দুই দেয়াল একই জায়গায়
+```
+
+লক্ষ করো, upper bound-এ শর্ত শুধু `<=` হয়ে গেছে। এক চিহ্ন বদলালে দেয়াল ডানে সরে গেল। এই "শর্ত একটা, কোড প্রায় একই" ব্যাপারটাই variant-গুলোর সৌন্দর্য।
+
+## কোড ব্রেকডাউন: lowerBound, লাইনে লাইনে
+
+1. `high = arr.length` : মূল search-এর মতো `length - 1` না। কারণ উত্তরটা **পুরো array-র পরের ঘরও** হতে পারে (সবাই target-এর ছোট হলে)। চুক্তি: `[low, high)`, high বাইরে।
+2. `while (low < high)` : exclusive চুক্তিতে সমান মানে পরিসর খালি, থামো। মূল পেজের `<=`-এর সঙ্গে তুলনা করো: চুক্তি বদলালে শর্ত বদলায়।
+3. `if (arr[mid] < target) low = mid + 1` : mid-এর মান ছোট, সে প্রার্থী হতেই পারে না, বাদ।
+4. `else high = mid` : mid প্রার্থী, কিন্তু আরও বামে ভালো থাকতে পারে। `high = mid` লিখে mid-কে পরিসরে রাখলাম। এখানে `mid - 1` দিলে প্রার্থী হারিয়ে যেত, আবার অনন্ত লুপের ভয় নেই কারণ `high` কমছেই।
+5. `return low` : loop শেষে low আর high একই দাগে মিলে, সেই দাগই উত্তর।
+
+## Complexity
+
+| অপারেশন | Time | কেন |
+|---------|------|-----|
+| lowerBound / upperBound | O(log n) | প্রতি ধাপে পরিসর অর্ধেক, হুবহু binary search |
+| countOccurrences | O(log n) | দুইবার bound চালানো, constant গুণক |
+| Space | O(1) | iterative |
+
+## সাধারণ ভুল আর edge case
+
+**১. মিললেই থেমে যাওয়া।**
+সাধারণ search-এর অভ্যাসে `arr[mid] === target` দেখলেই return করে ফেললে প্রথম/শেষ পাবে না, যেকোনোটা পাবে। এখানে মিল মানে "প্রার্থী, কিন্তু বামে আরও দেখো"।
+
+**২. চুক্তি দুটো গুলিয়ে ফেলা।**
+মূল পেজে `high = length - 1`, এখানে `high = length`। একটার শর্ত অন্যটায় বসালে অনন্ত লুপ বা off-by-one। যে variant লিখছ, তার চুক্তি আগে জোরে লিখে নাও।
+
+**৩. `high = mid - 1` লেখা lower bound-এ।**
+মিলা mid-টাই প্রথম হতে পারে; `mid - 1` দিলে সে বাদ পড়ে। প্রার্থীকে পরিসরে রাখতে `high = mid`।
+
+**৪. Count শূন্য হলে অবাক হওয়া।**
+Target না থাকলে lower আর upper একই দাগা, বিয়োগফল 0। এটা বৈশিষ্ট্য, বাগ না: `countOccurrences` আগে চেক করে "আছে কিনা"ও বলে দেয়।
+
+**৫. দুই bound-এর নাম উল্টে বলা।**
+Lower মানে target-এর নিচে না, lower মানে **সেই দাগ যেখানে >= শুরু**। Upper মানে যেখানে > শুরু। সংজ্ঞা ছাড়া নামে চললে interview-এ উল্টে যাবে।
+
+## Animation Spec
+
+> **Animation Spec: Boundary Finder**
+>
+> - **দৃশ্য:** duplicate-সহ sorted bar; target-এর জোড়া নীল; lower দেয়াল সবুজ খাড়া দাগ, upper লাল দাগ; পাশে দুই রঙের "প্রার্থী" ট্রেইল।
+> - **ইনপুট:** array (duplicate সহ), target; lower / upper / দুটোই টগল।
+> - **ধাপ:** mid মিললেও থামে না, প্রার্থী দাগ বামে সরতে থাকে; শেষে দুই দেয়াল দাঁড়ায়, মাঝের অংশ count হিসেবে জ্বলে।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** "মিলেও থামি না, শর্ত দিয়ে সরু করি" ভাবনাটা, আর দুই দেয়ালের দূরত্বই count।
+
+## অনুশীলন
+
+- **সহজ ১:** `[5, 7, 7, 8, 8, 10]`-এ lowerBound(8) আর upperBound(8) হাতে বের করো, টেবিল সহ।
+- **সহজ ২:** একই array-তে countOccurrences(6) কত দেবে? দুই bound কোথায় দাঁড়াবে, আঁকো।
+- **মাঝারি ১:** First/last position (LeetCode 34) লেখো: target-এর প্রথম আর শেষ index, না থাকলে `[-1, -1]`। (হিন্ট: দুই bound নাও, তারপর চেক করো সেই দাগে সত্যিই target আছে কিনা।)
+- **মাঝারি ২:** বন্ধুকে বোঝাও: কেন এই variant-গুলোতে `high = mid` লিখলেও অনন্ত লুপ হয় না। (হিন্ট: `low < high` শর্তে mid সবসময় high-এর চেয়ে ছোট, তাই high কমতেই থাকে।)
+- **কঠিন:** Sorted matrix-এ search (LeetCode 74): m×n grid, প্রতি সারি sorted আর পরের সারির শুরু আগের শেষের চেয়ে বড়। (হিন্ট: পুরো grid-কে ভাবো একটা লম্বা virtual sorted array; index `k` মানে সারি `floor(k / n)`, কলাম `k % n`। Bound নয়, সরাসরি binary search, কিন্তু index অনুবাদই আসল।)
+
+## সারসংক্ষেপ
+
+- Lower bound = প্রথম দাগ যেখানে `>= target`; upper bound = প্রথম দাগ যেখানে `> target`। দুটোই দেয়াল।
+- মিললেও থামো না: প্রার্থী মনে রেখে পরিসর সরু করো, এটাই variant-এর প্রাণ।
+- চুক্তি `[low, high)`, শর্ত `low < high`, আর `high = mid`: তিনটা একজোড়া।
+- দুই দেয়ালের দূরত্বই count; নেই হলে দূরত্ব শূন্য, আর lower-ই insert position।
+- একটা শর্ত বদলাও, নতুন variant পাও: এই টেমপ্লেট-ভাবনাই পরের পেজের দরজা।
