@@ -1,0 +1,51 @@
+---
+title: "Brute Force: আগে সব চেষ্টা, তারপর চালাকি"
+description: সব সম্ভাবনা একে একে পরীক্ষা - সরল, সবসময় সঠিক, আর optimize-এর বেসলাইন।
+---
+
+## কী শিখব
+
+- সব সম্ভাবনা পরীক্ষা - সরল কিন্তু ধীর বেসলাইন
+
+## ধারণা
+
+Brute force = কোনো চালাকি ছাড়া সব সম্ভাব্য উত্তর একে একে পরীক্ষা করা। প্রায়ই ধীর (O(n²), O(2ⁿ)), কিন্তু (১) সবসময় সঠিক উত্তর দেয়, (২) সমস্যা বোঝার প্রথম ধাপ, (৩) optimize করার বেসলাইন।
+
+**নিয়ম:** আগে brute force ভাবো, তারপর optimize করো।
+
+## কোড উদাহরণ
+
+```js
+// Two Sum - brute force
+function twoSumBrute(nums, target) {
+  for (let i = 0; i < nums.length; i++)
+    for (let j = i + 1; j < nums.length; j++)
+      if (nums[i] + nums[j] === target) return [i, j];
+  return [];                          // সব জোড়া পরীক্ষা -> O(n²)
+}
+console.log(twoSumBrute([2, 7, 11, 15], 9)); // [0,1]
+// তুলনা: hash version একই কাজ O(n)-এ করে
+```
+
+## কোড ব্রেকডাউন
+
+- সব জোড়া (i, j) পরীক্ষা -> O(n²)।
+- [Hash Tables](../hash-tables) chapter-এ দেখেছি hash দিয়ে এটা O(n) হয় - brute force থেকে optimize-এর ক্লাসিক উদাহরণ।
+
+## Complexity
+
+- সমস্যাভেদে O(n²)-O(2ⁿ)।
+
+## Animation Spec
+
+> **Animation Spec: Exhaustive Pairs**
+>
+> - **দৃশ্য:** array; দুটো pointer (i, j) সব জোড়া ঘোরে; পরীক্ষিত জোড়া গোনা।
+> - **ইনপুট:** array, target।
+> - **ধাপ:** প্রতিটা জোড়া হলুদ; মিললে সবুজ; counter মোট চেষ্টা দেখায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** O(n²)-এর "সব জোড়া" অনুভূতি ও optimize-এর প্রেরণা।
+
+## অনুশীলন
+
+- একটা array-তে সবচেয়ে বড় জোড়ার গুণফল brute force-এ বের করো।

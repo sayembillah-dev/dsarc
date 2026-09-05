@@ -1,0 +1,62 @@
+---
+title: "Kth Element: পুরো sort ছাড়াই k-তম"
+description: quickselect partition দিয়ে পুরো sort না করেই k-তম উপাদান; heap-বিকল্পসহ।
+---
+
+## কী শিখব
+
+- পুরো sort ছাড়াই k-তম বড়/ছোট উপাদান
+
+## ধারণা
+
+"k-তম বৃহত্তম" চাইলে পুরো array sort করা অপচয়। **Quickselect** [Quick Sort](../sorting/quick-sort)-এর partition-ই ব্যবহার করে: pivot একটা ঠিক ঘরে বসে গেলে দেখা যায় উত্তর কোন ভাগে - অন্য ভাগ ফেলে দিই (পুরো sort নয়, এক ভাগেই খোঁজ)। বিকল্প: k-আকারের একটা **heap** রেখে সবাইকে একবার ঢুকালে top-k আয়ত্তে (stream-এ এটাই ভালো, দেখো [Heaps](../heaps) chapter)।
+
+## কোড উদাহরণ
+
+```js
+// quickselect
+function kthLargest(nums, k) {
+  const target = nums.length - k; // sorted হলে এই index-এ থাকত
+  let left = 0, right = nums.length - 1;
+  while (left <= right) {
+    const p = partition(nums, left, right);
+    if (p === target) return nums[p];
+    else if (p < target) left = p + 1;  // ডান ভাগে খোঁজো
+    else right = p - 1;                 // বাঁ ভাগে খোঁজো
+  }
+}
+function partition(nums, left, right) {
+  const pivot = nums[right];
+  let i = left;
+  for (let j = left; j < right; j++) {
+    if (nums[j] <= pivot) { [nums[i], nums[j]] = [nums[j], nums[i]]; i++; }
+  }
+  [nums[i], nums[right]] = [nums[right], nums[i]];
+  return i;                             // pivot-এর চূড়ান্ত ঘর
+}
+console.log(kthLargest([3, 2, 1, 5, 6, 4], 2)); // 5
+```
+
+## কোড ব্রেকডাউন
+
+- partition pivot-কে চূড়ান্ত ঘরে বসায়: বাঁয়ে ছোট/সমান, ডানে বড়।
+- সেই ঘর target হলেই উত্তর; নাহলে ঠিক একটা ভাগে খোঁজ চলে - গড়ে প্রতি ধাপে অর্ধেক ফেলে দিই।
+- k-আকারের min-heap রাখলে top-k মিলে O(n log k)-এ; চলমান stream-এ সেটাই সুবিধাজনক।
+
+## Complexity
+
+- গড়ে O(n), worst O(n²) (দুর্ভাগ্যজনক pivot); heap-পথ O(n log k)।
+
+## Animation Spec
+
+> **Animation Spec: Quickselect**
+>
+> - **দৃশ্য:** bar array; pivot highlight; partition-এর পর ছোটগুলো বাঁয়ে, বড়গুলো ডানে; ফেলে-দেওয়া ভাগ ধুসর।
+> - **ইনপুট:** array, k।
+> - **ধাপ:** প্রতি round-এ pivot সবুজ চূড়ান্ত ঘরে; অনুসন্ধান-এলাকা সঙ্কুচিত হওয়া দৃশ্যমান।
+> - **নিয়ন্ত্রণ:** speed, step, reset; heap-পথ toggle।
+> - **লক্ষ্য:** পুরো sort না করেও k-তম পাওয়া যায় - কাজ কমানোই গতি।
+
+## অনুশীলন
+
+- quickselect দিয়ে median (k = n/2) বের করো।

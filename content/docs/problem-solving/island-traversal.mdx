@@ -1,0 +1,64 @@
+---
+title: "Island Traversal: grid-এ flood fill"
+description: grid-কে graph ভেবে DFS/BFS flood fill - island গোনার ক্লাসিক।
+---
+
+## কী শিখব
+
+- 2D grid-কে graph ভেবে flood fill
+
+## ধারণা
+
+'1' = স্থল, '0' = পানি; উপর-নিচ-বাঁ-ডানে সংযুক্ত স্থল একটা island। মোট কয়টা island? প্রতিটা অপরিদর্শিত স্থল ঘর থেকে **DFS/BFS দিয়ে পুরো island-টা visited** করে দিলে (flood fill), পরে সেই ঘর আর নতুন island ধরে না। মূলত graph-এর connected components গোনা ([Graphs](../graphs) chapter) - grid-ই এখানে graph, প্রতিবেশীই edge। grid নিয়ে বেসিক কাজ [2D Arrays](../arrays-strings/2d-arrays)-এ।
+
+## কোড উদাহরণ
+
+```js
+// island গোনা
+function numIslands(grid) {
+  if (!grid.length) return 0;
+  const rows = grid.length, cols = grid[0].length;
+  let count = 0;
+  function sink(r, c) {
+    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== '1') return;
+    grid[r][c] = '0';               // ডুবিয়ে দিই = visited চিহ্ন
+    sink(r + 1, c); sink(r - 1, c); // উপর-নিচ
+    sink(r, c + 1); sink(r, c - 1); // বাঁ-ডান
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] === '1') { count++; sink(r, c); } // নতুন island, পুরোটা ডুবাও
+    }
+  }
+  return count;
+}
+console.log(numIslands([
+  ['1', '1', '0', '0'],
+  ['1', '0', '0', '1'],
+  ['0', '0', '1', '1'],
+])); // 2
+```
+
+## কোড ব্রেকডাউন
+
+- বাইরের দুই loop প্রতিটা ঘর একবার দেখে; '1' পেলেই একটা নতুন island।
+- `sink` পুরো island-টা recursion দিয়ে '0' বানিয়ে দেয় - বাউন্ডারি ও পানি-চেক আগে।
+- BFS দিয়েও একই কাজ: queue-তে প্রতিবেশী রাখো। grid না বদলাতে চাইলে আলাদা visited set রাখো।
+
+## Complexity
+
+- O(rows * cols); প্রতিটা ঘর সর্বোচ্চ একবার।
+
+## Animation Spec
+
+> **Animation Spec: Flood Fill**
+>
+> - **দৃশ্য:** 2D grid; স্থল সবুজ, পানি নীল; DFS ঢেউ একটা island জুড়ে ছড়ায় (বেগুনি visited), শেষে island-এ নম্বর বসে।
+> - **ইনপুট:** grid (preset / কাস্টম), DFS বা BFS পছন্দ।
+> - **ধাপ:** scan cursor ঘরে ঘরে; '1' পেলে flood শুরু; island counter বাড়ে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; grid size।
+> - **লক্ষ্য:** flood fill = grid-এ graph traversal - একই ছাঁচে অনেক সমস্যা।
+
+## অনুশীলন
+
+- সবচেয়ে বড় island-এর আয়তন (ঘর-সংখ্যা) বের করো।

@@ -1,0 +1,52 @@
+---
+title: "Two Pointer: দুই প্রান্ত থেকে এগিয়ে"
+description: sorted array-তে দুই pointer দিয়ে nested loop-এর কাজ এক pass-এ।
+---
+
+## কী শিখব
+
+- দুটো pointer দিয়ে O(n²) কাজ O(n)-এ নামানো
+
+## ধারণা
+
+sorted array বা string-এ দুটো pointer (সাধারণত দুই প্রান্ত থেকে, বা একই দিকে) একসাথে সরিয়ে অনেক nested-loop সমস্যা এক pass-এ সমাধান। "জোড়া খোঁজা", palindrome, sorted-এ pair-sum - সব এতে। array sorted না থাকলে আগে [Sorting](../sorting) chapter-এর কোনো sort চালাও।
+
+## কোড উদাহরণ
+
+```js
+// sorted array-তে target যোগফলের জোড়া - O(n)
+function pairSum(sorted, target) {
+  let left = 0, right = sorted.length - 1;
+  while (left < right) {
+    const sum = sorted[left] + sorted[right];
+    if (sum === target) return [left, right];
+    else if (sum < target) left++;    // ছোট -> বাঁ pointer ডানে (বড় মান দরকার)
+    else right--;                     // বড় -> ডান pointer বাঁয়ে (ছোট মান দরকার)
+  }
+  return [];
+}
+console.log(pairSum([1, 3, 4, 6, 8, 11], 10)); // [2, 3]  (4+6=10)
+```
+
+## কোড ব্রেকডাউন
+
+- sorted বলে: sum ছোট হলে বড় মান দরকার -> left++; বড় হলে right--।
+- প্রতিটা pointer সর্বোচ্চ একবার পুরো array পার হয় -> O(n)।
+
+## Complexity
+
+- O(n) (sorted হলে); নাহলে sort O(n log n)।
+
+## Animation Spec
+
+> **Animation Spec: Converging Pointers**
+>
+> - **দৃশ্য:** sorted bar; left ও right pointer দুই প্রান্তে, কাছে আসে।
+> - **ইনপুট:** array, target।
+> - **ধাপ:** প্রতিবার sum হিসাব; কোন pointer সরবে তার সিদ্ধান্ত highlight।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** কেন sorted-এ two pointer O(n)।
+
+## অনুশীলন
+
+- two pointer দিয়ে array in-place reverse করো।

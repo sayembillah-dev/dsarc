@@ -1,0 +1,55 @@
+---
+title: "Merge Intervals: overlap জোড়া লাগানো"
+description: sort + sweep দিয়ে overlapping রেঞ্জ একত্র করার ছাঁচ।
+---
+
+## কী শিখব
+
+- sort + sweep দিয়ে overlapping রেঞ্জ একত্র করা
+
+## ধারণা
+
+বেশ কিছু interval (যেমন মিটিংয়ের সময়সীমা) দেওয়া আছে; যেগুলো overlap করে সেগুলো জোড়া লাগিয়ে একটা করে বড় interval বানাতে হয়। চাবি: **শুরু অনুযায়ী sort** - তারপর বাঁ থেকে ডানে এক pass-এ শুধু শেষ merged interval-এর সাথে তুলনা করলেই চলে। মিটিং রুম, ক্যালেন্ডার merge, রেঞ্জ-কভারেজ সমস্যায় সরাসরি লাগে। sort-এর কৌশলগুলো [Sorting](../sorting) chapter-এ।
+
+## কোড উদাহরণ
+
+```js
+// overlap জোড়া লাগানো
+function mergeIntervals(intervals) {
+  const sorted = [...intervals].sort((a, b) => a[0] - b[0]); // শুরু অনুযায়ী sort
+  const merged = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1];
+    const [start, end] = sorted[i];
+    if (start <= last[1]) last[1] = Math.max(last[1], end); // overlap -> জোড়া
+    else merged.push([start, end]);                          // আলাদা interval
+  }
+  return merged;
+}
+console.log(mergeIntervals([[1, 3], [8, 10], [2, 6], [15, 18]]));
+// [[1,6],[8,10],[15,18]]
+```
+
+## কোড ব্রেকডাউন
+
+- sort-এর পর কোনো interval-এর শুরু আগেরটার শেষের আগে হলেই overlap নিশ্চিত।
+- merge করার সময় শেষ হিসেবে দুটোর বড়টা রাখি (একটা আরেকটাকে পুরো ঢাকতে পারে)।
+- sort না করলে প্রতি জোড়াকে সবার সাথে মেলাতে হতো -> O(n²); sort করলেই sweep O(n)।
+
+## Complexity
+
+- sort O(n log n) + sweep O(n) = O(n log n)।
+
+## Animation Spec
+
+> **Animation Spec: Interval Merger**
+>
+> - **দৃশ্য:** সংখ্যারেখায় রঙিন interval বার; sort-এর পর sweep cursor বাঁ থেকে ডানে।
+> - **ইনপুট:** interval সেট (preset / কাস্টম যোগ করা)।
+> - **ধাপ:** sort হওয়া, cursor এগোনো, overlap-এ দুটো বার মিলে লম্বা বার (সবুজ)।
+> - **নিয়ন্ত্রণ:** speed, step, reset; interval যোগ/বাদ।
+> - **লক্ষ্য:** sort করলেই জটিল সমস্যা এক pass-এ নেমে আসে।
+
+## অনুশীলন
+
+- একটা নতুন interval insert করার পর merge করো (insert interval সমস্যা)।

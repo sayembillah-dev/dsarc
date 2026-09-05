@@ -1,0 +1,94 @@
+---
+title: "Two Heaps: মাঝখান সবসময় হাতের কাছে"
+description: max-heap ও min-heap মিলিয়ে চলমান stream-এর median O(1)-এ।
+---
+
+## কী শিখব
+
+- max-heap + min-heap মিলিয়ে চলমান median
+
+## ধারণা
+
+সংখ্যা একটা একটা আসতে থাকে (stream), আর যেকোনো মুহূর্তে median জানতে চাই। কৌশল: ছোট অর্ধেক রাখি **max-heap**-এ (শীর্ষে সেই অর্ধেকের সবচেয়ে বড়), বড় অর্ধেক **min-heap**-এ (শীর্ষে সেই অর্ধেকের সবচেয়ে ছোট)। দুটোর size-এর পার্থক্য সর্বোচ্চ ১ রাখলে median সবসময় heap-দুটোর শীর্ষে - O(1)। heap-এর ভিত্তি [Heaps](../heaps) chapter-এ।
+
+## কোড উদাহরণ
+
+```js
+// ছোট generic heap (comparator দিয়ে min/max দুটোই)
+class Heap {
+  constructor(cmp) { this.a = []; this.cmp = cmp; }
+  size() { return this.a.length; }
+  peek() { return this.a[0]; }
+  push(x) {
+    this.a.push(x);
+    let i = this.a.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (this.cmp(this.a[i], this.a[p]) < 0) { [this.a[i], this.a[p]] = [this.a[p], this.a[i]]; i = p; }
+      else break;
+    }
+  }
+  pop() {
+    const top = this.a[0], last = this.a.pop();
+    if (this.a.length) {
+      this.a[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1;
+        let m = i;
+        if (l < this.a.length && this.cmp(this.a[l], this.a[m]) < 0) m = l;
+        if (r < this.a.length && this.cmp(this.a[r], this.a[m]) < 0) m = r;
+        if (m === i) break;
+        [this.a[i], this.a[m]] = [this.a[m], this.a[i]];
+        i = m;
+      }
+    }
+    return top;
+  }
+}
+
+class MedianFinder {
+  constructor() {
+    this.low = new Heap((a, b) => b - a);  // ছোট অর্ধেক - max-heap
+    this.high = new Heap((a, b) => a - b); // বড় অর্ধেক - min-heap
+  }
+  addNum(x) {
+    this.low.push(x);
+    this.high.push(this.low.pop());        // low-র সবচেয়ে বড়টা high-তে
+    if (this.high.size() > this.low.size()) {
+      this.low.push(this.high.pop());      // ভারসাম্য: low-তে আগে
+    }
+  }
+  findMedian() {
+    if (this.low.size() > this.high.size()) return this.low.peek();
+    return (this.low.peek() + this.high.peek()) / 2;
+  }
+}
+const mf = new MedianFinder();
+[5, 2, 10, 3].forEach(n => mf.addNum(n));
+console.log(mf.findMedian()); // 4  (3 ও 5-এর গড়)
+```
+
+## কোড ব্রেকডাউন
+
+- নতুন সংখ্যা আগে low-তে; তারপর low-র শীর্ষ (ছোট অর্ধেকের সবচেয়ে বড়) high-তে - এতে সব ছোট বাঁয়ে, সব বড় ডানে থাকে নিশ্চিত।
+- high বড় হয়ে গেলে শীর্ষটা low-তে ফেরত - দুই পাশের পার্থক্য সর্বোচ্চ ১।
+- মাঝের মান (বা মাঝের দুটোর গড়) সবসময় heap-দুটোর শীর্ষে তৈরি।
+
+## Complexity
+
+- insert O(log n), median O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Balanced Halves**
+>
+> - **দৃশ্য:** মাঝখানে median-রেখা; বাঁয়ে max-heap (ছোট অর্ধেক), ডানে min-heap (বড় অর্ধেক)।
+> - **ইনপুট:** সংখ্যার stream (একটা একটা যোগ)।
+> - **ধাপ:** insert -> rebalance -> median হিসাব, তিন ধাপ আলাদা রঙে; heap-এ bubble up দৃশ্যমান।
+> - **নিয়ন্ত্রণ:** speed, step, reset; পরের সংখ্যা নিজে দেওয়া।
+> - **লক্ষ্য:** দুই বিপরীত heap রাখলে মাঝ সবসময় হাতের কাছে।
+
+## অনুশীলন
+
+- ভারসাম্যের শর্ত উল্টে দিলে (high-তে একটা বেশি) কোথায় কী বদলাতে হবে, লিখে দেখাও।

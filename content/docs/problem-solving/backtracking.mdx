@@ -1,0 +1,57 @@
+---
+title: "Backtracking: চেষ্টা করো, না হলে ফিরে এসো"
+description: choose - explore - un-choose; pruning সহ সম্ভাবনা-গাছ অন্বেষণ।
+---
+
+## কী শিখব
+
+- সম্ভাবনা "চেষ্টা করো, না হলে ফিরে এসো"
+
+## ধারণা
+
+Backtracking = সম্ভাব্য সমাধান ধাপে ধাপে বানানো; কোনো ধাপ ভুল বুঝলে **ফিরে গিয়ে (backtrack)** অন্য পথ চেষ্টা। brute force-এর "চালাক" রূপ - অসম্ভব শাখা আগেই ছেঁটে ফেলে (pruning)। permutations, N-Queens, Sudoku, subset - সব এতে। ভিত্তিটা [Recursion](../recursion) chapter-এর।
+
+## কোড উদাহরণ
+
+```js
+// সব permutation
+function permutations(arr) {
+  const result = [];
+  function backtrack(current, remaining) {
+    if (remaining.length === 0) { result.push([...current]); return; } // পূর্ণ সমাধান
+    for (let i = 0; i < remaining.length; i++) {
+      current.push(remaining[i]);                                  // চেষ্টা করি
+      const rest = [...remaining.slice(0, i), ...remaining.slice(i + 1)];
+      backtrack(current, rest);                                   // গভীরে
+      current.pop();                                              // backtrack (ফিরি)
+    }
+  }
+  backtrack([], arr);
+  return result;
+}
+console.log(permutations([1, 2, 3]));
+// [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+```
+
+## কোড ব্রেকডাউন
+
+- `push` = সিদ্ধান্ত নিই; recursion = গভীরে যাই; `pop` = সিদ্ধান্ত বাতিল করে ফিরি।
+- এই "choose - explore - un-choose" ছন্দটাই backtracking-এর হৃদয়।
+
+## Complexity
+
+- সমস্যাভেদে (permutation O(n * n!)); pruning অনেক কমায়।
+
+## Animation Spec
+
+> **Animation Spec: Decision Tree Walk**
+>
+> - **দৃশ্য:** সিদ্ধান্ত-গাছ; একটা পথ ধরে নামা, ডেড-এন্ডে লাল হয়ে backtrack।
+> - **ইনপুট:** সমস্যা (permutation / N-Queens preset)।
+> - **ধাপ:** choose (নিচে), explore, un-choose (উপরে) - ছন্দ দৃশ্যমান; pruning-এ শাখা কাটা।
+> - **নিয়ন্ত্রণ:** speed, step, reset; preset বদলানো।
+> - **লক্ষ্য:** backtracking = গাছ-অন্বেষণ + pruning।
+
+## অনুশীলন
+
+- একটা set-এর সব subset backtracking-এ বের করো।

@@ -1,0 +1,50 @@
+---
+title: "Randomised Algorithms: এলোমেলোতার শক্তি"
+description: এলোমেলো পছন্দ দিয়ে adversarial input থেকে রক্ষা - Fisher-Yates ও random pivot।
+---
+
+## কী শিখব
+
+- এলোমেলোতা দিয়ে adversarial input থেকে রক্ষা
+
+## ধারণা
+
+এলোমেলো পছন্দ ব্যবহার করে এমন algorithm, যার গতি/ফল খারাপ-ইচ্ছুক ইনপুটের (adversarial) হাতে ধরা পড়ে না। দুই ধরনের: **Las Vegas** - ফল সবসময় সঠিক, সময় এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort)); **Monte Carlo** - সময় নিশ্চিত, ফলে ছোট ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায় - তাই quicksort/[quickselect](./kth-element)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
+
+## কোড উদাহরণ
+
+```js
+// Fisher-Yates shuffle - প্রতিটা permutation সম-সম্ভাব্য
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // 0..i-এর যেকোনো একটা
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+console.log(shuffle([1, 2, 3, 4, 5])); // যেমন [3,1,5,2,4] - প্রতিবার আলাদা
+```
+
+## কোড ব্রেকডাউন
+
+- শেষ থেকে প্রতিটা ঘরে 0..i রেঞ্জের random index-এর সাথে swap; প্রতিটা অবস্থান সম-সম্ভাব্য বলেই এটা unbiased।
+- naive "random দুই ঘর বারবার swap" biased ফল দেয় - তাই Fisher-Yates-ই স্ট্যান্ডার্ড।
+- একই ধারণা [quickselect](./kth-element)-এ: pivot বাছাইয়ের আগে random index-টা শেষে swap করে নাও।
+
+## Complexity
+
+- Fisher-Yates O(n); random-pivot quicksort প্রত্যাশিত O(n log n)।
+
+## Animation Spec
+
+> **Animation Spec: Fair Shuffle**
+>
+> - **দৃশ্য:** কার্ড-সারি; i pointer ডান থেকে বাঁয়ে; প্রতি ধাপে 0..i রেঞ্ই highlight হয়ে random j বাছাই ও swap।
+> - **ইনপুট:** array; seed (একই shuffle পুনরুত্পাদনের জন্য)।
+> - **ধাপ:** প্রতি swap-এর পর রেঞ্ই এক ঘর সঙ্কুচিত; শেষে অনেকবার চালিয়ে permutation-এর uniformity চার্ট।
+> - **নিয়ন্ত্রণ:** speed, step, reset; reshuffle।
+> - **লক্ষ্য:** নিয়ন্ত্রিত এলোমেলোতা adversarial input থেকে রক্ষা করে।
+
+## অনুশীলন
+
+- [Quickselect](./kth-element)-এ random pivot যোগ করো: Math.random দিয়ে pivot index বেছে সেটাকে শেষে swap করে নাও।

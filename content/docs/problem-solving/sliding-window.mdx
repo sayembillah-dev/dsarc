@@ -1,0 +1,53 @@
+---
+title: "Sliding Window: চলমান জানালা"
+description: টানা subarray/substring-এ জানালা সরিয়ে O(n)-এ হিসাব।
+---
+
+## কী শিখব
+
+- ধারাবাহিক subarray/substring-এ চলমান জানালা
+
+## ধারণা
+
+একটা "জানালা" (window) array-এর উপর দিয়ে সরে; প্রতিবার পুরো window আবার হিসাব না করে শুধু **যোগ-বিয়োগ** করে আপডেট -> O(n)। "k-আকারের সর্বোচ্চ যোগফল", "সবচেয়ে বড় distinct substring" জাতীয় সমস্যায়।
+
+## কোড উদাহরণ
+
+```js
+// k-আকারের window-এর সর্বোচ্চ যোগফল
+function maxSumWindow(arr, k) {
+  let windowSum = 0;
+  for (let i = 0; i < k; i++) windowSum += arr[i];  // প্রথম window
+  let maxSum = windowSum;
+  for (let i = k; i < arr.length; i++) {
+    windowSum += arr[i] - arr[i - k];               // নতুন ঢুকল, পুরনো বেরোল
+    maxSum = Math.max(maxSum, windowSum);
+  }
+  return maxSum;
+}
+console.log(maxSumWindow([2, 1, 5, 1, 3, 2], 3)); // 9  (5+1+3)
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিবার window সরানোয় নতুন উপাদান যোগ, বেরিয়ে-যাওয়া উপাদান বিয়োগ -> O(1) আপডেট।
+- naive হতো প্রতিটা window O(k) -> মোট O(n * k); sliding window -> O(n)।
+- **variable-size window** (শর্তভিত্তিক) সমস্যায় right বাড়াও, শর্ত ভাঙলে left বাড়াও।
+
+## Complexity
+
+- O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Sliding Window**
+>
+> - **দৃশ্য:** array; একটা রঙিন window k-ঘর জুড়ে, ডানে সরে; running sum দেখানো।
+> - **ইনপুট:** array, k (বা শর্ত)।
+> - **ধাপ:** window সরানোয় বাঁ উপাদান বিয়োগ (লাল), ডান উপাদান যোগ (সবুজ); max ট্র্যাক।
+> - **নিয়ন্ত্রণ:** speed, step, reset; k স্লাইডার।
+> - **লক্ষ্য:** "পুরো নয়, শুধু পরিবর্তন হিসাব" - O(n)-এর চাবি।
+
+## অনুশীলন
+
+- variable-size window দিয়ে "সর্বনিম্ন subarray যার যোগফল target বা তার বেশি" ভাবো।

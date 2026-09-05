@@ -1,0 +1,63 @@
+---
+title: "Fast & Slow Pointers: কচ্ছপ ও খরগোশ"
+description: দুই গতির pointer দিয়ে linked list-এ cycle ধরা ও মাঝের node খোঁজা।
+---
+
+## কী শিখব
+
+- linked list/cycle-এ দুই গতির pointer
+
+## ধারণা
+
+দুটো pointer - একটা এক ধাপে (slow), একটা দুই ধাপে (fast)। cycle থাকলে fast একসময় slow-কে ধরে ফেলে (দুজন একই node-এ মেলে)। [Linked List](../linked-lists)-এ cycle detection, মাঝের node খোঁজা, ইত্যাদিতে ক্লাসিক। Floyd's cycle detection নামেও পরিচিত।
+
+## কোড উদাহরণ
+
+```js
+// linked list-এ cycle আছে কিনা
+function hasCycle(head) {
+  let slow = head, fast = head;
+  while (fast && fast.next) {
+    slow = slow.next;               // ১ ধাপ
+    fast = fast.next.next;          // ২ ধাপ
+    if (slow === fast) return true; // মিলে গেছে -> cycle
+  }
+  return false;                     // fast শেষে পৌঁছেছে -> cycle নেই
+}
+// মাঝের node খোঁজা: fast শেষে গেলে slow ঠিক মাঝে থাকে
+function middleNode(head) {
+  let slow = head, fast = head;
+  while (fast && fast.next) { slow = slow.next; fast = fast.next.next; }
+  return slow;
+}
+// ডেমো: 1 -> 2 -> 3 -> 4
+const n1 = { val: 1 }, n2 = { val: 2 }, n3 = { val: 3 }, n4 = { val: 4 };
+n1.next = n2; n2.next = n3; n3.next = n4; n4.next = null;
+console.log(middleNode(n1).val); // 3
+console.log(hasCycle(n1));       // false
+n4.next = n2;                    // cycle বানালাম (4 আবার 2-তে)
+console.log(hasCycle(n1));       // true
+```
+
+## কোড ব্রেকডাউন
+
+- cycle থাকলে fast "ল্যাপ" দিয়ে slow-কে ধরে (দৌড়ের ট্র্যাকের মতো)।
+- fast দ্বিগুণ গতিতে যায় বলে সে শেষে পৌঁছালে slow অর্ধেক পথে = মাঝ।
+
+## Complexity
+
+- O(n) time, O(1) space।
+
+## Animation Spec
+
+> **Animation Spec: Tortoise & Hare**
+>
+> - **দৃশ্য:** linked list (cycle সহ/ছাড়া); দুটো pointer ভিন্ন গতিতে।
+> - **ইনপুট:** cycle on/off।
+> - **ধাপ:** slow ১, fast ২ ধাপ; cycle থাকলে মিলন highlight।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** দুই গতির pointer-এর কৌশল।
+
+## অনুশীলন
+
+- cycle-এর শুরুর node কীভাবে বের করা যায় ভাবো (Floyd-এর ২য় পর্ব)।

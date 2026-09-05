@@ -1,0 +1,49 @@
+---
+title: "Divide & Conquer: ভাগ করো, জয় করো"
+description: সমস্যা ভাগ করে, উপ-সমস্যা সমাধান করে, ফল জোড়া লাগানোর ছাঁচ।
+---
+
+## কী শিখব
+
+- সমস্যা ভাগ, সমাধান, জোড়া - তিন ধাপের কাঠামো
+
+## ধারণা
+
+তিন ধাপ: (১) **Divide** - সমস্যাকে ছোট উপ-সমস্যায় ভাগ, (২) **Conquer** - উপ-সমস্যা recursively সমাধান, (৩) **Combine** - ফলাফল জোড়া। [Merge Sort](../sorting/merge-sort), [Binary Search](../searching/binary-search) এর উদাহরণ।
+
+## কোড উদাহরণ
+
+```js
+// Divide & Conquer দিয়ে array-এর max
+function maxDC(arr, low = 0, high = arr.length - 1) {
+  if (low === high) return arr[low];              // base: একটা উপাদান
+  const mid = Math.floor((low + high) / 2);
+  const leftMax = maxDC(arr, low, mid);           // বাঁ ভাগের max
+  const rightMax = maxDC(arr, mid + 1, high);     // ডান ভাগের max
+  return Math.max(leftMax, rightMax);             // combine
+}
+console.log(maxDC([3, 7, 2, 9, 4])); // 9
+```
+
+## কোড ব্রেকডাউন
+
+- মাঝ থেকে দুই ভাগ, প্রতি ভাগে recursion, শেষে দুই ফল থেকে সেরা।
+- অনেক D&C algorithm-এর complexity **Master Theorem** দিয়ে বের হয় (যেমন merge sort O(n log n))।
+
+## Complexity
+
+- সমস্যাভেদে; এখানে O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Divide Tree**
+>
+> - **দৃশ্য:** array উপরে; নিচে নামতে নামতে ভাগ, তারপর নিচ থেকে উপরে combine।
+> - **ইনপুট:** array।
+> - **ধাপ:** divide পর্বে টুকরো আলাদা; combine পর্বে জোড়ার ফল উপরে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** divide-conquer-combine চক্র।
+
+## অনুশীলন
+
+- D&C দিয়ে array-এর যোগফল বের করো।

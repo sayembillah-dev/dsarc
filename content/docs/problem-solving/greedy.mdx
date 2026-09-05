@@ -1,0 +1,51 @@
+---
+title: "Greedy: প্রতি ধাপে সেরা বাছাই"
+description: প্রতি ধাপে locally সেরা সিদ্ধান্ত; কখন কাজ করে, কখন ফেল করে।
+---
+
+## কী শিখব
+
+- প্রতিটা ধাপে "এই মুহূর্তে সেরা" বেছে নেওয়া
+
+## ধারণা
+
+Greedy প্রতিটা ধাপে সাময়িকভাবে সবচেয়ে ভালো (locally optimal) সিদ্ধান্ত নেয়, এই আশায় যে তা global-ভাবেও সেরা হবে। **সব সমস্যায় কাজ করে না** - শুধু "greedy choice property" থাকলে। কাজ করলে খুব সরল ও দ্রুত (Kruskal, Prim, Dijkstra সবই greedy, দেখো [Graphs](../graphs) chapter)।
+
+## কোড উদাহরণ
+
+```js
+// Coin change - greedy, নির্দিষ্ট মুদ্রায়
+// বাংলাদেশি নোট: কম সংখ্যক নোটে amount ভাঙা
+function minNotes(amount) {
+  const notes = [1000, 500, 100, 50, 20, 10, 5, 2, 1]; // বড় থেকে ছোট
+  const used = [];
+  for (const note of notes) {
+    while (amount >= note) { used.push(note); amount -= note; } // যত বড় নোট সম্ভব
+  }
+  return used;
+}
+console.log(minNotes(1270)); // [1000, 100, 100, 50, 20]
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিবার সবচেয়ে বড় সম্ভব নোট নেওয়া -> কম নোট।
+- **সতর্কতা:** এই greedy শুধু "canonical" মুদ্রা-সিস্টেমে সঠিক; অদ্ভুত মুদ্রায় (যেমন [1,3,4], amount 6) greedy ভুল করে - তখন [Dynamic Programming](./dynamic-programming) লাগে।
+
+## Complexity
+
+- এখানে O(amount/note); সাধারণত sort-এর জন্য O(n log n)।
+
+## Animation Spec
+
+> **Animation Spec: Greedy Picker**
+>
+> - **দৃশ্য:** নোটের সারি; amount কমতে থাকে যত বড় নোট বাছা হয়।
+> - **ইনপুট:** amount; মুদ্রা-সেট।
+> - **ধাপ:** প্রতি ধাপে সেরা নোট highlight ও amount থেকে বিয়োগ; "greedy fails" case-ও দেখানো যায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; canonical বনাম tricky মুদ্রা-সেট toggle।
+> - **লক্ষ্য:** greedy কখন কাজ করে, কখন নয়।
+
+## অনুশীলন
+
+- [1,3,4] মুদ্রায় amount=6-এ greedy vs optimal - পার্থক্য দেখাও।

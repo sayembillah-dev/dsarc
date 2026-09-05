@@ -1,0 +1,60 @@
+---
+title: "Multi-threaded: ভাগ করে সমান্তরালে"
+description: কাজ ভাগ করে সমান্তরালে চালানোর ধারণা - JavaScript-এর event loop থেকে worker পর্যন্ত।
+---
+
+## কী শিখব
+
+- কাজ ভাগ করে সমান্তরালে চালানোর ধারণা
+
+## ধারণা
+
+বড় কাজ টুকরো করে একাধিক thread-এ একসাথে চালালে সময় কমে - যেমন merge sort-এর দুই অর্ধেক আলাদা thread-এ। JavaScript মূলত **single-threaded** (event loop), তবু browser-এ Web Worker ও Node-এ worker_threads দিয়ে আসল parallelism পাওয়া যায়। DSA interview-তে গভীরে আসে না, কিন্তু মূল ধারণাগুলো জানা দরকার: race condition (একই ডেটা একসাথে পাল্টানোর বিপদ), shared state, আর [Divide & Conquer](./divide-and-conquer)-এর সাথে মিল।
+
+## কোড উদাহরণ
+
+```js
+// বড় যোগফল ৪ টুকরোয় ভাগ করে সমান্তরালে, শেষে combine
+function sumChunk(arr, from, to) {
+  return new Promise(resolve => {
+    let s = 0;
+    for (let i = from; i < to; i++) s += arr[i];
+    setTimeout(() => resolve(s), 0); // event loop-কে সুযোগ দিলাম
+  });
+}
+async function parallelSum(arr, chunks = 4) {
+  const size = Math.ceil(arr.length / chunks);
+  const parts = [];
+  for (let c = 0; c < chunks; c++) {
+    parts.push(sumChunk(arr, c * size, Math.min(arr.length, (c + 1) * size)));
+  }
+  const sums = await Promise.all(parts); // সব টুকরো শেষ হলে combine
+  return sums.reduce((a, b) => a + b, 0);
+}
+parallelSum(Array.from({ length: 1000000 }, (_, i) => i + 1))
+  .then(total => console.log(total)); // 500000500000
+```
+
+## কোড ব্রেকডাউন
+
+- [Divide & Conquer](./divide-and-conquer)-এরই সমান্তরাল রূপ: কাজ ভাগ, আলাদা আলাদা সমাধান, শেষে combine।
+- `Promise.all` সব টুকরো শেষ না হওয়া পর্যন্ত অপেক্ষা করে; আসল CPU-parallelism চাইলে worker_threads (Node) বা Web Worker (browser) - ভাগ-কর-combine-কর ছাঁচ একই।
+- সাবধানতা: একই ডেটা একসাথে পাল্টালে race condition - তাই প্রতিটা worker আলাদা ডেটা-অংশে কাজ করে।
+
+## Complexity
+
+- আদর্শে সময় ~T/p (p = worker-সংখ্যা) + ভাগ/জোড়ার overhead; বাস্তবে overhead মাথায় রাখো।
+
+## Animation Spec
+
+> **Animation Spec: Parallel Lanes**
+>
+> - **দৃশ্য:** একটা বড় কাজ-বার চারটা worker লেনে ভাগ; লেনগুলো সমান্তরালে ভরে ওঠে; শেষে combine ধাপ।
+> - **ইনপুট:** কাজের আকার, worker-সংখ্যা।
+> - **ধাপ:** ভাগ -> সমান্তরাল অগ্রগতি (সব লেন একসাথে) -> combine।
+> - **নিয়ন্ত্রণ:** worker-সংখ্যা বাড়ানো/কমানো, speed।
+> - **লক্ষ্য:** parallelism কেন রৈখিক গতি দেয় না - ভাগ ও জোড়ার overhead।
+
+## অনুশীলন
+
+- একই যোগফল chunks=1 বনাম chunks=8-এ চালিয়ে সময় মাপো (console.time) - পার্থক্য কেন?

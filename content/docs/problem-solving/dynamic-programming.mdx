@@ -1,0 +1,57 @@
+---
+title: "Dynamic Programming: একই হিসাব দ্বিতীয়বার নয়"
+description: overlapping subproblem-এর ফল জমিয়ে রেখে optimize - memoization ও tabulation।
+---
+
+## কী শিখব
+
+- পুনরাবৃত্ত উপ-সমস্যার ফল জমিয়ে রেখে optimize
+
+## ধারণা
+
+DP তখন কাজে লাগে যখন সমস্যায় (১) **overlapping subproblems** (একই ছোট সমস্যা বারবার) ও (২) **optimal substructure** (ছোট সমাধান দিয়ে বড় সমাধান) - দুটোই থাকে। কৌশল দুই ধরনের:
+
+- **Top-down (Memoization):** recursion + cache (দেখো [Memoization](../recursion/memoization))
+- **Bottom-up (Tabulation):** ছোট থেকে বড় টেবিল পূরণ
+
+## কোড উদাহরণ
+
+```js
+// Coin change - কম মুদ্রায়, DP; greedy যেখানে ফেল
+// যেকোনো মুদ্রা-সেটে amount বানাতে সর্বনিম্ন কয়টি মুদ্রা
+function coinChange(coins, amount) {
+  const dp = new Array(amount + 1).fill(Infinity);
+  dp[0] = 0;                                  // 0 বানাতে 0 মুদ্রা
+  for (let a = 1; a <= amount; a++) {
+    for (const coin of coins) {
+      if (coin <= a) dp[a] = Math.min(dp[a], dp[a - coin] + 1); // এই মুদ্রা নিলে?
+    }
+  }
+  return dp[amount] === Infinity ? -1 : dp[amount];
+}
+console.log(coinChange([1, 3, 4], 6)); // 2  (3+3), greedy দিত 3 (4+1+1)!
+```
+
+## কোড ব্রেকডাউন
+
+- `dp[a]` = amount `a` বানানোর সর্বনিম্ন মুদ্রা।
+- প্রতিটা amount-এর জন্য সব মুদ্রা চেষ্টা করে সেরা নেওয়া; ছোট থেকে বড়।
+- [Greedy](./greedy) যেখানে ভুল করে, DP সব সম্ভাবনা মিলিয়ে সঠিক দেয়।
+
+## Complexity
+
+- এখানে O(amount * coins)।
+
+## Animation Spec
+
+> **Animation Spec: DP Table Fill**
+>
+> - **দৃশ্য:** dp array (0..amount); প্রতিটা ঘর পূরণে কোন আগের ঘর ব্যবহার হচ্ছে তীর দিয়ে।
+> - **ইনপুট:** coins, amount।
+> - **ধাপ:** বাঁ থেকে ডানে ঘর পূরণ; প্রতিটা ঘরে সেরা পছন্দ highlight।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** "ছোট সমাধান জমিয়ে বড় সমাধান" বোঝা।
+
+## অনুশীলন
+
+- fibonacci-কে bottom-up DP-তে (টেবিল দিয়ে) লেখো।

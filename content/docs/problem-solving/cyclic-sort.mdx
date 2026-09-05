@@ -1,0 +1,64 @@
+---
+title: "Cyclic Sort: প্রতিটা সংখ্যা নিজের ঘরে"
+description: 1..n রেঞ্জের সংখ্যা নিজের ঘরে বসিয়ে missing/duplicate ধরা।
+---
+
+## কী শিখব
+
+- 1..n রেঞ্জের সংখ্যা নিজের ঘরে বসিয়ে sort করা
+
+## ধারণা
+
+array-এ ঠিক 1..n (বা 0..n-1) রেঞ্জের সংখ্যা থাকলে একটা সরল কৌশল: প্রতিটা সংখ্যাকে তার **নিজের index-এ** (value - 1) swap করে পাঠাও। কোনো তুলনা ছাড়াই, in-place, O(n)-এ সাজানো হয়। শেষে যে ঘরে মিল নেই সেটাই missing; যেটা দুইবার চায় সেটাই duplicate - এই ধরনের সমস্যায় সেরা বন্ধু।
+
+## কোড উদাহরণ
+
+```js
+// সাজানো + missing খোঁজা
+function cyclicSort(nums) {
+  let i = 0;
+  const n = nums.length;
+  while (i < n) {
+    const correct = nums[i] - 1;             // এই সংখ্যার সঠিক ঘর
+    if (nums[i] >= 1 && nums[i] <= n && nums[i] !== nums[correct]) {
+      [nums[i], nums[correct]] = [nums[correct], nums[i]]; // ঘরে পাঠাই
+    } else {
+      i++;                                    // ঠিক আছে (বা রেঞ্জের বাইরে), পরের ঘরে
+    }
+  }
+  return nums;
+}
+console.log(cyclicSort([3, 1, 5, 4, 2])); // [1,2,3,4,5]
+
+// প্রয়োগ: missing সংখ্যা - sort-এর পর যে ঘরে মিল নেই
+function findMissing(nums) {
+  cyclicSort(nums);
+  for (let i = 0; i < nums.length; i++) if (nums[i] !== i + 1) return i + 1;
+  return nums.length + 1;
+}
+console.log(findMissing([4, 1, 2])); // 3
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিটা swap অন্তত একটা সংখ্যাকে সঠিক ঘরে বসায়, তাই swap সর্বোচ্চ n-1 বার।
+- রেঞ্জের বাইরের মান (যেমন missing-সমস্যায় n+1) থাকলে সেটা স্থির রেখে এগিয়ে যাই - নাহলে infinite loop।
+- sort-এর পর এক pass: যে index-এ `nums[i] !== i+1`, সেটাই উত্তরের ইঙ্গিত।
+
+## Complexity
+
+- O(n) time, O(1) space।
+
+## Animation Spec
+
+> **Animation Spec: Everyone Home**
+>
+> - **দৃশ্য:** index-চিহ্নিত ঘরের সারি; ভুল ঘরের সংখ্যা তীর দিয়ে সঠিক ঘরে swap হয়।
+> - **ইনপুট:** 1..n রেঞ্জের array (missing / duplicate preset)।
+> - **ধাপ:** প্রতিটা swap-এ একটা সংখ্যা সবুজ (ঠিক ঘরে); শেষে অমিলের ঘর লাল -> missing/duplicate প্রকাশ।
+> - **নিয়ন্ত্রণ:** speed, step, reset।
+> - **লক্ষ্য:** রেঞ্জ জানা থাকলে তুলনা-ভিত্তিক sort ছাড়াই O(n) সম্ভব।
+
+## অনুশীলন
+
+- একই ছাঁচে duplicate সংখ্যা বের করো (ইঙ্গিত: যে সংখ্যার ঘরে আগে থেকেই সে বসে আছে)।
