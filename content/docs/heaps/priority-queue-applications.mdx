@@ -1,94 +1,132 @@
 ---
 title: "Priority Queue ও প্রয়োগ: Top-K, Dijkstra"
-description: heap দিয়ে priority queue চলে O(log n)-এ, আর তার ওপরেই দাঁড়িয়ে Top-K, Dijkstra-এর মতো ক্লাসিক জিনিস।
+description: Heap দিয়ে priority queue-এর প্রতিশ্রুতি পূরণ, Top-K-এর পুরো dry run size-k heap দিয়ে, আর কোন কোন বিখ্যাত জায়গায় এই একই চালক।
 ---
 
 ## কী শিখব
 
-- heap দিয়ে দক্ষ priority queue, আর তার বাস্তব প্রয়োগগুলো
+- [Priority Queue](../stacks-queues/priority-queue.mdx)-এর প্রতিশ্রুতি heap দিয়ে কীভাবে পূরণ হলো
+- Top-K সমস্যার পুরো dry run: size-k heap-এর চালাকি
+- কেন পুরো sort-এর বদলে size-k heap: খরচের হিসাব
+- একই চালক আর কোথায় কোথায়: Dijkstra, median, scheduling
+- কখন heap নয়, অন্য কিছু
 
 ## ধারণা
 
-ধরো তুমি একটা গেম বানাচ্ছ, যেখানে শত্রুদের মধ্যে যার জীবন সবচেয়ে কম, তাকে আগে মারতে হবে। বা ধরো একটা download manager, যেখানে জরুরি ফাইলটা আগে নামবে। এমন সব জায়গায় লাগে **Priority Queue**: এখানে যে আগে এসেছে সে নয়, যে সবচেয়ে গুরুত্বপূর্ণ, সে-ই আগে বের হয়।
-
-Section 06-এ আমরা sort করে priority queue বানিয়েছিলাম, insert-এ O(n log n) লাগত। Heap দিলে সেই একই কাজ, insert হোক বা extract, হয় O(log n)-এ। অনেক দক্ষ, তাই না?
-
-**ক্লাসিক প্রয়োগগুলো দেখো:**
-
-- **Top-K:** সবচেয়ে বড়/ছোট K উপাদান (size-K min-heap দিয়ে O(n log K))
-- **Dijkstra** (section 13): সবচেয়ে কাছের node আগে
-- **Heap sort** (section 09)
-- **Median maintenance** (two heaps, section 16)
-
-## কোড উদাহরণ
+Section 06-এ priority queue বানিয়েছিলাম sort দিয়ে: প্রতি enqueue-তে O(n log n), মোটে খারাপ। তখন প্রতিশ্রুতি ছিল heap দিয়ে দুটো অপারেশনই O(log n) হবে। [MinHeap](./minheap-class.mdx) হাতে পেয়ে সেটা এবার সত্যি:
 
 ```js
-// MinHeap helper (আগের পাতার ক্লাসটিই)
-class MinHeap {
-  constructor() { this.data = []; }
-  size() { return this.data.length; }
-  push(value) {
-    this.data.push(value);
-    let i = this.data.length - 1;
-    while (i > 0) {
-      const p = (i - 1) >> 1;
-      if (this.data[p] <= this.data[i]) break;
-      [this.data[p], this.data[i]] = [this.data[i], this.data[p]];
-      i = p;
-    }
-  }
-  pop() {
-    if (this.data.length === 0) return undefined;
-    const top = this.data[0];
-    const last = this.data.pop();
-    if (this.data.length) {
-      this.data[0] = last;
-      let i = 0;
-      const m = this.data.length;
-      while (true) {
-        let s = i;
-        const l = 2 * i + 1, r = 2 * i + 2;
-        if (l < m && this.data[l] < this.data[s]) s = l;
-        if (r < m && this.data[r] < this.data[s]) s = r;
-        if (s === i) break;
-        [this.data[i], this.data[s]] = [this.data[s], this.data[i]];
-        i = s;
-      }
-    }
-    return top;
-  }
-}
+const pq = new MinHeap();   // আগের পেজের ক্লাস
 
-// array থেকে সবচেয়ে বড় k সংখ্যা: size-k min-heap
+pq.enqueue = pq.push;       // নাম মিলিয়ে নিই
+pq.dequeue = pq.pop;
+```
+
+ব্যাস। Enqueue হলো push (O(log n)), dequeue হলো pop (O(log n)), peek O(1)। Emergency ward-এর সেই রোগীর লাইন এবার আসল কাঠামো পেল: নতুন রোগী ঢুকলেও, গুরুতর বের হলেও, দুটোই লগারিদমে।
+
+## প্রয়োগ ১: Top-K, পুরো dry run
+
+ক্লাসিক প্রশ্ন: এক কোটি সংখ্যার মধ্যে সবচেয়ে বড় ১০টা? সহজ উত্তর: sort করে শেষ ১০টা, O(n log n)। কিন্তু চালাকির উত্তর: **শুধু k-আকারের একটা min-heap রাখো**।
+
+ভাবনাটা উল্টোদিকের, মন দাও। আমরা চাই "সেরা k-টা" সবসময় হাতে থাকুক। Heap-টা min-heap, মানে এর root-এ থাকে সেরা k-এর মধ্যে **সবচেয়ে খারাপটা**। নতুন সংখ্যা এলে প্রশ্ন একটাই: সে কি ওই খারাপটার চেয়ে ভালো? হলে খারাপটা বিদায়, নতুনটা ঢোকে; না হলে উপেক্ষা।
+
+`[3, 1, 5, 12, 2, 11]`, k = 3, ধাপে ধাপে:
+
+| ধাপ | num | heap (size ≤ 3) | কী হলো |
+|-----|-----|------------------|--------|
+| 1 | 3 | `[3]` | ঢুকল |
+| 2 | 1 | `[1, 3]` | ঢুকল |
+| 3 | 5 | `[1, 3, 5]` | ঢুকল, ভরে গেল |
+| 4 | 12 | `[3, 5, 12]` | 12 > root 1: 1 বিদায় |
+| 5 | 2 | `[3, 5, 12]` | 2 < root 3: উপেক্ষা |
+| 6 | 11 | `[5, 12, 11]` | 11 > root 3: 3 বিদায় |
+
+শেষে heap-এ `[5, 12, 11]`: সত্যিই সেরা তিন। প্রতি সংখ্যা একবার দেখা, ঢোকা-বের হওয়া সর্বোচ্চ O(log k)। মোট **O(n log k)**, জায়গা O(k)। k = 10 আর n = এক কোটি হলে পার্থক্যটা অনুভব করো: পুরো sort-এর বদলে মাত্র ১০-ঘরের একটা heap।
+
+## কোড: topK
+
+```js
 function topK(nums, k) {
-  const heap = new MinHeap();
+  const heap = new MinHeap();          // আগের পেজের ক্লাস
+
   for (const num of nums) {
     heap.push(num);
-    if (heap.size() > k) heap.pop();  // ছোটটা ফেলে দিই, বড় k থাকে
+    if (heap.size() > k) {
+      heap.pop();                      // সেরা k-এর খারাপটা বিদায়
+    }
   }
-  return heap.data.sort((a, b) => b - a); // বড় থেকে ছোট
+
+  return heap.data.slice().sort((a, b) => b - a);  // বড় থেকে ছোট
 }
+
 console.log(topK([3, 1, 5, 12, 2, 11], 3)); // [12, 11, 5]
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: লাইনে লাইনে
 
-- ব্যাপারটা হলো, heap-টায় সবসময় সবচেয়ে বড় k-টা মানই রাখছি। size যখনই k ছাড়িয়ে যায়, root-এ বসে থাকা সবচেয়ে ছোটটাকে বিদায়।
-- ফলে পুরো array sort (O(n log n)) করা লাগে না, লাগে O(n log k)। k ছোট হলে সাশ্রয়টা বিশাল।
+1. `heap.push(num)` : নতুন সংখ্যা আগে ঢোকে। ঢুকিয়েই দেখা সরল।
+2. `if (heap.size() > k) heap.pop()` : ভর্তি কক্ষের নিয়ম: k ছাড়ালে root (সেরা k-এর সবচেয়ে খারাপ) বেরিয়ে যায়। Min-heap বলে root-এ খারাপটাই বসে থাকে, এটাই পুরো চালাকির চাবি।
+3. `heap.data.slice().sort(...)` : শেষে k-টা উপাদান heap-এর ভেতরে থাকে, সাজিয়ে দিই। Copy নিই যাতে মূল heap অক্ষত থাকে।
+4. উল্টো প্রশ্নে (ছোট k): max-heap নাও, একই যুক্তি, আয়নার রূপ।
 
-## Complexity
+## Complexity: তিন রাস্তার তুলনা
 
-- Top-K চালাতে মোট O(n log k)।
+| পদ্ধতি | Time | Space | কখন |
+|---------|------|-------|------|
+| পুরো sort | O(n log n) | O(1) বা O(n) | k ≈ n হলে ঠিক আছে |
+| Size-k heap | O(n log k) | O(k) | k ছোট, n বড়: আদর্শ |
+| Quickselect | গড়ে O(n) | O(1) | একবারের k-তম, [Kth Element](../problem-solving/kth-element.mdx)-এ |
+
+কোনটা কখন, তিনটা জানা মানে interview-এ তুমি ট্রেডঅফ বলতে পারছ, একটা উত্তর মুখস্থ না।
+
+## একই চালক আর কোথায়
+
+- **Dijkstra-র shortest path:** প্রতিবার সবচেয়ে কাছের unvisited node চাই, priority queue ছাড়া O(V²), heap দিয়ে O(E log V)। [Dijkstra](../graphs/dijkstra.mdx)-এ পুরো গল্প।
+- **Median maintenance:** stream-এ চলমান median, দুই heap (বাম অর্ধেক max-heap, ডান অর্ধেক min-heap), [Two Heaps](../problem-solving/two-heaps.mdx)-এ।
+- **Merge k sorted lists:** k-টা সারির সামনেরগুলো এক heap-এ, প্রতিবার ছোটটা বের করে ওই সারি এগিয়ে দাও।
+- **Task scheduling:** OS-এ জরুরি প্রসেস আগে, এই পেজের শুরুর রোগীর লাইনেরই প্রাতিষ্ঠানিক রূপ।
+
+প্যাটার্ন চিনে নাও: **বারবার চরম মান, আর সেটা বের করে ফেলা**। এই ছাপ দেখলেই heap।
+
+## সাধারণ ভুল আর edge case
+
+**১. Top-K-তে heap-এর ধরন উল্টে ফেলা।**
+বড় k চাইলে min-heap, ছোট k চাইলে max-heap। উল্টোটা করলে heap-এ জমে থাকে সবচেয়ে **খারাপ** k-টা, হাস্যকর উত্তর। মনে রাখো: heap-এর root হলো "সেরা দলের সবচেয়ে খারাপ", যাকে তাড়াতে পারি।
+
+**২. `if (heap.size() > k)`-এর জায়গায় প্রতিবার পুরো heap পরিষ্কার করা।**
+সব ঢুকিয়ে তারপর k বার pop করলেও ফল আসে, কিন্তু জায়গা লাগে O(n), আর সুবিধা হারায়। Streaming চরিত্রটাই এই কৌশলের প্রাণ: একসাথে সব মনে রাখার দরকার নেই।
+
+**৩. k > n বা k = 0-এর কেস না ভাবা।**
+k = 0 হলে খালি ফল, k ≥ n হলে পুরোটাই ফল। দুটোই আগে চেক করো, নইলে অদ্ভুত ফল। Edge case আগে লেখার অভ্যাস, সব পেজে ফিরে ফিরে আসছে দেখো।
+
+**৪. Priority বদলে যাওয়া object ঢোকানো।**
+Heap-এ object ঢোকিয়ে পরে তার priority বদলালে heap জানে না, ভুল ক্রমে বের হয়। [Priority Queue](../stacks-queues/priority-queue.mdx)-এর পুরনো সতর্কতা: priority বদলালে নতুন করে ঢোকাও, আর পুরনোটা stale হিসেবে ফেলে দেওয়ার চুক্তি রাখো (lazy deletion, Dijkstra-তে লাগবে)।
+
+**৫. সবসময় heap, যখন একবারের কাজ।**
+একবারের k-তম খোঁজায় heap বানানো (O(n log k)) quickselect-এর গড়ে O(n)-এর কাছে হেরে যায়। Heap-এর দাম বারবারের খেলায়; একবারের জন্য হালকা অস্ত্র যথেষ্ট।
 
 ## Animation Spec
 
 > **Animation Spec: Top-K Filter**
 >
-> - **দৃশ্য:** বাঁয়ে ইনপুট স্ট্রিম, ডানে size-k heap।
-> - **ইনপুট:** সংখ্যার লিস্ট, আর k।
-> - **ধাপ:** প্রতিটা সংখ্যা heap-এ ঢোকে; size k ছাড়ালে সবচেয়ে ছোটটা বেরিয়ে যায়; শেষে বড় k-টাই থেকে যায়।
-> - **লক্ষ্য:** top-K সমস্যায় heap কেন এত দক্ষ, সেটা অনুভব করা।
+> - **দৃশ্য:** বামে ইনপুট স্ট্রিম (সংখ্যা একে একে ভেসে আসে), ডানে size-k heap-এর গাছ; heap-এর root-এ "খারাপতম" ব্যাজ।
+> - **ইনপুট:** সংখ্যার সারি; k; speed; পাশে পুরো-sort পদ্ধতির কাউন্টার তুলনায়।
+> - **ধাপ:** সংখ্যা ঢুকে heap-এ জায়গা নেয়; size ভুললে root উড়ে যায়; উপেক্ষিত সংখ্যা ধূসরে বাদ পড়ে; শেষে heap-এর বাসিন্দারা পোডিয়ামে।
+> - **নিয়ন্ত্রণ:** step, play, reset; stream pause।
+> - **লক্ষ্য:** "সেরা k রাখো, বাকি ফেলো" চালাকি, আর O(n log k) কেন sort ছাড়ায়, দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- এবার উল্টোটা ভাবো: সবচেয়ে ছোট k-টা মান বের করতে হলে max-heap কীভাবে কাজে লাগাবে?
+- **সহজ ১:** `[7, 2, 9, 4, 8, 1]`, k = 2 দিয়ে topK-এর dry run টেবিল বানাও: প্রতি সংখ্যায় heap-এর অবস্থা।
+- **সহজ ২:** সবচেয়ে ছোট k-টা বের করার version লেখো। কোন heap লাগবে, আর কেন?
+- **মাঝারি ১:** k-তম বড় উপাদান **শুধু** heap দিয়ে, পুরোটা sort ছাড়া (LeetCode 215-এর এক রূপ)। দুই পদ্ধতি ভাবো: size-k min-heap, আর সব ঢুকিয়ে k বার pop। কোনটা কখন সস্তা?
+- **মাঝারি ২:** বন্ধুকে বোঝাও: কেন min-heap-এ বড় k-টা জমে, অথচ নামটা "min"। ছবি এঁকে বোঝাও root-এ কে বসে।
+- **কঠিন:** Merge k sorted lists (LeetCode 23): k-টা sorted list মিলিয়ে একটা sorted list। (হিন্ট: heap-এ রাখো প্রতি list-এর বর্তমান সামনেরটা, `(মান, listIndex)` জোড়া। ছোটটা বের করো, ওই list এগোয়। খরচ O(N log k), N = মোট উপাদান। কেন এটা একটা একটা merge করার চেয়ে ভালো, হিসাব করো।)
+
+## সারসংক্ষেপ
+
+- Heap দিয়ে priority queue সত্যিই O(log n)/O(log n), section 06-এর প্রতিশ্রুতি পূর্ণ।
+- Top-K-এর চালাকি: সেরা k-টা রাখো size-k heap-এ, root হলো দলের খারাপতম, নতুন ভালো এলে সে বিদায়।
+- খরচ O(n log k), জায়গা O(k): পুরো sort-এর চেয়ে বিশাল জয় যখন k ছোট।
+- Dijkstra, median, merge-k, scheduling: "বারবার চরম মান" দেখলেই heap।
+- একবারের k-তমে quickselect হালকা; heap বারবারের খেলার অস্ত্র।
