@@ -1,3 +1,3 @@
 {
-  "pages": ["index"]
+  "pages": ["index", "course-guide", "js-fundamentals", "intro-to-dsa", "algorithmic-complexity", "arrays-strings", "linked-lists", "stacks-queues", "hash-tables", "recursion", "sorting", "searching", "trees", "heaps", "graphs", "advanced-structures", "disk-based-structures", "problem-solving", "practice-roadmap"]
 }
