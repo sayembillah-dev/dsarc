@@ -1,0 +1,136 @@
+---
+title: "Recursion vs Iteration: কখন কোনটা"
+description: একই সমস্যা দুইভাবে লিখে পার্থক্য দেখা, memory-র আসল বিল, tail call-এর কথা, আর কখন কোনটা বেছে নেবে, সিদ্ধান্তের সূত্রসহ।
+---
+
+## কী শিখব
+
+- একই সমস্যা recursion আর loop, দুইভাবে লিখে তুলনা
+- কেন প্রতিটা recursion-ই loop-এ রূপান্তর করা যায়, তাত্ত্বিক সত্যটা
+- Space-এর আসল বিল: call stack বনাম একটা accumulator
+- Tail recursion কী, আর JavaScript-এ সেটা কেন বাস্তবে সাহায্য করে না
+- সিদ্ধান্তের সূত্র: কখন recursion, কখন loop
+
+## ধারণা
+
+একটা তত্ত্ব আগে জেনে নাও: **যা কিছু recursion-এ হয়, সবই loop-এও হয়**, আর তার উল্টোটাও। কম্পিউটার বিজ্ঞানে এটা প্রমাণিত। তাহলে প্রশ্ন "কোনটা পারে" না, প্রশ্ন হলো **কোনটায় সমস্যাটা স্বাভাবিক শোনায়, আর কোনটায় খরচ কমে**।
+
+দুটোকে পাশাপাশি রাখার আগে দুটোর আসল চরিত্র মনে করিয়ে দিই:
+
+- **Iteration (loop):** একটা অবস্থা (state) বারবার আপডেট হয়, যেমন `result` বাড়তে থাকে। ভেতরে লুকানো stack নেই।
+- **Recursion:** অবস্থা call stack-এর frame-গুলোতে ছড়িয়ে থাকে। প্রতি call নিজের অবস্থা নিয়ে অপেক্ষা করে, [Call Stack](./call-stack.mdx)-এ দেখেছিলে।
+
+মানে recursion আসলে **stack লুকিয়ে** চলে। এই এক বাক্যই পরে সব তুলনার মূল।
+
+## একই সমস্যা, দুই রূপ: factorial
+
+```js
+// Recursion: অবস্থা frame-এ জমে
+function factRec(n) {
+  if (n <= 1) return 1;
+  return n * factRec(n - 1);
+}
+
+// Iteration: অবস্থা একটা ভেরিয়েবলে জমে
+function factIter(n) {
+  let result = 1;
+  for (let i = 2; i <= n; i++) result *= i;
+  return result;
+}
+
+console.log(factRec(5));  // 120
+console.log(factIter(5)); // 120
+```
+
+উত্তর একই, রাস্তা আলাদা। Dry run-এ পার্থক্যটা দেখো, `n = 4`:
+
+| ধাপ | factRec(4): stack-এ অবস্থা | factIter(4): result-এ অবস্থা |
+|-----|-----------------------------|------------------------------|
+| শুরু | `fact(4)` অপেক্ষায় | result = 1 |
+| 1 | `fact(4) → fact(3)` | result = 2 (i=2) |
+| 2 | `...→ fact(2)` | result = 6 (i=3) |
+| 3 | `...→ fact(1)`, base | result = 24 (i=4) |
+| ফেরা | 1, 2, 6, 24 উপরে ওঠে | (লুপ শেষ) |
+| মোট frame/state | ৪টা frame জমেছিল | ১টা ভেরিয়েবল |
+
+Recursion-এ ৪টা frame জমে ছিল, iteration-এ একটা `result`। Time দুটোই O(n), কিন্তু space-এ ফারাক: **O(n) বনাম O(1)**।
+
+## Tail recursion: একটা বিশেষ রূপ, যা JavaScript-এ আসে না
+
+একটা রূপ জেনে রাখো, যদিও আমাদের ভাষায় তার ফল মেলে না। যদি recursive call-ই function-এর **শেষ কাজ** হয়, মানে call ফেরার পর আর কিছু করার থাকে না, তাকে বলে tail call:
+
+```js
+// Tail recursive: call ফেরার পর আর কাজ নেই
+function factTail(n, acc = 1) {
+  if (n <= 1) return acc;
+  return factTail(n - 1, acc * n);  // গুণ আগেই হয়ে গেছে, call-ই শেষ
+}
+```
+
+তত্ত্বে engine এখানে পুরনো frame ফেলে নতুনটা বসাতে পারে, জায়গা O(1)-এ নেমে আসে। কিন্তু ব্যবহারে: **JavaScript-এর বেশিরভাগ engine এই অপ্টিমাইজেশন করে না** (V8, মানে Chrome আর Node, করে না)। তাই JS-এ tail recursion লিখলেও stack-এর বিল একই থাকে। জেনে রাখো ভাষাবিশ্বের কথা হিসেবে, নির্ভর করার জন্য না।
+
+## সিদ্ধান্তের সূত্র: কখন কোনটা
+
+| পরিস্থিতি | পছন্দ | কেন |
+|-----------|-------|-----|
+| রৈখিক সরল কাজ (sum, countdown) | Loop | একই কাজ, space O(1), কোডও খাটো |
+| গাছাকার সমস্যা (tree, file system, nested comment) | Recursion | সমস্যাটা নিজেই ডানা-ডানা, loop-এ লিখলে নিজেকে stack বানাতেই হবে |
+| Divide and conquer (merge sort, binary search) | Recursion | "অর্ধেক করে দুই দিকে ডাক" loop-এ অস্বাভাবিক |
+| গভীরতা অনেক বড় (লক্ষ+) | Loop বা explicit stack | stack overflow এড়াতে |
+| খুব ছোট, পড়ার সুবিধা জরুরি | যেটায় সহজ শোনায় | দলের পড়ার খরচও খরচ |
+
+মূল কথা: tree বা graph-এ recursion এত স্বাভাবিক যে সেখানে loop লিখলে নিজে হাতে array দিয়ে stack বানাতে হয়, মানে recursion-এর ভেতরের যন্ত্রটা বাইরে এনে আবার বানানো। তাই [Tree](../trees/binary-tree-traversal.mdx) আর [DFS](../graphs/dfs.mdx)-এ সবাই recursion-ই লেখে। উল্টোদিকে, একটা array-র যোগফলে recursion টানা মানে ইচ্ছে করে O(n) stack space নেওয়া, যেখানে loop-এ O(1)।
+
+## Complexity: পাশাপাশি টেবিল
+
+| দিক | Recursion | Iteration |
+|-----|-----------|-----------|
+| Time (factorial/sum ঘরানার) | O(n) | O(n) |
+| Space | O(depth), frame প্রতি | O(1), কয়েকটা ভেরিয়েবল |
+| Stack overflow ঝুঁকি | আছে, গভীর হলে | নেই |
+| পাঠযোগ্যতা | গাছাকার সমস্যায় চোখজুড়ানো | রৈখিক কাজে সহজ |
+
+Derivation মনে করিয়ে দিই: recursive space = গভীরতম মুহূর্তে জীবিত frame-এর সংখ্যা = recursion-এর গভীরতা। Iteration-এ অবস্থা constant, n যাই হোক ভেরিয়েবল তো তিনটেই। আর time-এ দুটো সমান, কারণ একই সংখ্যকবার একই কাজ হচ্ছে, শুধু অবস্থা কোথায় জমে, সেটার ফারাক।
+
+## সাধারণ ভুল আর edge case
+
+**১. "Recursion সবসময় ধীর" বা "recursion-ই সবসময় সুন্দর", কোনো চরম ধারণা।**
+দুটোই ভুল। রৈখিক কাজে recursion শুধু বাড়তি stack খায়; গাছাকার কাজে loop জোর করে লাগালে কোড পড়াই কষ্ট হয়। প্রশ্নটা হলো সমস্যার আকৃতি কী, সেই অনুযায়ী অস্ত্র।
+
+**২. Loop-এ রূপান্তর করতে গিয়ে ফিরে-আসার-পথের কাজ হারানো।**
+`return n * factRec(n - 1)`-এ গুণটা ফিরে আসার পথে হয়। Loop-এ নিয়ে আসতে গেলে সেই কাজের জন্য accumulator আলাদা ভাবতে হয়, যেমন factIter-এর `result`। সরাসরি লাইন-বাই-লাইন তর্জমা করলে ভুল হয়।
+
+**৩. Tail recursion লিখে সন্তুষ্ট হওয়া।**
+উপরে বললাম, JS engine এই অপ্টিমাইজেশন করে না। "আমি তো tail form লিখেছি" বলে গভীর recursion চালালে তবু overflow। প্রয়োজনে সত্যিকারের loop-এ নাও।
+
+**৪. Recursion থেকে loop-এ নামার সময় stack-এর দরকারটা অস্বীকার করা।**
+Tree traversal loop-এ লিখতে গেলে তোমাকে নিজে একটা stack বানাতেই হবে। "Stack নেই" বলে গর্ব করা তখন ভুল, stack আছে, শুধু তুমি নিজে বানিয়েছ। Space তখনও O(depth)-ই।
+
+**৫. Hybrid ভুলে যাওয়া।**
+অনেক বাস্তব সমাধান দুটো মেশায়: বাইরে loop, ভেতরে ছোট recursion, বা recursion-এর গভীরতা সীমাবদ্ধ করে বাকিটা loop। সবসময় দুই চরমের একটা বাছতে হবে, এমন নিয়ম নেই।
+
+## Animation Spec
+
+> **Animation Spec: Two Paths**
+>
+> - **দৃশ্য:** বামে recursion, ডানে loop; recursion-এর নিচে call stack বাড়ছে-কমছে, loop-এর নিচে একটাই accumulator ঘর; উপরে একই n।
+> - **ইনপুট:** n; speed; "memory used" মিটার।
+> - **ধাপ:** দুই পদ্ধতি তালে তালে চলে; recursion-এ frame জমে আর pop হয়, loop-এ একই ঘর বারবার বদলায়; মিটারে দুটোর সর্বোচ্চ জায়গা দাগানো থাকে।
+> - **নিয়ন্ত্রণ:** step, play, reset।
+> - **লক্ষ্য:** একই সময়, ভিন্ন জায়গা, আর "recursion = লুকানো stack" এই যোগসূত্র চোখে পড়ুক।
+
+## অনুশীলন
+
+- **সহজ ১:** [Recursion Examples](./recursion-examples.mdx)-এর `sum` এবার loop দিয়ে লেখো। দুটোর space তুলনা করো, এক লাইনে।
+- **সহজ ২:** বন্ধুকে বোঝাও: "যা recursion-এ হয় সব loop-এ হয়" সত্য হলেও কেন tree traversal-এ সবাই recursion লেখে?
+- **মাঝারি ১:** fibonacci-র iterative version লেখো (দুইটা ভেরিয়েবল দিয়ে আগের দুই মান মনে রাখো)। Time আর space কত? [Memoization](./memoization.mdx) version-এর সঙ্গে তুলনা করো: কোনটা কোন দিকে এগিয়ে?
+- **মাঝারি ২:** `factTail`-কে সত্যিকারের loop-এ রূপান্তর করো, tail call-এর accumulator ধারণা ব্যবহার করে। দুটোর কোড পাশাপাশি রেখে দেখো, মিল কোথায়।
+- **কঠিন:** একটা binary tree-এর inorder traversal **loop দিয়ে** লেখো, explicit stack ব্যবহার করে (নিজে stack বানাবে, recursion না)। তারপর বলো: তোমার stack-এ সর্বোচ্চ কতগুলো node জমেছিল, আর সেটা tree-এর কোন বৈশিষ্ট্যের সঙ্গে মিলে? (উত্তর মিলাবে [Binary Tree Traversal](../trees/binary-tree-traversal.mdx)-এ গিয়ে।)
+
+## সারসংক্ষেপ
+
+- তত্ত্বে দুটো সমশক্তির; বাস্তবে পার্থক্য space-এ আর পাঠযোগ্যতায়।
+- Recursion = লুকানো stack; space O(গভীরতা)। Iteration-এ সেই বিল O(1)।
+- গাছাকার সমস্যায় recursion স্বাভাবিক, রৈখিক কাজে loop সাশ্রয়ী।
+- Tail call optimization JavaScript-এ আসে না, ওর ওপর ভরসা না।
+- Loop-এ রূপান্তর করলেও গাছাকার কাজে stack নিজে বানাতে হয়, বিল কমে না।
