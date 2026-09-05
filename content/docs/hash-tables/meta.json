@@ -1,0 +1,4 @@
+{
+  "title": "Hash Tables",
+  "pages": ["index", "hash-table-intro", "hash-function", "collision-handling", "map-and-set", "hash-patterns"]
+}
