@@ -1,56 +1,128 @@
 ---
 title: "Call Stack: recursion আসলে চলে কীভাবে"
-description: recursion মেমরিতে কীভাবে চলে, call stack-এ frame জমে আর খালি হয়, factorial দিয়ে পুরো খেলাটা বোঝা।
+description: প্রতিটা call মেমরিতে একটা frame জমায়, return-এ খালি হয়। factorial(4)-এর পুরো stack dry run, frame-এ কী থাকে, আর stack overflow কেন হয়।
 ---
 
 ## কী শিখব
 
-- recursion মেমরিতে আসলে কীভাবে চলে
+- Call stack আসলে কী: প্রতিটা function call-এর জন্য একটা করে frame
+- Frame-এ কী কী থাকে: নিজের ভেরিয়েবল, আর কোথায় ফিরতে হবে
+- `factorial(4)`-এর পুরো dry run, push থেকে pop পর্যন্ত
+- Stack overflow: কখন, কেন, আর সীমা প্রায় কত
+- কেন recursive space খরচ O(depth), loop-এ না
 
 ## ধারণা
 
-ধরো, তুমি একটা কাজ করছিলে, এমন সময় ফোন এলো। কাজটা থামিয়ে ফোন ধরলে। কথা বলতে বলতে দরজায় কেউ এলো, ফোনটা hold করে দরজার কাজটা সারলে। তারপর ফিরে এসে ফোন শেষ করলে, সবশেষে আসল কাজে ফিরলে। খেয়াল করো, মাথার ভেতরে কাজগুলো একটা stack-এর মতো জমছিল, আর উপর থেকে একে একে খালি হচ্ছিল।
+ধরো, তুমি ডেস্কে বসে রিপোর্ট লিখছ। হঠাৎ ফোন এলো, রিপোর্ট থামিয়ে ফোন ধরলে। ফোনে কথা বলতে বলতে দরজায় কেউ এলো, ফোন hold করে দরজার কাজ সারলে। তারপর ফিরে এসে ফোন শেষ করলে, সবশেষে আবার রিপোর্টে ফিরলে।
 
-Function call-ও ঠিক এমন। প্রতিবার function ডাকলে সেটা **call stack**-এ (সত্যিই একটা stack!) জমা হয়। Base case-এ পৌঁছালে stack উপর থেকে একে একে খালি হয় (return)। সহজ কথায়, recursion পুরোটাই এই call stack-এর উপর দাঁড়িয়ে।
+খেয়াল করো, তোমার মাথায় কাজগুলো একটা stack-এর মতো জমছিল: নতুন কাজ এলে আগেরটা থেমে তালিকার উপরে চাপল, কাজ শেষ হলে উপরেরটা উঠে গেল, আর তুমি ঠিক যেখানে থেমেছিলে সেখান থেকে শুরু করলে। কম্পিউটারের ভেতরে function call ঠিক এভাবেই চলে, আর সেই stack-এর নাম **call stack**। এটা [Stack](../stacks-queues/stack-lifo.mdx) পড়া তোমার চেনা সেই LIFO-ই, শুধু এবার ডেটার বদলে function-এর অবস্থা।
 
-## কোড উদাহরণ
+প্রতিবার কোনো function ডাকা হলে তার জন্য একটা **stack frame** জমা হয়, যেখানে থাকে:
+
+- সেই call-এর **নিজের ভেরিয়েবল** (প্রতিটা call-এর `n` আলাদা)
+- **ফিরে যাওয়ার ঠিকানা** (বাইরের call-এর কোন লাইনে ফিরতে হবে)
+
+Function return করলে frame উঠে যায় (pop), সবচেয়ে নিচের frame শেষ হলে প্রোগ্রাম শেষ।
+
+## Dry run: `factorial(4)`-এর পুরো জীবনচক্র
+
+আগে কোডটা, তারপর টেবিল:
 
 ```js
-// factorial দিয়ে stack বোঝা
 function factorial(n) {
   if (n <= 1) return 1;          // base case
-  return n * factorial(n - 1);   // n কে ছোট factorial দিয়ে গুণ
+  return n * factorial(n - 1);   // গুণটা হবে ভেতরের call ফেরার পর
 }
-
-console.log(factorial(4)); // 24
-/*
-factorial(4) = 4 * factorial(3)
-             = 4 * (3 * factorial(2))
-             = 4 * (3 * (2 * factorial(1)))
-             = 4 * (3 * (2 * 1)) = 24
-প্রথমে নিচে নামে (call), base-এ পৌঁছে উপরে ফেরে (return)।
-*/
 ```
 
-## কোড ব্রেকডাউন
+| ধাপ | ঘটনা | Call stack (ডানে top) | মন্তব্য |
+|-----|------|------------------------|---------|
+| 1 | `factorial(4)` call | `fact(4)` | n=4 মনে রেখে অপেক্ষা |
+| 2 | `factorial(3)` call | `fact(4) → fact(3)` | 4 × ? |
+| 3 | `factorial(2)` call | `fact(4) → fact(3) → fact(2)` | 3 × ? |
+| 4 | `factorial(1)` call | চারটা frame | base case |
+| 5 | `fact(1)` return 1 | `fact(4) → fact(3) → fact(2)` | pop, 1 উপরে |
+| 6 | `fact(2)` return 2×1=2 | `fact(4) → fact(3)` | pop |
+| 7 | `fact(3)` return 3×2=6 | `fact(4)` | pop |
+| 8 | `fact(4)` return 4×6=24 | খালি | শেষ |
 
-- প্রতিটা call নিজের `n` মনে রেখে অপেক্ষা করে, যতক্ষণ না ভেতরের call শেষ হয়।
-- base case থেকে 1 return করে, তারপর পেছন থেকে একে একে গুণ হয়ে যায়।
-- recursion খুব গভীরে চলে গেলে **stack overflow**, মানে মেমরি শেষ।
+দুটো জিনিস খেয়াল করো। এক, **গুণের কাজটা ফিরে আসার পথে** হচ্ছে: 4 × factorial(3) হিসাব করতে হলে আগে factorial(3) লাগবে, তাই `fact(4)` থেমে দাঁড়িয়ে ছিল পুরো সময়। দুই, চারটা frame একসাথে জীবিত ছিল, প্রতিটার নিজের `n` আলাদা: `fact(4)`-এর n=4, `fact(2)`-এর n=2, কেউ কারওটা নষ্ট করেনি। "প্রতিটা call-এর নিজস্ব জগত" কথাটার আসল অর্থ এই frame-গুলো।
+
+## Space-এর হিসাব: recursion কেন O(depth)
+
+এই টেবিল থেকেই একটা গুরুত্বপূর্ণ সিদ্ধান্ত আসে। `factorial(n)` চালালে সবচেয়ে গভীর মুহূর্তে n-টা frame জমে থাকে। প্রতিটা frame-এ কিছু ভেরিয়েবল আর ঠিকানা, ধরো constant জায়গা। তাই মোট জায়গা **O(n)**। লক্ষ করো, একই কাজ loop-এ করলে একটাই `result` ভেরিয়েবল লাগত, O(1)।
+
+মানে recursion-এর জন্য দুটো বিল দিতে হয়: সময়ের বিল আর **stack-এর বিল**। গভীরতা যত, stack তত। Recursion লেখার সময় মাথায় রাখার সূত্র: space complexity = **সবচেয়ে গভীর মুহূর্তে কতটা call জীবিত**, অর্থাৎ recursion-এর গভীরতা।
+
+## Stack overflow: সীমার বাইরে গেলে
+
+Call stack অসীম না, engine একটা নির্দিষ্ট জায়গা দেয় (ব্রাউজারভেদে প্রায় দশ থেকে কুড়ি হাজার frame)। Base case ভুলে গেলে বা খুব গভীর recursion হলে frame জমতে জমতে জায়গা ফুরিয়ে যায়:
+
+```js
+function forever(n) {
+  return forever(n + 1);   // base case-ই নেই
+}
+// forever(1) → RangeError: Maximum call stack size exceeded
+```
+
+এই error-টা দেখলে বুঝবে: recursion থামার রাস্তা খুঁজে পায়নি। Debug করার প্রথম ধাপ: base case আছে তো? দ্বিতীয় ধাপ: প্রতি call-এ সমস্যা সত্যিই base case-এর দিকে এগোচ্ছে তো?
+
+একটা মিথ ভাঙে রাখি: stack overflow মানে recursion নিজে খারাপ না। গভীরতা কয়েক হাজারের মধ্যে থাকলে নিশ্চিন্ত। সমস্যা যখন n যায় লাখের কাছে, তখন loop-এ বদলানো বা explicit stack ব্যবহার ভাবতে হয়।
+
+## কোড ব্রেকডাউন: factorial, লাইনে লাইনে
+
+1. `if (n <= 1) return 1` : base case। `<= 1` নেওয়াটা `=== 1`-এর চেয়ে নিরাপদ: কেউ ভুলে `factorial(0)` বা ঋণাত্মক ডাকলেও থেমে যায়, অসীমে যায় না।
+2. `return n * factorial(n - 1)` : এই এক লাইনে দুই কাজ: আগে ভেতরের call চলে (frame জমে), ফল এলে গুণ হয়, তারপর ফেরে। গুণ যে call-এর **পরে** হচ্ছে, সেটাই ফিরে আসার পথে কাজের উদাহরণ।
+3. পুরো চেইনে প্রতি frame নিজের `n` ধরে রাখে : তাই `fact(2)` শেষ হলে `fact(3)` ঠিক তার n=3 দিয়ে এগোতে পারে। Frame-ই এই স্মৃতির বাহক।
 
 ## Complexity
 
-- time O(n), space O(n) (stack গভীরতা)।
+| দিক | খরচ | কেন |
+|-----|------|-----|
+| Time | O(n) | n-টা call, প্রতিটায় এক গুণ |
+| Space | O(n) | গভীরতম মুহূর্তে n-টা frame জীবিত |
+
+তুলনার জন্য: iterative factorial-এ space O(1)। পার্থক্যটা আসল কোথায়, সেটা [Recursion vs Iteration](./recursion-vs-iteration.mdx)-এ পুরোদস্তুর নেওয়া হবে।
+
+## সাধারণ ভুল আর edge case
+
+**১. "Recursion ধীর" ধারণা, কারণ space ভুলে যাওয়া।**
+অনেকে time-এর দিকে তাকায়, অথচ recursion-এর আসল অতিরিক্ত বিল হলো stack space। Interview-এ complexity জিজ্ঞেস করলে call stack-এর O(depth) উল্লেখ না করলে উত্তর অর্ধেক।
+
+**২. Frame-গুলো যে আলাদা, সেটা ভুলে ভেরিয়েবল শেয়ার হয়ে যাওয়ার ভাবনা।**
+নতুনরা মাঝে মাঝে ভাবে সব call একই `n` নিয়ে কাজ করছে। আসলে প্রতি frame-এর নিজের কপি। ঠিক কথা, তবে **object/array পাঠালে reference-ই যায়**, তখন ভেতরের বদল বাইরেও দেখা যায়: এই পার্থক্যটা primitive বনাম object-এর খেলা, [JS Fundamentals](../js-fundamentals/variables-data-types.mdx)-এর গল্প।
+
+**৩. Base case দুরে সরে যাওয়া।**
+`factorial(n - 2)` টাইপ ভুলে কমলে base case লাফিয়ে যেতে পারে, আর stack overflow-ই একমাত্র খবরদার। ছোট input দিয়ে dry run করলেই ধরা পড়ে।
+
+**৪. Return না ফেরানো, চেইন ভাঙা।**
+`factorial(n - 1)` ডেকে return না করলে ভেতরে সব ঠিকই চলে, কিন্তু বাইরের গুণ পায় `undefined`, ফল NaN। Recursion-এ চেইনের **প্রতি ধাপে** return লাগে, শুধু base case-এ না।
+
+**৫. অযথা গভীর recursion, যেখানে loop-ই যথেষ্ট।**
+একটা array-এর যোগফলের জন্য লক্ষ উপাদানে recursion মানে লক্ষ frame। রৈখিক কাজে loop নিরাপদ; recursion রাখো সেখানে, যেখানে সমস্যা নিজেই শাখায় ভাঙে, যেমন tree।
 
 ## Animation Spec
 
 > **Animation Spec: Call Stack Visualizer**
 >
-> - **দৃশ্য:** ডান পাশে উল্লম্ব stack; প্রতিটা call একটা frame হিসেবে উপরে জমে।
-> - **ইনপুট:** n।
-> - **ধাপ:** call হলে frame push (নিচে নামা); base-এ পৌঁছালে frame গুলো একে একে pop হয়ে return-মান উপরে যায়।
-> - **লক্ষ্য:** recursion = call stack, এই যোগসূত্র স্পষ্ট করা।
+> - **দৃশ্য:** ডানে উল্লম্ব stack, প্রতি frame-এ `n` আর "ফেরার ঠিকানা"; বামে কোড, চলমান লাইন উজ্জ্বল; নিচে return-মানের নদী উপরে উঠছে।
+> - **ইনপুট:** n; আলাদা "overflow demo" মোড যেখানে base case বন্ধ করা যায়।
+> - **ধাপ:** call-এ নতুন frame জমে, নিজের n নিয়ে; base case-এ ফ্রেম সবুজ; return-এ ফ্রেম উঠে গিয়ে তার মান নিচের frame-এর গুণে ঢোকে। overflow মোডে frame অনবরত জমতে থাকে, সীমার দাগ পেরোলে লাল বিস্ফোরণ।
+> - **নিয়ন্ত্রণ:** step, play, reset; frame-এর ভেতরের ভেরিয়েবল দেখা/লুকানো।
+> - **লক্ষ্য:** recursion = call stack-এর উপর নাচ, আর space খরচ = গভীরতা, দুটোই চোখে দেখা।
 
 ## অনুশীলন
 
-- `factorial(5)`-এর পুরো stack ধাপটা হাতে লিখে ফেলো, কখন কী push হলো, কখন pop, সব।
+- **সহজ ১:** `factorial(5)`-এর পুরো টেবিল হাতে লিখো: কখন কোন frame push হলো, কখন pop, প্রতি pop-এ কী মান ফিরল।
+- **সহজ ২:** বন্ধুকে বোঝাও: কেন `factorial(3)` শেষ হওয়ার পর `factorial(4)` তার কাজ করতে পারে? "ফিরে যাওয়ার ঠিকানা" কথাটা ব্যবহার করে।
+- **মাঝারি ১:** একটা recursive function লেখো `power(base, exp)`, যেমন `power(2, 10)` → 1024। কতটা frame জমবে? তারপর ভাবো: `exp` জোড় হলে `power(base*base, exp/2)` করলে frame কমে যায়, কেন?
+- **মাঝারি ২:** ইচ্ছে করে stack overflow ফেলাও: base case ছাড়া একটা function চালাও, error-টা পড়ো। তারপর console-এ দেখো কতটা গভীরে গিয়ে থেমেছিল, তোমার ব্রাউজারে সীমা কত?
+- **কঠিন:** [Recursion Examples](./recursion-examples.mdx)-এর `sum(arr, i)` নাও, এটাকে এমনভাবে লেখো যাতে recursion-এর গভীরতা O(n) না হয়ে O(log n) হয়। (হিন্ট: প্রথম উপাদান বাদ দেওয়ার বদলে array-টা **মাঝ থেকে দুই টুকরো** করো: sum(left) + sum(right)। এই "অর্ধেকে ভাগ" ধারণাটা [Merge Sort](../sorting/merge-sort.mdx)-এ ফিরে আসবে।)
+
+## সারসংক্ষেপ
+
+- প্রতি function call মানে call stack-এ একটা frame: নিজের ভেরিয়েবল + ফেরার ঠিকানা।
+- Recursion-এ নিচে নামা = frame push, ফিরে আসা = frame pop, মাঝখানে সবাই অপেক্ষায়।
+- Recursive space = O(গভীরতা), কারণ গভীরতম মুহূর্তে ততগুলো frame জীবিত।
+- Stack overflow মানে থামার পথ হারানো; base case আর সঠিক দিকে অগ্রগতিই প্রতিরোধ।
+- Recursion খারাপ না, অযথা গভীর recursion খারাপ: কয়েক হাজার পর্যন্ত নিশ্চিন্ত।
