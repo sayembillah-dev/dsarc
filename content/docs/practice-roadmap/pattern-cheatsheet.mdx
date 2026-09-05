@@ -1,0 +1,47 @@
+---
+title: "প্যাটার্ন চেনার চিটশিট"
+description: সমস্যার ইঙ্গিত দেখে কোন কৌশল লাগবে - এক নজরের ম্যাপিং।
+---
+
+## কী শিখব
+
+- সমস্যার ইঙ্গিত দেখে কোন কৌশল লাগবে আন্দাজ করা
+
+## ধারণা
+
+বেশিরভাগ interview সমস্যা কয়েকটা চেনা প্যাটার্নের ছদ্মবেশ। ইঙ্গিত ধরতে পারলে অর্ধেক কাজ শেষ:
+
+| ইঙ্গিত (সমস্যায় যা দেখবে) | সম্ভাব্য কৌশল |
+|--------------------------|--------------|
+| Sorted array, জোড়া/triplet | [Two Pointer](../problem-solving/two-pointer) |
+| টানা subarray/substring, "window" | [Sliding Window](../problem-solving/sliding-window) |
+| "সব কম্বিনেশন/পারমুটেশন/subset" | [Backtracking](../problem-solving/backtracking) |
+| "সর্বোচ্চ/সর্বনিম্ন/কয় উপায়", overlapping subproblem | [DP](../problem-solving/dynamic-programming) |
+| Linked list-এ cycle/মধ্য | [Fast & Slow Pointer](../problem-solving/fast-slow-pointers) |
+| Top-K / k-তম | [Heap](../heaps) / [Quickselect](../problem-solving/kth-element) |
+| চলমান median | [Two Heaps](../problem-solving/two-heaps) |
+| রেঞ্জ/interval একত্র | [Merge Intervals](../problem-solving/merge-intervals) |
+| 1..n সংখ্যা, missing/duplicate | [Cyclic Sort](../problem-solving/cyclic-sort) |
+| গ্রিড/matrix-এ অঞ্চল | [Grid DFS/BFS](../problem-solving/island-traversal) |
+| শব্দ/prefix খোঁজা | [Trie](../advanced-structures/trie) |
+| গ্রাফে ছোট পথ | [BFS (unweighted)](../graphs/bfs) / [Dijkstra (weighted)](../graphs/dijkstra) |
+| "প্রতি ধাপে সেরা বাছাই" | [Greedy](../problem-solving/greedy) |
+
+## ব্রেকডাউন
+
+- এটা মুখস্থ নয়, বহু সমস্যা করলে নিজে থেকেই আসবে - চিটশিট শুধু গতি বাড়ায়।
+- একই সমস্যায় একাধিক কৌশল খাটতে পারে; brute থেকে শুরু করে সেরাটায় যাও।
+
+## Animation Spec
+
+> **Animation Spec: Pattern Matcher**
+>
+> - **দৃশ্য:** সমস্যার বর্ণনা কার্ড; মূল শব্দ (keyword) highlight হয়ে সম্পর্কিত প্যাটার্নে তীর যায়।
+> - **ইনপুট:** সমস্যার টেক্সট নির্বাচন।
+> - **ধাপ:** keyword ধরা পড়ে -> মিলে যাওয়া প্যাটার্ন কার্ড জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** সমস্যা পাল্টানো।
+> - **লক্ষ্য:** ইঙ্গিত -> কৌশল ম্যাপিং গেঁথে নেওয়া।
+
+## অনুশীলন
+
+- সমাধান করা শেষ ৫টা সমস্যা কোন প্যাটার্নে পড়ে, লিখে রাখো।
