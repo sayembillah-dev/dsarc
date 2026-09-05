@@ -1,0 +1,58 @@
+---
+title: সময় বনাম মেমরি (Time vs Space Complexity)
+description: Time Complexity আর Space Complexity-এর পার্থক্য, আর দুটোর মধ্যে trade-off কীভাবে কাজ করে।
+---
+
+## কী শিখব
+
+- সময় বনাম মেমরি, দুই ধরনের খরচ
+
+## ধারণা
+
+- **Time Complexity** অর্থাৎ কত ধাপ/অপারেশন লাগে (গতি)
+- **Space Complexity** অর্থাৎ কত অতিরিক্ত মেমরি লাগে (জায়গা)
+
+অনেক সময় এদের মধ্যে **trade-off** থাকে: বেশি মেমরি খরচ করে গতি বাড়ানো যায় (যেমন cache/Set ব্যবহার)।
+
+## কোড উদাহরণ
+
+```js
+// কম space, কিন্তু নেস্টেড loop, তাই বেশি time (O(n²))
+function hasDupSlow(arr) {
+  for (let i = 0; i < arr.length; i++)
+    for (let j = i + 1; j < arr.length; j++)
+      if (arr[i] === arr[j]) return true;
+  return false;              // Space: O(1), Time: O(n²)
+}
+
+// বেশি space (Set), কিন্তু কম time (O(n))
+function hasDupFast(arr) {
+  const seen = new Set();    // অতিরিক্ত মেমরি
+  for (const x of arr) {
+    if (seen.has(x)) return true;
+    seen.add(x);
+  }
+  return false;              // Space: O(n), Time: O(n)
+}
+
+console.log(hasDupSlow([1, 2, 3, 2])); // true
+console.log(hasDupFast([1, 2, 3, 2])); // true
+```
+
+## কোড ব্রেকডাউন
+
+- প্রথমটা মেমরি কম নেয় কিন্তু ধীর।
+- দ্বিতীয়টা মেমরি বেশি নেয় কিন্তু দ্রুত, এটাই **time-space trade-off**।
+
+## Animation Spec
+
+> **Animation Spec: Time vs Space Balance**
+>
+> - **দৃশ্য:** একটা দাঁড়িপাল্লা; এক পাল্লায় "Time", অন্যটায় "Space"।
+> - **ইনপুট:** algorithm variant নির্বাচন।
+> - **ধাপ:** variant বদলালে পাল্লা হেলবে; পাশে দুই metric-এর মান দেখাবে।
+> - **লক্ষ্য:** trade-off ধারণা।
+
+## অনুশীলন
+
+- উপরের দুই version-এ input বড় হলে কোনটা তাড়াতাড়ি চলবে, ভাবো।

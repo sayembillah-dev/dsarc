@@ -1,0 +1,93 @@
+---
+title: Common Runtimes (সব গুরুত্বপূর্ণ Complexity)
+description: O(1) থেকে O(n!) পর্যন্ত সবচেয়ে দরকারি runtime-গুলো, ভালো থেকে খারাপ ক্রমে, বাস্তব উদাহরণসহ।
+---
+
+## কী শিখব
+
+- সবচেয়ে দরকারি ৬টা runtime, ভালো থেকে খারাপ ক্রমে
+
+## ধারণা
+
+এই subsection-টা roadmap-এর "Common Runtimes", Constant থেকে Factorial পর্যন্ত। প্রতিটার একটা করে বাস্তব উদাহরণ দিচ্ছি।
+
+ক্রম (ভালো থেকে খারাপ):
+
+```text
+O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!)
+```
+
+## কোড উদাহরণ
+
+```js
+// O(1), Constant: input যত বড়ই হোক, একই কাজ
+function first(arr) { return arr[0]; }
+
+// O(log n), Logarithmic: প্রতিবার অর্ধেক (binary search-এর মতো)
+function halve(n) { let c = 0; while (n > 1) { n = Math.floor(n/2); c++; } return c; }
+
+// O(n), Linear: একবার loop
+function sum(arr) { let t = 0; for (const x of arr) t += x; return t; }
+
+// O(n log n): merge/quick sort-এর গতি (section 09)
+// arr.sort() মোটামুটি এই complexity
+
+// O(n²), Quadratic: নেস্টেড loop
+function allPairs(arr) {
+  const pairs = [];
+  for (const a of arr) for (const b of arr) pairs.push([a, b]);
+  return pairs;
+}
+
+// O(2ⁿ), Exponential: naive Fibonacci (section 08)
+function fib(n) { return n < 2 ? n : fib(n-1) + fib(n-2); }
+
+// O(n!), Factorial: সব permutation বানানো
+function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const result = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for (const p of permutations(rest)) result.push([arr[i], ...p]);
+  }
+  return result;
+}
+
+console.log(first([9, 8, 7]));              // 9
+console.log(halve(16));                     // 4
+console.log(sum([1, 2, 3]));                // 6
+console.log(allPairs([1, 2]).length);       // 4
+console.log(fib(10));                       // 55
+console.log(permutations([1, 2, 3]).length); // 6
+```
+
+## কোড ব্রেকডাউন
+
+কোনটা কেমন:
+
+| Runtime | নাম | কেমন | উদাহরণ |
+|---------|-----|------|--------|
+| O(1) | Constant | চমৎকার | array index, Map.get |
+| O(log n) | Logarithmic | দারুণ | binary search, balanced tree |
+| O(n) | Linear | ভালো | একবার loop |
+| O(n log n) | Linearithmic | মোটামুটি ভালো | efficient sort |
+| O(n²) | Quadratic/Polynomial | দুর্বল | নেস্টেড loop |
+| O(2ⁿ) | Exponential | খারাপ | naive recursion, subset |
+| O(n!) | Factorial | ভয়ংকর | সব permutation |
+
+<Callout type="info" title="বাস্তব অনুভূতি">
+n = 20 হলে O(n²) = 400 অপারেশন (তুচ্ছ), কিন্তু O(2ⁿ) ≈ ১০ লাখ, আর O(n!) ≈ ২৪ কোটি কোটি! তাই বড় input-এ exponential/factorial প্রায় অচল।
+</Callout>
+
+## Animation Spec
+
+> **Animation Spec: Runtime Comparison Dashboard**
+>
+> - **দৃশ্য:** ৭টা curve একসাথে গ্রাফে; নিচে একটা টেবিলে প্রতিটা n-এর জন্য অপারেশন সংখ্যা।
+> - **ইনপুট:** n-এর slider (1 থেকে 50); কোন কোন curve দেখাবে তার checkbox।
+> - **ধাপ:** n বাড়ালে প্রতিটা curve নিজ গতিতে উঠবে; exponential/factorial দ্রুত "ছাদ" ভেদ করবে (log-scale toggle)।
+> - **লক্ষ্য:** runtime-গুলোর আপেক্ষিক ভয়াবহতা অনুভব করা।
+
+## অনুশীলন
+
+- প্রতিটা runtime-এর একটা করে বাস্তব উদাহরণ নিজে খুঁজে লেখো।

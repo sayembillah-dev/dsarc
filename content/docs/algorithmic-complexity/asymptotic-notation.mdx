@@ -1,0 +1,56 @@
+---
+title: "Asymptotic Notation: Big-O, θ, Ω"
+description: Big-O, Big-Ω আর Big-θ, তিনটা notation-এর পার্থক্য আর কোনটা কখন প্রযোজ্য।
+---
+
+## কী শিখব
+
+- তিনটা notation-এর পার্থক্য
+
+## ধারণা
+
+এগুলো algorithm-এর গতির সীমা বর্ণনা করে:
+
+| Notation | নাম | বোঝায় | সাধারণ ভাষায় |
+|----------|-----|--------|----------------|
+| **O (Big-O)** | Upper bound | worst case | "সর্বোচ্চ এত খারাপ হতে পারে" |
+| **Ω (Omega)** | Lower bound | best case | "সর্বনিম্ন এত ভালো হতে পারে" |
+| **θ (Theta)** | Tight bound | average/উভয় সমান | "মোটামুটি এতটাই" |
+
+**উদাহরণ: Linear Search**
+
+- **best case (Ω):** target প্রথমেই পাওয়া গেল, Ω(1)
+- **worst case (O):** target নেই বা শেষে, O(n)
+- **θ:** যখন best ও worst একই স্তরের, তখন θ ব্যবহার হয়
+
+## কোড উদাহরণ
+
+```js
+function linearSearch(arr, target) {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return i; // ভাগ্য ভালো হলে প্রথমেই, Ω(1)
+  }
+  return -1;                          // না পেলে পুরোটা, O(n)
+}
+
+console.log(linearSearch([4, 7, 1, 9], 1)); // 2
+console.log(linearSearch([4, 7, 1, 9], 5)); // -1
+```
+
+## কোড ব্রেকডাউন
+
+- বাস্তবে আমরা প্রায় সবসময় **Big-O (worst case)** নিয়ে কথা বলি, কারণ নিরাপদ দিকটা জানা দরকার।
+- θ ব্যবহার হয় যখন best ও worst একই (যেমন সবসময় পুরো array-তে loop)।
+
+## Animation Spec
+
+> **Animation Spec: Three Bounds**
+>
+> - **দৃশ্য:** একটা গ্রাফ; একটাই algorithm curve, তার উপরে O ও নিচে Ω-এর সীমারেখা; θ হলে দুই রেখা কাছাকাছি।
+> - **ইনপুট:** best/average/worst scenario toggle।
+> - **ধাপ:** scenario বদলালে pointer curve-এর ভিন্ন অংশে যাবে ও সংশ্লিষ্ট notation highlight হবে।
+> - **লক্ষ্য:** কোন notation কখন প্রযোজ্য।
+
+## অনুশীলন
+
+- Binary search-এর best ও worst case কী হবে ভাবো (পরে section 10-এ মিলিয়ে নেবে)।

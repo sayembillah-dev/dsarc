@@ -1,0 +1,64 @@
+---
+title: কীভাবে Complexity হিসাব করব (How to Calculate Complexity)
+description: কোড দেখে Big-O বের করার ৩টা সহজ নিয়ম, সাথে ধাপে ধাপে উদাহরণ।
+---
+
+## কী শিখব
+
+- কোড দেখে Big-O বের করার নিয়ম
+
+## ধারণা
+
+৩টা সহজ নিয়ম:
+
+1. **ধ্রুবককে বাদ দাও:** O(2n) অর্থাৎ O(n), O(500) অর্থাৎ O(1)
+2. **শুধু সবচেয়ে বড় term রাখো:** O(n² + n) অর্থাৎ O(n²)
+3. **Loop গোনো:**
+   - একটা loop মানে O(n)
+   - loop-এর ভেতর loop মানে O(n²)
+   - প্রতিবার অর্ধেক হলে O(log n)
+
+## কোড উদাহরণ
+
+```js
+// উদাহরণ ১: দুটো আলাদা loop, অর্থাৎ O(n + n) = O(n)
+function example1(arr) {
+  for (const x of arr) console.log(x);   // O(n)
+  for (const x of arr) console.log(x*2); // O(n)
+}                                        // মোট O(n)
+
+// উদাহরণ ২: নেস্টেড loop, অর্থাৎ O(n²)
+function example2(arr) {
+  for (const a of arr)
+    for (const b of arr)
+      console.log(a, b);
+}
+
+// উদাহরণ ৩: প্রতিবার অর্ধেক, অর্থাৎ O(log n)
+function example3(n) {
+  while (n > 1) n = Math.floor(n / 2);
+}
+
+example1([1, 2, 3]);
+example2([1, 2]);
+example3(16);
+```
+
+## কোড ব্রেকডাউন
+
+- example1: দুটো O(n) যোগ = O(2n), ধ্রুবক বাদ দিলে **O(n)**।
+- example2: প্রতিটা উপাদানের জন্য পুরো array, **O(n²)**।
+- example3: n থেকে n/2, তারপর n/4 ... **O(log n)**।
+
+## Animation Spec
+
+> **Animation Spec: Big-O Detector**
+>
+> - **দৃশ্য:** কোড ব্লক; loop গুলোর চারপাশে রঙিন বক্স, পাশে "এই loop = O(?)" লেবেল।
+> - **ইনপুট:** কয়েকটা প্রস্তুত কোড snippet নির্বাচন।
+> - **ধাপ:** প্রতিটা loop highlight হবে, নিচে term যোগ হবে, শেষে নিয়ম প্রয়োগ করে final Big-O দেখাবে।
+> - **লক্ষ্য:** কোড থেকে Big-O রূপান্তরের নিয়ম শেখা।
+
+## অনুশীলন
+
+- একটা তিন-স্তরের নেস্টেড loop-এর complexity কত?
