@@ -1,0 +1,58 @@
+---
+title: "Recursion: কী"
+description: একটা function নিজেকে ডাকা মানে কী, base case ও recursive case-এর দুই অংশ, countdown উদাহরণ দিয়ে।
+---
+
+## কী শিখব
+
+- একটা function নিজেকে ডাকা মানে কী
+
+## ধারণা
+
+Recursion = একটা function নিজের ভেতরেই নিজেকে ডাকে, কিন্তু একটু **ছোট সমস্যা** নিয়ে, যতক্ষণ না সমস্যাটা এত ছোট হয় যে সরাসরি উত্তর জানা (**base case**)।
+
+বাস্তব উপমা: দুই আয়নার মাঝে দাঁড়ালে ছোট থেকে ছোট প্রতিফলন; অথবা রুশ পুতুল (matryoshka), অর্থাৎ ভেতরে ভেতরে ছোট পুতুল।
+
+**দুটো অংশ সবসময় লাগবে:**
+
+1. **Base case:** কখন থামবে (নাহলে infinite)
+2. **Recursive case:** ছোট সমস্যায় নিজেকে ডাকা
+
+## কোড উদাহরণ
+
+```js
+// countdown উদাহরণ
+function countdown(n) {
+  if (n === 0) {              // base case: থামার শর্ত
+    console.log("শেষ!");
+    return;
+  }
+  console.log(n);
+  countdown(n - 1);          // recursive case: ছোট সমস্যা
+}
+
+countdown(3); // 3, 2, 1, শেষ!
+```
+
+## কোড ব্রেকডাউন
+
+- `if (n === 0) return` অর্থাৎ base case; না থাকলে অসীম বার ডাকবে (stack overflow)।
+- `countdown(n - 1)` অর্থাৎ প্রতিবার সমস্যা এক ধাপ ছোট।
+- প্রতিটা recursion-এ সমস্যা base case-এর দিকে এগোতেই হবে।
+
+## Complexity
+
+- এখানে O(n)।
+
+## Animation Spec
+
+> **Animation Spec: Nested Dolls**
+>
+> - **দৃশ্য:** n থেকে শুরু করে ভেতরে ভেতরে ছোট box (প্রতিটা call)।
+> - **ইনপুট:** n।
+> - **ধাপ:** প্রতিটা call ভেতরে নতুন box খোলে; base case-এ পৌঁছালে ভেতর থেকে বাইরে return হতে হতে box বন্ধ হয়।
+> - **লক্ষ্য:** "নিচে নামা, base, ফিরে আসা" চক্র।
+
+## অনুশীলন
+
+- 1 থেকে n পর্যন্ত recursion দিয়ে ছাপাও (উল্টো দিকে)।

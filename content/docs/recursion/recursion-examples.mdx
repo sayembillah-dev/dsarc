@@ -1,0 +1,59 @@
+---
+title: "Recursion উদাহরণ: Sum, Reverse, Fibonacci"
+description: sum, reverse, fibonacci প্রচলিত recursion উদাহরণ এবং naive fibonacci-র অপচয়।
+---
+
+## কী শিখব
+
+- sum, reverse, fibonacci, প্রচলিত recursion
+
+## ধারণা
+
+"বড় সমস্যা = ছোট সমস্যা + একটু কাজ", এই দৃষ্টিভঙ্গিতে অনেক সমস্যা লেখা যায়।
+
+## কোড উদাহরণ
+
+```js
+// ১) array যোগফল
+function sum(arr, i = 0) {
+  if (i === arr.length) return 0;      // base
+  return arr[i] + sum(arr, i + 1);     // প্রথমটা + বাকির যোগফল
+}
+console.log(sum([1, 2, 3, 4])); // 10
+
+// ২) string উল্টানো
+function reverse(str) {
+  if (str.length <= 1) return str;                 // base
+  return reverse(str.slice(1)) + str[0];           // বাকিটা উল্টে + প্রথম অক্ষর
+}
+console.log(reverse("hello")); // "olleh"
+
+// ৩) Fibonacci (naive, শিক্ষার জন্য)
+function fib(n) {
+  if (n < 2) return n;                 // base: fib(0)=0, fib(1)=1
+  return fib(n - 1) + fib(n - 2);      // আগের দুই সংখ্যার যোগ
+}
+console.log(fib(7)); // 13
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিটাতে: base case + "ছোট সমস্যায় নিজেকে ডাকা"।
+- `fib` naive version **O(2ⁿ)**, একই মান বারবার হিসাব হয় (Memoization পাতায় ঠিক করব)।
+
+## Complexity
+
+- sum/reverse O(n); naive fib O(2ⁿ)।
+
+## Animation Spec
+
+> **Animation Spec: Recursion Tree (Fibonacci)**
+>
+> - **দৃশ্য:** fib(n) থেকে দুই শাখা fib(n-1), fib(n-2), গাছের মতো ছড়িয়ে পড়ে।
+> - **ইনপুট:** n।
+> - **ধাপ:** গাছ বাড়তে থাকবে; একই মান (যেমন fib(2)) বহুবার এলে সেগুলো একই রঙে highlight, অপচয় দেখানো।
+> - **লক্ষ্য:** কেন naive fib এত ধীর তা চোখে দেখা।
+
+## অনুশীলন
+
+- recursion দিয়ে একটা সংখ্যার সব অঙ্কের যোগফল বের করো।

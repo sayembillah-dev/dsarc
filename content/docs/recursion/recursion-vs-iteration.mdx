@@ -1,0 +1,58 @@
+---
+title: "Recursion vs Iteration: কখন কোনটা"
+description: কখন recursion, কখন loop, পাঠযোগ্যতা, memory ও ঝুঁকির তুলনা, একই factorial দুইভাবে।
+---
+
+## কী শিখব
+
+- কখন recursion, কখন loop
+
+## ধারণা
+
+যা recursion-এ করা যায়, তা প্রায়ই loop-এও করা যায়। পার্থক্য:
+
+| দিক | Recursion | Iteration (loop) |
+|-----|-----------|------------------|
+| পাঠযোগ্যতা | Tree/Graph-এ সুন্দর | সরল সমস্যায় সহজ |
+| Memory | call stack (O(depth)) | সাধারণত O(1) |
+| ঝুঁকি | stack overflow | নেই |
+
+**নিয়ম:** সমস্যাটা স্বাভাবিকভাবে "ছোট একই সমস্যায়" ভাঙে (tree, divide-and-conquer) তাহলে recursion; সরল রৈখিক হলে loop।
+
+## কোড উদাহরণ
+
+```js
+// একই factorial, দুইভাবে
+// recursion
+function factRec(n) { return n <= 1 ? 1 : n * factRec(n - 1); }
+
+// iteration
+function factIter(n) {
+  let result = 1;
+  for (let i = 2; i <= n; i++) result *= i;
+  return result;                       // Space O(1), stack নেই
+}
+console.log(factRec(5), factIter(5)); // 120 120
+```
+
+## কোড ব্রেকডাউন
+
+- দুটোই সঠিক; iteration-এ extra stack memory লাগে না।
+- Tree/Graph traversal recursion-এ অনেক পরিষ্কার, তাই সেখানে recursion পছন্দ।
+
+## Complexity
+
+- time দুটোই O(n); space: recursion O(n) (call stack), iteration O(1)।
+
+## Animation Spec
+
+> **Animation Spec: Two Paths**
+>
+> - **দৃশ্য:** বাঁয়ে recursion (stack বাড়ছে), ডানে loop (একটাই accumulator)।
+> - **ইনপুট:** n।
+> - **ধাপ:** দুই পদ্ধতি পাশাপাশি চলবে; memory ব্যবহারের পার্থক্য দেখা যাবে।
+> - **লক্ষ্য:** trade-off বোঝা।
+
+## অনুশীলন
+
+- section 8.3-এর `sum`-কে loop দিয়ে লেখো।

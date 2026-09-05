@@ -1,0 +1,54 @@
+---
+title: "Call Stack: কীভাবে recursion চলে"
+description: recursion মেমরিতে কীভাবে চলে, call stack-এ frame জমা ও খালি হওয়া, factorial দিয়ে বোঝা।
+---
+
+## কী শিখব
+
+- recursion মেমরিতে কীভাবে চলে
+
+## ধারণা
+
+প্রতিবার function ডাকলে সেটা **call stack**-এ (একটা stack!) জমা হয়। base case-এ পৌঁছালে stack উপর থেকে একে একে খালি হয় (return)। এজন্য recursion আসলে stack-এর উপর দাঁড়িয়ে।
+
+## কোড উদাহরণ
+
+```js
+// factorial দিয়ে stack বোঝা
+function factorial(n) {
+  if (n <= 1) return 1;          // base case
+  return n * factorial(n - 1);   // n কে ছোট factorial দিয়ে গুণ
+}
+
+console.log(factorial(4)); // 24
+/*
+factorial(4) = 4 * factorial(3)
+             = 4 * (3 * factorial(2))
+             = 4 * (3 * (2 * factorial(1)))
+             = 4 * (3 * (2 * 1)) = 24
+প্রথমে নিচে নামে (call), base-এ পৌঁছে উপরে ফেরে (return)।
+*/
+```
+
+## কোড ব্রেকডাউন
+
+- প্রতিটা call `n` মনে রেখে অপেক্ষায় থাকে যতক্ষণ ভেতরের call শেষ না হয়।
+- base case থেকে 1 return হয়, পিছাতে পিছাতে গুণ হয়।
+- খুব বেশি গভীর recursion মানে **stack overflow** (মেমরি শেষ)।
+
+## Complexity
+
+- time O(n), space O(n) (stack গভীরতা)।
+
+## Animation Spec
+
+> **Animation Spec: Call Stack Visualizer**
+>
+> - **দৃশ্য:** ডান পাশে উল্লম্ব stack; প্রতিটা call একটা frame হিসেবে উপরে জমে।
+> - **ইনপুট:** n।
+> - **ধাপ:** call হলে frame push (নিচে নামা); base-এ পৌঁছালে frame গুলো একে একে pop হয়ে return-মান উপরে যায়।
+> - **লক্ষ্য:** recursion = call stack, এই যোগসূত্র স্পষ্ট করা।
+
+## অনুশীলন
+
+- `factorial(5)`-এর সম্পূর্ণ stack ধাপ হাতে লেখো।

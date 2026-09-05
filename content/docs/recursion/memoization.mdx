@@ -1,0 +1,49 @@
+---
+title: "Memoization: Recursion দ্রুত করা"
+description: আগে হিসাব করা ফলাফল cache-এ জমিয়ে naive recursion-কে O(2ⁿ) থেকে O(n)-এ নামানো, DP-র বীজ।
+---
+
+## কী শিখব
+
+- আগে হিসাব করা ফলাফল জমিয়ে রাখা (DP-র বীজ)
+
+## ধারণা
+
+Naive fib বারবার একই মান হিসাব করে (অপচয়)। **Memoization** = হিসাব করা ফলাফল একটা cache-এ (Map) রেখে দেওয়া; পরে দরকার হলে হিসাব না করে সরাসরি ফেরত। এটাই Dynamic Programming-এর ভিত্তি (section 16)।
+
+## কোড উদাহরণ
+
+```js
+function fibMemo(n, cache = new Map()) {
+  if (n < 2) return n;
+  if (cache.has(n)) return cache.get(n);   // আগে হিসাব করা? সরাসরি দাও
+  const result = fibMemo(n - 1, cache) + fibMemo(n - 2, cache);
+  cache.set(n, result);                    // পরের জন্য জমা রাখি
+  return result;
+}
+
+console.log(fibMemo(40)); // 102334155, সাথে সাথে (naive হলে বহু সেকেন্ড)
+```
+
+## কোড ব্রেকডাউন
+
+- `cache.has(n)` মানে আগে হিসাব করা থাকলে তৎক্ষণাৎ return।
+- প্রতিটা `n` একবারই হিসাব হয়, অর্থাৎ **O(2ⁿ) থেকে O(n)**-এ নেমে আসে!
+- এই কৌশলই "top-down DP"।
+
+## Complexity
+
+- O(n) time, O(n) space।
+
+## Animation Spec
+
+> **Animation Spec: Cached Recursion Tree**
+>
+> - **দৃশ্য:** fib recursion tree; প্রথমবার হিসাব হলে node সবুজ ও cache-এ যোগ; পুনরায় লাগলে cache থেকে সরাসরি (গাছ আর বাড়ে না)।
+> - **ইনপুট:** n; memoization on/off toggle।
+> - **ধাপ:** off হলে বিশাল গাছ; on হলে ছোট গাছ + cache hits।
+> - **লক্ষ্য:** memoization কীভাবে পুনরাবৃত্ত কাজ কাটে।
+
+## অনুশীলন
+
+- memoization দিয়ে "n-ধাপ সিঁড়ি কতভাবে ওঠা যায়" সমস্যা ভাবো (fib-এর মতোই)।
