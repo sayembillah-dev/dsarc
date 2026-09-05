@@ -1,11 +1,11 @@
 ---
 title: Graph Data Structures
-description: Graph-এর ভাষা থেকে BFS, DFS, shortest path (Dijkstra, Bellman-Ford, A*) আর MST (Prim, Kruskal), সব একসাথে।
+description: Graph-এর ভাষা থেকে BFS, DFS, components, cycle, topological sort, shortest path (Dijkstra, Bellman-Ford, A*) আর MST (Prim, Kruskal), সব একসাথে।
 ---
 
 Heap-এর section শেষ। এবার আসি সবচেয়ে শক্তিশালী আর বহুমুখী কাঠামোটায়: **Graph**। ভাবো তো, Facebook-এ বন্ধুত্বের জাল, Google Maps-এ শহর আর রাস্তা, ইন্টারনেটের কম্পিউটার আর ক্যাবল, এমনকি কোন কাজের আগে কোন কাজ করতে হয় তার dependency, সবই graph দিয়ে মডেল করা যায়। আর Tree? সেটা আসলে graph-এরই একটা বিশেষ রূপ। ভালো খবর হলো, আগের section-এর MinHeap এখানে Dijkstra আর Prim-এ সরাসরি কাজে লাগবে।
 
-**Section Roadmap:** আগে পরিভাষা আর directed/undirected ধরনগুলো, তারপর উপস্থাপন (adjacency list/matrix), তারপর BFS আর DFS, তারপর shortest path (Dijkstra, Bellman-Ford, A*), আর শেষে MST (Prim, Kruskal)।
+**Section Roadmap:** আগে পরিভাষা আর directed/undirected ধরনগুলো, তারপর উপস্থাপন (adjacency list/matrix), তারপর BFS আর DFS। ঘোরা শিখে গেলে সেই ঘোরা দিয়েই কাজ: components গোনা, cycle ধরা, আর dependency-এর সাজানো ক্রম (topological sort)। তারপর weighted graph-এ shortest path (Dijkstra, Bellman-Ford, A*), আর শেষে MST (Prim, Kruskal)।
 
 ## এই Chapter-এ যা যা আছে
 
@@ -13,13 +13,16 @@ Heap-এর section শেষ। এবার আসি সবচেয়ে �
 2. [Graph উপস্থাপন](./graph-representation.mdx): adjacency list বনাম matrix
 3. [Breadth First Search (BFS)](./bfs.mdx): স্তরে স্তরে ঘোরা, unweighted shortest path
 4. [Depth First Search (DFS)](./dfs.mdx): এক পথ ধরে যতদূর যাওয়া যায়
-5. [Dijkstra's Algorithm](./dijkstra.mdx): weighted graph-এ সবচেয়ে কম খরচের পথ
-6. [Bellman-Ford Algorithm](./bellman-ford.mdx): negative weight সামলানো shortest path
-7. [A* Search Algorithm](./a-star.mdx): heuristic দিয়ে দ্রুত shortest path
-8. [Minimum Spanning Tree](./minimum-spanning-tree.mdx): Prim ও Kruskal দিয়ে সবচেয়ে কম মোট ওজনে সংযোগ
+5. [Connected Components](./connected-components.mdx): ভাঙা graph-এর টুকরো গোনা আর চেনা
+6. [Cycle Detection](./cycle-detection.mdx): directed আর undirected, দুই রকম cycle-ই ধরা
+7. [Topological Sort](./topological-sort.mdx): dependency মেনে কাজের ক্রম সাজানো (DAG)
+8. [Dijkstra's Algorithm](./dijkstra.mdx): weighted graph-এ সবচেয়ে কম খরচের পথ
+9. [Bellman-Ford Algorithm](./bellman-ford.mdx): negative weight সামলানো shortest path
+10. [A* Search Algorithm](./a-star.mdx): heuristic দিয়ে দ্রুত shortest path
+11. [Minimum Spanning Tree](./minimum-spanning-tree.mdx): Prim ও Kruskal দিয়ে সবচেয়ে কম মোট ওজনে সংযোগ
 
 ## সারাংশ
 
-সহজ কথায়, graph মানে vertex আর edge। edge directed, undirected বা weighted হতে পারে। কোডে রাখতে সাধারণত adjacency list-ই নেবে। ঘোরার দুটো পথ: BFS (queue দিয়ে স্তরে স্তরে, unweighted graph-এ shortest path দেয়) আর DFS (stack/recursion দিয়ে গভীরে)। দুটোতেই visited রাখা মাস্ট। Weighted shortest path-এ Dijkstra (non-negative weight, heap দিয়ে), negative weight থাকলে Bellman-Ford, আর ভালো heuristic থাকলে A*। আর সব node-কে সবচেয়ে কম খরচে জোড়াতে MST, সেটা Prim বা Kruskal দিয়ে।
+সহজ কথায়, graph মানে vertex আর edge। edge directed, undirected বা weighted হতে পারে। কোডে রাখতে সাধারণত adjacency list-ই নেবে। ঘোরার দুটো পথ: BFS (queue দিয়ে স্তরে স্তরে, unweighted graph-এ shortest path দেয়) আর DFS (stack/recursion দিয়ে গভীরে)। দুটোতেই visited রাখা মাস্ট। ঘোরার ওপর দাঁড়িয়ে তিনটা বড় কাজ: কটা টুকরো আছে (connected components), cycle আছে কিনা (cycle detection), আর DAG-এ dependency-মাফিক ক্রম (topological sort)। Weighted shortest path-এ Dijkstra (non-negative weight, heap দিয়ে), negative weight থাকলে Bellman-Ford, আর ভালো heuristic থাকলে A*। আর সব node-কে সবচেয়ে কম খরচে জোড়াতে MST, সেটা Prim বা Kruskal দিয়ে।
 
 **পরবর্তী:** [Advanced Data Structures](/docs/advanced-structures)।

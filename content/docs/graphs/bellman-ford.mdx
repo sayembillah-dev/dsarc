@@ -1,61 +1,251 @@
 ---
-title: "Bellman-Ford Algorithm: Negative Weight সামলানো"
-description: সব edge বারবার relax করে shortest path, negative weight আর negative cycle দুটোই সামলায়।
+title: "Bellman-Ford Algorithm: negative weight-এর জগতে shortest path"
+description: "সব edge বারবার relax করে shortest path; negative weight সামলায়, negative cycle ধরে ফেলে। Dijkstra কেন হেরে যায় আর এটা কেন জেতে।"
 ---
 
 ## কী শিখব
 
-- negative weight সামলানো shortest path
+- Dijkstra কেন negative weight-এ হার মানে, আর Bellman-Ford সেখানে কীভাবে জিতে
+- মূল insight: k রাউন্ড পর সর্বোচ্চ k-টা edge-এর সব shortest path final
+- কেন ঠিক V-1 রাউন্ডই যথেষ্ট, আর এক রাউন্ড বেশি হলে কী বোঝা যায়
+- হাতে গোনা দুটো dry run: negative edge-ওয়ালা graph আর negative cycle ধরা
+- early-exit optimization আর queue-ভিত্তিক SPFA
+- কখন BFS, কখন Dijkstra, কখন Bellman-Ford: সিদ্ধান্তের ছক
 
 ## ধারণা
 
-Dijkstra-র একটা শর্ত ছিল: weight negative হবে না। কিন্তু negative weight থাকলেই তো আছে, তখন কী করবে? উত্তর **Bellman-Ford**। কৌশলটা অদ্ভুত সহজ: সব edge একটা পুরো রাউন্ডে relax করো, আর এমন রাউন্ড চালাও **V-1 বার**। হ্যাঁ, Dijkstra-র চেয়ে ধীর (O(V * E))। কিন্তু negative weight সামলায়, আর বোনাস হিসেবে **negative cycle**-ও ধরে ফেলে, সেই cycle যেখানে ঘুরতে ঘুরতে খরচ কমতেই থাকে।
+ভাবো তো, [Dijkstra](./dijkstra.mdx)-র শর্তটা কী ছিল: edge-এর weight negative হবে না। কিন্তু বাস্তবে negative weight আছেই: currency exchange-এর rate, game-এর power-up, cashback-ওয়ালা খরচ। আর Dijkstra সেখানে হেরে যায়, কারণ সে একবার node settle করে ফেলে, পেছনে লুকিয়ে থাকা negative edge-টা সে আর দেখতেই পায় না।
 
-## কোড উদাহরণ
+Bellman-Ford একদম উল্টো পথে যায়। সে বলে: settle-বস্তু ছাড়ো। **সব edge-কে relax করো, একবার নয়, পুরো V-1 রাউন্ড।** শুনতে brute force লাগে, কিন্তু পেছনে সুন্দর একটা insight আছে।
+
+Insight-টা হলো: প্রথম রাউন্ড শেষে যেসব shortest path মাত্র ১টা edge দিয়ে বানানো যায়, তারা final। দ্বিতীয় রাউন্ড শেষে সর্বোচ্চ ২টা edge-এর পথগুলো final। এভাবে k-তম রাউন্ডের পর সর্বোচ্চ k-টা edge নিয়ে বানানো সব shortest path নিশ্চিত। আর shortest path-এ cycle থাকতে পারে না (positive cycle-এ ঘুরলে খরচ বাড়ে, zero cycle-এ ঘুরে লাভ শূন্য), তাই যেকোনো shortest path-এ সর্বোচ্চ V-1 টা edge। অর্থাৎ V-1 রাউন্ডেই সব ঠিক হয়ে যাবে, গ্যারান্টেড।
+
+দাম? ধীর: O(V·E)। Dijkstra-র তুলনায় অনেক বেশি। কিন্তু বিনিময়ে পাওয়া যায় দুটো জিনিস: negative weight চলে, আর একটা বোনাস ক্ষমতা: V-তম রাউন্ডেও যদি কোনো দূরত্ব কমে, বুঝে নাও graph-এ **negative cycle** আছে, এমন cycle যেখানে ঘুরতে ঘুরতে খরচ অসীম কমতেই থাকে। Dijkstra এমন cycle ধরতেই পারে না।
+
+Graph রাখার জন্য এবার edge list-ই সবচেয়ে স্বাভাবিক: [u, v, w] ত্রয়ীর একটা তালিকা। [Graph Representation](./graph-representation.mdx)-এ তিনটা রূপ দেখেছিলে; এই পাতার কাজটাই হলো বারবার পুরো edge list ঘোরা, তাই edge list সরাসরি মানানসই। node-গুলোকে 0 থেকে V-1 সংখ্যা ধরব, dist থাকবে সরল array-তে।
+
+## ধাপে ধাপে: dry run দুটো
+
+### Dry run ১: negative edge আছে, negative cycle নেই
+
+Directed graph, source A:
+
+```
+            A
+        6 /   \ 7
+         v     v
+         B -8-> C
+       / |       |
+     5/  |-4     |-3
+     v   v       v
+     D <-7------ E
+     আরেকটা edge: D -(-2)-> B (D থেকে B-তে ফিরতি)
+```
+
+Edge-গুলো (এই ক্রমেই relax হবে): A→B:6, A→C:7, B→C:8, B→D:5, B→E:-4, C→D:-3, D→B:-2, E→D:7। V=5, তাই রাউন্ড লাগবে সর্বোচ্চ 4।
+
+| রাউন্ড | relax হওয়া edge (ক্রমে) | A | B | C | D | E |
+|--------|---------------------------|---|---|---|---|---|
+| শুরু | - | 0 | ∞ | ∞ | ∞ | ∞ |
+| 1 | A→B (B=6), A→C (C=7), B→D (D=11), B→E (E=2), C→D (D=4), D→B (B=2) | 0 | 2 | 7 | 4 | 2 |
+| 2 | B→E (E=-2) | 0 | 2 | 7 | 4 | -2 |
+| 3 | কিছুই relax হলো না, early exit | 0 | 2 | 7 | 4 | -2 |
+
+কয়টা জিনিস খেয়াল করো। প্রথম, রাউন্ড ১-এর ভেতরেই B দুইবার বদলেছে: আগে 6 (A থেকে সরাসরি), রাউন্ডের শেষে 2 (A → C → D → B পথ ধরে)। এক রাউন্ডে এক edge-এর বেশি লম্বা পথও ঠিক হয়ে যেতে পারে, যদি edge-গুলো সৌভাগ্যক্রমে সঠিক ক্রমে পড়ে। কিন্তু সৌভাগ্যের ওপর ভরসা নয়; নিশ্চয়তা আসে রাউন্ড সংখ্যা থেকে।
+
+দ্বিতীয়, B→C:8 edge-টা কখনোই relax হয়নি: B-এর দাম 2 নেমে গেলেও 2+8=10, C-এর 7-এর চেয়ে বড়। সব edge যে প্রতি রাউন্ডে কাজ করবে, এমন কথা নেই।
+
+তৃতীয়, রাউন্ড ৩-এ কিছুই বদলায়নি, মানে আর বদলাবেও না। রাউন্ড ৪ বাকি থাকলেও এখানেই থেমে যাওয়াই early exit।
+
+### Dry run ২: negative cycle ধরা
+
+এবার ছোট একটা graph নিই যেখানে cycle-টাই negative:
+
+```
+        A --1--> B
+        ^        |
+     -1 |        | -1
+        |        v
+        +--- C <-+
+```
+
+Edge: A→B:1, B→C:-1, C→A:-1। cycle-এর মোট weight: 1 + (-1) + (-1) = -1। ঘুরলেই খরচ এক করে কমে। V=3, মানে V-1=2 রাউন্ডেই সব ঠিক হওয়ার কথা। source A।
+
+| রাউন্ড | relax হওয়া edge | A | B | C |
+|--------|-------------------|---|---|---|
+| শুরু | - | 0 | ∞ | ∞ |
+| 1 | A→B (B=1), B→C (C=0), C→A (A=-1) | -1 | 1 | 0 |
+| 2 | A→B (B=0), B→C (C=-1), C→A (A=-2) | -2 | 0 | -1 |
+| check (V-তম) | A→B আবার relax হচ্ছে (A=-2, তাই B-এ -1 যায়) | ... | ... | ... |
+
+খেয়াল করো, source নিজেই দূষিত (poisoned) হয়ে গেছে, কারণ cycle-টা তাকে ছুঁয়ে আছে। দুই রাউন্ড শেষে সব final থাকার কথা ছিল, কিন্তু check রাউন্ডেও দূরত্ব কমছে। এই "V-তম রাউন্ডে relaxation"-ই negative cycle-এর সাক্ষর।
+
+## কোড: পুরো implementation
 
 ```js
-// edges: [[u, v, weight], ...]
-function bellmanFord(vertices, edges, start) {
-  const dist = new Map(vertices.map(v => [v, Infinity]));
-  dist.set(start, 0);
+function bellmanFord(V, edges, source) {
+  const dist = new Array(V).fill(Infinity);  // সবাই অনন্ত দূরে
+  dist[source] = 0;
 
-  // V-1 বার সব edge relax করি
-  for (let i = 0; i < vertices.length - 1; i++) {
+  // মোট V-1 রাউন্ড
+  for (let round = 1; round <= V - 1; round++) {
+    let changed = false;                     // এই রাউন্ডে কিছু বদলাল?
+
     for (const [u, v, w] of edges) {
-      if (dist.get(u) + w < dist.get(v)) dist.set(v, dist.get(u) + w);
+      if (dist[u] === Infinity) continue;    // guard: এখনো পৌঁছানো যায়নি
+      if (dist[u] + w < dist[v]) {           // relaxation
+        dist[v] = dist[u] + w;
+        changed = true;
+      }
     }
-  }
-  // আরেকবার relax হলে, অর্থাৎ negative cycle আছে
-  for (const [u, v, w] of edges) {
-    if (dist.get(u) + w < dist.get(v)) throw new Error("Negative cycle!");
+
+    if (!changed) break;                     // early exit: আর কমার কিছু নেই
   }
   return dist;
 }
-console.log(bellmanFord(
-  ["A", "B", "C"],
-  [["A", "B", 4], ["A", "C", 5], ["B", "C", -3]],
-  "A"
-)); // A:0, B:4, C:1
+
+// Dry run ১-এর graph: A=0, B=1, C=2, D=3, E=4
+const edges = [
+  [0, 1, 6], [0, 2, 7],
+  [1, 2, 8], [1, 3, 5], [1, 4, -4],
+  [2, 3, -3], [3, 1, -2], [4, 3, 7],
+];
+console.log(bellmanFord(5, edges, 0));
+// [0, 2, 7, 4, -2]
 ```
 
-## কোড ব্রেকডাউন
+টেবিলের সাথে মিলিয়ে নাও, হুবহু মিলছে।
 
-- V-1 বার কেন? cycle ছাড়া কোনো shortest path-এ সর্বোচ্চ V-1 টা edge থাকতে পারে। তাই ততবার relax করলেই সব ঠিক হয়ে যায়।
-- এখানেই আসল জিনিস: যদি V-তম রাউন্ডেও দূরত্ব কমে, বুঝবে negative cycle আছে। নইলে কমার কথাই নয়।
+## ভ্যারিয়েন্ট ১: negative cycle detection
 
-## Complexity
+V-1 রাউন্ডের পর শুধু একটা রাউন্ড আর: এখনো কিছু relax হলে negative cycle আছে। আগের ফাংশনটাই ব্যবহার করব:
 
-- O(V * E)।
+```js
+function bellmanFordCheck(V, edges, source) {
+  const dist = bellmanFord(V, edges, source);   // V-1 রাউন্ড, early exit সহ
+
+  // V-তম রাউন্ড: এখনো relax হলে negative cycle
+  for (const [u, v, w] of edges) {
+    if (dist[u] === Infinity) continue;
+    if (dist[u] + w < dist[v]) {
+      return { dist, hasNegCycle: true };
+    }
+  }
+  return { dist, hasNegCycle: false };
+}
+
+// Dry run ২-এর graph: A=0, B=1, C=2
+const cyclic = [[0, 1, 1], [1, 2, -1], [2, 0, -1]];
+console.log(bellmanFordCheck(3, cyclic, 0));
+// { dist: [-2, 0, -1], hasNegCycle: true }
+
+console.log(bellmanFordCheck(5, edges, 0).hasNegCycle); // false
+```
+
+একটা সূক্ষ্ম কথা: early exit থাকলেও detection ঠিক থাকে। কারণ early exit মানে dist আর বদলাচ্ছে না, তাই check রাউন্ডেও কিছু relax হবে না; false positive-এর ভয় নেই।
+
+আরেকটা গভীর প্রশ্ন: cycle থাকলে ওই node-গুলোর "আসল" shortest দূরত্ব কত? উত্তর: -Infinity, কারণ cycle-টা আরও কয়বার ঘোরা যায়, খরচ কমতেই থাকে। আমাদের কোড শুধু flag দেয়। cycle-দূষিত সব node চিহ্নিত করতে চাইলে বাড়তি কাজ লাগবে, সেটা নিচের কঠিন অনুশীলনে রেখেছি।
+
+## ভ্যারিয়েন্ট ২: SPFA, queue-ভিত্তিক Bellman-Ford
+
+প্রতি রাউন্ডে আমরা সব edge ঘোরি, কিন্তু বেশিরভাগ edge তখন অকাজের: যেসব node-এর dist আগের রাউন্ডে বদলায়নি, তাদের edge দিয়ে নতুন কিছু relax হওয়ার কথা নয়। SPFA (Shortest Path Faster Algorithm) এই পর্যবেক্ষণটাকেই কাজে লাগায়: queue-তে শুধু সেই node-গুলো রাখো যাদের dist এইমাত্র বদলেছে। ব্যাপারটা প্রায় [BFS](./bfs.mdx)-এর মতো দেখতে, শুধু দরকার হলে একই node আবার queue-তে ঢোকে:
+
+```js
+function spfa(V, adj, source) {          // adj: Array, adj[u] = [[v, w], ...]
+  const dist = new Array(V).fill(Infinity);
+  const inQueue = new Array(V).fill(false);
+  dist[source] = 0;
+
+  const queue = [source];
+  inQueue[source] = true;
+  let head = 0;
+
+  while (head < queue.length) {
+    const u = queue[head++];
+    inQueue[u] = false;
+
+    for (const [v, w] of adj[u]) {
+      if (dist[u] + w < dist[v]) {
+        dist[v] = dist[u] + w;
+        if (!inQueue[v]) {               // লাইনে না থাকলেই ঢোকাও
+          queue.push(v);
+          inQueue[v] = true;
+        }
+      }
+    }
+  }
+  return dist;
+}
+```
+
+প্র্যাকটিসে এটা অনেক দ্রুত, এলোমেলো graph-এ প্রায় Dijkstra-র কাছাকাছি। কিন্তু worst case এখনো O(V·E), আর প্রতিযোগিতার টেস্টাররা SPFA-কে ধীর করে দেওয়ার input বানাতে জানে। শেখার জন্য আর ছোট কাজের জন্য দারুণ, কঠিন টেস্টে ভরসা সীমিত।
+
+## কোড ব্রেকডাউন: মূল bellmanFord, লাইনে লাইনে
+
+1. `const dist = new Array(V).fill(Infinity)` : শুরুতে সবাই অনন্ত দূরে। Infinity ছাড়া অন্য কিছু দিলে কী বিপদ, নিচের ভুল-তালিকায় আছে।
+2. `dist[source] = 0` : শুধু source-এর দূরত্ব শূন্য। এখান থেকেই সব relaxation ছড়াবে।
+3. `for (let round = 1; round <= V - 1; round++)` : ঠিক V-1 রাউন্ড। কেন এই সংখ্যাটা, ধারণার অংশে দেখেছ: shortest path-এ সর্বোচ্চ V-1 edge।
+4. `let changed = false` : early exit-এর পতাকা। পুরো রাউন্ডে একটাও relaxation না হলে পরের রাউন্ডেও হবে না।
+5. `for (const [u, v, w] of edges)` : পুরো edge list উপর থেকে নিচে। ক্রম যাই হোক, রাউন্ড যথেষ্ট হলে উত্তর একই আসবে।
+6. `if (dist[u] === Infinity) continue` : guard। যে node-এ এখনো পৌঁছানোই যায়নি, তার edge দিয়ে relax করার কিছু নেই।
+7. `if (dist[u] + w < dist[v])` : relaxation-এর শর্ত, Dijkstra-র মতোই; শুধু এখানে কোনো heap বা settle নেই।
+8. `if (!changed) break` : এক রাউন্ড নীরব হলেই থামো। অবস্থা আর বদলাবে না, ঘোরা নিষ্ফল।
+
+## Complexity: হিসাব আর তিন ভাইয়ের তুলনা
+
+**Time: worst case O(V·E)।** হিসাবটা সরাসরি: প্রতি রাউন্ডে পুরো edge list ঘোরা হয়, খরচ O(E); রাউন্ড সর্বোচ্চ V-1; গুণ করলেই O(V·E)। Early exit থাকলে best case O(E): প্রথম রাউন্ডেই কিছু না বদলালে বেরিয়ে যাই। গড়পড়তা কোথাও মাঝখানে।
+
+**Space: O(V)।** অ্যালগরিদমের নিজের খরচ শুধু dist array। Edge list রাখতে O(E) লাগে, কিন্তু সেটা input নিজেই।
+
+এবার তিন ভাইকে পাশাপাশি রাখি, কখন কাকে নেবে:
+
+| Algorithm | Time | Space (অতিরিক্ত) | কখন |
+|-----------|------|-------------------|------|
+| [BFS](./bfs.mdx) | O(V + E) | O(V) | সব edge-এর দাম সমান (unweighted) |
+| [Dijkstra](./dijkstra.mdx) | O((V + E) log V) | O(V + E) | weight আছে, সব non-negative |
+| Bellman-Ford | O(V·E) | O(V) | negative weight আছে, বা negative cycle ধরতে হবে |
+
+নিয়মটা সহজ: সব edge সমান হলে BFS; weight আছে কিন্তু negative নেই হলে Dijkstra; negative আছে হলে Bellman-Ford। সবসময় প্রয়োজন মেটে এমন সবচেয়ে দ্রুতটা নাও।
+
+## সাধারণ ভুল আর edge case
+
+**১. Infinity guard ছাড়া relax করা।**
+`if (dist[u] === Infinity) continue` লাইনটা সৌন্দর্যের জন্য নয়। JS-এ Infinity + (-5) = Infinity, তাই এই কোডে না দিলেও বেঁচে যাবে। কিন্তু fixed-width integer-ওয়ালা ভাষায় Infinity-র বদলে INT_MAX ধরা থাকে, আর INT_MAX + (-5) overflow হয়ে খুব ছোট negative সংখ্যা হয়, তখন ভুল relaxation ঘটে। guard-টা লেখোই, সব ভাষায় কাজে দেবে।
+
+**২. Cycle-এর প্রশ্নে V-1 রাউন্ড চালিয়েই থেমে যাওয়া।**
+প্রশ্নে যদি negative cycle আছে কিনা জানতে চায়, V-1 রাউন্ডের পর check রাউন্ডটা লাগবেই। সেটা ভুলে গেলে cycle-ওয়ালা graph-এ নিঃশব্দে ভুল dist return করবে, আর "cycle আছে" উত্তরটা পাবেই না।
+
+**৩. Cycle-দূষিত পথে finite দূরত্ব রিপোর্ট করা।**
+Negative cycle যদি source থেকে target-এর পথের ওপর পড়ে, আসল উত্তর -Infinity: cycle-টা ঘুরতে ঘুরতে খরচ কমানোই যায়। শুধু flag return করলে user জানবে cycle আছে, কিন্তু কোন কোন node দূষিত তা জানবে না। দরকার হলে দূষিত node-গুলো আলাদা চিহ্নিত করো (কঠিন অনুশীলনটা দেখো)।
+
+**৪. যেখানে Dijkstra যথেষ্ট সেখানে Bellman-Ford।**
+Non-negative graph-এ Bellman-Ford চালালে ভুল হবে না, কিন্তু প্র্যাকটিসে 10 থেকে 100 গুণ ধীর। টাইম লিমিট কড়া প্রশ্নে এটাই TLE-র কারণ হয়।
+
+**৫. এক পাসেই সব ঠিক হয়ে যাবে ভাবা।**
+Edge-গুলো দুর্ভাগ্যক্রমে এমন ক্রমে আসতে পারে যে এক পাসে পেছনের node-গুলো আপডেটই হয় না। ছোট উদাহরণ: `edges = [[B, C, 1], [A, B, 1]]`, source A। এক পাসে B→C আগে আসে, তখন B-ই Infinity, তাই C আপডেট হয় না; পরে A→B-এ B=1 হয়, কিন্তু পাস শেষ। C থেকে যায় Infinity। দ্বিতীয় রাউন্ডেই C=2 হয়ে যায়। এই জন্যই রাউন্ড লাগে, আর রাউন্ড যথেষ্ট হলে edge-এর ক্রম উত্তর বদলায় না।
 
 ## Animation Spec
 
-> **Animation Spec: Repeated Relaxation**
+> **Animation Spec: Relaxation Rounds**
 >
-> - **দৃশ্য:** graph; প্রতিটা round-এ সব edge একে একে relax; distance টেবিল আপডেট হয়।
-> - **ইনপুট:** graph (negative weight সহ)।
-> - **ধাপ:** round-by-round distance কমছে; শেষ round-এ negative cycle ধরা পড়ল (লাল)।
-> - **লক্ষ্য:** Dijkstra-র সাথে trade-off আর negative weight বোঝা।
+> - **দৃশ্য:** graph আর পাশে edge list; প্রতি রাউন্ডে edge list উপর থেকে নিচে স্ক্যান হয়; node-এর ওপর dist লেবেল বদলায়; পাশে রাউন্ড কাউন্টার।
+> - **ইনপুট:** graph preset (negative edge-ওয়ালা / negative cycle-ওয়ালা), source node।
+> - **ধাপ:** relax হলে edge সবুজ flash আর dist কমে যায়; relax না হলে edge ধূসর হয়ে যায়; রাউন্ড শেষে dist টেবিলের snapshot; early exit-এ "কিছু বদলায়নি" ব্যানার; check রাউন্ডে relax হলে cycle-এর edge-গুলো লাল flash।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "এক রাউন্ড করে" বোতাম, যাতে রাউন্ড-ভিত্তিক ছড়ানোটা পরিষ্কার দেখা যায়।
+> - **লক্ষ্য:** V-1 রাউন্ডের যুক্তি, early exit, আর negative cycle detection-এর মুহূর্ত।
 
 ## অনুশীলন
 
-- Dijkstra আর Bellman-Ford-এর মধ্যে কখন কোনটা নেবে, লিস্ট করে ফেলো।
+- **সহজ ১:** Negative edge-ওয়ালা একটা graph-এ `bellmanFord` চালিয়ে dist মিলাও। হিন্ট: উপরের dry run ১-ই তোমার টেস্ট কেস; উত্তর [0, 2, 7, 4, -2] আসা চাই।
+- **সহজ ২:** Directed graph দেওয়া আছে, negative cycle আছে কিনা বের করো। হিন্ট: ভ্যারিয়েন্ট ১-এর check রাউন্ডটাই যথেষ্ট; source-এ পৌঁছানো যায় না এমন cycle ধরতে হলে সব node-কে 0 দিয়ে শুরু করার কৌশল ভাবো।
+- **মাঝারি ১:** Cheapest Flights Within K Stops (LeetCode 787), এবার Bellman-Ford দিয়ে। হিন্ট: রাউন্ড থামাও k+1-এ; আর প্রতি রাউন্ডে আগের রাউন্ডের dist-এর কপি থেকে আপডেট করো, নইলে এক রাউন্ডেই দুইটা stop নেওয়া হয়ে যাবে।
+- **মাঝারি ২:** Currency arbitrage: exchange rate-এর টেবিল দেওয়া, টাকা ঘুরিয়ে ঘুরিয়ে বাড়ানো যায় কিনা? হিন্ট: weight = -log(rate) নাও; গুণ করলে যে cycle-এ 1-এর বেশি হয়, log-এর জগতে সেটাই negative cycle। Bellman-Ford-ই সেখানে cycle খুঁজবে।
+- **কঠিন:** Negative cycle দিয়ে দূষিত সব node খুঁজে বের করো। হিন্ট: V-1 রাউন্ডের পর V-তম রাউন্ডে যেসব node relax হয়, তারা cycle-এর হাতে পড়েছে; তাদের প্রতিটা থেকে [BFS](./bfs.mdx) বা [DFS](./dfs.mdx) চালাও, যেখানে যেখানে পৌঁছায় সবাই দূষিত।
+
+## সারসংক্ষেপ
+
+- Bellman-Ford = সব edge, V-1 রাউন্ড, কারো কোনো settle নেই।
+- k রাউন্ডে সর্বোচ্চ k edge-এর shortest path final; shortest path-এ cycle নেই, তাই V-1 রাউন্ডই যথেষ্ট।
+- V-তম রাউন্ডে relax মানেই negative cycle।
+- Early exit: এক রাউন্ড নীরব হলেই থামো, best case O(E)।
+- Time O(V·E), space O(V)। Negative না থাকলে ভুলে যাও, [Dijkstra](./dijkstra.mdx)-ই নাও।

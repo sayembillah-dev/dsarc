@@ -1,60 +1,223 @@
 ---
-title: "Graph পরিভাষা ও প্রকার: Vertex, Edge, Directed/Undirected"
-description: "vertex, edge, directed/undirected, weighted, cycle, connected: graph বোঝার মূল ভাষাগুলো এখানেই।"
+title: "Graph পরিভাষা: একটা জাল দেখে সব শব্দ চেনা"
+description: "Facebook-এর বন্ধুত্ব আর Twitter-এর follow দিয়ে graph-এর পুরো ভাষা: vertex, edge, degree, path, cycle, component, DAG, sparse/dense। একবার পাকা করলে পরের সব পাতা সহজ।"
 ---
 
 ## কী শিখব
 
-- vertex, edge, directed/undirected, weighted
+- vertex, edge, neighbor, degree: graph-এর চারটা মূল শব্দ, একটা বন্ধু-জাল দিয়ে
+- directed আর undirected-এর পার্থক্য, আর directed-এর in-degree/out-degree
+- path, simple path, cycle, connected, component: পথ ঘেঁটে সব ভাষা
+- weighted, sparse/dense, complete graph, self-loop, subgraph আর DAG
+- tree কেন আসলে graph-এরই একটা বিশেষ রূপ
+- যেকোনো graph দেখে চোখে চোখে তার পরিচয় বের করা
 
 ## ধারণা
 
-ভাবো তো তোমার Facebook-এর বন্ধুদের কথা। প্রত্যেক মানুষকে একটা গোল বিন্দু ধরো, আর দুইজন বন্ধু হলে তাদের মাঝে একটা লাইন টানো। এই বিন্দুগুলোই **vertex** (node), লাইনগুলোই **edge**, আর পুরো জিনিসটা মিলিয়ে একটা **graph**। চলো এবার ধরনগুলো দেখি:
+ভাবো তো তোমার Facebook-এর বন্ধুদের কথা। প্রত্যেক মানুষ একটা বিন্দু, দুজন বন্ধু হলে মাঝখানে একটা লাইন। এই বিন্দুগুলোই **vertex** (অনেকে **node**ও বলে, একই জিনিস), লাইনগুলোই **edge**, আর পুরোটা মিলে একটা **graph**।
 
-- **Undirected:** edge দুই দিকেই চলে। Facebook-এর বন্ধুত্বের মতো: তুমি কারো বন্ধু মানে সেও তোমার বন্ধু।
-- **Directed (digraph):** edge একমুখী। Twitter-এ follow করার মতো: তুমি কাউকে follow করলেই যে সে তোমাকে follow করবে, এমন নিয়ম নেই (A -> B মানে B -> A নয়)।
-- **Weighted:** edge-এর সাথে একটা সংখ্যা জড়ানো, যেমন দুই শহরের দূরত্ব বা রাস্তার খরচ।
-- **Cycle:** একটা vertex থেকে বেরিয়ে ঘুরপথে আবার সেখানেই ফিরে আসা যায়।
-- **Connected:** যেকোনো vertex থেকে বাকি সব vertex-এ পৌঁছানো যায়।
+এবার ভাবো Twitter। তুমি কাউকে follow করতে পারো, কিন্তু সে তোমাকে নাও করতে পারে। সম্পর্কটা **একমুখী**। Facebook-এর বন্ধুত্ব কিন্তু **দ্বিমুখী**: তুমি কারো বন্ধু মানে সেও তোমার বন্ধু। এই এক পার্থক্য থেকেই graph-এর দুটো বড় ধরন:
+
+- **Undirected graph:** edge-এর দিক নেই, দুই পথেই চলে। Facebook-এর জাল।
+- **Directed graph (digraph):** edge-এ তীর থাকে, এক দিকেই চলে। Twitter-এর জাল।
+
+বাকি সব পরিভাষা এই দুটো জালের গায়েই শিখব। সংজ্ঞা মুখস্থ করতে বলছি না, ছবিটা মাথায় রাখো, শব্দগুলো নিজে থেকে বসে যাবে। আর graph-টা মেমরিতে রাখা যায় কীভাবে, সেটা দেখে এসেছো [Graph Representation](./graph-representation.mdx) পাতায়।
+
+## প্রথম জাল: undirected graph-এর ভাষা
+
+পাঁচজন মানুষের একটা ছোট বন্ধু-জাল ধরো:
 
 ```
-Undirected:  A - B        Directed:  A -> B
-             |   |                    ^    |
-             |   |                    |    v
-             C - D                    C <- D
+    A ----- B
+    |     / |
+    |   /   |
+    | /     |
+    C       D
+    |
+    E
 ```
 
-## কোড উদাহরণ
+Edge-গুলো: A-B, A-C, B-C, B-D, C-E। এবার একে একে ভাষাগুলো:
+
+- **Adjacent / neighbor:** সরাসরি edge দিয়ে যুক্ত দুটো vertex পরস্পরের neighbor। B-এর neighbor A, C আর D। B আর E neighbor নয়, মাঝে সরাসরি লাইন নেই (পথ আছে, সেটা অন্য কথা)।
+- **Degree:** একটা vertex-এ কতগুলো edge লেগে আছে। A-এর degree 2, C-এর degree 3। Undirected graph-এ সব degree-র যোগফল = 2 × edge সংখ্যা, কারণ প্রতিটা edge দুটো vertex-এর degree-তে একবার করে যোগ হয়। এখানে 2+3+3+1+1 = 10 = 2 × 5। এই হিসাবের নাম handshaking lemma, নিজের হাতে গোনা মিলিয়ে নেওয়ার চমৎকার উপায়।
+- **Path:** একটা vertex থেকে আরেকটায় যাওয়ার রাস্তা। E থেকে D-তে একটা path হলো E → C → B → D। আরেকটা আছে: E → C → A → B → D।
+- **Simple path:** যে path-এ কোনো vertex দুইবার আসে না। উপরের দুটোই simple। কিন্তু E → C → B → A → C → D simple নয়, C দুইবার এসেছে। আলাদা করে কিছু না বললে "path" বলতে simple path-ই বোঝায়।
+- **Cycle:** নিজের গায়ে ফিরে আসা path। A → B → C → A একটা cycle (ত্রিভুজটা দেখেছো?)। এই graph-এ এটাই একমাত্র cycle।
+- **Connected:** যেকোনো vertex থেকে যেকোনো vertex-এ পথ আছে কিনা। এই জাল connected। এবার ভাবো, আলাদা দুজন মানুষ X আর Y ঢুকল, তারা শুধু পরস্পরের বন্ধু:
+
+```
+    A ----- B        X --- Y
+    |     / |
+    |   /   |
+    | /     |
+    C       D
+    |
+    E
+```
+
+এখন graph-টা disconnected, আর এর দুটো **component** আছে: {A, B, C, D, E} আর {X, Y}। Component মানে connected টুকরো। Component গুনে বের করার কৌশলটা পাবে [Connected Components](./connected-components.mdx) পাতায়।
+
+- **Subgraph:** পুরো graph-এর একটা অংশ নিলে সেটা subgraph। শুধু {A, B, C} আর তাদের ভেতরের তিনটা edge নিলে যে ত্রিভুজটা পাও, সেটা এই graph-এর একটা subgraph।
+
+## দ্বিতীয় জাল: directed graph-এর ভাষা
+
+এবার Twitter-জাল, তীর দেখাচ্ছে কে কাকে follow করে:
+
+```
+    A → B → C
+        ↓   ↓
+        D → E
+```
+
+Edge-গুলো: A→B, B→C, B→D, C→E, D→E। এখানে degree-র জায়গায় দুটো আলাদা শব্দ:
+
+- **Out-degree:** vertex থেকে কতটা তীর বেরিয়েছে। B-এর out-degree 2 (C আর D-এর দিকে)।
+- **In-degree:** vertex-এ কতটা তীর ঢুকেছে। E-এর in-degree 2 (C আর D থেকে)। A-এর in-degree 0, কেউ A-কে follow করে না।
+
+Directed graph-এ cycle মানে তীর মেনে ঘুরে নিজের কাছে ফিরে আসা। এখানে কোনো cycle নেই। তীর-ওয়ালা cycle নেই এমন directed graph-এর নাম **DAG (Directed Acyclic Graph)**। DAG-এর ওপর দাঁড়িয়ে আছে বড় বড় algorithm, যেমন [Topological Sort](./topological-sort.mdx): dependency মেনে কাজ সাজানো। আর cycle আছে কিনা যাচাই করতে হয় [Cycle Detection](./cycle-detection.mdx) দিয়ে।
+
+## বাকি ধরনগুলো এক নিঃশ্বাসে
+
+- **Weighted vs unweighted:** প্রতিটা edge-এর সাথে সংখ্যা থাকলে weighted, যেমন দুই শহরের দূরত্ব বা রাস্তার খরচ। না থাকলে unweighted। পার্থক্যটা ছোট নয়: weighted graph-এ shortest path বের করতে [Dijkstra](./dijkstra.mdx) লাগে, শুধু [BFS](./bfs.mdx) দিয়ে হয় না।
+- **Sparse vs dense:** edge কম না বেশি, এই অনুভূতি। Sparse মানে E মোটামুটি V-এর কাছাকাছি (বন্ধু-জালে V=5, E=5)। Dense মানে E প্রায় V²-এর কাছাকাছি। হাজার জনের Facebook-এ প্রত্যেকের গড়ে ৩০০ বন্ধু হলে E ≈ 150,000, যা V² = 1,000,000-এর অনেক নিচে, তাই সেটা sparse।
+- **Complete graph:** প্রতিটা জোড়া vertex-এর মাঝেই edge থাকলে complete। V-টা vertex-এ edge হয় V(V-1)/2 টা। এটাই edge-এর পরম সীমা, dense-এর চূড়ান্ত রূপ।
+- **Self-loop আর parallel edge:** নিজে থেকে নিজের কাছে edge হলো self-loop; একই জোড়ার মাঝে একাধিক edge হলো parallel edge। বেশিরভাগ জায়গায় আমরা **simple graph** ধরি: self-loop নেই, parallel edge নেই। প্রশ্নে উল্টোটা না বললে এটাই default।
+- **Tree:** surprise, tree আলাদা কিছু নয়। Connected, cycle-বিহীন undirected graph-ই tree। V-টা node থাকলে edge ঠিক V-1 টা। তাই [Tree পরিভাষা](../trees/tree-terminology.mdx) পাতার সব কথা বিনা পরিবর্তনে এখানেও সত্য।
+
+## চোখে চোখে graph পড়া: একটা dry run
+
+কোডের আগে চোখের কসরত। বন্ধু-জালটা (A-B, A-C, B-C, B-D, C-E) নিয়ে ছকটা ভরি; তুমি আগে নিজে চেষ্টা করে তারপর মিলিয়ে নিও:
+
+| প্রশ্ন | উত্তর | হিসাবটা |
+|--------|--------|---------|
+| Vertex কয়টা (V)? | 5 | A, B, C, D, E |
+| Edge কয়টা (E)? | 5 | লাইন গুনে |
+| A-এর degree? | 2 | neighbor: B, C |
+| B-এর degree? | 3 | neighbor: A, C, D |
+| C-এর degree? | 3 | neighbor: A, B, E |
+| D-এর degree? | 1 | শুধু B |
+| E-এর degree? | 1 | শুধু C |
+| degree-র যোগফল? | 10 | 2+3+3+1+1 = 2 × E |
+| E থেকে D-তে simple path? | E → C → B → D | আরেকটা: E → C → A → B → D |
+| Cycle আছে? | হ্যাঁ, একটাই | A → B → C → A |
+| Connected? | হ্যাঁ | সবার মাঝে পথ আছে |
+| Sparse না dense? | Sparse | E = 5, সর্বোচ্চ 5×4/2 = 10 হতে পারত |
+| Complete? | না | A আর D-এর মাঝে edge নেই |
+
+Directed জালের জন্যও একই কসরত: in-degree হয় A:0, B:1, C:1, D:1, E:2; out-degree হয় A:1, B:2, C:1, D:1, E:0। দুটোর যোগফলই 5, কারণ প্রতিটা তীর কারো out-degree আর কারো in-degree ঠিক একবার করে বাড়ায়।
+
+খেয়াল করো, পুরো ছকটা একটাই ছবি থেকে এসেছে। Graph "পড়তে" শেখা মানে এই: ছবি দেখে ছক ভরা।
+
+## কোড: degree হিসাব
+
+পরিভাষার পাতা হলেও একটা ছোট হিসাব কোডে করলে ব্যাপারটা পাকা হয়। Graph-টা adjacency list-এ রাখা:
 
 ```js
-// vertices: A,B,C,D ; edges: A-B, A-C, B-D, C-D
-const vertices = ["A", "B", "C", "D"];
-const edges = [["A", "B"], ["A", "C"], ["B", "D"], ["C", "D"]];
-console.log(vertices.length, edges.length); // 4 4 (4 vertex, 4 edge)
+// বন্ধু-জালটা (undirected: প্রতিটা edge দুই দিকেই লেখা)
+const adj = {
+  A: ["B", "C"],
+  B: ["A", "C", "D"],
+  C: ["A", "B", "E"],
+  D: ["B"],
+  E: ["C"],
+};
+
+// degree = neighbor list-এর দৈর্ঘ্য
+function degrees(adj) {
+  const result = {};
+  for (const node in adj) {
+    result[node] = adj[node].length;
+  }
+  return result;
+}
+
+console.log(degrees(adj));
+// { A: 2, B: 3, C: 3, D: 1, E: 1 }
+
+// edge সংখ্যা = degree-র যোগফলের অর্ধেক (প্রতিটা edge দুইবার গোনা হয়েছে)
+function edgeCount(adj) {
+  let sum = 0;
+  for (const node in adj) sum += adj[node].length;
+  return sum / 2;
+}
+
+console.log(edgeCount(adj)); // 5
+
+// directed হলে in-degree গুনতে হয়: প্রতিটা তীর কার গায়ে ঢুকছে দেখো
+const nodes = ["A", "B", "C", "D", "E"];
+const dirEdges = [["A", "B"], ["B", "C"], ["B", "D"], ["C", "E"], ["D", "E"]];
+
+function inDegrees(nodes, edges) {
+  const indeg = {};
+  for (const n of nodes) indeg[n] = 0;
+  for (const [u, v] of edges) indeg[v]++;
+  return indeg;
+}
+
+console.log(inDegrees(nodes, dirEdges));
+// { A: 0, B: 1, C: 1, D: 1, E: 2 }
 ```
 
-## কোড ব্রেকডাউন
+## কোড ব্রেকডাউন: লাইনে লাইনে
 
-- Tree-ও আসলে একটা graph, শুধু cycle নেই আর সবকিছু connected। n টা node থাকলে edge হবে ঠিক n-1 টা।
-- কিন্তু সাধারণ graph-এ cycle থাকতেই পারে। তাই traversal-এর সময় কোন node দেখে ফেলেছি, সেটা ট্র্যাক করা (visited) আবশ্যক। নইলে একই জায়গায় ঘুরতেই থাকবে।
+1. `result[node] = adj[node].length` : undirected graph-এ neighbor list-টাই degree-র সংজ্ঞা। লিস্টে যে কজন, তারা-ই পাশে আছে।
+2. `return sum / 2` : কেন অর্ধেক? A-B edge-টা A-এর list-এও আছে, B-এর list-এও। প্রতিটা edge ঠিক দুইবার গোনা হয়েছে, তাই 2 দিয়ে ভাগ।
+3. `for (const n of nodes) indeg[n] = 0` : আগে সবার in-degree শূন্য বসিয়ে নিই। এই লাইন না থাকলে যার in-degree 0 (A), তার entry-ই তৈরি হত না।
+4. `for (const [u, v] of edges) indeg[v]++` : প্রতিটা তীর u → v মানে v-এর in-degree এক বাড়ল। u-কে ছোঁয়া হয়নি, তার বেলায় এটা out-degree।
 
-<Callout type="warn" title="সতর্কতা: visited ছাড়া traversal করো না">
-Graph-এ cycle থাকলে visited ট্র্যাক না করলে traversal infinite loop-এ আটকে যাবে।
-</Callout>
+আরেকটা জিনিস লক্ষ্য করো: directed-এর হিসাবে আলাদা adjacency list লাগলই না, শুধু edge-লিস্টই যথেষ্ট।
 
-## Complexity
+## Complexity: ছোট হিসাব
 
-- এই পাতাটা পরিভাষার, তাই আলাদা algorithmic complexity নেই। পরের পাতাগুলোর traversal-এর খরচ vertex আর edge-এর ওপর নির্ভর করে, যেমন O(V + E)।
+তিনটা কাজের খরচ আলাদা আলাদা:
+
+- `degrees`: প্রতিটা vertex-এর list-এর `length` পড়া O(1), মোট **O(V)**।
+- `edgeCount`: V-টা যোগ, মোট **O(V)**। (Adjacency list-টা বানানোর খরচ O(V + E), সেটা [Graph Representation](./graph-representation.mdx) পাতার ব্যাপার।)
+- `inDegrees`: শুরুতে V-টা শূন্য, তারপর প্রতিটা edge-এ একবার `++`, মোট **O(V + E)**।
+
+Space তিন জায়গায়ই **O(V)**: উত্তরের object-এ প্রতি vertex-এর একটা করে entry।
+
+## সাধারণ ভুল আর edge case
+
+**১. directed edge-কে দুই দিকের ভেবে নেওয়া।**
+A → B মানে A থেকে B-তে যাওয়া যায়, B থেকে A-তে নয়। Twitter-এ তুমি কাউকে follow করলেই যে সে তোমাকে করবে, এমন নিয়ম নেই। Adjacency list বানানোর সময় এই ভুলটাই সবচেয়ে বেশি হয়: directed হলে শুধু `adj[u].push(v)`, উল্টোটা নয়।
+
+**২. path আর cycle-কে এক ভাবা।**
+Path হলো এক জায়গা থেকে আরেক জায়গায় রাস্তা; cycle হলো নিজের গায়ে ফিরে আসা path। প্রতিটা cycle একটা path, কিন্তু প্রতিটা path cycle নয়। আরেকটা সূক্ষ্ম ব্যাপার: simple path-এ vertex দুইবার আসতে পারে না; এটা ভুলে গেলে cycle খোঁজার algorithm-গুলো গুলিয়ে যাবে।
+
+**৩. প্রতিটা graph-ই connected ধরে নেওয়া।**
+আসল জীবনের graph প্রায়ই ভাঙা ভাঙা। Traversal চালালে শুধু শুরুর component-টুকু ঘোরা হবে, বাকিটা বাদ পড়ে যাবে। পুরো graph ঘোরাতে বাইরে আলাদা loop লাগে, যেমনটা [BFS](./bfs.mdx) পাতার ভুল-লিস্টে দেখেছো।
+
+**৪. sparse আর dense-এর সংখ্যা উল্টে ফেলা।**
+Sparse মানে E ≈ V (প্রতি vertex-এ মুঠোভর্তি edge), dense মানে E ≈ V² (প্রায় সব জোড়ায় edge)। হাজার vertex-এ পাঁচ হাজার edge হলে সেটা sparse, dense নয়। এই অনুভূতি দরকারি, কারণ অনেক algorithm-এর খরচ E-এর ওপর, আর E ছোট না বড় তার ওপর ভালো ডেটা স্ট্রাকচার বদলে যায়।
+
+**৫. tree-কে graph থেকে আলাদা ভাবা।**
+Tree হলো connected, cycle-বিহীন undirected graph, ব্যস। তাই graph-এর সব traversal (BFS, DFS) tree-তেও চলে। উল্টোদিকে tree-র সুন্দর গুণগুলো, যেমন দুই node-এর মাঝে ঠিক একটাই simple path, আসে cycle না থাকা থেকে। বিস্তারিত [Tree পরিভাষা](../trees/tree-terminology.mdx)-তে।
 
 ## Animation Spec
 
-> **Animation Spec: Graph Explorer**
+> **Animation Spec: Term Highlighter**
 >
-> - **দৃশ্য:** node আর edge; toggle দিয়ে directed/undirected আর weighted রূপ বদলানো যাবে।
-> - **ইনপুট:** node/edge যোগ-বাদ; edge weight।
-> - **ধাপ:** নির্বাচন বদলালে তীর/লাইন আর weight লেবেল সাথে সাথে আপডেট হয়।
-> - **লক্ষ্য:** graph-এর ধরন আর পরিভাষা চেনা।
+> - **দৃশ্য:** পাশাপাশি দুটো ছোট graph: বামে undirected বন্ধু-জাল, ডানে directed Twitter-জাল। পাশে পরিভাষার তালিকা (degree, path, cycle, component, in-degree...)।
+> - **ইনপুট:** তালিকার যেকোনো শব্দে hover বা click; চাইলে নতুন edge যোগ-বাদ।
+> - **ধাপ:** শব্দ ছুঁলেই graph-এ তার অংশটা জ্বলে ওঠে: "degree" ছুঁলে নির্বাচিত node-এর লেগে থাকা edge-গুলো রঙিন হয়, "cycle" ছুঁলে A → B → C → A ত্রিভুজে একটা বিন্দু ঘুরে ঘুরে চক্কর দেয়, "component" ছুঁলে প্রতিটা টুকরো আলাদা রঙে ভাগ হয়ে যায়।
+> - **নিয়ন্ত্রণ:** directed/undirected toggle, weighted toggle (edge-এ সংখ্যা ফুটে ওঠে), reset।
+> - **লক্ষ্য:** শব্দ আর ছবির মিল চোখে পাকা করা; edge যোগ দিলে degree আর connected সাথে সাথে বদলে যায়, সেটা দেখা।
 
 ## অনুশীলন
 
-- ভাবো তো, তোমার বন্ধু-লিস্টটা directed না undirected graph? যুক্তি দাও।
+- **সহজ ১:** এই graph-এর প্রতিটা vertex-এর degree বের করো: edge-গুলো হলো A-B, B-C, C-D, D-A, A-C। যোগফল দিয়ে মিলিয়ে দেখো 2 × E পাও কিনা। হিন্ট: আগে ছবি এঁকে নাও, তারপর প্রতিটা vertex-এ লেগে থাকা লাইন গোনো।
+- **সহজ ২:** এই তিনটা জাল classify করো (directed না undirected? weighted না unweighted? connected না disconnected?): ঢাকা-চট্টগ্রাম-খুলনা মহাসড়ক আর তাদের দূরত্বের নকশা; তোমার Instagram follower-জাল; একটা গ্রামের পাঁচ বাড়ি, যেখানে দুই বাড়ির সাথে বাকি কারো কোনো রাস্তা নেই। হিন্ট: প্রতিটার জন্য তিনটা প্রশ্নের আলাদা আলাদা উত্তর লিখো।
+- **মাঝারি ১:** V-টা vertex-এ complete graph-এ ঠিক V(V-1)/2-টা edge হয় কেন, হিসাবটা নিজে বের করো। হিন্ট: প্রতিটা vertex বাকি V-1 জনের সাথে যুক্ত, মোট V(V-1); কিন্তু প্রতিটা edge দুইবার গোনা হয়েছে।
+- **মাঝারি ২:** এই ছোট graph-এ সবগুলো cycle চিহ্নিত করো: A-B, B-C, C-D, D-A, A-C। হিন্ট: তিনটা পাবে; দুটো ত্রিভুজ আর একটা চতুর্ভুজ।
+- **কঠিন:** যুক্তি দাও, connected undirected graph-এ V-টা vertex থাকলে edge অন্তত V-1-টা লাগবেই। হিন্ট: একটা একটা করে vertex যোগ করার কল্পনা করো; নতুন প্রতিটা vertex-কে জালে যুক্ত করতে অন্তত একটা edge লাগে। সমতা (ঠিক V-1) কখন হয়? যখন graph-টা tree।
+
+## সারসংক্ষেপ
+
+- Graph = vertex + edge। Undirected-এ edge দ্বিমুখী (Facebook), directed-এ একমুখী (Twitter)।
+- Undirected-এ degree; directed-এ in-degree আর out-degree। সব degree-র যোগফল 2E, সব in বা out-degree-র যোগফল E।
+- Path মানে রাস্তা, cycle মানে নিজের গায়ে ফিরে আসা। Connected না হলে graph ভেঙে component-এ পড়ে।
+- Sparse ≈ E ছোট (V-এর কাছে), dense ≈ E বড় (V²-এর কাছে)। Complete graph-এ edge V(V-1)/2।
+- Tree হলো connected acyclic undirected graph; cycle-বিহীন directed graph হলো DAG, যার ওপর দাঁড়িয়ে [Topological Sort](./topological-sort.mdx)।
+- এই ভাষাই পরের সব পাতার ইট-কাঠ: [BFS](./bfs.mdx), [DFS](./dfs.mdx), সব এখানকার শব্দেই লেখা।

@@ -1,0 +1,299 @@
+---
+title: "Cycle Detection: graph-এ চক্কর আছে কিনা"
+description: "undirected-এ parent ট্র্যাক, directed-এ তিন রঙের পদ্ধতি; কেন একই লজিক দুই জায়গায় চলে না, diamond trap, self-loop, আর চক্রটা বের করে আনা।"
+---
+
+## কী শিখব
+
+- Cycle ঠিক কী, আর deadlock, course prerequisite, dependency resolution-এ কেন এটাই প্রথম প্রশ্ন
+- Undirected graph-এ cycle ধরা: DFS + parent ট্র্যাক
+- Directed graph-এ কেন সেই লজিক হারিয়ে যায়, আর white/gray/black তিন রঙের পদ্ধতি
+- শুধু হ্যাঁ/না নয়, চক্রটা বের করে আনা
+- Union-Find দিয়ে একই কাজ, আর complexity-র পুরো হিসাব
+
+## ধারণা
+
+ধরো, তুমি পাঁচটা course নিতে চাও। কোনোটার prerequisite আরেকটা: C নিতে হলে আগে B, B নিতে হলে আগে A। ঠিক আছে, A → B → C করে নিলেই চলে। কিন্তু যদি কেউ ভুল করে লিখে দেয় C নিতে হলে আগে B, আবার B নিতে হলে আগে C? দুজনেই অপরের অপেক্ষায়, কেউই শুরু হতে পারছে না। এটাই **cycle**, আর এটা ধরার কাজটাই cycle detection।
+
+ব্যাপারটা হলো, cycle শুধু syllabus-এর সমস্যা নয়। Operating system-এ দুটো process পরস্পরের lock-এর অপেক্ষায় থাকলে deadlock; সেটাও একটা wait graph-এর cycle। npm বা build system-এ package dependency-তে চক্র থাকলে install-ই আটকে যায়। আর [Topological Sort](./topological-sort.mdx) মনে আছে? ওটা চালানোর আগেই প্রশ্নটা আসে: graph-এ cycle আছে কিনা, থাকলে sort-ই অসম্ভব।
+
+প্রশ্নটা সরল শোনায়: এমন পথ আছে কিনা যেখানে একই node-এ ফিরে আসা যায়। কিন্তু উত্তরটা পুরোপুরি নির্ভর করে graph-টা directed না undirected তার ওপর। দুই ক্ষেত্রে লজিক আলাদা, আর দুটো গুলিয়ে ফেলাটাই সবচেয়ে ক্লাসিক bug। একে একে দুটোই দেখি। আগে undirected।
+
+## Undirected: DFS + parent ট্র্যাক
+
+[DFS](./dfs.mdx) চালানোর সময় ভাবো, তুমি একটা node-এ দাঁড়িয়ে আছো, সামনে কয়েকটা edge। যে edge দিয়ে এই node-এ এসেছি (parent-এর edge), সেটা দিয়ে ফেরত তাকানো তো স্বাভাবিক, ওটা cycle নয়। কিন্তু অন্য কোনো edge দিয়ে যদি এমন কারও কাছে পৌঁছাও যাকে **আগেই দেখে ফেলেছো**, তাহলে বুঝো রাস্তা দুইটা, মানে একটা চক্র বন্ধ হলো। ওই edge-টার নাম **back edge**।
+
+সহজ কথায়: DFS-এ প্রতিটা node-এর সাথে তার parent-টাও পাঠাও। Neighbor visited, আর সে parent না, এই দুটো মিললেই cycle।
+
+## ধাপে ধাপে: undirected dry run
+
+Graph-টা ধরো, চারটে node-এর একটা চক্র, সাথে একটা লেজ:
+
+```
+  A ─── B
+  |     |
+  D ─── C
+  |
+  E
+```
+
+Edge: A-B, B-C, C-D, D-A, D-E। শুরু A থেকে, adjacency-র ক্রম মেনে।
+
+| ধাপ | call | recursion stack | দেখা গেল |
+|-----|------|-----------------|----------|
+| 1 | dfs(A, null) | [A] | B দেখিনি, ডাকলাম |
+| 2 | dfs(B, A) | [A, B] | A = parent, skip; C ডাকলাম |
+| 3 | dfs(C, B) | [A, B, C] | B = parent, skip; D ডাকলাম |
+| 4 | dfs(D, C) | [A, B, C, D] | C = parent, skip; **A visited, আর parent-ও না: back edge!** |
+
+ধাপ ৪-এই উত্তর পেয়ে গেলাম: cycle আছে। খেয়াল করো, E পর্যন্ত যাওয়াই লাগল না; back edge পাওয়ামাত্র `true` উপরে উপরে ফিরে আসে। আর ধাপ ২-তে A-কে skip না করলে প্রথম ধাপেই ভুল করে cycle বলে দিতাম, কারণ undirected-এ প্রতিটা edge দুই দিকেই লেখা থাকে। এই skip-টাই পুরো লজিকের প্রাণ।
+
+একই কাজ **Union-Find** দিয়েও হয়: edge-গুলো একটা একটা করে যোগ করো, যোগ করার আগে দেখো দুই প্রান্ত কি আগে থেকেই একই দলে। থাকলে, এই edge-টাই চক্রটা বন্ধ করে দিল। বিস্তারিত [Disjoint Set](../advanced-structures/disjoint-set.mdx) পাতায়; সেটা বিশেষ করে তখন দারুণ, যখন edge ধীরে ধীরে আসতে থাকে।
+
+## Directed: কেন আলাদা লজিক লাগে
+
+Directed graph-এ শুধু "visited কিনা" দেখলে ভুল হয়ে যায়। এই diamond-টা দেখো:
+
+```
+    A
+   ↙ ↘
+  B   C
+   ↘ ↙
+    D
+```
+
+Edge: A→B, A→C, B→D, C→D। Cycle একদম নেই। কিন্তু naive visited-only DFS চালাও: A থেকে B, B থেকে D (D visited হলো), ফিরে এসে A থেকে C, C থেকে দেখল D আগেই visited, আর ধরে ফেলল "cycle!"। মিথ্যা alarm। D-তে দুই পথে পৌঁছানো যায়, সেটা diamond, cycle না।
+
+আসল শত্রু হলো **এই মুহূর্তে যে পথে দাঁড়িয়ে আছি**, তার কারও কাছে ফেরত edge। তাই node-গুলোকে তিন রঙে ভাগ করি:
+
+- **white**: এখনো দেখিনি
+- **gray**: এই recursion path-এ আছে, কাজ চলছে
+- **black**: ওর সব descendant দেখা শেষ, পুরোপুরি done
+
+Gray node-এ ফেরত edge = back edge = cycle। Black-এ গেলে ভয় নেই, ও অন্য পথের লোক, অনেক আগেই শেষ।
+
+## ধাপে ধাপে: directed dry run
+
+চক্রওয়ালা ছোট্ট একটা directed graph:
+
+```
+  A → B → C
+      ↑   ↓
+      └───┘
+          C → D
+```
+
+Edge: A→B, B→C, C→A, C→D।
+
+| ধাপ | call | রঙের অবস্থা | দেখা গেল |
+|-----|------|-------------|----------|
+| 1 | dfs(A) | A=gray | B white, ডাকলাম |
+| 2 | dfs(B) | A,B gray | C white, ডাকলাম |
+| 3 | dfs(C) | A,B,C gray | A **gray** হাতে পেলাম: back edge! |
+
+Cycle: A → B → C → A। Diamond-এর D-এর মতো black node এখানে ভুল ফোঁকাতে পারে না, কারণ black মানে ওই node-এর পথ আমাদের সাথে আর জড়িত না।
+
+## কোড: দুটোই, পুরোপুরি runnable
+
+Graph class আগের পাতার মতোই, শুধু directed edge-এর সুবিধা যোগ করলাম:
+
+```js
+class Graph {
+  constructor() { this.adj = new Map(); }
+
+  addVertex(v) {
+    if (!this.adj.has(v)) this.adj.set(v, []);
+  }
+
+  addEdge(u, v, directed = false) {
+    this.addVertex(u);
+    this.addVertex(v);
+    this.adj.get(u).push(v);
+    if (!directed) this.adj.get(v).push(u);
+  }
+
+  neighbors(v) { return this.adj.get(v) || []; }
+}
+```
+
+Undirected: DFS + parent:
+
+```js
+function hasCycleUndirected(graph) {
+  const visited = new Set();
+
+  function dfs(node, parent) {
+    visited.add(node);
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) {
+        if (dfs(next, node)) return true;
+      } else if (next !== parent) {
+        return true;          // visited, আর parent-ও না: back edge
+      }
+    }
+    return false;
+  }
+
+  for (const v of graph.adj.keys()) {   // বাইরের loop: সব component খুঁজো
+    if (!visited.has(v)) {
+      if (dfs(v, null)) return true;
+    }
+  }
+  return false;
+}
+
+const g1 = new Graph();
+g1.addEdge("A", "B"); g1.addEdge("B", "C");
+g1.addEdge("C", "D"); g1.addEdge("D", "A");
+g1.addEdge("D", "E");
+console.log(hasCycleUndirected(g1));   // true
+
+const g2 = new Graph();
+g2.addEdge("A", "B"); g2.addEdge("B", "C");
+console.log(hasCycleUndirected(g2));   // false (শুধু একটা পথ)
+```
+
+Directed: তিন রঙ:
+
+```js
+function hasCycleDirected(graph) {
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map();
+  for (const v of graph.adj.keys()) color.set(v, WHITE);
+
+  function dfs(node) {
+    color.set(node, GRAY);                       // পথে ঢুকলাম
+    for (const next of graph.neighbors(node)) {
+      if (color.get(next) === GRAY) return true; // এই পথেই ফেরত edge
+      if (color.get(next) === WHITE && dfs(next)) return true;
+    }
+    color.set(node, BLACK);                      // পথ থেকে বেরিয়ে গেলাম
+    return false;
+  }
+
+  for (const v of graph.adj.keys()) {
+    if (color.get(v) === WHITE) {
+      if (dfs(v)) return true;
+    }
+  }
+  return false;
+}
+
+const g3 = new Graph();
+g3.addEdge("A", "B", true); g3.addEdge("B", "C", true);
+g3.addEdge("C", "A", true); g3.addEdge("C", "D", true);
+console.log(hasCycleDirected(g3));   // true
+
+const g4 = new Graph();              // সেই diamond, cycle নেই
+g4.addEdge("A", "B", true); g4.addEdge("A", "C", true);
+g4.addEdge("B", "D", true); g4.addEdge("C", "D", true);
+console.log(hasCycleDirected(g4));   // false
+```
+
+## ভ্যারিয়েন্ট ১: চক্রটা বের করে আনা
+
+শুধু হ্যাঁ/না না জেনে অনেক সময় চাই চক্রটা কোন পথে। Directed case-এ কাজটা সহজ: recursion path-টা একটা array-তে রাখো, gray node পেলে ওখান থেকে শেষ পর্যন্ত টুকরোটাই চক্র।
+
+```js
+function findCycleDirected(graph) {
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map();
+  for (const v of graph.adj.keys()) color.set(v, WHITE);
+  const stack = [];                              // এই মুহূর্তের পথ
+
+  function dfs(node) {
+    color.set(node, GRAY);
+    stack.push(node);
+    for (const next of graph.neighbors(node)) {
+      if (color.get(next) === GRAY) {
+        const i = stack.indexOf(next);
+        return stack.slice(i).concat(next);      // চক্র: next ... node, আবার next
+      }
+      if (color.get(next) === WHITE) {
+        const found = dfs(next);
+        if (found) return found;
+      }
+    }
+    stack.pop();                                 // পথ থেকে সরে গেলাম
+    color.set(node, BLACK);
+    return null;
+  }
+
+  for (const v of graph.adj.keys()) {
+    if (color.get(v) === WHITE) {
+      const found = dfs(v);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+console.log(findCycleDirected(g3));  // [ 'A', 'B', 'C', 'A' ]
+console.log(findCycleDirected(g4));  // null
+```
+
+## ভ্যারিয়েন্ট ২: self-loop
+
+Self-loop মানে node নিজের দিকেই edge, আর এটা একটা পুরোপুরি cycle। Directed-এ তিন রঙ নিজে থেকেই ধরে ফেলে: node gray, আর neighbor-ও সে নিজেই, মানে gray। Undirected-এও ধরা পড়ে, কারণ next === node, অথচ parent না। মানে দুটো কোডেই আলাদা কিছু লেখা লাগে না, self-loop আপনাআপনি পড়ে যায়। শুধু জেনে রাখো, অনেক সমস্যার ইনপুটে self-loop থাকেই, আর "cycle মানে অন্তত তিনটা node" ধারণাটা মিথ্যা।
+
+## কোড ব্রেকডাউন: hasCycleDirected, লাইনে লাইনে
+
+1. `WHITE, GRAY, BLACK` : তিনটা অবস্থা। সংখ্যা দিয়ে রাখলাম, চাইলে string-ও চলে; শুধু তিনটা আলাদা হলেই হবে।
+2. `for (const v of ...) color.set(v, WHITE)` : সবাই white দিয়ে শুরু।
+3. `color.set(node, GRAY)` : dfs-এ ঢোকামাত্র node-টা এই পথে ঢুকে গেল।
+4. `for (const next of graph.neighbors(node))` : প্রতিটা outgoing edge পরীক্ষা।
+5. `if (color.get(next) === GRAY) return true` : পুরো লজিকের হৃদয়। এই পথের কারও কাছে ফেরত edge, মানে cycle।
+6. `if (... === WHITE && dfs(next)) return true` : white হলে ডাকো; নিচে কেউ cycle পেলে উত্তরটা উপরে তুলে দাও।
+7. `color.set(node, BLACK)` : সব neighbor দেখা শেষ, এই node এখন নিরাপদ, পথ থেকে সরে গেল। Black-এ কখনোই cycle-এর অভিযোগ নেই।
+8. বাইরের `for` loop: disconnected graph-এর প্রতিটা টুকরোয় চালাও, নাহলে দূরের টুকরোয় লুকিয়ে থাকা cycle মিস হবে।
+
+মনে রাখো, gray-কে অনেক জায়গায় "recursion stack-এ আছে" বলা হয়। [Call Stack](../recursion/call-stack.mdx)-এর ধারণাটা মাথায় থাকলে ব্যাপারটা একদম স্বাভাবিক লাগবে: gray = এখনো stack-এর ভেতরে বসে আছে।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Time: O(V + E)**, দুটো ক্ষেত্রেই। যুক্তিটা [BFS](./bfs.mdx)-এর মতোই হাতে গোনা যায়: প্রতিটা node-এ সর্বোচ্চ একবার dfs ঢোকে (white থাকলেই শুধু), আর ঢুকলে তার edge-গুলো একবার করে দেখে। সব মিলে node-এর কাজ V বার, edge-এর কাজ E বার। Cycle পাওয়ামাত্র থেমে যাওয়াটা best-case bonus; worst case-এ পুরো graph ঘুরতেই হয়।
+
+**Space: O(V)।** visited বা color map-এ V-টা entry, আর recursion stack সবচেয়ে গভীরে V পর্যন্ত যেতে পারে; ভাবো, একদম সরু লম্বা একটা chain। খুব বড় graph-এ recursion overflow-এর ভয় থাকলে iterative DFS-এ নামা যায়, কিন্তু লজিক একই থাকে।
+
+## সাধারণ ভুল আর edge case
+
+**১. Directed graph-এ visited-only লজিক।**
+Diamond-টাই সাক্ষী: A→B, A→C, B→D, C→D-তে cycle নেই, কিন্তু শুধু visited দেখলে false positive আসবেই। D-তে দুই পথে পৌঁছানো যায়, সেটা cycle না। Directed হলে তিন রঙ ছাড়া উপায় নেই।
+
+**২. Undirected-এ parent skip না করা।**
+Undirected-এ প্রতিটা edge দুই দিকে লেখা, তাই A থেকে B-তে গেলে B-এর list-এ আবার A বসে আছে। Parent-কে skip না করলে প্রতিটা edge-ই cycle মনে হবে; দুই node-এর একটা edge থাকলেই। এই এক লাইন (`next !== parent`) ভুলে গেলে সব গাছও cycle হয়ে যায়।
+
+**৩. বাইরের loop ভুলে যাওয়া।**
+dfs শুধু একটা node থেকে চালালে ওই component-টুকুই দেখা হবে। Disconnected graph-এ cycle অন্য টুকরোয় লুকিয়ে থাকতে পারে। প্রতিটা unvisited/white node থেকে চালাতে হবে, visited বা color শেয়ার করে।
+
+**৪. Self-loop-কে cycle না ভাবা।**
+n→n edge মানেই cycle, length এক হলেও। ভালো খবর: উপরের দুটো কোডেই self-loop নিজে থেকেই ধরা পড়ে। খারাপ খবর: interview-তে জিজ্ঞেস করলে অনেকেই বলে "অন্তত তিনটা edge লাগে", যেটা self-loop-এর জগতে মিথ্যা।
+
+**৫. Undirected-এর লজিক directed-এ কপি করা।**
+Undirected-এ parent-passing যথেষ্ট, কারণ সেখানে ফেরত edge মানেই cycle। Directed-এ ফেরত edge অন্য পথেরও হতে পারে, তাই "আমি ঠিক কোন পথে আছি" ট্র্যাক করতেই হয়। দুটো আলাদা সমস্যা, আলাদা হাতিয়ার; একটা আরেকটার জায়গায় বসালে নিঃশব্দে ভুল উত্তর আসবে।
+
+## Animation Spec
+
+> **Animation Spec: Cycle Detector**
+>
+> - **দৃশ্য:** directed graph; node-গুলো রঙ বদলায়, white থেকে gray থেকে black; recursion path হলুদ ঝলকানি; back edge পাওয়ামাত্র সেই edge লাল হয়ে চক্রটা ঘিরে জ্বলে ওঠে।
+> - **ইনপুট:** directed/undirected টগল; preset graph (চক্র আছে / diamond / disconnected দুই টুকরো / self-loop)।
+> - **ধাপ:** প্রতি dfs call-এ node gray; gray node-এ ফেরত edge দেখলে cycle detect, চক্রের node-গুলো একসাথে pulse করে; backtrack হলে node black হয়ে শান্ত।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "visited-only mode" টগল, diamond-এ ভুল alarm কেমন দেখায় তা প্রত্যক্ষ করার জন্য।
+> - **লক্ষ্য:** directed-এ gray মানেই বিপদের সম্ভাবনা, আর undirected-এ parent ছাড়া visited মানেই চক্র।
+
+## অনুশীলন
+
+- **সহজ ১:** edge list দেওয়া আছে, undirected graph-এ cycle আছে কিনা বলো। হিন্ট: আগে adjacency list বানাও ([Graph Representation](./graph-representation.mdx)), তারপর `hasCycleUndirected` চালাও।
+- **সহজ ২:** Course Schedule (LeetCode 207)। `numCourses` আর prerequisite জোড়া দেওয়া, সব course শেষ করা সম্ভব কিনা? হিন্ট: এটা হুবহু directed cycle detection; cycle থাকলে অসম্ভব, না থাকলে সম্ভব।
+- **মাঝারি ১:** Redundant Connection (LeetCode 684)। একটা গাছে একটা বাড়তি edge ঢুকে গেছে, কোনটা সরালে আবার গাছ হয়? হিন্ট: edge-গুলো একটা একটা করে Union-Find-এ ঢোকাও ([Disjoint Set](../advanced-structures/disjoint-set.mdx)); যেটার দুই প্রান্ত আগেই একই root-এ, সেটাই অপরাধী।
+- **মাঝারি ২:** Find Eventual Safe States (LeetCode 802)। কোন node-গুলো থেকে শুরু করলে cycle-এ আটকাবেই না? হিন্ট: তিন রঙের উল্টো পড়াশোনা; যারা শেষ পর্যন্ত black হয়ে যায় তারাই safe, gray-তে আটকে যাওয়ারাই unsafe।
+- **কঠিন:** directed graph-এ এমন সব node বের করো যারা **কোনো না কোনো cycle-এর সদস্য**। হিন্ট: ভ্যারিয়েন্ট ১ দিয়ে cycle-এর node-গুলো mark করো; একাধিক cycle থাকলে প্রতিটা gray হিটে mark জমাও, বা mark-করা node-দের থেকে উল্টো graph-এ DFS চালিয়ে propagation করো।
+
+## সারসংক্ষেপ
+
+- Cycle detection = dependency, deadlock, prerequisite, এই সব জায়গার প্রথম প্রশ্ন।
+- Undirected: DFS + parent; visited non-parent মানেই back edge। একই কাজ Union-Find-ও করে।
+- Directed: তিন রঙ (white/gray/black); gray-তে ফেরত edge মানেই cycle। visited-only diamond-এ ফাঁকি দেয়।
+- দুই ক্ষেত্রের লজিক মিশিয়ো না, বাইরের loop ভুলো না, self-loop-ও cycle।
+- Time O(V + E), space O(V); cycle পেলে তৎক্ষণাৎ থেমে যাওয়াটা free bonus।

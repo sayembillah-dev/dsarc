@@ -1,89 +1,291 @@
 ---
-title: "A* Search Algorithm: Heuristic দিয়ে Target-এর দিকে খোঁজা"
-description: heuristic-এর আন্দাজ যোগ করে target-এর দিকে ঝুঁকে দ্রুত shortest path, গেম আর ম্যাপের প্রিয় algorithm।
+title: "A* Search: Heuristic দিয়ে লক্ষ্যের দিকে তাকিয়ে খোঁজা"
+description: Dijkstra-র ওপর heuristic-এর আন্দাজ যোগ করে goal-এর দিকে ঝুঁকে shortest path। গ্রিডে পুরো dry run, Manhattan থেকে octile, ভুল heuristic-এর দাম, আর কখন Dijkstra-ই যথেষ্ট।
 ---
 
 ## কী শিখব
 
-- heuristic দিয়ে দ্রুত shortest path (গেম/ম্যাপ-এ)
+- Dijkstra কেন সব দিকে সমান ছড়ায়, আর A\* সেখানে ঠিক কী যোগ করে
+- f = g + h সূত্রটা: এখন পর্যন্ত আসল খরচ, আর বাকি পথের আন্দাজ
+- admissible আর consistent heuristic, মানে কোন শর্তে optimal-এর গ্যারান্টি টিকে
+- grid-এ সঠিক heuristic বাছাই: চার দিকে Manhattan, আট দিকে Chebyshev বা octile
+- একটা পুরো dry run, সাথে Dijkstra-র expanded cell-এর সংখ্যার তুলনা
+- কখন A\* অর্থহীন: ভালো heuristic না থাকলে সেটা আসলে Dijkstra-ই
 
 ## ধারণা
 
-Dijkstra-র একটা দুর্বলতা আছে: সে জানেই না target কোন দিকে। তাই সব দিকে সমানভাবে ছড়িয়ে খোঁজে। **A\*** এখানেই চালাকি করে। এটা একটা **heuristic**, মানে একটা আন্দাজ (যেমন target পর্যন্ত সরলরেখা দূরত্ব) যোগ করে দেয়। ফলে খোঁজা target-এর দিকে ঝুঁকে যায়, আর অনেক কম node দেখেই উত্তর পায়। মূল সূত্রটা:
+ভাবো তো, ম্যাপ অ্যাপে তুমি ঢাকা থেকে চট্টগ্রামের রাস্তা চাইলে, অ্যাপটা কি রাজশাহী-খুলনার দিকের রাস্তাও সমান উৎসাহে ঘেঁটে দেখে? দেখে না। কারণ সে জানে লক্ষ্য কোন দিকে।
+
+[Dijkstra](./dijkstra.mdx)-র ব্যাপারটা ঠিক উল্টো। সে লক্ষ্যের দিকটা জানেই না। শুরুর জায়গা থেকে ঢেউয়ের মতো সব দিকে সমান ছড়াতে থাকে, যতক্ষণ না ঢেউ গিয়ে goal-কে ছোঁয়। কাজ তো হয়, কিন্তু প্রচুর কাজ হয় এমন দিকে যেখানে goal একদমই নেই।
+
+**A\*** এই ঘাটতিটাই পূরণ করে। সূত্রটা এক লাইনের:
 
 ```
 f(n) = g(n) + h(n)
-g = start থেকে n পর্যন্ত বাস্তব খরচ
-h = n থেকে target পর্যন্ত আন্দাজ খরচ (heuristic)
+g = start থেকে n পর্যন্ত আসল খরচ (Dijkstra-র dist-টাই)
+h = n থেকে goal পর্যন্ত আন্দাজ খরচ (heuristic)
+f = এই cell দিয়ে গেলে পুরো পথের সম্ভাব্য খরচ
 ```
 
-একটা শর্ত আছে: **h যেন বাস্তব খরচকে কখনো বড় করে না বলে** (এমন heuristic-কে বলে admissible)। তাহলে A\* সবচেয়ে ভালো পথই দেবে, গ্যারান্টি।
+Dijkstra যেখানে শুধু g দেখে সবচেয়ে কাছের node তোলে, A\* তোলে সবচেয়ে ছোট **f**-ওয়ালা node। এই সর্বনিম্ন-f তোলাটাই আমাদের পরিচিত [greedy choice](../problem-solving/greedy.mdx), শুধু এবার নজরে আছে পেছনের খরচের সাথে সামনের আন্দাজও। ফলে খোঁজার frontier-টা goal-এর দিকে বেঁকে যায়।
 
-## কোড উদাহরণ (গ্রিডে, সরল কাঠামো)
+কিন্তু এই আন্দাজের ওপর একটা কঠোর শর্ত আছে:
+
+**h যেন কখনো আসল বাকি খরচকে বড় করে না বলে।** এমন heuristic-কে বলে **admissible**। শর্তটা মেনে চললে A\* optimal path-এর গ্যারান্টি দেয়। যুক্তিটা সহজ: h কখনো বড় বলে না মানে আসল ভালো পথের ওপরের cell-গুলোর f কখনো আসল খরচ ছাড়িয়ে যায় না। তাই খারাপ পথের goal heap-এর মাথায় আসার আগেই ভালো পথের পরের cell pop হয়ে যায়।
+
+আরেকটা শক্তিশালী শর্ত আছে, **consistent**: প্রতিটা edge-এর জন্য `h(u) <= w(u, v) + h(v)`। সহজ ভাষায়, এক ধাপ এগোলে আন্দাজ সেই খরচের চেয়ে বেশি কমতে পারে না। consistent হলে admissible তো হয়ই, সাথে আরেকটা সুবিধা মেলে: কোনো node একবার pop হলে তার g আর কখনো ভালো হয় না, মানে re-open-এর ঝামেলা নেই। আমরা যে heuristic ব্যবহার করব, Manhattan, সেটা consistent-ই।
+
+চার দিকে চলা grid-এ সবচেয়ে প্রচলিত heuristic হলো **Manhattan distance**:
+
+```
+h(r, c) = |r - goal.r| + |c - goal.c|
+```
+
+কেন এটা admissible? কারণ এক ঘর এগোতে কমপক্ষে খরচ ১ লাগবেই, আর goal-এ পৌঁছাতে কমপক্ষে |Δr| + |Δc| ধাপ তো লাগবেই। তাই এই আন্দাজ আসল খরচকে কখনো বড় করে বলতে পারে না। আট দিকে (diagonal সহ) চলা গেলে হিসাব বদলে যায়, সেটা ভ্যারিয়েন্ট ১-এ। আমরা A\*-টা grid-এ শিখব, কারণ grid-এ frontier-টা চোখেই দেখা যায়, আর grid মানে তো আমাদের পরিচিত [2D array](../arrays-strings/2d-arrays.mdx)-ই।
+
+## ধাপে ধাপে: গ্রিডে একটা পুরো dry run
+
+৫x৫ grid। S = start (0, 0), G = goal (4, 4), `#` = দেয়াল:
+
+```
+col    0  1  2  3  4
+row0   S  .  #  .  .
+row1   .  .  #  .  .
+row2   .  .  #  .  .
+row3   .  .  #  .  .
+row4   .  .  .  .  G
+```
+
+মাঝখানে প্রায় পুরোটা জুড়ে দেয়াল। সোজা যাওয়া যায় না, নিচ দিয়ে ঘুরতে হবে। প্রতি ধাপের খরচ ১, চলা যায় চার দিকে। heap-এ থাকবে `[f, h, g, key]`। f সমান হলে ছোট h আগে, মানে goal-এর কাছেরটা আগে। এটা শুধু tie-break, optimality নষ্ট করে না।
+
+| ধাপ | pop হলো | g | h | f | এবার push হলো |
+|-----|---------|---|---|---|----------------|
+| শুরু | - | - | - | - | (0,0), f=8 |
+| 1 | (0,0) | 0 | 8 | 8 | (0,1) f=8, (1,0) f=8 |
+| 2 | (0,1) | 1 | 7 | 8 | (1,1) f=8 [(0,2) দেয়াল] |
+| 3 | (1,1) | 2 | 6 | 8 | (2,1) f=8 |
+| 4 | (2,1) | 3 | 5 | 8 | (3,1) f=8 |
+| 5 | (3,1) | 4 | 4 | 8 | (4,1) f=8 |
+| 6 | (4,1) | 5 | 3 | 8 | (4,2) f=8 |
+| 7 | (4,2) | 6 | 2 | 8 | (4,3) f=8 |
+| 8 | (4,3) | 7 | 1 | 8 | (4,4) f=8 |
+| 9 | (4,4) | 8 | 0 | 8 | goal pop, থামো |
+
+মোট ৯টা cell expand হলো, আর পথটাও ঠিক ৮ খরচের।
+
+খেয়াল করো ধাপ ২-এ। (1,0) তখন heap-এই ছিল, f-ও সমান ৮। কিন্তু tie-break-এ ছোট h জিতে গেছে, তাই frontier (0,1) দিয়ে দেয়াল ঘেঁষে নিচে নেমেছে। পুরো খোঁজাটা goal-এর দিকে বেঁকে গেছে, একটা অচল cell-ও ঘাঁটা হয়নি।
+
+তুলনাটা এখন। একই grid-এ h = 0 করে দিলে A\* হুবহু Dijkstra হয়ে যায়, আর তখন goal pop হতে হতে **১৪টা** cell expand হয়: `dist < 8`-এর সবাইকেই আগে তুলতেই হয়, কারণ সে জানেই না goal কোন দিকে, তাই ঢেউ সব দিকে সমান ছড়ায়। A\* নেয় ৯টায়। ছোট grid-এ ব্যবধান এতটাই, কিন্তু বড় খোলা ম্যাপে ব্যবধানটা বৃত্ত আর সরলরেখার পার্থক্যে পৌঁছে যায়: Dijkstra dist-ব্যাসার্ধের পুরো বৃত্ত ভরে, A\* প্রায় সোজা হেঁটে যায়।
+
+## কোড: পুরো implementation
+
+আগে একটা compact MinHeap। entry-গুলো array, element-wise তুলনা হয়, তাই সবচেয়ে গুরুত্বপূর্ণ মানটা আগে রাখো। heap-এর ভেতরের গল্প জানতে চাইলে দেখো [Min Heap](../heaps/minheap-class.mdx)।
 
 ```js
-// গ্রিডে চারদিকের প্রতিবেশী (0 = পথ, 1 = দেয়াল)
-function neighbors(grid, [r, c]) {
-  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const out = [];
-  for (const [dr, dc] of dirs) {
-    const nr = r + dr, nc = c + dc;
-    if (nr >= 0 && nr < grid.length && nc >= 0 && nc < grid[0].length && grid[nr][nc] === 0) {
-      out.push([nr, nc]);
+class MinHeap {
+  constructor() { this.a = []; }
+  size() { return this.a.length; }
+  push(x) {                            // শেষে ঢুকিয়ে উপরে ভাসাও
+    this.a.push(x);
+    for (let i = this.a.length - 1; i > 0; ) {
+      const p = (i - 1) >> 1;
+      if (!this.less(this.a[i], this.a[p])) break;
+      [this.a[i], this.a[p]] = [this.a[p], this.a[i]];
+      i = p;
     }
   }
-  return out;
+  pop() {                              // মাথা বের করে শেষটাকে ডুবাও
+    const top = this.a[0], last = this.a.pop();
+    if (this.a.length) {
+      this.a[0] = last;
+      for (let i = 0; ; ) {
+        const l = 2 * i + 1, r = 2 * i + 2;
+        let m = i;
+        if (l < this.a.length && this.less(this.a[l], this.a[m])) m = l;
+        if (r < this.a.length && this.less(this.a[r], this.a[m])) m = r;
+        if (m === i) break;
+        [this.a[i], this.a[m]] = [this.a[m], this.a[i]];
+        i = m;
+      }
+    }
+    return top;
+  }
+  less(x, y) {                         // element-wise: [f, h, g, key]
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i];
+    return false;
+  }
 }
+```
 
-function aStar(grid, start, goal, h) {
-  const key = ([r, c]) => `${r},${c}`;
-  const open = [[h(start, goal), 0, start]]; // [f, g, node]
-  const gScore = new Map([[key(start), 0]]);
-  while (open.length) {
-    open.sort((a, b) => a[0] - b[0]);        // ছোট f আগে
-    const [, g, node] = open.shift();
-    if (key(node) === key(goal)) return g;   // পৌঁছেছি
-    for (const next of neighbors(grid, node)) {
-      const tentative = g + 1;               // প্রতি পদক্ষেপ খরচ 1
-      if (tentative < (gScore.get(key(next)) ?? Infinity)) {
-        gScore.set(key(next), tentative);
-        open.push([tentative + h(next, goal), tentative, next]); // f = g + h
+এবার আসল A\*। grid-এর cell-কে একটা সংখ্যায় বদলে (`r * cols + c`) map-এর key হিসেবে রাখি, স্ট্রিং জোড়ার ঝামেলা নেই:
+
+```js
+const manhattan = (r, c, [gr, gc]) => Math.abs(r - gr) + Math.abs(c - gc);
+
+function aStar(grid, start, goal, h = manhattan) {
+  const rows = grid.length, cols = grid[0].length;
+  const key = (r, c) => r * cols + c;
+  const goalKey = key(goal[0], goal[1]);
+  const gScore = new Map([[key(start[0], start[1]), 0]]);
+  const parent = new Map([[key(start[0], start[1]), -1]]);
+  const heap = new MinHeap();
+  const sh = h(start[0], start[1], goal);
+  heap.push([sh, sh, 0, key(start[0], start[1])]);   // [f, h, g, key]
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];   // চার দিক
+  let expanded = 0;
+
+  while (heap.size()) {
+    const [f, , g, k] = heap.pop();      // সর্বনিম্ন f
+    if (g > gScore.get(k)) continue;     // বাসি entry, বাদ
+    expanded++;
+    if (k === goalKey) break;            // goal pop মানেই optimal
+    const r = Math.floor(k / cols), c = k % cols;
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+      if (grid[nr][nc] === 1) continue;  // দেয়াল
+      const nk = key(nr, nc);
+      const ng = g + 1;
+      if (ng < (gScore.get(nk) ?? Infinity)) {   // ভালো পথ পেলাম
+        gScore.set(nk, ng);
+        parent.set(nk, k);
+        const nh = h(nr, nc, goal);
+        heap.push([ng + nh, nh, ng, nk]);
       }
     }
   }
-  return -1;
+  if (!parent.has(goalKey)) return { path: [], cost: -1, expanded };
+
+  const path = [];
+  for (let cur = goalKey; cur !== -1; cur = parent.get(cur)) {
+    path.push([Math.floor(cur / cols), cur % cols]);   // উল্টো হাঁটা
+  }
+  path.reverse();
+  return { path, cost: gScore.get(goalKey), expanded };
 }
-
-// Manhattan distance heuristic (গ্রিডের জন্য)
-const manhattan = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-
-const grid = [
-  [0, 0, 0, 0],
-  [1, 1, 0, 1],
-  [0, 0, 0, 0],
-];
-console.log(aStar(grid, [0, 0], [2, 3], manhattan)); // 5
 ```
 
-## কোড ব্রেকডাউন
+চালিয়ে দেখি:
 
-- মজার কথা: `h = 0` করে দিলে A\* আবার Dijkstra-ই হয়ে যায়।
-- heuristic যত ভালো, তত কম node দেখতে হয়, মানে তত দ্রুত।
-- গেমের pathfinding বা GPS routing-এ তুমি যা দেখো, তার বেশিরভাগই A\*-এর কোনো না কোনো রূপ।
+```js
+const grid = [
+  [0, 0, 1, 0, 0],
+  [0, 0, 1, 0, 0],
+  [0, 0, 1, 0, 0],
+  [0, 0, 1, 0, 0],
+  [0, 0, 0, 0, 0],
+];
 
-## Complexity
+const { path, cost, expanded } = aStar(grid, [0, 0], [4, 4]);
+console.log("মোট খরচ:", cost);                // 8
+console.log("cell expand হলো:", expanded);     // 9
+console.log(path.map(([r, c]) => `(${r},${c})`).join(" -> "));
+// (0,0) -> (0,1) -> (1,1) -> (2,1) -> (3,1) -> (4,1) -> (4,2) -> (4,3) -> (4,4)
+```
 
-- heuristic-এর ওপর নির্ভর করে; ভালো h মানে Dijkstra-র চেয়ে অনেক কম node।
+dry run-এর সাথে মিলিয়ে দেখো: ৯টা expansion, দেয়াল ঘেঁষে নিচে নেমে ডানে যাওয়া পথ। হুবহু একই।
+
+## ভ্যারিয়েন্ট ১: ডায়াগোনাল চলা, heuristic বদলে যায়
+
+অনেক গেমে আট দিকে চলা যায়। তখন দুটো জিনিস বদলায়: `dirs`-এ চারটা কোণ যোগ হয়, আর heuristic-ও বদলাতে হয়। কারণ Manhattan এখন **অবৈধ**: (0,0) থেকে (1,1)-এ ডায়াগোনালে এক ধাপেই যাওয়া যায়, আসল খরচ ১, অথচ Manhattan বলবে ২। মানে overestimate, admissibility চলে গেল, optimal-এর গ্যারান্টিও গেল।
+
+ডায়াগোনালের খরচ যদি সোজার মতোই ১ হয়, নাও **Chebyshev distance**:
+
+```js
+// আট দিক: ৪টা সোজা + ৪টা কোণ
+const dirs8 = [[1, 0], [-1, 0], [0, 1], [0, -1],
+               [1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+const chebyshev = (r, c, [gr, gc]) => Math.max(Math.abs(r - gr), Math.abs(c - gc));
+```
+
+আর ডায়াগোনালের খরচ যদি বাস্তবসম্মত √2 হয়, নাও **octile distance**:
+
+```js
+const octile = (r, c, [gr, gc]) => {
+  const dx = Math.abs(r - gr), dy = Math.abs(c - gc);
+  return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy);
+};
+```
+
+সাথে কোডের ভেতরে ধাপের খরচও বদলাতে হবে: ডায়াগোনাল ধাপে `ng = g + Math.SQRT2`, সোজা ধাপে `g + 1`। নিয়মটা একটাই: heuristic যে ধাপ-খরচ ধরে নিয়েছে, কোডের আসল ধাপ-খরচ যেন তার সাথে মিলে যায়।
+
+## ভ্যারিয়েন্ট ২: h বদলে দেখা, h=0 মানে হুবহু Dijkstra
+
+`aStar`-এর চতুর্থ প্যারামিটারটাই heuristic। সেটা শূন্য করে দিলে কী হয়?
+
+```js
+const zero = () => 0;
+
+console.log(aStar(grid, [0, 0], [4, 4], zero).expanded); // 14
+console.log(aStar(grid, [0, 0], [4, 4]).expanded);       // 9 (Manhattan)
+```
+
+h = 0 মানে f = g, আর সেটা তো [Dijkstra](./dijkstra.mdx)-র priority-ই। হুবহু একই algorithm, একই ১৪টা expansion। উল্টো প্রান্তটা ভাবো: যদি h প্রতিটা cell-এর **আসল** বাকি খরচটাই জানত (ধরো আগে থেকেই goal থেকে সবার দূরত্ব বের করে রাখা), তাহলে frontier একদম সোজা shortest path বেয়ে হেঁটে যেত, একটা ভুল cell-ও দেখত না। সেই আদর্শ h-কে বলে perfect heuristic।
+
+সহজ কথায়, h যত সত্যের কাছাকাছি (কিন্তু কখনো বেশি না), খোঁজা তত নিশানায়। h = 0 থেকে perfect h পর্যন্ত পুরো একটা spectrum, আর Dijkstra সেই spectrum-এর একদম বাম প্রান্ত।
+
+## কোড ব্রেকডাউন: aStar, লাইনে লাইনে
+
+1. `const key = (r, c) => r * cols + c` : (row, col) জোড়াকে একটা সংখ্যা। Map-এর key হিসেবে সংখ্যা স্ট্রিং-এর চেয়ে সস্তা আর ঝামেলাহীন।
+2. `const gScore = new Map(...)` : start থেকে প্রতিটা cell-এ এখন পর্যন্ত জানা সেরা খরচ। Dijkstra-র dist-এর যমজ।
+3. `const parent = new Map(...)` : কে কার ওপর দিয়ে এলাম। শেষে এটা ধরেই পথ উল্টো হেঁটে বানাবো। start-এর parent -1, মানে সেখানেই থামা।
+4. `heap.push([sh, sh, 0, key(...)])` : entry-র কাঠামো [f, h, g, key]। f আগে, কারণ সেটাই priority। h দ্বিতীয়, f সমান হলে goal-এর কাছেরটাকে আগে তোলার জন্য।
+5. `const [f, , g, k] = heap.pop()` : সর্বনিম্ন f-ওয়ালা entry বের হলো। h-টা এখানে কাজে লাগে না, তাই ফাঁকা রেখে এড়িয়ে গেছি।
+6. `if (g > gScore.get(k)) continue` : বাসি entry চেক। এই cell-এর জন্য পরে ছোট g নিয়ে আরেকটা entry ঢুকে থাকলে এটা ফেলে দাও। [Dijkstra](./dijkstra.mdx)-তে যে একই প্যাটার্ন দেখেছ।
+7. `if (k === goalKey) break` : কেন dequeue-এর সময় থামছি, push-এর সময় নয়? কারণ admissible h-তে goal pop হওয়ার মুহূর্তেই তার g নিশ্চিত। push-এর সময় থামলে ভালো পথ এসে হঠাতে পারত।
+8. `ng < (gScore.get(nk) ?? Infinity)` : আগে কখনো দেখিনি (Infinity), বা এবার ছোট পথ পেলাম, দুটোতেই আপডেট। এটাই relaxation, সাথে re-open-এর ছাড়পত্রও।
+9. `heap.push([ng + nh, nh, ng, nk])` : নতুন entry। মনে রাখো, পুরনোটা heap থেকে মোছা হয় না, ওটা ধাপ ৬-এর চেকেই ধরা পড়বে।
+10. শেষের `for (let cur = goalKey; ...)` : parent map ধরে goal থেকে start পর্যন্ত উল্টো হাঁটা। [BFS](./bfs.mdx)-এর path reconstruction-এর একই কায়দা।
+
+## Complexity: সৎ হিসাব
+
+**Worst case time: O(E log V)-এর আশেপাশে, Dijkstra-র মতোই।** হাতে গোনা যায়: প্রতিটা relaxation-এ heap-এ একটা push, সব edge মিলে সর্বোচ্চ E-টা push। প্রতি push আর pop চলে log-এ, heap-এ O(V)-র ওপরে entry থাকলে সেটা log V। মানে সব মিলে Dijkstra-র সঙ্গে একই চাদর।
+
+তাহলে লাভটা কোথায়? লাভটা **প্র্যাকটিক্যাল**, asymptotic নয়। ভালো h থাকলে E আর V-এর যে অংশটা আসলে ঘাঁটা হয়, সেটা নাটকীয়ভাবে ছোট হয়। উপরের grid-এ ৯ বনাম ১৪। খোলা ম্যাপে, যেখানে কোনো দেয়াল নেই, Dijkstra dist-ব্যাসার্ধের বৃত্ত ভরে ফেলে (দূরত্বের বর্গের সমানুপাতিক cell), আর Manhattan-ওয়ালা A\* প্রায় সোজা লাইনে চলে যায়। আবার খারাপ h হলে কেউ বাঁচাতে পারবে না: সবকিছুই দেখতে হতে পারে, তার ওপর h গোনার খরচ আলাদা। free lunch নেই।
+
+**Space: O(V)।** gScore, parent, আর heap, তিনটাই সর্বোচ্চ V-সাইজের দিকে। grid-এ V মানে rows x cols।
+
+## সাধারণ ভুল আর edge case
+
+**১. heuristic আসল খরচকে বড় করে বলে ফেলা।**
+সবচেয়ে ভয়ংকর ভুল, কারণ চুপচাপ। কেউ ধরো h-কে ২ দিয়ে গুণ করলো "আরও আক্রমণাত্মক" করতে, অথবা ভুল unit ব্যবহার করলো। admissibility ভাঙা মানে optimal-এর গ্যারান্টি শেষ, কিন্তু কোড কোনো error দেবে না, শুধু মাঝে মাঝে খারাপ পথ দেবে। মনে রাখো: h কখনো সত্যিকারের বাকি খরচ ছাড়াতে পারে না।
+
+**২. inconsistent heuristic, অথচ re-open-এর পথ বন্ধ।**
+consistent না হলে একবার pop হওয়া node-এর কাছে আরেক পথ ঘুরে ভালো g আসতে পারে। আমাদের `ng < gScore` চেক আর stale-skip মিলে সেটাই সামলায়। কেউ যদি pop-এর পর node-কে চিরকালের জন্য বন্ধ করে দেয়, inconsistent h-তে ভুল উত্তর পাবে। সহজ রাস্তা: consistent heuristic নাও (Manhattan consistent-ই), অথবা re-push-এর ছাড় দাও।
+
+**৩. diagonal চলার জায়গায় Manhattan distance।**
+ক্লাসিক ভুল। আট দিকে চললে Manhattan নিশ্চিতভাবে overestimate করে: ডায়াগোনালে ১ খরচের জায়গায় সে ২ বলে। ফলে optimal পথ হারায়। আট দিক মানে Chebyshev (সব ধাপ ১) বা octile (ডায়াগোনাল √2)। ভ্যারিয়েন্ট ১ দেখো।
+
+**৪. stale-entry skip ভুলে যাওয়া।**
+heap-এ পুরনো বড় g-এর entry পড়ে থাকে। skip-চেক না থাকলে সেই বাসি entry process হবে, অচল কাজে সময় যাবে, parent map-এও গোলমাল ঢুকতে পারে। [Dijkstra](./dijkstra.mdx)-তে যেমন, এখানেও ঠিক তেমন: pop-এর পরপরই `g > gScore` কিনা দেখো।
+
+**৫. যেখানে ভালো heuristic-ই নেই, সেখানে A\* টেনে আনা।**
+A\*-এর জাদুটাই h। Abstract graph, social network, dependency graph, এগুলোতে "goal পর্যন্ত আন্দাজ" বলতে অর্থবহ কিছু নেই। সেখানে h তো যেভাবেই ০-র কাছাকাছি, তাই সোজা [Dijkstra](./dijkstra.mdx) লেখো। geometry না থাকলে A\* শুধু অতিরিক্ত গণনা।
 
 ## Animation Spec
 
-> **Animation Spec: A\* vs Dijkstra Race**
+> **Animation Spec: A\* বনাম Dijkstra দৌড়**
 >
-> - **দৃশ্য:** গ্রিড-ম্যাপ (দেয়াল সহ); দুটো search পাশাপাশি, একটায় h=0 (Dijkstra), একটায় Manhattan।
-> - **ইনপুট:** start/goal আঁকা, দেয়াল বসানো; heuristic নির্বাচন।
-> - **ধাপ:** explored cell রঙ পায়; A\* goal-এর দিকে ঝুঁকে কম cell খোঁজে।
-> - **লক্ষ্য:** heuristic কীভাবে খোঁজাকে "গাইড" করে, সেটা বোঝা।
+> - **দৃশ্য:** দেয়ালসহ grid ম্যাপ; প্রতিটা frontier cell তার f-এর মানে রঙিন (ছোট f গাঢ়); পাশে g আর h-এর লাইভ সংখ্যা।
+> - **ইনপুট:** start আর goal টেনে বসানো, দেয়াল আঁকা, heuristic বাছাই (Manhattan / Chebyshev / h = 0)।
+> - **ধাপ:** প্রতি pop-এ cell "settled" রঙ ধরে; নতুন push frontier-এ যোগ হয়; goal পেলে parent map ধরে পথটা নিজে নিজে আঁকা শুরু করে; পাশে expanded cell-এর কাউন্টার ঘুরতে থাকে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; সবচেয়ে জরুরি "heuristic চালু / বন্ধ" toggle, যাতে একই ম্যাপে A\*-এর বাঁকানো frontier আর Dijkstra-র গোল ঢেউ পাশাপাশি দেখা যায়।
+> - **লক্ষ্য:** h খোঁজাকে goal-এর দিকে বাঁকায়, কম cell দেখেই একই optimal পথ মেলে।
 
 ## অনুশীলন
 
-- ভাবো তো, heuristic যদি খরচকে বড় করে বলে (inadmissible), তাহলে কী গোলমাল হতে পারে?
+- **সহজ ১:** উপরের grid-টা (দেয়ালসহ) নিজে কোডে বসাও, A\* চালিয়ে পথ আর খরচ ছাপাও। হিন্ট: এই পাতার কোডই, কিন্তু আগে নিজে লেখার চেষ্টা করো, তারপর মিলাও।
+- **সহজ ২:** একই grid-এ `manhattan` আর `zero` heuristic দিয়ে expanded-এর সংখ্যা তুলনা করো। তারপর একটা বড় খোলা grid বানিয়ে (দেয়াল ছাড়া) আবার গুনো। হিন্ট: expanded কাউন্টারটা কোডে আছেই, শুধু ছাপাতে হবে।
+- **মাঝারি ১:** 8-puzzle solver-এর খসড়া লেখো (3x3 ছক, একটা ঘর ফাঁকা, টাইল সরিয়ে লক্ষ্য অবস্থায় যেতে হবে)। হিন্ট: প্রতিটা অবস্থা একটা node, h হিসেবে নাও ভুল জায়গায় থাকা টাইলের সংখ্যা, অথবা প্রতিটা টাইলের Manhattan দূরত্বের যোগফল। দুটোই admissible, দ্বিতীয়টা অনেক শক্তিশালী।
+- **মাঝারি ২:** Snake গেমের auto-pathing, সাপ নিজে থেকে খাবারের দিকে যাবে। হিন্ট: প্রতিটা চালে goal বদলে যায়, তাই প্রতি move-এ A\* নতুন করে চালাও; নিজের শরীরের cell-গুলোকে দেয়াল ধরো, আর লেজের দিকটা খালি হবে ভেবে ছাড় দিতে পারো।
+- **কঠিন:** weighted terrain grid: কোনো cell-এ ঢুকার খরচ সেই cell-এর উচ্চতা (১ থেকে ৯)। h কীভাবে রাখবে যেন admissible থাকে? হিন্ট: g-এ প্রকৃত terrain খরচ জমাও; h-কে সর্বনিম্ন সম্ভাব্য cell-খরচ (১) দিয়ে স্কেল করো, মানে Manhattan x 1। সর্বনিম্নের চেয়ে বড় কিছু ধরে নিলেই overestimate-এর ঝুঁকি।
+
+## সারসংক্ষেপ
+
+- A\* = [Dijkstra](./dijkstra.mdx) + heuristic: priority হলো f = g + h, আসল খরচ আর আন্দাজের যোগফল।
+- h admissible হলে, মানে কখনো বড় না বললে, optimal-এর গ্যারান্টি টিকে থাকে।
+- ভালো h খোঁজাকে goal-এর দিকে বাঁকায়; খারাপ h চুপচাপ সেই গ্যারান্টি নষ্ট করে।
+- চার দিকের grid-এ Manhattan, আট দিকে Chebyshev বা octile। ভুল জোড়া মানে ভুল উত্তর।
+- Worst case-এ A\* Dijkstra-ই, জয়টা প্র্যাকটিক্যাল: ভালো h-তে ঘাঁটা হয় অনেক কম cell।
+- অর্থবহ heuristic না থাকলে A\* টেনো না, Dijkstra-ই তোমার বন্ধু।

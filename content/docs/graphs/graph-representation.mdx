@@ -1,62 +1,257 @@
 ---
-title: "Graph উপস্থাপন: Adjacency List বনাম Matrix"
-description: "graph-কে কোডে রাখার দুই প্রধান উপায়: sparse graph-এ list, dense graph-এ matrix।"
+title: "Graph Representation: graph-কে কোডে রাখার তিনটি উপায়"
+description: adjacency list, adjacency matrix, আর edge list। কোনটা কখন নেবে, পুরো Graph class, দুই পদ্ধতির operation-wise তুলনা, আর সেই বিখ্যাত এক-দিকের edge ভুলটা।
 ---
 
 ## কী শিখব
 
-- graph কোডে কীভাবে রাখব
+- abstract graph-কে কোডে রাখার তিনটা প্রধান উপায়: adjacency list, adjacency matrix, edge list
+- পুরো একটা Graph class JavaScript-এ: addVertex, addEdge, neighbors, hasEdge
+- weighted edge রাখার ঠিকানা, directed আর undirected-এর পার্থক্য কোডে কোথায়
+- কোন পদ্ধতি কখন জিতে: sparse বনাম dense graph
+- দুই পদ্ধতির operation-wise complexity তুলনা
+- Map না নিয়ে plain object নিলে কী বিপদ
 
 ## ধারণা
 
-graph-টা মাথায় পরিষ্কার। কিন্তু কোডে রাখবে কীভাবে? দুটো প্রধান উপায় আছে:
+ভাবো তো, তোমার ফোনের contact list-টা কেমন। প্রতিটা নামের পাশে তার নম্বর। এবার ভাবো একটা শহরের রাস্তার ম্যাপ: কোন চৌরাস্তা থেকে কোন চৌরাস্তায় সরাসরি রাস্তা গেছে। এই তথ্যটা মাথায় একদম পরিষ্কার। কিন্তু কোডে রাখবে কীভাবে?
 
-- **Adjacency List:** প্রতিটা vertex-এর পাশে তার প্রতিবেশীদের লিস্ট রাখো (`Map` দিয়ে)। edge কম থাকলে (sparse graph) এটাই দক্ষ, জায়গা লাগে O(V + E)।
-- **Adjacency Matrix:** একটা V×V গ্রিড বানাও। `matrix[i][j] = 1` মানে i থেকে j-তে edge আছে। edge আছে কিনা চেক করা O(1), কিন্তু জায়গা লাগে O(V²)। তাই dense graph হলে ভালো, নইলে অপচয়।
+Graph নিজে একটা abstract ধারণা: কিছু node, আর তাদের মধ্যে edge। নামগুলো নতুন লাগলে [Graph Terminology](./graph-terminology.mdx) দেখে নাও। কিন্তু প্রোগ্রাম চালাতে হলে এই ধারণাকে মেমরিতে বসাতে হয়। আর বসানোর তিনটা প্রধান উপায় আছে:
 
-বাস্তবে বেশিরভাগ সমস্যায় তুমি **adjacency list**-ই ব্যবহার করবে।
+1. **Adjacency list:** প্রতিটা node-এর পাশে তার neighbor-দের লিস্ট। ঠিক contact list-এর মতো।
+2. **Adjacency matrix:** V×V-এর একটা grid। `matrix[i][j]` দেখলেই বোঝা যায় i থেকে j-তে edge আছে কিনা।
+3. **Edge list:** শুধু edge-গুলোর লিস্ট, `[[A, B], [A, C], ...]`।
 
-## কোড উদাহরণ
+মজার ব্যাপার হলো, এই পছন্দটা শুধু রাখার ব্যাপার নয়। পরে তুমি যে-ই অ্যালগরিদম চালাবে, [BFS](./bfs.mdx)-ই হোক বা [Dijkstra](./dijkstra.mdx), তার গতি আর মেমরি খরচ এই representation-এর ওপরই দাঁড়িয়ে। ভুল পছন্দ মানে O(E)-তে হওয়া কাজটা হবে O(V²)-এ।
+
+## ধাপে ধাপে: একই graph, দুই রূপ
+
+আমাদের পরিচিত graph-টাই নিই, [BFS](./bfs.mdx) আর [DFS](./dfs.mdx)-এ যেটা ছিল:
+
+```
+        A
+       / \
+      B   C
+      |   |
+      D   E
+       \ /
+        F
+```
+
+Edge: A-B, A-C, B-D, C-E, D-F, E-F।
+
+**Adjacency list বানানো:** প্রতিটা `addEdge` ডাকে Map-টা কেমন ফুলে ওঠে দেখো:
+
+| ধাপ | addEdge ডাক | Map-এ যা বদলাল |
+|-----|-------------|-----------------|
+| 1 | addEdge(A, B) | A → [B], B → [A] |
+| 2 | addEdge(A, C) | A → [B, C], C → [A] |
+| 3 | addEdge(B, D) | B → [A, D], D → [B] |
+| 4 | addEdge(C, E) | C → [A, E], E → [C] |
+| 5 | addEdge(D, F) | D → [B, F], F → [D] |
+| 6 | addEdge(E, F) | E → [C, F], F → [D, E] |
+
+শেষ অবস্থা: A → [B, C], B → [A, D], C → [A, E], D → [B, F], E → [C, F], F → [D, E]। প্রতিটা undirected edge **দুইবার** জমা হয়েছে, দুই দিকেই। ৬টা edge মানে ১২টা entry।
+
+**একই graph, matrix হিসেবে:** row আর column-এর ক্রম A, B, C, D, E, F ধরে:
+
+```
+    A  B  C  D  E  F
+A   0  1  1  0  0  0
+B   1  0  0  1  0  0
+C   1  0  0  0  1  0
+D   0  1  0  0  0  1
+E   0  0  1  0  0  1
+F   0  0  0  1  1  0
+```
+
+দুটো জিনিস চোখে পড়ছ? প্রথমত, matrix-টা কর্ণ বরাবর সমমিত (symmetric), কারণ undirected edge দুই দিকেই আছে। দ্বিতীয়ত, ৩৬টা ঘরের মধ্যে ১২টাতে 1, বাকি ২৪টা ফাঁকা 0। Graph-টা sparse, তাই matrix-এর বড় অংশ অপচয়। এই অপচয়টাই একটু পরে বড় কথা হয়ে ফিরে আসবে।
+
+## কোড: adjacency list দিয়ে পুরো Graph class
+
+বাস্তবে ৯০% সময় তুমি এই representation-টাই ব্যবহার করবে। পুরো class-টা:
 
 ```js
 class Graph {
-  constructor() { this.adj = new Map(); }
+  constructor(directed = false) {
+    this.adj = new Map();
+    this.directed = directed;
+  }
 
   addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
 
-  addEdge(u, v) {                 // undirected
+  addEdge(u, v) {
     this.addVertex(u); this.addVertex(v);
-    this.adj.get(u).push(v);
-    this.adj.get(v).push(u);      // directed হলে এই লাইন বাদ
+    this.adj.get(u).push(v);          // সামনের দিক
+    if (!this.directed) {
+      this.adj.get(v).push(u);        // undirected হলে উল্টো দিকও
+    }
   }
 
   neighbors(v) { return this.adj.get(v) || []; }
+
+  hasEdge(u, v) { return this.neighbors(u).includes(v); }
+
+  display() {
+    for (const [v, list] of this.adj) {
+      console.log(`${v} → ${list.join(", ")}`);
+    }
+  }
 }
 
 const g = new Graph();
 g.addEdge("A", "B"); g.addEdge("A", "C");
-g.addEdge("B", "D"); g.addEdge("C", "D");
-console.log(g.neighbors("A")); // ['B','C']
+g.addEdge("B", "D"); g.addEdge("C", "E");
+g.addEdge("D", "F"); g.addEdge("E", "F");
+g.display();
+// A → B, C
+// B → A, D
+// C → A, E
+// D → B, F
+// E → C, F
+// F → D, E
+console.log(g.hasEdge("B", "D")); // true
+console.log(g.hasEdge("A", "F")); // false
 ```
 
-## কোড ব্রেকডাউন
 
-- `Map`-এর প্রতিটা entry-তে একটা vertex আর তার প্রতিবেশীদের array। যা লাগে, সরাসরি হাতে পাবে।
-- undirected graph-এ edge দুই দিকেই যোগ করছি: A জানে B-কে, B-ও জানে A-কে। directed হলে দ্বিতীয় লাইনটা বাদ, শুধু এক দিক।
+## ভ্যারিয়েন্ট ১: weighted edge
 
-## Complexity
+edge-এর সাথে weight থাকলে neighbor-এর জায়গায় একটা জোড়া `[neighbor, weight]` রাখো:
 
-- list: space O(V + E); matrix: space O(V²)।
+```js
+addEdge(u, v, w) {
+  this.addVertex(u); this.addVertex(v);
+  this.adj.get(u).push([v, w]);       // [কোথায়, কত খরচে]
+  if (!this.directed) {
+    this.adj.get(v).push([u, w]);
+  }
+}
+```
+
+তাহলে A → [[B, 4], [C, 2]] মানে A থেকে B-তে 4 খরচে, C-তে 2 খরচে। [Dijkstra](./dijkstra.mdx) বা [Bellman-Ford](./bellman-ford.mdx)-এ যখন neighbor ঘুরবে, জোড়াটা destructuring করে নেবে: `for (const [next, w] of graph.neighbors(u))`। আর matrix-এ weighted edge রাখতে হলে 1/0-এর বদলে সরাসরি weight বসে, edge না থাকলে `Infinity`। 0 বসালে weight-0-এর আসল edge-এর সাথে গুলিয়ে যাবে, এটা নিয়ে নিচে ভুল ৫।
+
+## ভ্যারিয়েন্ট ২: adjacency matrix
+
+Graph ছোট আর ঘন হলে matrix সোজাসুজি:
+
+```js
+class MatrixGraph {
+  constructor(vertices) {
+    this.vertices = vertices;                      // ["A", "B", ...]
+    this.index = new Map(vertices.map((v, i) => [v, i]));
+    const n = vertices.length;
+    this.m = Array.from({ length: n }, () => Array(n).fill(0));
+  }
+
+  addEdge(u, v) {
+    const i = this.index.get(u), j = this.index.get(v);
+    this.m[i][j] = 1;
+    this.m[j][i] = 1;                             // directed হলে বাদ
+  }
+
+  hasEdge(u, v) {
+    return this.m[this.index.get(u)][this.index.get(v)] === 1;
+  }
+
+  neighbors(v) {
+    const i = this.index.get(v);
+    return this.vertices.filter((_, j) => this.m[i][j] === 1);
+  }
+}
+
+const mg = new MatrixGraph(["A", "B", "C", "D", "E", "F"]);
+mg.addEdge("A", "B"); mg.addEdge("A", "C"); mg.addEdge("B", "D"); mg.addEdge("C", "E"); mg.addEdge("D", "F"); mg.addEdge("E", "F");
+console.log(mg.hasEdge("A", "F")); // false, একদম O(1)-এ
+console.log(mg.neighbors("F"));    // ['D', 'E'], কিন্তু পুরো row ঘুরে
+```
+
+`hasEdge` এখানে একদম O(1): দুটো index lookup, একটা ঘর পড়া। কিন্তু `neighbors` বের করতে পুরো row-টা (V-টা ঘর) ঘুরতে হচ্ছে, যদিও আসল neighbor মাত্র দুজন। এই পার্থক্যটা মনে রাখো, নিচের টেবিলে কাজে লাগবে।
+
+## ভ্যারিয়েন্ট ৩: edge list
+
+সবচেয়ে minimal representation: শুধু edge-গুলোর array।
+
+```js
+const edges = [
+  ["A", "B"], ["A", "C"], ["B", "D"],
+  ["C", "E"], ["D", "F"], ["E", "F"],
+];
+// weighted হলে তিনজন করে: ["A", "B", 4]
+```
+
+নিজে থেকে এটা দিয়ে "A-এর neighbor কারা" বের করা ব্যয়বহুল, পুরো list ঘুরতে হয়, O(E)। তাহলে কেন রাখবে? কারণ কিছু অ্যালগরিদম neighbor চায় না, চায় শুধু সব edge এক জায়গায়। Kruskal-এর MST অ্যালগরিদম প্রথম যে কাজটা করে, সেটা edge-গুলোকে weight-এ sort করা, আর তার জন্য edge list-ই লাগে। পুরোটা দেখো [Minimum Spanning Tree](./minimum-spanning-tree.mdx)-এ। অনেক প্রতিযোগিতার ইনপুটও edge list আকারেই আসে, তাই list থেকে adjacency list বানানোটা প্রায় প্রথম কাজ, অনুশীলনে আছে।
+
+## কোড ব্রেকডাউন: মূল Graph class, লাইনে লাইনে
+
+1. `constructor(directed = false)` : graph-টা directed কিনা, সেটাই একমাত্র সেটিং। `addEdge`-এর আচরণ এতেই বদলে যায়।
+2. `this.adj = new Map()` : Map নেওয়ার কারণ key হিসেবে যা খুশি রাখা যায় (string, number, এমনকি object), আর lookup চলে গড়ে O(1)-এ।
+3. `if (!this.adj.has(v)) this.adj.set(v, [])` : vertex নতুন হলে ফাঁকা neighbor list দিয়ে শুরু। `has` না দেখলে পুরোনো list-টা উধাউ হয়ে যেত।
+4. `this.addVertex(u); this.addVertex(v);` : edge যোগ করতে গিয়েই vertex-দুটো নিশ্চিত করে ফেলি। ব্যবহারকারীকে আলাদা করে `addVertex` ডাকাতে হয় না, ভুলের সুযোগও কমে।
+5. `this.adj.get(u).push(v)` : আসল কাজ এই লাইনে। u-এর neighbor list-এ v ঢুকল।
+6. `if (!this.directed) this.adj.get(v).push(u)` : undirected graph-এ edge রাস্তার দুই পাশে, তাই উল্টো দিকও জমা হয়। এই লাইন ভুলে গেলে কী হয়, নিচে ভুল ১-এ দেখবে।
+7. `return this.adj.get(v) || []` : vertex-টা নেই এমন অবস্থাতেও ফাঁকা array ফেরত, যাতে `for...of` চালাতে গিয়ে crash না হয়।
+8. `this.neighbors(u).includes(v)` : `hasEdge` আসলে list খুঁজে দেখা, O(deg(u))। Matrix-এ এটাই O(1), এটা list-এর দুর্বলতা।
+
+## Complexity আর তুলনা: কোনটা কখন
+
+দুই পদ্ধতির operation-wise খরচ:
+
+| অপারেশন | Adjacency List | Adjacency Matrix |
+|---------|----------------|------------------|
+| edge আছে কিনা `hasEdge(u, v)` | O(deg(u)) | O(1) |
+| সব neighbor ঘোরা | O(deg(u)) | O(V) |
+| edge যোগ | O(1) | O(1) |
+| নতুন vertex যোগ | O(1) | O(V) (নতুন row আর column) |
+| মেমরি | **O(V + E)** | **O(V²)** |
+
+মনে রাখার সহজ নিয়ম:
+
+- **Sparse graph** (edge কম, E ≈ V-এর কাছাকাছি): adjacency list। বাস্তবের প্রায় সব graph এমনই: সোশ্যাল নেটওয়ার্ক, রাস্তার ম্যাপ, ওয়েব পেজ।
+- **Dense graph** (প্রায় সব জোড়ায় edge, E ≈ V²): matrix। ফাঁকা ঘর তখন আর অপচয় নয়, আর O(1) lookup-টা পুরো কাজে লাগে।
+- শুধু edge-centric কাজ (sort করে একে একে process): edge list।
+
+একটা হিসাব করে দেখো। V = ১০০,০০০, সাধারণ সাইজের ইনপুট। Matrix চাইবে 10^10-টা ঘর, প্রতি ঘরে 1 byte দিলেও প্রায় 10 GB। আর ওই graph-এ যদি গড়ে 10-টা করে edge থাকে, list লাগবে মাত্র কয়েক MB-এ। এজন্যই "matrix-এ তো lookup O(1), সেটাই নিই" বলাটা খতরনাক, বিস্তারিত ভুল ৩-এ।
+
+## সাধারণ ভুল আর edge case
+
+**১. undirected graph-এ উল্টো edge-টা যোগ করা ভুলে যাওয়া।**
+`addEdge(A, B)` লিখে শুধু A-এর list-এ B ঢোকালে। এরপর [BFS](./bfs.mdx) চালালে A থেকে B-তে যাবে, কিন্তু B থেকে A-তে ফিরবে না। কোনো error দেবে না, output চুপচাপ ভুল আসবে। সবচেয়ে নিষ্ঠুর ধরনের bug, ছোট উদাহরণে ধরাও পড়ে না। নিয়ম একটাই: undirected মানে দুই দিক, `addEdge`-এর ভেতরেই দুটো push।
+
+**২. Map-এর বদলে plain object `{}` নেওয়া।**
+Object-এর key সবসময় string-এ বদলে যায়। Node id 1 (number) আর "1" (string) আলাদা রাখতে গেলে দুটোই এক হয়ে যাবে। এর ওপর `"__proto__"`-এর মতো key লিখতে গেলে prototype pollution-এর ঝামেলা। `Map`-এ key যা দাও তাই থাকে, `.size` আছে, iteration order-ও নির্ভরযোগ্য। Graph-এর জন্য Map-ই সঠিক টুল।
+
+**৩. "matrix-এ lookup O(1), তাই matrix-ই ভালো" ভাবা।**
+Lookup সত্যিই O(1), কিন্তু দামটা আগেই দিয়ে ফেলেছ: O(V²) মেমরি। V = ১০০,০০০ হলে সেটা প্রায় 10 GB, প্রোগ্রাম শুরু হওয়ার আগেই মরে। আর sparse graph-এ `neighbors` ঘোরাতে গিয়ে পুরো row (V-টা ঘর) দেখতে হয়, যেখানে আসল neighbor ৫ জন। O(1)-এর লোভে পুরো অ্যালগরিদম ধীর হয়ে যায়।
+
+**৪. self-loop আর parallel edge-এর কথা ভাবাই না।**
+ইনপুটে `addEdge(A, A)` এলে কী হবে? A নিজেরই neighbor হয়ে যাবে। Traversal-এ visited থাকলে ক্ষতি নেই, কিন্তু degree গোনায় দ্বিগুণ হিসাব হয়ে যেতে পারে। আর একই জোড়ার edge দুইবার এলে (parallel edge) list-এ duplicate জমা হবে। দুটোই valid, কিন্তু আগে থেকে ঠিক করো: গ্রহণ করবে, নাকি `hasEdge` দেখে বাদ দেবে, নাকি count রাখবে। Interview-তে এই প্রশ্নটা না জিজ্ঞেস করাটাই ভুল।
+
+**৫. weighted আর unweighted format গুলিয়ে ফেলা।**
+List-এ কোথাও neighbor জমা আছে `B`, কোথাও `[B, 4]`। Traversal-এর লুপে একবার node পাচ্ছে, একবার array। আবার matrix-এ "edge নেই" বোঝাতে 0 বসিয়েছ, অথচ ইনপুটে weight-0-এর আসল edge আছে। নিয়ম একটাই: একটা graph-এ একটাই format। Unweighted মানে শুধু node, weighted মানে সব জায়গায় `[node, weight]` জোড়া, আর matrix-এ অনুপস্থিতির জন্য `Infinity`।
 
 ## Animation Spec
 
-> **Animation Spec: List vs Matrix**
+> **Animation Spec: List বনাম Matrix Morph**
 >
-> - **দৃশ্য:** বাঁয়ে graph, ডানে একই graph-এর adjacency list আর matrix পাশাপাশি।
-> - **ইনপুট:** edge যোগ।
-> - **ধাপ:** edge যোগ করলে list-এর entry আর matrix-এর cell একসাথে আপডেট হয়।
-> - **লক্ষ্য:** দুই উপস্থাপনের trade-off বোঝা।
+> - **দৃশ্য:** মাঝখানে graph; বাঁয়ে adjacency list, ডানে adjacency matrix; একই graph তিন রূপে।
+> - **ইনপুট:** edge যোগ বা বাদ; directed/undirected টগল; weighted টগল।
+> - **ধাপ:** edge যোগ করলে graph-এ নতুন রেখা আঁকা হয়, সাথে সাথে list-এর দুটো entry আর matrix-এর দুটো ঘর হাইলাইট হয়ে বদলায়; undirected হলে দুই দিক, directed হলে একটাই ঘর জ্বলে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; node সংখ্যা বাড়ানোর slider, যাতে matrix-এর ঘর সংখ্যা দ্রুত ফুলে যাওয়াটা চোখে দেখা যায়।
+> - **লক্ষ্য:** একই তথ্য তিনভাবে রাখা যায়, আর V বাড়লে matrix-এর দাম কীভাবে আকাশছোঁয়া হয়।
 
 ## অনুশীলন
 
-- ওপরের graph-এর adjacency matrix-টা খাতায় হাতে আঁকো।
+- **সহজ ১:** edge list আকারে ইনপুট দেওয়া আছে (`[["A","B"],["B","C"],...]`)। সেটা থেকে adjacency list বানানোর একটা ফাংশন লেখো। হিন্ট: প্রতিটা edge-এর জন্য আমাদের `addEdge` ডাকলেই তো হয়ে গেল?
+- **সহজ ২:** `hasEdge` দুটোই representation-এ implement করো, তারপর অনেকবার random query চালিয়ে সময় মাপো। হিন্ট: `console.time()` আর `console.timeEnd()` দিয়ে মাপা যায়। List-এ degree বাড়ালে ফারাকটা বাড়ে, খেয়াল করো।
+- **মাঝারি ১:** adjacency list থেকে প্রতিটা node-এর degree বের করো। Directed graph হলে in-degree আর out-degree আলাদা আলাদা। হিন্ট: out-degree তো list-এর length-ই। In-degree-র জন্য সবার list ঘুরে কাকে কাকে উল্লেখ আছে গুনতে হবে।
+- **মাঝারি ২:** directed graph-এর transpose বানাও, মানে সব edge উল্টে দাও। হিন্ট: নতুন ফাঁকা graph নাও, প্রতিটা `u → v` edge-এর জন্য নতুন graph-এ `v → u` যোগ করো।
+- **কঠিন:** একটা সোশ্যাল নেটওয়ার্ক ডিজাইন করো যেখানে ১০ কোটি (10^8) user, গড়ে প্রতিজনের কয়েকশ বন্ধু। কোন representation নেবে আর কেন? হিন্ট: matrix চাইবে 10^16-টা ঘর, ভাবাই যায় না। List নিলে মেমরি কত লাগবে হিসাব করো (10^8 × কয়েকশ × কয়েক byte)। তারপর ভাবো, এক মেশিনে না ঢুকলে কী করবে, user-দের ভাগ করে আলাদা মেশিনে রাখা যায় কিনা।
+
+## সারসংক্ষেপ
+
+- Graph মাথায় abstract, কোডে চাই representation: adjacency list, matrix, নয়তো edge list।
+- Default হলো adjacency list: Map of node → neighbor list, মেমরি O(V + E), বাস্তবের sparse graph-এর জন্য পারফেক্ট।
+- Matrix তখনই, যখন graph ছোট আর dense, আর O(1) edge lookup সত্যিই দরকার।
+- Edge list লাগে যখন অ্যালগরিদমটা edge-centric, যেমন Kruskal।
+- Undirected মানে দুই দিকে push, weighted মানে সব জায়গায় `[node, weight]` জোড়া। এই দুটো ধারাবাহিক রাখলেই অর্ধেক bug কমে।

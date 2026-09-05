@@ -1,80 +1,253 @@
 ---
-title: "Depth First Search (DFS): যতদূর সম্ভব গভীরে"
-description: recursion বা stack দিয়ে এক পথ ধরে গভীরে, আটকে গেলে backtrack।
+title: "Depth First Search (DFS): এক পথ ধরে গভীরে"
+description: recursion বা stack দিয়ে যতদূর সম্ভব গভীরে যাওয়া, আটকে গেলে backtrack। একই graph-এ BFS-এর সাথে পাশাপাশি তুলনা, তিনটা ভ্যারিয়েন্ট, complexity-এর হিসাব, আর কেন DFS shortest path দেয় না।
 ---
 
 ## কী শিখব
 
-- এক পথ ধরে যতদূর যাওয়া যায়
+- DFS কীভাবে এক পথ ধরে যতদূর সম্ভব গভীরে যায়, তারপর backtrack করে
+- BFS আর DFS-এর আসল পার্থক্য শুধু একটা ডেটা স্ট্রাকচারের: queue নাকি stack
+- recursion দিয়ে DFS লেখা, আর explicit stack দিয়ে iterative ভ্যারিয়েন্ট
+- entry/exit time রেখে DFS, যেটা cycle detection আর topological sort-এর ভিত্তি
+- একই graph-এ BFS আর DFS-এর order পাশাপাশি রেখে তুলনা
+- কেন DFS shortest path-এর গ্যারান্টি দেয় না
 
 ## ধারণা
 
-ধরো তুমি একটা বড় বাড়িতে ঢুকেছ, করিডরে করিডর। একটা করিডর ধরে হেঁটেই যাচ্ছ, যতদূর যাওয়া যায়। ডেড-এন্ডে পড়লে ফিরে এসে (backtrack) আগের মোড় থেকে অন্য করিডর ধরছ। DFS-ও ঠিক এমন: একটা পথ ধরে **যতদূর সম্ভব গভীরে** যায়, আটকে গেলে ফিরে এসে অন্য পথ নেয়। recursion দিয়ে লিখলে call stack-ই এই কাজটা করে, নইলে নিজে একটা **stack** রাখতে হয়। cycle detection, connected components, topological sort, এসবের ভিত্তিই এই DFS।
+ধরো তুমি একটা বড় maze-এ ঢুকেছ। সামনে তিনটে করিডর। তুমি কী করবে? একটা করিডর ধরে হেঁটেই যাবে, যতদূর যাওয়া যায়। ডেড-এন্ডে পড়লে ফিরে আসবে আগের মোড়ে, তারপর দ্বিতীয় করিডর ধরবে। পুরো maze একসাথে ছড়িয়ে দেখার চেষ্টা করছ না। আগে একটা পথ, তার শেষ পর্যন্ত।
 
-## কোড উদাহরণ
+এটাই **DFS (Depth First Search)**। Graph-এ একটা node থেকে শুরু করে যতদূর সম্ভব গভীরে যায়। নতুন কিছু না পেলে এক ধাপ পিছিয়ে এসে (এটাই **backtrack**) অন্য পথ খোঁজে।
+
+[BFS](./bfs.mdx)-এর সাথে তুলনা করো। BFS পুকুরের ঢেউয়ের মতো স্তরে স্তরে ছড়ায়, কাছের সবাইকে আগে। DFS ঠিক উল্টোটা: কাছের সবাইকে দেখার আগেই একটা পথ ধরে গভীরে নেমে যায়। আর মজার ব্যাপার হলো, কোডে পার্থক্যটা মাত্র একটা জিনিসের: BFS-এ যেখানে **queue**, DFS-এ সেখানে **stack**। Stack মানে LIFO, যে শেষে ঢুকে সে আগে বের হয়, [Stack-এর পাতায়](../stacks-queues/stack-lifo.mdx) ফিরে দেখো। তাই সবচেয়ে নতুন আবিষ্কৃত node-ই পরে process হয়, মানে গভীরেই যেতে থাকে।
+
+recursion দিয়ে লিখলে stack নিজে বানাতেও হয় না। ফাংশন ডাকা মানেই [call stack](../recursion/call-stack.mdx)-এ একটা করে frame জমা হচ্ছে, আর ফাংশন শেষ মানেই backtrack। তাই recursive DFS লেখাই সবচেয়ে সহজ। আর graph-টা রাখা আছে adjacency list-এ, ঠিক [Graph Representation](./graph-representation.mdx)-এর পাতায় যেমন দেখেছ।
+
+## ধাপে ধাপে: একই graph, অন্য order
+
+[BFS-এর পাতায়](./bfs.mdx) যে graph-টা ছিল, হুবহু সেটাই নিচ্ছি, যাতে দুটো order পাশাপাশি তুলনা করা যায়:
+
+```
+        A
+       / \
+      B   C
+      |   |
+      D   E
+       \ /
+        F
+```
+
+Edge: A-B, A-C, B-D, C-E, D-F, E-F। শুরু A থেকে। Neighbor-রা যে ক্রমে edge যোগ করা হয়েছে, সেই ক্রমেই ঘোরা হবে (A-এর ক্ষেত্রে আগে B, তারপর C)।
+
+নিয়ম একটাই: **node-এ ঢুকার মুহূর্তেই visited বলে দাগ**, তারপর তার প্রথম unvisited neighbor-এ লাফ দাও। recursive ভার্সনটা trace করছি, তাই stack-এর জায়গায় দেখাব কোন ফাংশন ডাকগুলো call stack-এ জমা আছে।
+
+| ধাপ | কী হলো | call stack (নিচে → উপরে) | visited-এ নতুন | output |
+|-----|--------|--------------------------|----------------|--------|
+| শুরু | dfs(A) ডাকা হলো | A | A | A |
+| 1 | A-র প্রথম neighbor B-তে ঢুকলাম | A, B | B | B |
+| 2 | B-র neighbor A visited, তাই D-তে | A, B, D | D | D |
+| 3 | D-র neighbor B visited, তাই F-তে | A, B, D, F | F | F |
+| 4 | F-র neighbor D visited, তাই E-তে | A, B, D, F, E | E | E |
+| 5 | E-র প্রথম neighbor C-তে | A, B, D, F, E, C | C | C |
+| 6 | C-র সব neighbor (A, E) visited; return | A, B, D, F, E | - | - |
+| 7 | E-র বাকি neighbor F visited; return | A, B, D, F | - | - |
+| 8 | F শেষ; return | A, B, D | - | - |
+| 9 | D শেষ; return | A, B | - | - |
+| 10 | B শেষ; return | A | - | - |
+| 11 | A-র দ্বিতীয় neighbor C এতক্ষণে visited; A শেষ | (খালি) | - | - |
+
+Output: **A, B, D, F, E, C**।
+
+মনে আছে BFS দিয়েছিল **A, B, C, D, E, F**? একই graph, একই শুরু, শুধু ডেটা স্ট্রাকচার বদলেছে, আর order পুরো বদলে গেল। BFS চওড়া হয়ে ছড়ায়, DFS গভীরে ডুব দেয়।
+
+ধাপ ৬ থেকে ১১-এর দিকে খেয়াল করো। কোনো নতুন node আসছে না, শুধু ফাংশন ডাকগুলো একে একে return হচ্ছে। এই return হওয়ার ধাপগুলোই backtracking। কোডে এর জন্য আলাদা কিছু লেখা নেই, recursion নিজেই করে দিচ্ছে।
+
+recursive call-গুলোকে একটা tree আকারে দেখলে ব্যাপারটা আরো পরিষ্কার:
+
+```
+dfs(A)
+└── dfs(B)
+    └── dfs(D)
+        └── dfs(F)
+            └── dfs(E)
+                └── dfs(C)
+```
+
+C আবার ডাকা হয়নি A থেকে, কারণ ততক্ষণে সে visited। এই graph-টা ভেতরে প্রায় একটা চেইনের মতো গেছে, তাই tree-টা লম্বা। অন্য গঠনের graph-এ ডাল-পালা ছড়িয়ে যেত, প্রতিটা ডাল একটা করে শেষ হয়ে ফিরে আসত।
+
+## কোড: পুরো implementation
+
+Graph class-টা [আগের পাতারই](./graph-representation.mdx), adjacency list। সংক্ষেপে আবার দিলাম:
 
 ```js
-// আগের পাতার Graph class (adjacency list)
 class Graph {
   constructor() { this.adj = new Map(); }
-  addVertex(v) { if (!this.adj.has(v)) this.adj.set(v, []); }
-  addEdge(u, v) {
-    this.addVertex(u); this.addVertex(v);
+
+  addVertex(v) {
+    if (!this.adj.has(v)) this.adj.set(v, []);
+  }
+
+  addEdge(u, v) {                 // undirected: দুই দিকেই
+    this.addVertex(u);
+    this.addVertex(v);
     this.adj.get(u).push(v);
     this.adj.get(v).push(u);
   }
+
   neighbors(v) { return this.adj.get(v) || []; }
 }
 
 const g = new Graph();
 g.addEdge("A", "B"); g.addEdge("A", "C");
-g.addEdge("B", "D"); g.addEdge("C", "D");
+g.addEdge("B", "D"); g.addEdge("C", "E");
+g.addEdge("D", "F"); g.addEdge("E", "F");
+```
 
-// recursive
+এবার আসল DFS, recursive ভার্সন। এটাই মূল, সবচেয়ে বেশি ব্যবহার করবে এটাই:
+
+```js
 function dfs(graph, start, visited = new Set(), order = []) {
-  visited.add(start);
+  visited.add(start);              // ঢুকার মুহূর্তেই দাগ
   order.push(start);
-  for (const next of graph.neighbors(start)) {
-    if (!visited.has(next)) dfs(graph, next, visited, order);
-  }
-  return order;
-}
-console.log(dfs(g, "A")); // যেমন ['A','B','D','C']
 
-// iterative (stack)
-function dfsIter(graph, start) {
-  const visited = new Set(), stack = [start], order = [];
-  while (stack.length) {
-    const node = stack.pop();            // LIFO মানে গভীরে
-    if (visited.has(node)) continue;
-    visited.add(node); order.push(node);
-    for (const next of graph.neighbors(node)) {
-      if (!visited.has(next)) stack.push(next);
+  for (const next of graph.neighbors(start)) {
+    if (!visited.has(next)) {            // নতুন পেলেই
+      dfs(graph, next, visited, order);  // সাথে সাথে গভীরে
     }
   }
   return order;
 }
-console.log(dfsIter(g, "A")); // যেমন ['A','C','D','B']
+
+console.log(dfs(g, "A")); // ['A', 'B', 'D', 'F', 'E', 'C']
 ```
 
-## কোড ব্রেকডাউন
+মাত্র কয়েক লাইনের ফাংশন, কিন্তু এর ভেতরেই পুরো maze-ঘোরার কৌশল লুকিয়ে আছে। recursion না হলে এই ফাংশনের ভেতরের অবস্থা (কোন neighbor পর্যন্ত ঘোরা হয়েছে) হারিয়ে যেত। Call stack সেটা মনে রাখে।
 
-- recursion লিখলে নিজে stack বানাতে হয় না, call stack-ই ওই কাজটা করে দেয়।
-- মজার ব্যাপার হলো, BFS আর DFS-এর কোড প্রায় এক। শুধু একটায় **queue**, আরেকটায় **stack**। এই ছোট্ট পার্থক্যই পুরো আচরণ বদলে দেয়।
+## ভ্যারিয়েন্ট ১: iterative DFS, নিজের stack দিয়ে
 
-## Complexity
+recursion সবসময় চালানো যায় না। খুব গভীর graph-এ call stack ফুলে ফেটে যায় (নিচের ভুল নম্বর ২ দেখো)। তখন নিজে একটা stack রাখতে হয়। আর এখানেই সেই বিখ্যাত তুলনাটা: BFS-এর কোড নাও, queue-র জায়গায় stack বসাও, হয়ে গেল DFS।
 
-- O(V + E) time; O(V) space।
+```js
+function dfsIterative(graph, start) {
+  const visited = new Set([start]); // ঢোকানোর মুহূর্তেই দাগ, BFS-এর মতোই
+  const stack = [start];
+  const order = [];
+
+  while (stack.length > 0) {
+    const node = stack.pop();      // LIFO: সবচেয়ে নতুনটা আগে
+    order.push(node);
+
+    for (const next of graph.neighbors(node)) {
+      if (!visited.has(next)) {
+        visited.add(next);         // push-এর মুহূর্তেই দাগ
+        stack.push(next);
+      }
+    }
+  }
+  return order;
+}
+
+console.log(dfsIterative(g, "A")); // ['A', 'C', 'E', 'F', 'D', 'B']
+```
+
+একটু অদ্ভুত লাগছে? order-টা এসেছে A, C, E, F, D, B, recursive-এর উল্টো দিক দিয়ে। কারণটা সহজ: stack-এ আগে B ঢুকে, পরে C, কিন্তু বের হয় আগে C। মানে neighbor-রা **উল্টো ক্রমে** ঘোরা হয়। উত্তর ঠিকই আছে, DFS-এর কোনো নির্দিষ্ট order-এর গ্যারান্টি নেই। তবু recursive-এর ক্রমই চাইলে neighbor list-টা উল্টে push করো: `for (const next of [...graph.neighbors(node)].reverse())`।
+
+## ভ্যারিয়েন্ট ২: entry আর exit time রাখা
+
+DFS শুধু order দেয় না, গভীরে নামার আর ফিরে আসার ছাপও রেখে যায়। প্রতিটা node-এ কখন ঢুকলাম (entry) আর কখন চিরকালের মতো বের হলাম (exit), এই দুটো সময় জমিয়ে রাখলে পরে অদ্ভুত কাজ হয়:
+
+```js
+function dfsTimestamps(graph) {
+  const entry = new Map();
+  const exit = new Map();
+  let time = 0;
+
+  function visit(u) {
+    entry.set(u, time++);          // ঢুকার ছাপ (এটাই visited-এর কাজও করছে)
+    for (const v of graph.neighbors(u)) {
+      if (!entry.has(v)) visit(v);
+    }
+    exit.set(u, time++);           // বের হওয়ার ছাপ
+  }
+
+  for (const v of graph.adj.keys()) {   // disconnected graph-ও কভার হবে
+    if (!entry.has(v)) visit(v);
+  }
+  return { entry, exit };
+}
+
+const { entry, exit } = dfsTimestamps(g);
+console.log(entry); // Map { 'A'=>0, 'B'=>1, 'D'=>2, 'F'=>3, 'E'=>4, 'C'=>5 }
+console.log(exit);  // Map { 'C'=>6, 'E'=>7, 'F'=>8, 'D'=>9, 'B'=>10, 'A'=>11 }
+```
+
+খেয়াল করো, exit time-এর ক্রমটা উল্টো দিকের: যে node-এর কাজ সবার আগে শেষ, সে আসলে গভীরের পাতা। এই দুটো ছাপ দিয়েই চলে:
+
+- directed graph-এ cycle আছে কিনা ধরা। কোনো node-এর exit হওয়ার আগেই তারই পথে আবার সে দেখা পেলে back edge, মানে cycle। পুরো কৌশল [Cycle Detection](./cycle-detection.mdx)-এ।
+- exit time-এর উল্টো ক্রমই [Topological Sort](./topological-sort.mdx)। এক লাইনের কাজ, কিন্তু dependency resolve করার পুরো যন্ত্র এতেই।
+
+## কোড ব্রেকডাউন: মূল dfs, লাইনে লাইনে
+
+recursive ভার্সনটা আবার দেখি, কোন লাইন কেন আছে:
+
+1. `function dfs(graph, start, visited = new Set(), order = [])` : প্রথম ডাকে `visited` আর `order` দেওয়া নেই, তাই default হিসেবে নতুন Set আর array বানে। পরের recursive ডাকগুলোতে একই দুটো পাঠিয়ে দিচ্ছি, যাতে সবাই একই খাতায় লিখি।
+2. `visited.add(start)` : এই node-এ ঢুকার মুহূর্তেই দাগ। এই লাইন না থাকলে cycle-এ আটকে recursion থামবেই না।
+3. `order.push(start)` : এখানেই node-টা আসলে ঘোরা হলো। output-এর ক্রম এই push-এর ক্রমেই।
+4. `for (const next of graph.neighbors(start))` : সব neighbor একে একে দেখো, যে ক্রমে edge যোগ করা হয়েছিল সেই ক্রমে।
+5. `if (!visited.has(next))` : ফিল্টার। আগে দেখা neighbor-এ আর যাওয়া নেই, এটাই অসীম লুপের বিরুদ্ধে একমাত্র প্রাচীর।
+6. `dfs(graph, next, visited, order)` : আসল জাদু এই লাইনে। এখানে বর্তমান ফাংশন থেমে যায় না, call stack-এ নতুন ফ্রেম চাপে, আর সেখান থেকে আবার গভীরে। এই নতুন ডাক শেষ না হলে নিচের কিছুই চলে না।
+7. লুপ শেষে ফাংশন return : এটাই backtracking। কোনো আলাদা কোড নেই, ফাংশন শেষ হলেই call stack থেকে ফ্রেমটা উঠে যায়, আর আগের ফ্রেম তার বাকি neighbor থেকে আবার চালু হয়। এক নিমেষে পুরো করিডর ফিরে আসা।
+
+## Complexity: হিসাবটা কোথা থেকে আসে
+
+**Time: O(V + E)।** BFS-এর সাথে হুবহু একই যুক্তি:
+
+- প্রতিটা node সর্বোচ্চ একবার visited হয়, দাগ পড়লেই আর ডাকা হয় না। মানে সর্বোচ্চ V-টা ফাংশন ডাক।
+- প্রতিটা ডাকের ভেতরে ওই node-এর সব neighbor একবার ঘোরা হয়। সব ডাক মিলিয়ে মোট ঘোরা হয় যতগুলো edge। Undirected graph-এ প্রতিটা edge দুই দিক থেকে দুইবার, directed-এ একবার। যেভাবেই হোক, O(E)।
+- দুটো মিলে O(V + E)।
+
+**Space: O(V)।** visited set-এ সর্বোচ্চ V-টা node। আর recursion stack? সবচেয়ে খারাপ মুহূর্তে call stack-এ V-টা ফ্রেম জমা থাকতে পারে। কখন? ধরো graph-টা একটা সরু চেইন: A-B-C-...-Z। DFS এক নিঃশ্বাসে শেষ পর্যন্ত নেমে যায়, ফিরে আসার আগেই V-টা ফ্রেম জমা। তাই মোট O(V)।
+
+এখানেই BFS-এর সাথে আসল trade-off। চেইন-টাইপ গভীর graph-এ BFS-এর queue ছোট থাকে (প্রতি স্তরে একজনই), কিন্তু DFS-এর stack গভীর। আবার প্রতি node-এর হাজার হাজার neighbor-ওয়ালা চওড়া graph-এ উল্টোটা: BFS-এর queue বিশাল ফুলে যায়, DFS-এর stack ছোট। কোনটা কবে নিরাপদ, সেটা graph-এর গঠন দেখে ঠিক করতে হয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. visited রাখা ভুলে যাওয়া।**
+cycle-ওয়ালা graph-এ এটা মৃত্যুদণ্ড। visited ছাড়া A থেকে B, B থেকে A, আবার B... recursion কখনো থামে না। কয়েক সেকেন্ড পর `RangeError: Maximum call stack size exceeded`। recursion-এ এই ভুলটা while-লুপের চেয়েও ভয়ংকর, কারণ এখানে stack-ই ফেটে যায়।
+
+**২. খুব গভীর graph-এ recursion-ই ফেটে যায়।**
+visited ঠিক থাকলেও সমস্যা। JavaScript-এর call stack সাধারণত দশ হাজারের মতো ফ্রেম ধরে। এক লক্ষ node-এর চেইন graph-এ recursive DFS সেই সীমা ছাড়িয়ে যাবে। এমন ইনপুট আসতে পারে মনে হলে ওপরের iterative ভ্যারিয়েন্টটাই লেখো। নিজের array-stack জায়গা নেয় heap-এ, সেটা অনেক বড়।
+
+**৩. DFS দিয়ে shortest path খোঁজা।**
+BFS-এর মতো স্তর-গ্যারান্টি DFS দেয় না। যে পথে আগে হেঁটেছে, সেই পথেই আগে পৌঁছাবে, পথটা ছোট কিনা তার খোঁজ নেই। উদাহরণ: edge A-B, B-C, C-F, আর A-F। A থেকে F খুঁজলে recursive DFS বলবে A → B → C → F, তিন ধাপ। অথচ A → F সরাসরি এক ধাপেই যায়, DFS সেটা পেছনে ফেলে এসেছে। Shortest চাইলে [BFS](./bfs.mdx), weight থাকলে [Dijkstra](./dijkstra.mdx)।
+
+**৪. iterative ভার্সনে দাগ দেওয়া হয় pop-এর সময়।**
+BFS-এর সেই একই ভুল, শুধু stack-এ। ধরো A-এর দুই neighbor B আর C, দুজনেই D-কে চেনে। push-এর সময় দাগ না দিলে D stack-এ দুইবার ঢুকে যাবে। ছোট graph-এ শুধু নষ্ট কাজ, cycle-ঘন graph-এ stack ফুলে ফাটবে। নিয়ম আগেরটাই: **ঢোকানোর মুহূর্তেই দাগ।**
+
+**৫. disconnected graph-এ outer loop ভুলে যাওয়া।**
+`dfs(g, "A")` শুধু A-এর component-টুকু ঘোরে। বাকি node-রা visited-ই হলো না, চুপচাপ। পুরো graph কভার করতে হলে সব vertex-এর ওপর loop চালিয়ে যে-টা unvisited সেখান থেকে নতুন DFS শুরু করতে হয়, ঠিক ওপরের `dfsTimestamps`-এর মতো। এই কৌশল দিয়েই component গোনা হয়, দেখো [Connected Components](./connected-components.mdx)।
 
 ## Animation Spec
 
 > **Animation Spec: DFS Deep Dive**
 >
-> - **দৃশ্য:** graph; একটা path ধরে গভীরে নামা, ডেড-এন্ডে backtrack (তীর পিছিয়ে যায়)।
-> - **ইনপুট:** start node।
-> - **ধাপ:** current পথ কমলা; visited বেগুনি; backtrack স্পষ্ট দেখানো।
-> - **লক্ষ্য:** "গভীরে যাও, আটকে গেলে ফিরে এসো" ধারণাটা; BFS-এর সাথে তুলনা।
+> - **দৃশ্য:** graph; একটা পথ ধরে গভীরে নামা, ডেড-এন্ডে তীর পিছিয়ে আসা; পাশে live stack-এর অবস্থা।
+> - **ইনপুট:** start node; চাইলে graph preset (চেইন / চওড়া / cycle-ওয়ালা)।
+> - **ধাপ:** current পথ কমলা রঙে; visited বেগুনি; backtrack হলে পিছিয়ে আসা ফ্রেম ফ্রেম দেখানো; পাশের stack view-তে push/pop চোখে পড়ে; node-এ ঢুকলেই order list-এ যোগ।
+> - **নিয়ন্ত্রণ:** speed, step, reset; recursive/iterative টগল; সাথে BFS-এর সাথে পাশাপাশি race mode, একই graph-এ দুটো order তুলনার জন্য।
+> - **লক্ষ্য:** "গভীরে যাও, আটকে গেলে ফিরে এসো" ধারণাটা; আর stack বসালেই BFS থেকে DFS হয়ে যায়, এই পার্থক্যটা।
 
 ## অনুশীলন
 
-- DFS দিয়ে directed graph-এ cycle আছে কিনা বের করার কৌশলটা ভাবো।
+- **সহজ ১:** দুটো node দেওয়া আছে, DFS দিয়ে বলো একটা থেকে আরেকটায় পথ আছে কিনা। হিন্ট: target পেলেই তখনই return করে দাও, পুরো graph ঘোরার দরকার নেই।
+- **সহজ ২:** Number of Provinces (LeetCode 547)। n-টা শহর আর কোনটা কোনটার সাথে সরাসরি জোড়া দেওয়া আছে, বলো কয়টা আলাদা province। হিন্ট: প্রতিটা unvisited node থেকে নতুন DFS, কয়বার নতুন DFS লাগল সেটাই উত্তর। বিস্তারিত [Connected Components](./connected-components.mdx)-এ।
+- **মাঝারি ১:** All Paths From Source to Target (LeetCode 797)। শুধু একটা পথ নয়, **সবগুলো** পথ ছাপাতে হবে। হিন্ট: চলতি পথের array-টা রাখো, node-এ ঢুকলে push, ফিরে আসার সময় pop করে সরিয়ে দাও। এই দাগ তুলে ফেলার কাজটাই [backtracking](../problem-solving/backtracking.mdx)।
+- **মাঝারি ২:** Number of Islands (LeetCode 200)। 0 আর 1-এর grid, কয়টা দ্বীপ আছে গুনতে হবে। হিন্ট: grid-টাই graph, প্রতিটা cell থেকে চার দিকে edge। প্রতি unvisited স্থল থেকে DFS চালিয়ে পুরো দ্বীপটা ডুবিয়ে দাও। আরো অনুশীলন চাইলে [Island Traversal](../problem-solving/island-traversal.mdx) দেখো।
+- **কঠিন:** Course Schedule (LeetCode 207)। কিছু কোর্স আর তাদের prerequisite দেওয়া, সব কোর্স শেষ করা সম্ভব কিনা? হিন্ট: prerequisite-গুলো directed edge, আর সমস্যাটা আসলে cycle আছে কিনা খোঁজা। তিন রঙের marking বা ওপরের entry/exit time দিয়েই করা যায়, পুরো কৌশল [Cycle Detection](./cycle-detection.mdx)-এ।
+
+## সারসংক্ষেপ
+
+- DFS = এক পথ ধরে গভীরে, আটকে গেলে backtrack। BFS ছড়ায়, DFS ডুব দেয়।
+- কোডে পার্থক্য একটাই জিনিসের: BFS-এ queue, DFS-এ stack। recursion হলে call stack-ই সেই stack।
+- Time O(V + E), space O(V)। গভীর graph-এ recursion stack-টাই আসল খরচ।
+- দাগ দাও ঢোকানোর মুহূর্তেই, আর মনে রাখো DFS shortest path দেয় না।
+- entry/exit time জমিয়ে রাখলে cycle detection আর topological sort প্রায় ফ্রিতে পাওয়া যায়।
