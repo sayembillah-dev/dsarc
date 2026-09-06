@@ -2,6 +2,7 @@ import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 import { IfElseAnim, SwitchAnim } from './anim/control-flow';
 import { ForLoopAnim, WhileLoopAnim } from './anim/loops';
+import { ArrayOpsAnim, FunctionAnim, OopAnim } from './anim/basics';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -10,6 +11,9 @@ export function getMDXComponents(components?: MDXComponents) {
     SwitchAnim,
     ForLoopAnim,
     WhileLoopAnim,
+    ArrayOpsAnim,
+    FunctionAnim,
+    OopAnim,
     ...components,
   } satisfies MDXComponents;
 }
