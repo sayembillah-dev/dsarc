@@ -1,50 +1,285 @@
 ---
-title: "Randomised Algorithms: এলোমেলোতার শক্তি"
-description: এলোমেলো পছন্দ দিয়ে adversarial input থেকে রক্ষা - Fisher-Yates ও random pivot।
+title: "Randomised Algorithms: এলোমেলো পছন্দের শক্তি"
+description: "deterministic বনাম randomised; random pivot-এ quicksort-এর worst case প্রায় অসম্ভব, reservoir sampling-এ অজানা stream থেকে ন্যায্য নমুনা, Fisher-Yates-এ unbiased shuffle; তিনটাই চালিয়ে যাচাই করা।"
 ---
 
 ## কী শিখব
 
-- এলোমেলোতা দিয়ে adversarial input থেকে রক্ষা
+- randomised algorithm আসলে কী: ইনপুট নয়, অ্যালগরিদমের ভেতরের পছন্দগুলোই এলোমেলো
+- worst case আর expected time কেন এক জিনিস নয়
+- প্রতি ধাপে 1/n সম্ভাবনার যুক্তিতে quicksort-এর O(n^2) কীভাবে অদৃশ্য হয়
+- reservoir sampling: দৈর্ঘ্য অজানা stream থেকে সম-সম্ভাবনায় k-টা আইটেম
+- Fisher-Yates shuffle, এর fairness-এর হিসাব, আর 60000 বার চালিয়ে পরীক্ষা
+- Monte Carlo আর Las Vegas: randomised algorithm-এর দুই গোত্র
 
 ## ধারণা
 
-ধরো, কেউ ইচ্ছা করে তোমার quick sort-কে worst case-এ ফেলতে চাইছে। pivot বাছাইয়ের নিয়ম জানা থাকলে প্রতিপক্ষ এমন ইনপুট বানাতেই পারে। কিন্তু pivot-টা যদি তুমি এলোমেলোভাবে বাছো? তখন ওর কোনো ফন্দি কাজ করে না। এই যে এলোমেলো পছন্দ দিয়ে নিজেকে রক্ষা করা, এটাই **randomised algorithm**। দুই রকমের: **Las Vegas** - ফল সবসময় সঠিক, শুধু সময়টা এলোমেলো (random-pivot [Quick Sort](../sorting/quick-sort.mdx)); আর **Monte Carlo** - সময় নিশ্চিত, ফলে ক্ষুদ্র ভুল-সম্ভাবনা। quick sort-এ random pivot নিলে worst case O(n²) প্রায় অসম্ভব হয়ে যায়, তাই quicksort বা [quickselect](./kth-element.mdx)-এ এটা প্রায় বাধ্যতামূলক অভ্যাস।
+ধরো, তোমার হাতে কয়েনের দশটা প্যাকেট। শুনেছো এক-দুটো প্যাকেটে ভেজাল কয়েন মেশানো আছে, কিন্তু খোলার আগে কেউ জানে না কোনটায়। এখন তুমি যদি সবসময় বাম দিকের প্যাকেটটাই তোলো, দোকানদার সেটা জেনে গেলে ভেজালটা সেইখানেই গুঁজে দেবে। কিন্তু না দেখে যেকোনো একটা তুলে নিলে? ওর কিছুই করার থাকে না। বেশিরভাব সময় তোমার প্যাকেট ঠিক থাকবে; ভুল হলেও সেটা ওর চালাকিতে নয়, ভাগ্যে।
 
-## কোড উদাহরণ
+randomised algorithm ঠিক এই কৌশল। ইনপুট এলোমেলো নয়; **অ্যালগরিদমের ভেতরের পছন্দগুলো** এলোমেলো। যে algorithm একই ইনপুটে সবসময় একই পথে, একই সিদ্ধান্তে চলে, তাকে বলি **deterministic**। randomised-এ চলার পথ বদলাতে পারে প্রতিবার, তবে লক্ষ্য একই: প্রতিপক্ষ যে ইনপুটই দিক, সে আগে থেকে জানে না তুমি কোন পছন্দটা করবে। ফাঁদ পাতার জায়গাই থাকে না।
+
+দুটো ধারণা এখানেই আলাদা করে রাখো:
+
+- **worst case:** সবচেয়ে দুর্ভাগ্যজনক ইনপুটে সময় সর্বোচ্চ কত হতে পারে
+- **expected time:** এলোমেলো পছন্দের সব সম্ভাব্য ফলের ওপর গড়ে সময় কত; ইনপুট যাই হোক, এই সংখ্যাটা একই
+
+fixed pivot-এর [Quick Sort](../sorting/quick-sort.mdx) মনে করো। pivot সবসময় শেষ উপাদান হলে already sorted ইনপুটে প্রতি partition খারাপ ভাগ হয়, সময় O(n^2)। কিন্তু pivot যদি প্রতিবার **এলোমেলোভাবে** বাছো? রেঞ্জের যে উপাদানই pivot হবে তার সম্ভাবনা প্রতিবার ঠিক 1/n। প্রতিপক্ষ যে ইনপুটই দিক, প্রতি স্তরে ভাগ্য নতুন করে পরীক্ষিত হচ্ছে। টানা সব স্তরে সবচেয়ে খারাপ pivot পাওয়ার সম্ভাবনা এত ক্ষুদ্র যে expected time থেকে যায় O(n log n)। পুরো হিসাব Complexity অংশে।
+
+আজকের তিনটা হাতিয়ার:
+
+1. **random pivot quicksort:** worst case-কে অসম্ভব বানানো
+2. **reservoir sampling:** দৈর্ঘ্য অজানা stream থেকে ন্যায্য নমুনা
+3. **Fisher-Yates shuffle:** এমন এলোমেলো সাজানো যাতে প্রতিটা বিন্যাস সম-সম্ভাব্য
+
+## ধাপে ধাপে ড্রাই রান
+
+### Fisher-Yates: একটা shuffle-এর ভেতরে
+
+array ধরো [1, 2, 3, 4]। নিয়ম: শেষ থেকে প্রতিটা i-এর জন্য [0..i] রেঞ্জ থেকে এলোমেলো j বেছে arr[i] আর arr[j] বদলাও।
+
+```
+শুরু:  [1, 2, 3, 4]
+                  ↑  i এখান থেকে বামে আসবে
+```
+
+| ধাপ | i | এলোমেলো j (রেঞ্জ [0..i]) | কী বদলালো | array এখন |
+|-----|---|---------------------------|-----------|-----------|
+| 1 | 3 | 1 | arr[3] আর arr[1] | [1, 4, 3, 2] |
+| 2 | 2 | 0 | arr[2] আর arr[0] | [3, 4, 1, 2] |
+| 3 | 1 | 1 | arr[1] নিজের সাথে নিজে | [3, 4, 1, 2] |
+
+ফলাফল: [3, 4, 1, 2]। অবশ্যই তোমার রানে অন্য কিছু আসতে পারে, সেটাই তো কাজ।
+
+fairness-এর হিসাবটা সুন্দর। ধাপ ১-এ 4-টা রেঞ্জ থেকে বাছাই, ধাপ ২-এ 3-টা, ধাপ ৩-এ 2-টা। মোট 4 * 3 * 2 = 24-টা সম্ভাব্য পথ, প্রতিটার সম্ভাবনা 1/24। আর [1,2,3,4]-এর সম্ভাব্য বিন্যাসও 4! = 24-টা। প্রতিটা বিন্যাস ঠিক একটা পথ দিয়ে আসে, তাই প্রতিটার সম্ভাবনা ঠিক 1/n!। কোনো পক্ষপাত নেই, গাণিতিকভাবে প্রমাণিত।
+
+### reservoir sampling: stream এসে যাচ্ছে, জায়গা একটাই
+
+এবার ভাবো, log ফাইলের লাইন ধরে ডেটা আসছে, কত লাইন আসবে জানা নেই। যেকোনো মুহূর্তে এমন একটা লাইন দেখাতে হবে যেন এ পর্যন্ত আসা প্রতিটা লাইনের বাছাই হওয়ার সম্ভাবনা সমান। নিয়ম: i-তম আইটেম এলে 1/i সম্ভাবনায় পুরনোটাকে বদলে দাও। stream ধরো [a, b, c, d, e]:
+
+```
+stream →  a   b   c   d   e   (কতটুকু আসবে জানা নেই)
+            ↓
+reservoir: [ _ ]   (একটাই স্লট, k = 1)
+```
+
+| ধাপ | এলো | i | রাখার সম্ভাবনা (1/i) | এলোমেলো সিদ্ধান্ত (ধরে নিচ্ছি) | reservoir-এ এখন |
+|-----|-----|---|----------------------|--------------------------------|------------------|
+| 1 | a | 1 | 1/1, মানে নিশ্চিত | রাখা হলো | a |
+| 2 | b | 2 | 1/2 | রাখা হলো না | a |
+| 3 | c | 3 | 1/3 | রাখা হলো | c |
+| 4 | d | 4 | 1/4 | রাখা হলো না | c |
+| 5 | e | 5 | 1/5 | রাখা হলো না | c |
+
+এখন প্রমাণটা দেখো। শেষে reservoir-এ a থাকার সম্ভাবনা: a ঢুকল (1), তারপর b, c, d, e কেউই জায়গা নিতে পারেনি: 1 * 1/2 * 2/3 * 3/4 * 4/5 = 1/5। একইভাবে b-এর হিসাব: 1/2 * 2/3 * 3/4 * 4/5 = 1/5। প্রত্যেকের ঠিক 1/5, কেউ বেশি না কম না। নিচের কোডে এটা 50000 বার চালিয়ে যাচাই করবো।
+
+## কোড
+
+একটাই ফাইল, তিনটা হাতিয়ার, নিচে demo আর দুটো পরীক্ষা:
 
 ```js
-// Fisher-Yates shuffle - প্রতিটা permutation সম-সম্ভাব্য
+// ছোট seeded RNG: demo যেন প্রতিবার একই ফল দেয়
+// চাইলে সব rand() বদলে Math.random() দাও, একই কথা
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(42);
+
+// --- ১. random pivot quicksort ---
+function quickSort(arr, lo = 0, hi = arr.length - 1) {
+  if (lo >= hi) return arr;
+  const p = partition(arr, lo, hi);
+  quickSort(arr, lo, p - 1);
+  quickSort(arr, p + 1, hi);
+  return arr;
+}
+
+function partition(arr, lo, hi) {
+  const pivotIdx = lo + Math.floor(rand() * (hi - lo + 1)); // এলোমেলো pivot
+  [arr[pivotIdx], arr[hi]] = [arr[hi], arr[pivotIdx]];      // শেষে সরালাম
+  const pivot = arr[hi];
+  let i = lo;
+  for (let j = lo; j < hi; j++) {
+    if (arr[j] < pivot) {
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      i++;
+    }
+  }
+  [arr[i], arr[hi]] = [arr[hi], arr[i]];
+  return i;
+}
+
+// --- ২. reservoir sampling: অজানা দৈর্ঘ্যের stream থেকে k-টা ---
+function reservoirSample(stream, k) {
+  const reservoir = [];
+  let i = 0;
+  for (const item of stream) {              // দৈর্ঘ্য আগে থেকে দেখছি না
+    if (i < k) {
+      reservoir.push(item);                 // প্রথম k-টা সোজা ঢুকল
+    } else {
+      const j = Math.floor(rand() * (i + 1)); // 0..i রেঞ্জের যেকোনো একটা
+      if (j < k) reservoir[j] = item;       // k/(i+1) সম্ভাবনায় বদলে দিলাম
+    }
+    i++;
+  }
+  return reservoir;
+}
+
+// --- ৩. Fisher-Yates shuffle ---
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1)); // 0..i-এর যেকোনো একটা
+    const j = Math.floor(rand() * (i + 1)); // [0..i] রেঞ্জ থেকে
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
-console.log(shuffle([1, 2, 3, 4, 5])); // যেমন [3,1,5,2,4] - প্রতিবার আলাদা
+
+// --- demo ---
+console.log("quicksort:", quickSort([5, 3, 8, 1, 9, 2, 7]));
+console.log("already sorted ইনপুটেও:", quickSort([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+
+console.log("reservoir (k=1):", reservoirSample(["a", "b", "c", "d", "e"], 1));
+console.log("reservoir (k=3):", reservoirSample([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 3));
+
+// পরীক্ষা ১: k=1 reservoir সত্যিই সম-সম্ভাব্য?
+const pickCount = { a: 0, b: 0, c: 0, d: 0, e: 0 };
+for (let t = 0; t < 50000; t++) {
+  const [ch] = reservoirSample(["a", "b", "c", "d", "e"], 1);
+  pickCount[ch]++;
+}
+console.log("50000 বারে কে কতবার:", pickCount); // সবাই প্রায় 10000
+
+// পরীক্ষা ২: Fisher-Yates সত্যিই ন্যায্য?
+const permCount = new Map();
+for (let t = 0; t < 60000; t++) {
+  const key = shuffle([1, 2, 3]).join(",");
+  permCount.set(key, (permCount.get(key) || 0) + 1);
+}
+console.log("60000 shuffle-এ প্রতি বিন্যাস (আশা: প্রায় 10000):");
+for (const [perm, n] of [...permCount].sort()) console.log(perm, "->", n);
 ```
+
+দুটো পরীক্ষাই চালিয়ে দেখো, গণনা তত্ত্বের কাছাকাছি আসে। seed বদলালে সংখ্যা সামান্য বদলায়, কিন্তু কাছাকাছিই থাকে।
+
+## ভ্যারিয়েন্ট
+
+### ১. randomized quickselect
+
+quicksort-এর partition দুই পাশে ভাগ করলে পুরোটা sort না করেও শুধু যে পাশে উত্তর, সেই পাশে ঢোকা যায়। random pivot থাকলেই এর expected time O(n):
+
+```js
+// k-তম ছোট উপাদান (0-indexed); partition আগের কোডেরই
+function quickSelect(arr, k) {
+  let lo = 0, hi = arr.length - 1;
+  while (lo < hi) {
+    const p = partition(arr, lo, hi); // random pivot-ওয়ালা সেই partition
+    if (p === k) return arr[p];       // pivot-ই উত্তর
+    if (p < k) lo = p + 1;            // উত্তর ডান পাশে
+    else hi = p - 1;                  // উত্তর বাম পাশে
+  }
+  return arr[lo];
+}
+```
+
+পুরো গল্প [Kth Element](./kth-element.mdx) পাতায়; randomization ছাড়া এর worst caseও O(n^2)।
+
+### ২. Monte Carlo বনাম Las Vegas
+
+randomised algorithm দুই গোত্রের:
+
+- **Las Vegas:** ফল সবসময় সঠিক, এলোমেলো শুধু সময়। আমাদের random pivot quicksort-ই জীবন্ত উদাহরণ।
+- **Monte Carlo:** সময় আগে থেকে বেঁধে দেওয়া, বদলে ফলে ক্ষুদ্র ভুল-সম্ভাবনা। যেমন Miller-Rabin primality test: "composite" বললে নিশ্চিত, "prime" বললে ভুলের সম্ভাবনা রাউন্ড বাড়ালেই যত ইচ্ছে ছোট।
+
+### ৩. rejection sampling: rand7 দিয়ে rand10
+
+একটা রেঞ্জের random দিয়ে আরেকটা রেঞ্জ বানাতে হলে বাড়তি ফলাফল ফেলে দাও, আবার টানো:
+
+```js
+// ধরে নিচ rand7() দেওয়া আছে, 1..7 সম-সম্ভাব্য
+function rand10() {
+  while (true) {
+    const v = (rand7() - 1) * 7 + rand7();  // 1..49, প্রতিটা সম-সম্ভাব্য
+    if (v <= 40) return ((v - 1) % 10) + 1; // 41..49 পেলে ফেলে দাও, আবার
+  }
+}
+```
+
+41..49 ফেলে না দিলে 1..8-এর সম্ভাবনা বেড়ে যেত, distribution বিকৃত হয়ে যেত।
 
 ## কোড ব্রেকডাউন
 
-- শেষ থেকে প্রতিটা ঘরে 0..i রেঞ্জের random index-এর সাথে swap; প্রতিটা অবস্থান সম-সম্ভাব্য বলেই এটা unbiased।
-- naive "random দুই ঘর বারবার swap" biased ফল দেয় - তাই Fisher-Yates-ই স্ট্যান্ডার্ড।
-- একই ধারণা [quickselect](./kth-element.mdx)-এ: pivot বাছাইয়ের আগে random index-টা শেষে swap করে নাও।
+মূল কোডের গুরুত্বপূর্ণ লাইনগুলো, কোনটা কেন আছে:
+
+1. `mulberry32(seed)` : ছোট seeded RNG। Math.random seed নেয় না, তাই পরীক্ষার ফল পুনরুত্পাদনের জন্য নিজেরটা রাখলাম। শুধু demo-র সুবিধা; সব `rand()` বদলে `Math.random()` দিলেও সব ঠিক চলে।
+2. `const pivotIdx = lo + Math.floor(rand() * (hi - lo + 1));` : রেঞ্জের প্রতিটা উপাদানের pivot হওয়ার সম্ভাবনা সমান, ঠিক 1/(hi - lo + 1)। পুরো আশার ভিত্তি এই লাইন।
+3. `[arr[pivotIdx], arr[hi]] = ...` : বাছাই করা pivot-কে শেষে সরালাম, কারণ Lomuto partition সবসময় শেষ উপাদানকে pivot ধরে। randomization আর partition-এর যুক্তি আলাদা রাখলে দুটোই বোঝা সহজ।
+4. `if (arr[j] < pivot)` : Lomuto scan; ছোটগুলো বামে জমা হচ্ছে, i হলো পরের ছোটটার জায়গা। শেষে pivot বসে নিজের চূড়ান্ত জায়গায়।
+5. `for (const item of stream)` : for..of চলে যেকোনো iterable-এ, array, generator, এমনকি ফাইলের লাইন-স্ট্রিম। আমরা কখনোই দৈর্ঘ্য আগে থেকে জানি না, এটাই আসল stream-এর অনুভূতি।
+6. `if (i < k) reservoir.push(item);` : প্রথম k-টা নিঃশর্ত ঢুকল; reservoir ভরাট না হওয়া পর্যন্ত বদলানোর প্রশ্নই আসে না।
+7. `const j = Math.floor(rand() * (i + 1)); if (j < k) ...` : এলোমেলো স্লট বাছাই। j reservoir-এর ভেতরে পড়লেই নতুনটা পুরনোটাকে ঠেলে দেয়, সম্ভাবনা k/(i+1)। k=1 হলে সেটাই 1/(i+1), dry run-এর টেবিল মনে করো।
+8. `for (let i = arr.length - 1; i > 0; i--)` : shuffle-এ শেষ থেকে শুরু। i=0-এ দাঁড়ানোর দরকার নেই, [0..0] রেঞ্জে নিজের সাথেই swap।
+9. `const j = Math.floor(rand() * (i + 1));` : j-এর রেঞ্জ [0..i], i-ও অন্তর্ভুক্ত; মানে কোনো উপাদান জায়গায় থেকেও যেতে পারে। রেঞ্জ ভুললে fairness নষ্ট, নিচের ভুল নম্বর ২ দেখো।
+10. শেষের দুটো পরীক্ষার loop : অ্যালগরিদমের অংশ নয়, গাণিতিক দাবির যাচাই। 50000 আর 60000 বার চালিয়ে দেখো গণনা তত্ত্বের কাছাকাছি আসে কিনা।
 
 ## Complexity
 
-- Fisher-Yates O(n); random-pivot quicksort প্রত্যাশিত O(n log n)।
+**quicksort (random pivot): expected O(n log n), worst O(n^2)।** হিসাবটা হাতে গোনা যায়:
+
+- প্রতি recursion-স্তরে partition মিলে মোট n-টা comparison। তাই আসল প্রশ্ন: স্তর কতগুলো?
+- "ভালো" pivot বলি যেটা মাঝের 50%-এ পড়ে, মানে দুই পাশেই অন্তত 25% করে থাকে। এলোমেলো pivot-এর ভালো হওয়ার সম্ভাবনা 1/2।
+- প্রতিটা ভালো pivot বড় অংশটাকে সর্বোচ্চ 3/4 আকারে নামায়। গড়ে প্রতি দুই স্তরে একটা ভালো pivot আশা করা যায়, মানে স্তর-সংখ্যা মোটামুটি 2 * log n (4/3 ভিত্তিতে), অর্থাৎ O(log n)।
+- মোট: O(n) * O(log n) = O(n log n)।
+- worst case এখনো O(n^2): প্রতি স্তরে প্রান্তিক pivot পড়লে। কিন্তু তার সম্ভাবনা (2/n) * (2/(n-1)) * (2/(n-2)) * ... গুণ করে দেখো, n=100 হলেই লটারি জেতার চেয়েও কম। আর মজার ব্যাপার: expected time কোনো বিশেষ ইনপুটের জন্য নয়; ইনপুট যাই হোক একই, কারণ ভাগ্যের দাও প্রতি স্তরে নতুন করে গড়া হয়।
+
+**reservoir sampling: time O(n), space O(k)।** প্রতি আইটেমে একটা random টানা আর সম্ভবত একটা assignment, constant কাজ। আর জায়গা লাগে শুধু reservoir-এর: stream কোটি লাইনের হলেও k-টা স্লটই। এটাই এর আসল শক্তি।
+
+**Fisher-Yates: time O(n), বাড়তি space O(1)।** প্রতি i-এর জন্য একটা random, একটা swap। naive "random দুই ঘর বারবার বদলাও" পদ্ধতিও একই O(n) লাগতে পারে, কিন্তু ফল biased; সময় এক, ন্যায় ভিন্ন।
+
+শেষের পরীক্ষা দুটোর 50000 ও 60000-টা রান demo-র খরচ, অ্যালগরিদমের complexity-র অংশ নয়।
+
+## সাধারণ ভুল আর edge case
+
+**১. Math.round দিয়ে random index বানানো।**
+`Math.round(Math.random() * (n - 1))` লিখলে প্রান্তের দুই index অর্ধেক সম্ভাবনায় আসে, মাঝেরগুলো দ্বিগুণ। distribution টেরেই বিকৃত। সবসময় `Math.floor(Math.random() * n)`, রেঞ্জ [lo..hi] হলে `lo + Math.floor(rand() * (hi - lo + 1))`।
+
+**২. Fisher-Yates-এর বদলে "random দুই ঘর বারবার swap"।**
+n-টা random swap করলেও সব বিন্যাস সম-সম্ভাব্য হয় না; কোনো বিন্যাস অন্যের চেয়ে বেশি ফিরে আসে। একই ভুল j-এর রেঞ্জ [0..i] না দিয়ে [0..n-1] দিলেও। shuffle দরকার হলে Fisher-Yates-ই, নিজের বানানো নয়।
+
+**৩. sorted ইনপুটে fixed pivot।**
+প্রথম বা শেষ উপাদান pivot ধরলে already sorted array-তেই quicksort O(n^2); প্রতিপক্ষ জানলে ইচ্ছা করে এমন ইনপুট দিতে পারে। random pivot নিলে worst case ইনপুটের হাতে থাকে না, থাকে ভাগ্যে, আর ভাগ্যের পরীক্ষা প্রতি স্তরে নতুন করে।
+
+**৪. reservoir-এ ভুল সম্ভাবনা।**
+i-তম আইটেমকে 1/i সম্ভাবনায় রাখতে হয় (সাধারণ k-এর জন্য k/(i+1))। অভ্যাসবশত 1/2 রেখে দিলে শেষ দিকের আইটেমগুলো অন্যায্যভাবে জিতে যায়। আর stream-এর মোট দৈর্ঘ্য আগে থেকে জেনে হিসাব করলে reservoir-এর মূল্য শেষ।
+
+**৫. টেস্টে আর security-তে Math.random সরাসরি।**
+টেস্টে Math.random দিলে ফল মাঝে মাঝে বদলায়, ফেলের কারণ খুঁজে পাবে না; seeded RNG রাখো (কোডে যেমন দেখালাম)। আর token, password, key-এর মতো security-র কাজে Math.random কখনোই না, সেটা অনুমানযোগ্য; সেখানে crypto-এর randomValues লাগে।
 
 ## Animation Spec
 
-> **Animation Spec: Fair Shuffle**
+> **Animation Spec: Randomness at Work**
 >
-> - **দৃশ্য:** কার্ড-সারি; i pointer ডান থেকে বাঁয়ে; প্রতি ধাপে 0..i রেঞ্ই highlight হয়ে random j বাছাই ও swap।
-> - **ইনপুট:** array; seed (একই shuffle পুনরুত্পাদনের জন্য)।
-> - **ধাপ:** প্রতি swap-এর পর রেঞ্ই এক ঘর সঙ্কুচিত; শেষে অনেকবার চালিয়ে permutation-এর uniformity চার্ট।
-> - **নিয়ন্ত্রণ:** speed, step, reset; reshuffle।
-> - **লক্ষ্য:** নিয়ন্ত্রিত এলোমেলোতা adversarial input থেকে রক্ষা করে।
+> - **দৃশ্য:** তিনটা প্যানেল; quicksort-এ random pivot বাছাই (রেঞ্জ highlight, pivot লাফিয়ে শেষে), stream-এ reservoir (একটা স্লট, প্রতি আইটেমে 1/i সম্ভাবনার চক্র ঘোরে), আর shuffle-এ i pointer আর প্রতি swap।
+> - **ইনপুট:** array/stream preset; seed ইনপুট, একই এলোমেলোতা পুনরুত্পাদনের জন্য।
+> - **ধাপ:** প্রতি random call-এর মুহূর্তে থামা; সম্ভাবনার ভগ্নাংশ দেখা; শেষে পরীক্ষার histogram (60000 রানে ছয়টা বিন্যাস প্রায় সমান)।
+> - **নিয়ন্ত্রণ:** speed, step, reset; reshuffle/re-run; seed বদল।
+> - **লক্ষ্য:** এলোমেলোতা অনুমান না, হিসাবসহ অস্ত্র; fairness গাণিতিকভাবে যাচাইযোগ্য।
 
 ## অনুশীলন
 
-- [Quickselect](./kth-element.mdx)-এ random pivot যোগ করো: Math.random দিয়ে pivot index বেছে সেটাকে শেষে swap করে নাও।
+- **সহজ ১:** Shuffle an Array (LeetCode 384)। হিন্ট: Fisher-Yates-ই সরাসরি; reset()-এর জন্য মূল array-টার একটা copy জমিয়ে রাখো, shuffle সবসময় কপির ওপর।
+- **সহজ ২:** Implement Rand10() Using Rand7() (LeetCode 470)। হিন্ট: (rand7() - 1) * 7 + rand7() দিলে 1..49 সম-সম্ভাব্য; 40-এর বেশি পেলে ফেলে দাও আবার চালাও, এটাই rejection sampling।
+- **মাঝারি ১:** Linked List Random Node (LeetCode 382)। হিন্ট: length আগে থেকে জানা নেই ধরে নাও; একটা মাত্র স্লটের reservoir sampling, i-তম node এলে 1/i সম্ভাবনায় বদলাও।
+- **মাঝারি ২:** Random Pick Index (LeetCode 398)। হিন্ট: target-এর প্রতিটা occurrence গুনতে থাকো; k-তমটা পেলে 1/k সম্ভাবনায় আগের রাখা index বদলাও। এটা reservoir-এরই রূপান্তর।
+- **কঠিন:** Random Pick with Weight (LeetCode 528)। হিন্ট: weight-এর prefix sum বানাও, তারপর [1, total] রেঞ্জে এলোমেলো সংখ্যা নিয়ে [binary search](../searching/binary-search.mdx) দিয়ে খুঁজো সেটা কোন বাক্সে পড়ল।
+
+## সারসংক্ষেপ
+
+- randomised algorithm: ইনপুট নয়, ভেতরের পছন্দ এলোমেলো; মাপকাঠি expected time।
+- random pivot-এ quicksort expected O(n log n); worst case O(n^2) আছে, কিন্তু প্রায় অসম্ভব, আর প্রতিপক্ষের নিয়ন্ত্রণে নয়।
+- reservoir sampling: অজানা দৈর্ঘ্যের stream থেকে O(k) জায়গায় ন্যায্য নমুনা; i-তম আইটেম 1/i (সাধারণে k/(i+1)) সম্ভাবনায়।
+- Fisher-Yates: শেষ থেকে i ধরে [0..i]-এর random j-এর সাথে swap; প্রতি বিন্যাসের সম্ভাবনা 1/n!, পরীক্ষা করেও মিলে।
+- টেস্টে seed-ওয়ালা RNG, security-র কাজে crypto; Math.random সব জায়গার ওষুধ নয়।

@@ -1,52 +1,217 @@
 ---
-title: "Two Pointer: দুই প্রান্ত থেকে এগিয়ে"
-description: sorted array-তে দুই pointer দিয়ে nested loop-এর কাজ এক pass-এ।
+title: "Two Pointer: দুই প্রান্ত থেকে মিলিত হওয়া"
+description: sorted array-তে দুটো pointer দিয়ে nested loop-এর O(n^2) কাজ এক pass-এ O(n)-এ; pair-sum-এর পুরো dry run, in-place কৌশল, আর sliding window-এর সাথে পার্থক্য।
 ---
 
 ## কী শিখব
 
-- দুটো pointer দিয়ে O(n²) কাজ O(n)-এ নামানো
+- sorted array-তে pair খোঁজা nested loop ছাড়া O(n)-এ কীভাবে হয়
+- কোন pointer কখন কেন সরে: প্রতিটা সরার পেছনের যুক্তি
+- দুই রকম two pointer: দুই প্রান্ত থেকে কাছাকাছি, আর একই দিকে read/write
+- তিনটা কাজ: pair-sum, in-place duplicate বাদ, in-place reverse
+- ভ্যারিয়েন্ট: palindrome, container with most water, Dutch flag; আর sliding window-এর সাথে পার্থক্য
 
 ## ধারণা
 
-ধরো, sorted একটা array থেকে এমন দুটো সংখ্যা খুঁজতে হবে যাদের যোগফল target। সব জোড়া মেলালে O(n²)। কিন্তু একটা pointer বাঁ প্রান্তে, আরেকটা ডান প্রান্তে রেখে দুজনকে কাছাকাছি আনলে? একটাই pass, O(n)। এইটাই **two pointer**: sorted array বা string-এ দুটো pointer (বেশিরভাগ সময় দুই প্রান্ত থেকে, কখনো একই দিকে) একসাথে সরিয়ে nested-loop-এর কাজ এক pass-এ শেষ করা। "জোড়া খোঁজা", palindrome, sorted-এ pair-sum, সব এতে। array sorted না থাকলে আগে [Sorting](../sorting/index.mdx) chapter-এর কোনো sort চালিয়ে নাও।
+ধরো তুই আর তোর বন্ধু একটা লম্বা সারির দুই প্রান্তে দাঁড়িয়ে আছো, তুই একদম বাঁয়ে, সে একদম ডানে। মাঝখানে দেখা করতে হবে। এলোমেলো হাঁটলে কবে যে মিলবে ঠিক নেই, কিন্তু প্রতিবার কারো না কারো এক ঘর সরা বাধ্যতামূলক করলে সর্বোচ্চ সারির দৈর্ঘ্যটুকু ধাপেই দেখা। Two pointer-এর খেলাটা এমনই, শুধু এখানে "দেখা" মানে একটা শর্ত মিটে যাওয়া।
 
-## কোড উদাহরণ
+সারিটা যদি sorted সংখ্যার হয় আর শর্তটা যদি হয় "দুজনের সংখ্যার যোগফল target", তাহলে সরার নিয়মটা বুদ্ধি দিয়ে বানানো যায়। বাঁ প্রান্তে সবচেয়ে ছোট সংখ্যা, ডান প্রান্তে সবচেয়ে বড়টা। যোগফল target-এর চেয়ে **ছোট**? বড় মান দরকার, একমাত্র আশা left pointer ডানে সরানো। যোগফল **বড়**? right pointer বাঁয়ে সরাও। প্রতি ধাপে একজন অবশ্যই সরবে, আর প্রতিটা সরায় এক সারি জোড়া চিরকালের জন্য বাদ পড়ে যায়, অথচ সম্ভাব্য উত্তর একটাও বাদ পড়ে না। এটা টেকসই শুধু array-টা sorted বলে।
+
+তুলনাটা জরুরি। [Brute force](./brute-force.mdx) বলত: সব জোড়া মেলাও, n(n-1)/2 টা, মানে O(n^2)। Two pointer বলছে: প্রতিটা উপাদান সর্বোচ্চ একবার ছোঁয়া যায়, O(n)। Array sorted না থাকলে? দুই পথ: আগে sort করে নাও (তাহলে মোট খরচ O(n log n), দেখো [কেন sort](../sorting/why-sorting.mdx)), নয়তো [hash table](../hash-tables/hash-patterns.mdx) দিয়ে অন্যভাবে O(n)। কোনটা কখন, সেটা প্রশ্নের শর্ত দেখে ঠিক হয়।
+
+আরেকটা রকম two pointer আছে, একই দিকে দুজন: একটা **read** pointer সব ঘর ঘুরে দেখে, আরেকটা **write** pointer শুধু দরকারি জায়গায় লিখে। নতুন array ছাড়া in-place কাজের হাতিয়ার এটা, নিচে duplicate বাদ করার সময় দেখবে।
+
+## ধাপে ধাপে ড্রাই রান
+
+sorted array `[1, 2, 3, 4, 5, 6, 11]`, target 9। দুই pointer দুই প্রান্তে:
+
+```
+index:   0   1   2   3   4   5    6
+value:   1   2   3   4   5   6   11
+         L                        R    sum = 12 > 9, R বাঁয়ে
+         L                    R        sum = 7 < 9, L ডানে
+             L                R        sum = 8 < 9, L ডানে
+                 L            R        sum = 9 = 9, পেয়ে গেছি
+```
+
+| ধাপ | left | right | a[left] + a[right] | sum | সিদ্ধান্ত |
+|-----|------|-------|--------------------|-----|----------|
+| 1 | 0 | 6 | 1 + 11 | 12 | বড়, right-- |
+| 2 | 0 | 5 | 1 + 6 | 7 | ছোট, left++ |
+| 3 | 1 | 5 | 2 + 6 | 8 | ছোট, left++ |
+| 4 | 2 | 5 | 3 + 6 | 9 | মিলে গেছে, থামো |
+
+মাত্র 4টা চেষ্টা। Brute force করলে 21টা জোড়া মেলাতে হতো। আর সুন্দর কথাটা হলো ধাপ 1-এ right-- করার সঙ্গে সঙ্গে আমরা জানি 11-এর সাথে আর কোনো জোড়া বানানো দরকার নেই: সবচেয়ে ছোট 1-এর সাথেও সে target ছাড়িয়ে গেছে, বাকি সবার সাথে তো আরও বেশিই হবে। প্রতিটা সরার পেছনে এই রকম একটা অকাট্য যুক্তি থাকে, এটাই two pointer-এর আত্মা।
+
+## কোড: পুরো ফাইল, চালানো যায়
 
 ```js
-// sorted array-তে target যোগফলের জোড়া - O(n)
+// ===== ১. Pair sum (sorted array) =====
 function pairSum(sorted, target) {
   let left = 0, right = sorted.length - 1;
   while (left < right) {
     const sum = sorted[left] + sorted[right];
     if (sum === target) return [left, right];
-    else if (sum < target) left++;    // ছোট -> বাঁ pointer ডানে (বড় মান দরকার)
-    else right--;                     // বড় -> ডান pointer বাঁয়ে (ছোট মান দরকার)
+    if (sum < target) left++;   // বড় মান দরকার
+    else right--;               // ছোট মান দরকার
   }
-  return [];
+  return [];                    // এমন জোড়া নেই
 }
-console.log(pairSum([1, 3, 4, 6, 8, 11], 10)); // [2, 3]  (4+6=10)
+
+// ===== ২. Sorted array থেকে duplicate বাদ, in-place =====
+function removeDuplicates(nums) {
+  if (nums.length === 0) return 0;
+  let write = 1;                             // পরের unique কোথায় বসবে
+  for (let read = 1; read < nums.length; read++) {
+    if (nums[read] !== nums[read - 1]) {     // নতুন মান?
+      nums[write] = nums[read];
+      write++;
+    }
+  }
+  return write;                              // প্রথম write-টা ঘরেই সব unique
+}
+
+// ===== ৩. In-place reverse =====
+function reverseInPlace(arr) {
+  let left = 0, right = arr.length - 1;
+  while (left < right) {
+    [arr[left], arr[right]] = [arr[right], arr[left]];
+    left++;
+    right--;
+  }
+  return arr;
+}
+
+// ===== ডেমো =====
+console.log("pairSum([1,2,3,4,5,6,11], 9) =", pairSum([1, 2, 3, 4, 5, 6, 11], 9)); // [2, 5]
+console.log("pairSum([1,2,3], 100) =", pairSum([1, 2, 3], 100));                   // []
+const a = [1, 1, 2, 2, 2, 3];
+const len = removeDuplicates(a);
+console.log("unique অংশ:", a.slice(0, len));          // [1, 2, 3]
+console.log("reverse:", reverseInPlace([1, 2, 3, 4, 5])); // [5, 4, 3, 2, 1]
 ```
 
-## কোড ব্রেকডাউন
+## ভ্যারিয়েন্ট ১: palindrome check
 
-- array sorted, তাই sum ছোট হলে বড় মান দরকার, left++; বড় হলে right--।
-- প্রতিটা pointer সর্বোচ্চ একবার পুরো array পার হয় -> O(n)।
+একই pointer জোড়া, এবার string-এর দুই প্রান্তে। যতক্ষণ অক্ষর মিলছে কাছে আসো, একবার না মিললেই না:
 
-## Complexity
+```js
+function isPalindrome(s) {
+  const clean = s.toLowerCase().replace(/[^a-z0-9]/g, ""); // ছোট হাতের + শুধু অক্ষর-সংখ্যা
+  let left = 0, right = clean.length - 1;
+  while (left < right) {
+    if (clean[left] !== clean[right]) return false;
+    left++;
+    right--;
+  }
+  return true;
+}
+console.log(isPalindrome("A man, a plan, a canal: Panama")); // true
+console.log(isPalindrome("hello"));                          // false
+```
 
-- O(n) (sorted হলে); নাহলে sort O(n log n)।
+## ভ্যারিয়েন্ট ২: container with most water
+
+দুই উল্লম্ব দেয়ালের মধ্যে কতটুকু পানি ধরবে, তা ঠিক করে **খাটো দেয়ালটা গুণ দূরত্ব**। তাই কৌশল: প্রতিবার খাটো দিকের pointer-টাই সরাও।
+
+কেন এটা নিরাপদ? ধরো left খাটো। right-এর দিকটা সরালে দূরত্ব কমবেই, আর উচ্চতা left-এর চেয়ে বাড়তে পারে না (left-ই খাটো, সে-ই সীমা)। মানে ওই জোড়া রেখে ভবিষ্যতে আরও ভালো কিছু অসম্ভব। উল্টোদিকে left সরালে নতুন, হয়তো লম্বা দেয়াল আসতে পারে, আশা শুধু সেখানেই। pair-sum-এর মতোই: প্রতিটা সরায় এক সারি জোড়া যুক্তিসহ বাদ পড়ছে।
+
+```js
+function maxArea(height) {
+  let left = 0, right = height.length - 1, best = 0;
+  while (left < right) {
+    const area = Math.min(height[left], height[right]) * (right - left);
+    best = Math.max(best, area);
+    if (height[left] < height[right]) left++;   // খাটোটাই সরবে
+    else right--;
+  }
+  return best;
+}
+console.log(maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])); // 49
+```
+
+## ভ্যারিয়েন্ট ৩: Dutch national flag (তিন pointer-এর ঝলক)
+
+0, 1, 2 মেশানো একটা array sort করতে হবে, এক pass-এ, in-place। তিনটা pointer: low (0-দের সীমানা), mid (এখন যাকে দেখছি), high (2-দের সীমানা)। two pointer-এরই বড় ভাই:
+
+```js
+function sortColors(nums) {
+  let low = 0, mid = 0, high = nums.length - 1;
+  while (mid <= high) {
+    if (nums[mid] === 0) {
+      [nums[low], nums[mid]] = [nums[mid], nums[low]];
+      low++;
+      mid++;
+    } else if (nums[mid] === 1) {
+      mid++;
+    } else {
+      [nums[mid], nums[high]] = [nums[high], nums[mid]];
+      high--;                    // mid সরালাম না: নতুনটা এখনো দেখা হয়নি
+    }
+  }
+  return nums;
+}
+console.log(sortColors([2, 0, 2, 1, 1, 0])); // [0, 0, 1, 1, 2, 2]
+```
+
+## Sliding window বনাম two pointer
+
+দুটোতেই "দুই pointer" দেখতে পাবে, গল্পটা আলাদা। [Sliding window](./sliding-window.mdx)-এ pointer দুটো একই দিকে এগোয়, আর মাঝখানের অংশটা একটা "জানালা" যার দৈর্ঘ্য বা সমষ্টি নিয়ে কাজ হয় (যেমন সেরা k-দৈর্ঘ্যের subarray)। Two pointer-এ pointer দুটো দুই প্রান্ত থেকে মুখোমুখি আসে, সিদ্ধান্ত হয় দুই প্রান্তের মান দেখে। আরেক আত্মীয় আছে: linked list-এ ধীর আর দ্রুত pointer, তার নিজের পাতা আছে, দেখো [fast and slow pointers](./fast-slow-pointers.mdx)।
+
+## কোড ব্রেকডাউন: pairSum, লাইনে লাইনে
+
+1. `let left = 0, right = sorted.length - 1` : দুজনকে দুই প্রান্তে দাঁড় করালাম।
+2. `while (left < right)` : ক্রস করলেই থামো। `<=` লিখলে একই ঘর দুইবার ব্যবহার হয়ে যেত, জোড়ার নিয়ম ভাঙত।
+3. `const sum = sorted[left] + sorted[right]` : এই জোড়ার যোগফল।
+4. `if (sum === target) return [left, right]` : পেলেই থামো, আর ঘোরা দরকার নেই।
+5. `if (sum < target) left++` : সবচেয়ে গুরুত্বপূর্ণ লাইন। array sorted, তাই এখনকার right-এর সাথে left থেকে ছোট সবার যোগফলও কমই হবে, ওই জোড়াগুলো সব বাদ। বড় মানের একমাত্র ভরসা left সরানো।
+6. `else right--` : ঠিক উল্টো যুক্তি।
+7. `return []` : পুরো array পেরিয়েও মেলেনি, এমন জোড়া নেই।
+
+## Complexity: হিসাব কোথা থেকে আসে
+
+প্রতি iteration-এ হয় left এক ঘর বাড়ে, নয় right এক ঘর কমে। দুজনের দূরত্ব তাই প্রতিবার ঠিক 1 কমে। শুরুতে দূরত্ব n - 1, শূন্য হলেই লুপ থামে। মানে সর্বোচ্চ n - 1 iteration, প্রতিটা O(1) কাজ, মোট time O(n)। অতিরিক্ত জায়গা শুধু দুটো ভেরিয়েবল, space O(1)। Brute force-এর O(n^2) থেকে নেমে এলাম O(n)-এ, মূল্য দিলাম শুধু "array sorted" শর্তটা দিয়ে। sorted না থাকলে sort-ই খরচের বড় অংশ, তখন মোট O(n log n)।
+
+removeDuplicates আর reverse-এর হিসাবও একই ধরনের: read pointer একবার পুরো array পার হয়, O(n); কোনো নতুন array নেই, O(1)।
+
+## সাধারণ ভুল আর edge case
+
+**১. Array sorted না, অথচ two pointer লাগানো।**
+সবচেয়ে বড় শর্তটাই ভুলে যাওয়া হয়। unsorted array-তে left++ করার যুক্তিটাই টেকে না, উত্তর এলোমেলো হয়ে যাবে। আগে sort করো, নয়তো hash-এর পথ নাও।
+
+**২. কোনো শাখায় pointer সরানো ভুলে যাওয়া।**
+কোনো branch-এ left বা right কেউই না সরলে while চিরকাল ঘুরতেই থাকবে। প্রতিটা শাখায় অন্তত একজনের সরা বাধ্যতামূলক; sum মিলে return না করে কেবল flag বদলালে এই ভুলটা প্রায়ই ঘটে।
+
+**৩. `left <= right` লেখা।**
+সমান হলে দুই pointer একই ঘরে দাঁড়িয়েছে, মানে একই সংখ্যা দুইবার ব্যবহার হচ্ছে। একই উপাদান একবারই আসতে পারে বললে সীমানা সবসময় `left < right`।
+
+**৪. In-place কাজে নতুন array বানানো, বা return length না বোঝা।**
+removeDuplicates-এ filter করে নতুন array দিলে প্রশ্নের শর্তই ভাঙে। আরেকটা ভুল: return করা length অগ্রাহ্য করে পুরো পুরোনো array-টাই প্রিন্ট করা। শেষের ঘরগুলোতে তখন আগের ময়লা পড়ে থাকে, আসল উত্তর প্রথম `write`-টা ঘরে।
+
+**৫. Palindrome-এ ছোট-বড় হাতের আর বিরামচিহ্ন ভুলে যাওয়া।**
+"A" আর "a" আলাদা; কমা-স্পেস বাদ না দিলে "A man, a plan, a canal: Panama"-ও false বলে দেবে। আগে normalize করো, তারপর pointer ছাড়ো।
 
 ## Animation Spec
 
 > **Animation Spec: Converging Pointers**
 >
-> - **দৃশ্য:** sorted bar; left ও right pointer দুই প্রান্তে, কাছে আসে।
-> - **ইনপুট:** array, target।
-> - **ধাপ:** প্রতিবার sum হিসাব; কোন pointer সরবে তার সিদ্ধান্ত highlight।
-> - **নিয়ন্ত্রণ:** speed, step, reset।
-> - **লক্ষ্য:** কেন sorted-এ two pointer O(n)।
+> - **দৃশ্য:** sorted array-র বার; বাঁ প্রান্তে নীল L, ডান প্রান্তে লাল R; নিচে চলতি sum আর target-এর তুলনা দেখা যায়।
+> - **ইনপুট:** sorted array আর target; sorted নয় এমন ইনপুট দিলে সতর্কবার্তা।
+> - **ধাপ:** প্রতি চেষ্টায় sum জ্বলে ওঠে; কোন pointer সরবে তার সিদ্ধান্ত লেখা হয়; বাদ পড়া অংশ ধূসর হয়ে যায়, কেন বাদ পড়ল তা tooltip-এ।
+> - **নিয়ন্ত্রণ:** speed, step, reset; brute force মোড টগল, যাতে 21 বনাম 4 চেষ্টা পাশাপাশি দেখা যায়।
+> - **লক্ষ্য:** sorted-এ প্রতিটা সরা যুক্তিসহ; O(n) কেন তা চোখে দেখা।
 
 ## অনুশীলন
 
-- two pointer দিয়ে array in-place reverse করো।
+- **সহজ ১:** Two Sum II (LeetCode 167)। এই পাতার pairSum-ই, শুধু উত্তরে index 1-based। হিন্ট: array sorted দেওয়াই আছে, sort লাগবে না।
+- **সহজ ২:** Valid Palindrome (LeetCode 125)। হিন্ট: দুই pointer দুই প্রান্তে; non-alphanumeric পেলে ওই pointer-টা এগিয়ে দাও, মিল না হলে সঙ্গে সঙ্গে false।
+- **মাঝারি ১:** Remove Duplicates from Sorted Array (LeetCode 26)। হিন্ট: read pointer সব ঘরে, write pointer শুধু নতুন মানে; return করবে unique-এর সংখ্যা, array নয়।
+- **মাঝারি ২:** Container With Most Water (LeetCode 11)। হিন্ট: প্রতিবার খাটো দিকের pointer সরাও; কেন সেটা নিরাপদ, তা নিজের ভাষায় লিখে দেখো।
+- **কঠিন:** 3Sum (LeetCode 15)। হিন্ট: একটা সংখ্যা ধরে রেখে বাকি অংশে two pointer দিয়ে -nums[i] খোঁজো; duplicate জোড়া এড়াতে মিলে যাওয়ার পরও pointer এগিয়ে যেতে ভুলো না।
+
+## সারসংক্ষেপ
+
+- Two pointer = sorted array-তে দুই প্রান্ত থেকে যুক্তিসহ এগিয়ে nested loop বাদ দেওয়া।
+- প্রতি ধাপে এক pointer অবশ্যই সরে, প্রতি সরায় এক সারি জোড়া চিরকালের জন্য বাদ: time O(n), space O(1)।
+- একই দিকে read/write pointer দিয়ে in-place কাজ; দুই প্রান্ত থেকে pointer দিয়ে জোড়া-শর্তের কাজ।
+- Sorted না থাকলে আগে sort, নয়তো hash table; subarray-র সমষ্টি নিয়ে প্রশ্ন হলে sliding window-এর কথা ভাবো।

@@ -1,20 +1,69 @@
 ---
 title: "Two Heaps: মাঝখান সবসময় হাতের কাছে"
-description: max-heap ও min-heap মিলিয়ে চলমান stream-এর median O(1)-এ।
+description: "max-heap আর min-heap মিলিয়ে চলমান stream-এর median O(1)-এ; balance rule, পুরো dry run, আর IPO-র মতো ভ্যারিয়েন্ট।"
 ---
 
 ## কী শিখব
 
-- max-heap + min-heap মিলিয়ে চলমান median
+- দুটো বিপরীত heap দিয়ে stream-এর median কীভাবে সবসময় O(1)-এ পাওয়া যায়
+- Balance rule: দুই পাশের size পার্থক্য সর্বোচ্চ ১, কেন আর কীভাবে
+- `[5, 15, 1, 3, 8, 7]` stream-এর একটা পুরো dry run
+- দুটো ভ্যারিয়েন্ট: sliding window median-এর আইডিয়া, আর IPO-তে দুই heap-এর জুটি
+- insert O(log n) আর median O(1) কেন, হাতে হাতে হিসাব
 
 ## ধারণা
 
-ধরো, সংখ্যা একটা একটা আসতেই আছে (stream), আর যেকোনো মুহূর্তে জিজ্ঞেস করা যায়: বলো তো, এখন median কত? প্রতিবার sort করে তো আর চলা যায় না। এখানেই আসল জিনিস: ছোট অর্ধেকটা রাখো একটা **max-heap**-এ (শীর্ষে থাকবে ওই অর্ধেকের সবচেয়ে বড়টা), আর বড় অর্ধেক একটা **min-heap**-এ (শীর্ষে ওই অর্ধেকের সবচেয়ে ছোটটা)। দুটোর size-এর পার্থক্য সর্বোচ্চ ১ রাখলে median সবসময় heap-দুটোর শীর্ষে, O(1)-এ পেয়ে যাবে। heap-এর ভিত্তি [Heaps](../heaps/index.mdx) chapter-এ দেখেছো।
+ভাবো তো, একটা সাজানো দল দাঁড় করিয়ে রেখেছো, আর মাঝখানে মধ্যমা বসে আছে। ছোটদের দল বাঁদিকে, বড়দের দল ডানদিকে। এখন নতুন একজন এলে তাকে ঠিক দলে ঢোকাও, দুই দলের ভারসাম্য ঠিক রাখো; ব্যাস, দুই দলের নেতাই মধ্যমা জানে। ছোটদের দলের নেতা হলো তাদের সবচেয়ে বড়, মানে একটা **max-heap**। বড়দের দলের নেতা হলো তাদের সবচেয়ে ছোট, মানে একটা **min-heap**। মধ্যমা = এই দুই নেতার কেউ একজন, নয়তো তাদের গড়।
 
-## কোড উদাহরণ
+সমস্যাটা দাঁড়ায় এভাবে: সংখ্যা একটা একটা আসতেই আছে (stream), থামার কথা নয়। যেকোনো মুহূর্তে জিজ্ঞেস করা যায়: বলো তো, এখন median কত? প্রতিবার পুরোটা sort করে তো চলা যায় না; আর sorted array রেখে insert করলেই প্রতি insert-এ সবাইকে এক ঘর সরাতে হয়, O(n)। stream-এ প্রতি সংখ্যায় এত কাজ মানে ডুবে যাওয়া।
+
+দুই heap-এর জুটি এই সমস্যার জন্য তৈরি। নিয়ম দুটো:
+
+1. **invariant:** ছোটদের দলের সবাই <= বড়দের দলের সবাই। এটা না মানলে "মাঝখান" বলে কিছু থাকে না।
+2. **balance rule:** দুই দলের size-এর পার্থক্য সর্বোচ্চ ১।
+
+এই দুটো ঠিক থাকলে median-এর জায়গা নিশ্চিত: মোট জোড় হলে দুই নেতার গড়, বেজোড় হলে যে দলে একজন বেশি, তার নেতা। আর heap-এ নেতাকে দেখতে খরচ O(1), নতুনকে ঢুকতে খরচ O(log n)। heap-এর ভিত্তি, bubble up-down কীভাবে চলে, সব [Heaps](../heaps/index.mdx) chapter-এ দেখেছো, বিশেষ করে [Heap কী](../heaps/what-is-heap.mdx) আর [MinHeap class](../heaps/minheap-class.mdx)।
+
+একটা প্রশ্ন মাথায় রাখো: একটা heap দিয়ে কেন হবে না? কারণ median মানে দুই দিকের সীমানা একসাথে জানা; একটা heap শুধু একটা প্রান্ত দেখায়। দুই প্রান্তের মাঝখানে দাঁড়াতে হলে দুটো আয়না-বিপরীত heap লাগবেই।
+
+## ধাপে ধাপে ড্রাই রান
+
+কোডে যাওয়ার আগে হাতে হাতে চালাই। Stream: `[5, 15, 1, 3, 8, 7]`, একটা একটা করে আসবে।
+
+রীতিটা আগে ঠিক করি (এটা একটা convention, উল্টোটাও চলে):
+
+1. নতুন x আগে **low** (ছোটদের max-heap)-এ ঢোকো।
+2. low-এর শীর্ষ (ছোটদের সবচেয়ে বড়) তুলে **high** (বড়দের min-heap)-এ দাও। এতে invariant নিশ্চিত: low-এর সবাই high-এর সবার চেয়ে ছোট-সমান।
+3. high বড় হয়ে গেলে তার শীর্ষ low-তে ফেরত দাও। এতে balance rule মানা: low হয় high-এর সমান, নয়তো একটা বেশি।
+
+```
+        ছোট অর্ধেক (low)   | মধ্যমা |    বড় অর্ধেক (high)
+           max-heap        |  রেখা  |       min-heap
+              ^ শীর্ষ                  ^ শীর্ষ
+       (এই পাশের সবচেয়ে বড়)     (এই পাশের সবচেয়ে ছোট)
+```
+
+| সংখ্যা | শেষে কোন পাশে | rebalance? | low শীর্ষ | high শীর্ষ | median |
+|--------|---------------|------------|-----------|------------|--------|
+| 5 | low | high থেকে 5 ফেরত | 5 | - | 5 |
+| 15 | high | দরকার নেই | 5 | 15 | 10 |
+| 1 | low | high থেকে 5 ফেরত | 5 | 15 | 5 |
+| 3 | low | দরকার নেই | 3 | 5 | 4 |
+| 8 | high | high থেকে 5 ফেরত | 5 | 8 | 5 |
+| 7 | high | দরকার নেই | 5 | 7 | 6 |
+
+প্রথম সারিটা আস্তে দেখো। 5 এলো: low-তে ঢুকল, সাথে সাথে নিয়ম ২ অনুযায়ী low-এর শীর্ষ high-তে গেল, এখন low খালি আর high-এ একজন, তাই ফেরত low-তে। শেষে low = {5}, high = {}। median 5।
+
+তৃতীয় সারিতে মজাটা। 1 এলো: low = {5, 1}, শীর্ষ 5 high-তে গেল, high = {5, 15}; এবার high-এর size 2, low-এর 1, তাই high-এর শীর্ষ 5 low-তে ফেরত। শেষে low = {5, 1}, high = {15}। খেয়াল করো, আসল মানে কিছুই হারায়নি; 5 শুধু এক চক্কর ঘুরে এসেছে। এই "ঘুরে আসা"টাই দুটো নিয়ম একসাথে মানার দাম।
+
+শেষ সারির পরে অবস্থা: low = {1, 3, 5}, high = {7, 8, 15}। মোট 6-টা, জোড়, তাই median = (5 + 7) / 2 = 6। sorted করে মিলিয়ে দেখো: `[1, 3, 5, 7, 8, 15]`, মাঝের দুটো 5 আর 7। একদম ঠিক।
+
+## কোড
+
+একটা পুরো runnable ফাইল: comparator-ভিত্তিক generic Heap, তার ওপর MinHeap/MaxHeap, তারপর MedianFinder, নিচে stream demo:
 
 ```js
-// ছোট generic heap (comparator দিয়ে min/max দুটোই)
+// comparator দিয়ে min/max দুটোই বানানো যায়
 class Heap {
   constructor(cmp) { this.a = []; this.cmp = cmp; }
   size() { return this.a.length; }
@@ -24,13 +73,16 @@ class Heap {
     let i = this.a.length - 1;
     while (i > 0) {
       const p = (i - 1) >> 1;
-      if (this.cmp(this.a[i], this.a[p]) < 0) { [this.a[i], this.a[p]] = [this.a[p], this.a[i]]; i = p; }
-      else break;
+      if (this.cmp(this.a[i], this.a[p]) < 0) {
+        [this.a[i], this.a[p]] = [this.a[p], this.a[i]];
+        i = p;
+      } else break;
     }
   }
   pop() {
-    const top = this.a[0], last = this.a.pop();
-    if (this.a.length) {
+    const top = this.a[0];
+    const last = this.a.pop();
+    if (this.a.length > 0) {
       this.a[0] = last;
       let i = 0;
       for (;;) {
@@ -47,16 +99,19 @@ class Heap {
   }
 }
 
+const MinHeap = () => new Heap((a, b) => a - b); // শীর্ষে সবচেয়ে ছোট
+const MaxHeap = () => new Heap((a, b) => b - a); // শীর্ষে সবচেয়ে বড়
+
 class MedianFinder {
   constructor() {
-    this.low = new Heap((a, b) => b - a);  // ছোট অর্ধেক - max-heap
-    this.high = new Heap((a, b) => a - b); // বড় অর্ধেক - min-heap
+    this.low = MaxHeap();  // ছোট অর্ধেক, শীর্ষে ওদের সবচেয়ে বড়
+    this.high = MinHeap(); // বড় অর্ধেক, শীর্ষে ওদের সবচেয়ে ছোট
   }
   addNum(x) {
-    this.low.push(x);
-    this.high.push(this.low.pop());        // low-র সবচেয়ে বড়টা high-তে
+    this.low.push(x);                  // ১. আগে ছোটদের দলে
+    this.high.push(this.low.pop());    // ২. ছোটদের নেতা বড়দের দলে
     if (this.high.size() > this.low.size()) {
-      this.low.push(this.high.pop());      // ভারসাম্য: low-তে আগে
+      this.low.push(this.high.pop());  // ৩. ভারসাম্য: low সমান বা এক বেশি
     }
   }
   findMedian() {
@@ -64,31 +119,113 @@ class MedianFinder {
     return (this.low.peek() + this.high.peek()) / 2;
   }
 }
+
+// demo: ওপরের dry run-এর stream-টাই
 const mf = new MedianFinder();
-[5, 2, 10, 3].forEach(n => mf.addNum(n));
-console.log(mf.findMedian()); // 4  (3 ও 5-এর গড়)
+for (const x of [5, 15, 1, 3, 8, 7]) {
+  mf.addNum(x);
+  console.log(`এলো ${x} -> median ${mf.findMedian()}`);
+}
+// এলো 5 -> median 5
+// এলো 15 -> median 10
+// এলো 1 -> median 5
+// এলো 3 -> median 4
+// এলো 8 -> median 5
+// এলো 7 -> median 6
 ```
+
+## ভ্যারিয়েন্ট
+
+**ভ্যারিয়েন্ট ১: sliding window median (LC 480)।** এবার window সরে, মানে পুরনো সংখ্যাকে heap থেকে **সরাতেও** হবে। heap-এ arbitrary উপাদান সরানো O(n), প্রতি ধাপে এটা করলে লাভ নেই। বুদ্ধি হলো **lazy deletion**: একটা map-এ গুণে রাখো কোন সংখ্যা কতবার মোছা বাকি, শীর্ষে উঠে এলে তখন pop করে দাও, তারপর দুই পাশের "কার্যকর size" মিলিয়ে আবার balance করো। আইডিয়াটা এই MedianFinder-এরই সম্প্রসারণ, কিন্তু balance হিসাবটা আসল খেলা। window-ভিত্তিক চিন্তার জন্য দেখো [Sliding Window](./sliding-window.mdx)।
+
+**ভ্যারিয়েন্ট ২: IPO / maximize capital (LC 502)।** এখানে median নেই, কিন্তু দুই heap-এর জুটি একই। প্রজেক্টগুলোর capital আর profit দেওয়া, হাতে w টাকা, মোট k-টা প্রজেক্ট করা যাবে। যেগুলো এখনো afford করি না, তারা **capital-এর min-heap**-এ; capital যত কম, তত কাছে পৌঁছানো। যেগুলো afford করি, তারা **profit-এর max-heap**-এ; সবচেয়ে লাভজনকটা আগে তুলে নিই। প্রতি রাউন্ডে দরজা আরও খুলে যায় (w বাড়ে), তাই waiting থেকে doable-এ নতুনদের টেনে আনি:
+
+```js
+function maximizeCapital(k, w, profits, capital) {
+  const waiting = new Heap((a, b) => a[0] - b[0]); // capital-এ min-heap
+  const doable = new Heap((a, b) => b[1] - a[1]);  // profit-এ max-heap
+  for (let i = 0; i < profits.length; i++) {
+    waiting.push([capital[i], profits[i]]); // [capital, profit]
+  }
+  for (let round = 0; round < k; round++) {
+    while (waiting.size() > 0 && waiting.peek()[0] <= w) {
+      doable.push(waiting.pop());           // নতুন afford-able সবাই ঢোকো
+    }
+    if (doable.size() === 0) break;         // আর কিছু করার নেই
+    w += doable.pop()[1];                   // সবচেয়ে লাভজনকটা নাও
+  }
+  return w;
+}
+
+console.log(maximizeCapital(2, 0, [1, 2, 3], [0, 1, 1])); // 4
+```
+
+দুটো ভ্যারিয়েন্টেই প্যাটার্ন একই: দুটো বিপরীত অগ্রাধিকার দুটো বিপরীত heap-এ ভাগ করে দাও, মাঝখানের সিদ্ধান্ত ফ্রি-তে পেয়ে যাবে। কখন কোন heap কোন দিকে, সেটা ঠিক করাটাই [Greedy](./greedy.mdx)-র চর্চা।
 
 ## কোড ব্রেকডাউন
 
-- নতুন সংখ্যা আগে low-তে; তারপর low-র শীর্ষ (ছোট অর্ধেকের সবচেয়ে বড়) high-তে - এতে সব ছোট বাঁয়ে, সব বড় ডানে থাকে নিশ্চিত।
-- high বড় হয়ে গেলে শীর্ষটা low-তে ফেরত - দুই পাশের পার্থক্য সর্বোচ্চ ১।
-- মাঝের মান (বা মাঝের দুটোর গড়) সবসময় heap-দুটোর শীর্ষে তৈরি।
+মূল `MedianFinder` আর `Heap`, কোন লাইন কেন আছে:
+
+1. `constructor(cmp)` : একটাই Heap class দিয়ে দুই রকম heap। comparator-এর দায়িত্ব: "a কি b-র আগে উঠবে?" `a - b` দিলে ছোটটা আগে (min-heap), `b - a` দিলে বড়টা (max-heap)।
+2. `push`-এর while লুপ: নতুন উপাদান শেষে বসে, তারপর parent-এর সাথে তুলনা করে প্রয়োজনে উপরে ভাসে। এটাই bubble up, সর্বোচ্চ উচ্চতা log n ধাপ।
+3. `pop`-এর for লুপ: শীর্ষ তুলে নিয়ে শেষের উপাদান মাথায় বসে, তারপর দুই সন্তানের ছোটটার (বা comparator অনুযায়ী যোগ্যের) সাথে বদল হয়ে নিচে নামে। এটাই bubble down।
+4. `this.low = MaxHeap()` : ছোট অর্ধেকে max-heap কেন? কারণ ওই দল থেকে আমার শুধু একজনকে দরকার: ওদের **সবচেয়ে বড়**, মানে মাঝের ঠিক বাঁ পাশের চেয়ার।
+5. `addNum`-এর ধাপ ১: নতুন x আগে low-তে। সরাসরি ঠিক দল বেছে নেওয়ার চেষ্টা না করে সবাইকে একই দরজা দিয়ে ঢোকাই, বাকিটা নিয়ম ঠিক করে দেবে।
+6. ধাপ ২: low-এর শীর্ষ high-তে। এই এক লাইনে invariant বজায়: low-এ যা বাকি, সবাই high-এর সবার চেয়ে ছোট-সমান।
+7. ধাপ ৩: high-এর size বেশি হলে শীর্ষ ফেরত। এটাই balance rule; শেষে low হয় high-এর সমান, নয়তো একটা বেশি।
+8. `findMedian` : জোড় হলে (size সমান) দুই শীর্ষের গড়, বেজোড় হলে low-এর শীর্ষ, কারণ low-তেই সেই একজন বাড়তি।
+9. খেয়াল করো, `addNum`-এ মোট push/pop হয় ২ বা ৩ বার, কখনো এর বেশি নয়। সংখ্যাটা দুই দলে "ঘুরে" এলেও কাজটা constant সংখ্যক heap অপারেশনে শেষ।
+10. `peek()` heap খালি হলে `undefined` দেয়; খালি stream-এ `findMedian` ডাকলে এই undefined গুলিয়ে যাবে, guard দেওয়া তোমার দায়িত্ব।
 
 ## Complexity
 
-- insert O(log n), median O(1)।
+**addNum: O(log n)।** হিসাবটা হাতে গোনা যায়। প্রতি call-এ একটা push, একটা pop, আর কখনো কখনো আরেকটা push। heap-এ মোট n-টা উপাদান থাকলে তার উচ্চতা প্রায় log n, আর bubble up/down সেই উচ্চতা বেয়েই চলে। মানে প্রতিটা অপারেশন সর্বোচ্চ log n ধাপ। ৩-টা অপারেশন মিলেও 3 * log n, constant বাদে O(log n)।
+
+**findMedian: O(1)।** শুধু peek, মানে array-এর index 0 পড়া। দুই শীর্ষের গড় হলেও দুটো পড়া।
+
+**Space: O(n)।** দুই heap মিলে n-টাই উপাদান রাখে, বাড়তি কিছু নয়।
+
+তুলনাটা করে ফেলি: প্রতি query-তে sort করলে O(n log n) বারবার; sorted array রেখে binary search দিয়ে insert point খুঁজলেও সরানোর খরচ O(n)। দুই heap দুটোকেই হারায়: insert সস্তা, median ফ্রি। কখন median লাগে না শুধু k-তম বড়টা লাগে? তখন একটা heap-ই যথেষ্ট, দেখো [Kth Element](./kth-element.mdx)।
+
+## সাধারণ ভুল আর edge case
+
+**১. comparator উল্টে দেওয়া।**
+low-তে min-heap আর high-তে max-heap বসিয়ে ফেলাটা সবচেয়ে আলগা ভুল। ফল কী হয়? low-এর শীর্ষে বসে ছোটদের সবচেয়ে ছোট, high-এর শীর্ষে বড়দের সবচেয়ে বড়; মাঝখানের চেয়ার দুটো খালি, median এলোপাথাড়ি। মন্ত্র: ছোটদের নেতা বড় (max), বড়দের নেতা ছোট (min)।
+
+**২. rebalance ভুলে যাওয়া।**
+শুধু ধাপ ১ আর ২ করলে high ক্রমে ফুলে যায়, পার্থক্য ২-৩ হয়ে যায়। তখন বেজোড় মোটে median আর low-এর শীর্ষে নেই। size চেকটা এক লাইনের, কিন্তু ওটা না থাকলে পুরো গ্যারান্টি ভেঙে যায়।
+
+**৩. খালি stream-এ findMedian।**
+কোনো সংখ্যা আসার আগে median জিজ্ঞেস করলে `peek()` দেয় `undefined`, আর `(undefined + undefined) / 2` দেয় `NaN`, চুপচাপ। আগেই guard: `if (this.low.size() === 0) return null;`
+
+**৪. জোড়-বেজোড় হিসাব উল্টে যাওয়া।**
+বেজোড় হলে বড় heap-এর শীর্ষ, জোড় হলে দুই শীর্ষের গড়। এই convention-এ বড়টা সবসময় low (কারণ addNum-এর ধাপ ৩ এমন)। convention উল্টে নিলে (high-তে বাড়তি) findMedian-ও উল্টাতে হবে, দুটো মিলিয়ে। আর JS-এ `/` ভগ্নাংশ দেয় বলে 4.5 ঠিকঠাক আসে, কিন্তু Java/C++-এ integer division-এ কেটে যাবে, সাবধান।
+
+**৫. পুরনো সংখ্যা সরাতে গিয়ে আটকে যাওয়া।**
+sliding window-এ window-এর বাইরের সংখ্যা heap থেকে বের করতে হয়, arbitrary remove O(n)। প্রতি ধাপে এমন করলে দুই heap-এর লাভ শেষ। পথটা lazy deletion: মোছার তালিকা map-এ গুণে রাখো, শীর্ষে এলে তখন pop, তারপর balance। আর একটা ছোট edge: ডুপ্লিকেট সংখ্যা; নিয়ম ঠিক থাকলে সমস্যা নেই, `[2, 2]`-এর median 2-ই।
 
 ## Animation Spec
 
 > **Animation Spec: Balanced Halves**
 >
-> - **দৃশ্য:** মাঝখানে median-রেখা; বাঁয়ে max-heap (ছোট অর্ধেক), ডানে min-heap (বড় অর্ধেক)।
-> - **ইনপুট:** সংখ্যার stream (একটা একটা যোগ)।
-> - **ধাপ:** insert -> rebalance -> median হিসাব, তিন ধাপ আলাদা রঙে; heap-এ bubble up দৃশ্যমান।
-> - **নিয়ন্ত্রণ:** speed, step, reset; পরের সংখ্যা নিজে দেওয়া।
-> - **লক্ষ্য:** দুই বিপরীত heap রাখলে মাঝ সবসময় হাতের কাছে।
+> - **দৃশ্য:** মাঝখানে উজ্জ্বল median-রেখা; বাঁয়ে max-heap গাছাকারে (ছোট অর্ধেক), ডানে min-heap (বড় অর্ধেক); দুই শীর্ষ দুই পাশ থেকে রেখাকে ঘিরে।
+> - **ইনপুট:** সংখ্যার stream, একটা একটা যোগ; preset sequence (বাড়তে থাকা / কমতে থাকা / এলোমেলো)।
+> - **ধাপ:** প্রতি সংখ্যায় তিনটা মোছা যোগ্য ধাপ আলাদা রঙে: low-তে ঢোকা, low-এর শীর্ষ high-তে যাওয়া, প্রয়োজনে ফেরত; heap-এর ভেতরে bubble up/down চোখে দেখা যায়; median-রেখার দুই পাশের সংখ্যা দুটো জ্বলে ওঠে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; পরের সংখ্যা নিজে টাইপ করা; "rebalance বন্ধ" টগল, ভারসাম্য ভাঙলে কী হয় তা দেখার জন্য।
+> - **লক্ষ্য:** দুই বিপরীত heap রাখলে মাঝ সবসময় হাতের কাছে, আর ভারসাম্যই সেই মাঝকে বাঁচিয়ে রাখে।
 
 ## অনুশীলন
 
-- ভারসাম্যের শর্ত উল্টে দিলে (high-তে একটা বেশি) কোথায় কী বদলাতে হবে, লিখে দেখাও।
+- **সহজ ১:** Last Stone Weight (LeetCode 1046)। হিন্ট: একটাই max-heap লাগবে; প্রতিবার দুই ভারী পাথর pop করো, পার্থক্য থাকলে ফেরত push করো। দুই heap নয়, heap-এর হাত গরম করার ওয়ার্ম-আপ।
+- **সহজ ২:** Minimum Cost to Connect Sticks (LeetCode 1167)। হিন্ট: min-heap; প্রতিবার দুই ছোট লাঠি জোড়া লাগাও, খরচ ফেরত ঢোকাও। কেন ছোট দুটোই আগে, সেটা [Greedy](./greedy.mdx) যুক্তি।
+- **মাঝারি ১:** Find Median from Data Stream (LeetCode 295)। হিন্ট: এই পাতার MedianFinder-ই পুরো উত্তর; আগে নজর না দিয়ে নিজে লেখো, তারপর মিলাও।
+- **মাঝারি ২:** IPO (LeetCode 502)। হিন্ট: capital-এ min-heap, profit-এ max-heap; প্রতি রাউন্ডে afford-able সবাইকে waiting থেকে doable-এ টেনে আনো, তারপর শীর্ষেরটা নাও।
+- **কঠিন:** Sliding Window Median (LeetCode 480)। হিন্ট: দুই heap-ই, কিন্তু পুরনো সংখ্যা সরাতে lazy deletion (মোছা-বাকির count map), আর প্রতি ধাপে "কার্যকর size" দিয়ে আবার balance। ভারসাম্যের হিসাবটাই আসল খেলা।
+
+## সারসংক্ষেপ
+
+- দুই heap = ছোটদের max-heap + বড়দের min-heap; দুই নেতাই median জানে।
+- দুটো নিয়ম চিরস্থায়ী: ছোট সবাই <= বড় সবাই, আর size পার্থক্য সর্বোচ্চ ১।
+- addNum O(log n), findMedian O(1), space O(n)।
+- convention একটাই বেছে নাও (আমরা low-তে বাড়তি একজন) আর findMedian সেই অনুযায়ী লেখো।
+- দুই বিপরীত অগ্রাধিকার দেখলেই (মাঝ বনাম দুই পাশ, capital বনাম profit) দুই heap-এর কথা ভাবো।

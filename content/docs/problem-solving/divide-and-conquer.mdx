@@ -1,49 +1,284 @@
 ---
-title: "Divide & Conquer: ভাগ করো, জয় করো"
-description: সমস্যা ভাগ করে, উপ-সমস্যা সমাধান করে, ফল জোড়া লাগানোর ছাঁচ।
+title: "Divide and Conquer: ভাগ করো, জয় করো, মিলাও"
+description: "বড় সমস্যাকে একই ধরনের ছোট সাব-সমস্যায় ভেঙে solve করে ফল মেলানোর কৌশল; merge sort আর binary search-এর dry run, recurrence tree দিয়ে O(n log n) হাতে-কলমে বের করা"
 ---
 
 ## কী শিখব
 
-- সমস্যা ভাগ, সমাধান, জোড়া - তিন ধাপের কাঠামো
+- Divide and conquer-এর তিন ধাপ: ভাগ করো, জয় করো, মিলাও, আর recursion-এর সাথে এর সম্পর্ক
+- `[38, 27, 43, 3, 9, 82, 10]`-এর উপর merge sort-এর পুরো dry run: split tree আর merge table
+- Binary search কেন D&C-এর সবচেয়ে চিকন রূপ
+- T(n) = 2T(n/2) + O(n) থেকে tree-level যুক্তি দিয়ে O(n log n) বের করা
+- Iterative বনাম recursive বাস্তবায়ন, আর কোন সমস্যায় D&C লাগে আর কোথায় লাগে না
 
 ## ধারণা
 
-ভাবো তো, ১০০ পৃষ্ঠার বইয়ে একটা শব্দ খুঁজতে বললে পুরো বই কি এক ধাক্কায় দেখবে? না, আগে ভাগ করে ফেলো। বড় সমস্যার ক্ষেত্রেও একই কথা। তিনটা ধাপ: (১) **Divide** - সমস্যাকে ছোট ছোট উপ-সমস্যায় ভাগ করো, (২) **Conquer** - উপ-সমস্যাগুলো recursively solve করো, (৩) **Combine** - ফলাফল জোড়া লাগাও। [Merge Sort](../sorting/merge-sort.mdx) আর [Binary Search](../searching/binary-search.mdx)-ই এই ছাঁচের চমৎকার উদাহরণ।
+ভাবো তো, পুরনো দিনের মোটা ফোনবুকে "রহিমা খাতুন"-এর নম্বর খুঁজতে হবে, হাজার পাতার বই। কেউ কি প্রথম পাতা থেকে একে একে সব নাম পড়ে? না। তুমি বইটা মাঝখান থেকে খুলো, দেখো কোন অক্ষরে পড়েছো, তারপর বইয়ের যে অর্ধেকটা অচল হয়ে গেল সেটা ফেলে দিয়ে বাকি অর্ধেকে আবার একই কাজ। কয়েকটা লাফেই সঠিক পাতায় পৌঁছে যাও।
 
-## কোড উদাহরণ
+আরেকটা দৃশ্য ধরো: একা এক দিনে ৫০০ জনের বিরিয়ানি রাঁধা অসম্ভব। কিন্তু ১০ জন কুককে ৫০ জন করে ভাগ করে দাও, প্রত্যেকে নিজের অংশ শেষ করুক, শেষে শুধু সবার হাতের কাজ এক টেবিলে মেলাও। বিশাল কাজ আর বিশাল না রইল।
+
+এই দুটো গল্পের কৌশলটাই **divide and conquer**, তিনটা ধাপে:
+
+1. **ভাগ করো (Divide)**: সমস্যাটাকে একই ধরনের ছোট সাব-সমস্যায় ভাঙো
+2. **জয় করো (Conquer)**: সাব-সমস্যাগুলো solve করো; এত ছোট হয়ে গেলে সরাসরি উত্তর দাও (base case), না হলে আবার ভাগ করো
+3. **মিলাও (Combine)**: সাব-সমস্যার উত্তরগুলো জোড়া লাগিয়ে মূল সমস্যার উত্তর বানাও
+
+দ্বিতীয় ধাপে "আবার ভাগ করো" লেখা আছে, মানে D&C স্বাভাবিকভাবেই recursion-এর ঘরে বসে। তাই শুরুর আগে [Recursion](../recursion/recursion-intro.mdx) আর [Call Stack](../recursion/call-stack.mdx)-এর ধারণা পরিষ্কার থাকলে এই অধ্যায় মিষ্টি হয়ে যাবে।
+
+তবে একটা সতর্কতা: সব "ভাগ করা" সমস্যা D&C না। দুটো শর্ত মানতে হয়: সাব-সমস্যাগুলো **একই ধরনের** হবে (ছোট input-এ হুবহু একই সমস্যা) আর **পরস্পর স্বাধীন** হবে। সাব-সমস্যার মধ্যে overlap থাকলে, মানে একই সাব-সমস্যা বারবার দরকার হলে, সেটা [Dynamic Programming](./dynamic-programming.mdx)-এর জমি, D&C-এর না।
+
+## ধাপে ধাপে ড্রাই রান
+
+`[38, 27, 43, 3, 9, 82, 10]`-কে merge sort দিয়ে sort করি। [Merge Sort](../sorting/merge-sort.mdx) অধ্যায়ের আগে এটাকে D&C-এর চোখে দেখো: ভাগ করো = মাঝ দিয়ে অর্ধেক, জয় করো = এক-element array (নিজেই sorted, এটাই base case), মিলাও = দুটো sorted array একসাথে মেশানো।
+
+**Divide পর্ব** (উপরে থেকে নিচে):
+
+```
+                    [38, 27, 43, 3, 9, 82, 10]
+                   /                          \
+          [38, 27, 43, 3]                  [9, 82, 10]
+          /             \                  /         \
+      [38, 27]       [43, 3]            [9]       [82, 10]
+      /     \        /     \                        /    \
+    [38]   [27]    [43]   [3]                     [82]   [10]
+```
+
+এক-element array নিজেই sorted, তাই এখানে ভাগ করা থামে। এবার **Combine পর্ব** (নিচে থেকে উপরে), প্রতিটা জোড়া মিলিয়ে sorted বানানো:
+
+```
+    [38]   [27]    [43]   [3]                     [82]   [10]
+      \     /        \     /                        \    /
+     [27, 38]       [3, 43]                       [10, 82]
+        \              /                   \          /
+      [3, 27, 38, 43]                      [9, 10, 82]
+               \                                  /
+                [3, 9, 10, 27, 38, 43, 82]
+```
+
+Combine-এর ভেতরের যন্ত্রটা খোলা যাক। ধরো `[27, 38]` আর `[3, 43]` মিলাচ্ছি। দুটোই sorted, তাই দুটো pointer রেখে প্রতিবার ছোট মাথাটা তুলে নিলেই পুরোটা sorted হয়ে যায়:
+
+| ধাপ | বাম pointer | ডান pointer | তুলনা | নেওয়া হলো | merged |
+|-----|-------------|--------------|--------|-------------|--------|
+| 1 | 27 | 3 | 3 ছোট | 3 | [3] |
+| 2 | 27 | 43 | 27 ছোট | 27 | [3, 27] |
+| 3 | 38 | 43 | 38 ছোট | 38 | [3, 27, 38] |
+| 4 | (বাম শেষ) | 43 | তুলনাই নেই | 43 | [3, 27, 38, 43] |
+
+চারটা element মাত্র ৩-টা তুলনায় মিশে গেল, কেউ কারো সাথে দুইবার তুলনা হলো না। কারণ দুপাশ আগে থেকেই sorted। এই "দুটো sorted মাথা থেকে ছোটটা তোলা" trick-টা মনে রাখো, কঠিন অনেক সমস্যার ভেতরেই ঘুরে ফিরে এটা আসবে।
+
+## কোড
+
+এক ফাইলে D&C-এর দুটো রূপ: merge sort (Combine-ভারী) আর binary search (Combine-বিহীন)। পুরোটা copy করে `node divide-and-conquer.js` দিয়ে চালাও।
 
 ```js
-// Divide & Conquer দিয়ে array-এর max
-function maxDC(arr, low = 0, high = arr.length - 1) {
-  if (low === high) return arr[low];              // base: একটা উপাদান
-  const mid = Math.floor((low + high) / 2);
-  const leftMax = maxDC(arr, low, mid);           // বাঁ ভাগের max
-  const rightMax = maxDC(arr, mid + 1, high);     // ডান ভাগের max
-  return Math.max(leftMax, rightMax);             // combine
+// ============================================================
+// divide-and-conquer.js : merge sort + binary search
+// ============================================================
+
+// ---- Merge Sort ----
+function mergeSort(arr) {
+  if (arr.length <= 1) return arr;             // base case: 0 বা 1 element নিজেই sorted
+
+  const mid = Math.floor(arr.length / 2);      // Divide: মাঝ দিয়ে কাটো
+  const left = mergeSort(arr.slice(0, mid));   // Conquer: বাম অর্ধেক
+  const right = mergeSort(arr.slice(mid));     // Conquer: ডান অর্ধেক
+
+  return merge(left, right);                   // Combine
 }
-console.log(maxDC([3, 7, 2, 9, 4])); // 9
+
+// দুটো sorted array মিলিয়ে একটা sorted array
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]);  // ছোট মাথাটা আগে
+    else result.push(right[j++]);
+  }
+
+  // যে পাশে মাল পড়ে রইল, সেটা পুরো বসে যায়
+  while (i < left.length) result.push(left[i++]);
+  while (j < right.length) result.push(right[j++]);
+
+  return result;
+}
+
+// ---- Binary Search (recursive D&C) ----
+// শর্ত: arr অবশ্যই sorted হতে হবে
+function binarySearch(arr, target, low = 0, high = arr.length - 1) {
+  if (low > high) return -1;                   // base case: ভাগ করার আর কিছু নেই
+
+  const mid = Math.floor((low + high) / 2);    // Divide: মাঝখানে উঁকি
+
+  if (arr[mid] === target) return mid;         // Conquer: পেয়ে গেছি
+  if (target < arr[mid]) {
+    return binarySearch(arr, target, low, mid - 1);   // ডান অর্ধেক ফেলে দাও
+  }
+  return binarySearch(arr, target, mid + 1, high);    // বাম অর্ধেক ফেলে দাও
+}
+
+// ----------------- demo -----------------
+const data = [38, 27, 43, 3, 9, 82, 10];
+const sorted = mergeSort(data);
+console.log(sorted);                            // [3, 9, 10, 27, 38, 43, 82]
+console.log(mergeSort([5, 2]));                 // [2, 5]
+console.log(mergeSort([]));                     // []
+
+console.log(binarySearch(sorted, 27));          // 3
+console.log(binarySearch(sorted, 100));         // -1
+console.log(binarySearch([1, 2, 3, 4, 5], 1));  // 0
 ```
+
+দুটোর গঠন দেখো: দুটোই ভাগ করছে, কিন্তু merge sort-এ সব আসল কাজ Combine-এ, binary search-এ Combine বলে কিছুই নেই, এক পাশ পুরো ফেলে দেওয়া হয়। D&C-এর পরিবারে এটাই বড় ভিন্নতা।
+
+## ভ্যারিয়েন্ট
+
+### ভ্যারিয়েন্ট ১: iterative binary search
+
+একই D&C, অন্য প্যাকেজিং: recursive call-এর বদলে while loop-এ boundary সরাও। Call stack লাগে না, তাই space O(1)।
+
+```js
+function binarySearchIter(arr, target) {
+  let low = 0, high = arr.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (arr[mid] === target) return mid;
+    if (target < arr[mid]) high = mid - 1;   // ডান পাশ ফেলে দাও
+    else low = mid + 1;                      // বাম পাশ ফেলে দাও
+  }
+  return -1;
+}
+console.log(binarySearchIter([3, 9, 10, 27, 38, 43, 82], 82)); // 6
+```
+
+কোনটা ভালো? Recursive-টা ধারণাটা পরিষ্কার দেখায়, iterative-টা চলনসই। দুটোই একই recurrence মানে। বিস্তারিত [Binary Search](../searching/binary-search.mdx) অধ্যায়ে।
+
+### ভ্যারিয়েন্ট ২: count inversions (teaser)
+
+Merge-এর মুহূর্তে একটা counter যোগ করলেই জাদু: ডান পাশের element আগে উঠলে সে বাম পাশের বাকি সবার চেয়ে ছোট, মানে ততগুলো inversion:
+
+```js
+function countInversions(arr) {
+  if (arr.length <= 1) return [arr, 0];
+  const mid = Math.floor(arr.length / 2);
+  const [left, li] = countInversions(arr.slice(0, mid));
+  const [right, ri] = countInversions(arr.slice(mid));
+
+  let i = 0, j = 0, inv = li + ri;
+  const merged = [];
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) merged.push(left[i++]);
+    else {
+      merged.push(right[j++]);
+      inv += left.length - i;   // ডানটা ছোট: বামের বাকি সবার আগে উঠে গেল
+    }
+  }
+  while (i < left.length) merged.push(left[i++]);
+  while (j < right.length) merged.push(right[j++]);
+  return [merged, inv];
+}
+console.log(countInversions([8, 4, 2, 1])[1]); // 6
+```
+
+Brute force-এ inversion গুনতে O(n²) লাগত; D&C দিয়ে O(n log n)। এটাই D&C-এর আসল জাদু: ভাগ করা আকারটা না, Combine-এর তথ্যটাই আসল সম্পদ।
+
+### ভ্যারিয়েন্ট ৩: quicksort-এর partition
+
+ভাগ করার স্টাইল বদলে দাও: মাঝখানে কাটার বদলে একটা pivot নাও, ছোটগুলো বামে, বড়গুলো ডানে। এখানে কাজটা Divide-এ, Combine-এ প্রায় কিছু নেই:
+
+```js
+function partition(arr, low, high) {
+  const pivot = arr[high];                 // শেষ element-কে pivot ধরলাম
+  let i = low;                             // ছোটদের অঞ্চলের সীমানা
+  for (let j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      i++;
+    }
+  }
+  [arr[i], arr[high]] = [arr[high], arr[i]];  // pivot-কে তার জায়গায় বসাও
+  return i;
+}
+```
+
+এই partition-টাই পরে [Quick Sort](../sorting/quick-sort.mdx)-এর ইঞ্জিন, আর [Kth Element](./kth-element.mdx)-এ quickselect হিসেবেও কাজ করে।
 
 ## কোড ব্রেকডাউন
 
-- মাঝ থেকে দুই ভাগ, প্রতি ভাগে recursion, শেষে দুই ফল থেকে সেরা।
-- অনেক D&C algorithm-এর complexity **Master Theorem** দিয়ে বের করা যায় (যেমন merge sort-এ O(n log n))।
+মূল ফাইলের গুরুত্বপূর্ণ line-গুলো আবার দেখি:
+
+1. `if (arr.length <= 1) return arr;` : base case। এই line না থাকলে ভাগ করা থামে না, call stack উপচে program crash করে। Recursion-এর প্রথম নিয়ম: থামার শর্ত আগে লেখো।
+2. `const mid = Math.floor(arr.length / 2);` : ভাগ করার জায়গা। Odd length হলে এক পাশ একটু বড় হয়, ক্ষতি নেই।
+3. `arr.slice(0, mid)` আর `arr.slice(mid)` : দুটো স্বাধীন সাব-সমস্যা। দুটোই আসল সমস্যারই ছোট সংস্করণ: এটাই D&C-এর সংজ্ঞা পূরণ করে।
+4. `mergeSort(...)` দুইবার : Conquer ধাপ। প্রতিটা call নিজের ছোট্ট tree-তে নেমে যায়; call stack-ই এই গভীরতা সামলায়।
+5. `return merge(left, right);` : Combine। Merge sort-এ আসল কাজ Divide-এ না, Combine-এ।
+6. `while (i < left.length && j < right.length)` : দুপাশে মাল থাকতে ছোট মাথাটা তোলো। প্রতিটা element ঠিক একবারই result-এ ঢোকে।
+7. `left[i] <= right[j]`-এ `<=` : সমান হলে বামটা আগে যায়, এতে sort-টা stable থাকে (সমান element-দের আসল ক্রম বদলায় না)।
+8. শেষের দুটো `while` : যে পাশে element পড়ে রইল, সেটা পুরো কপি। এগুলো ভুলে গেলে answer-এ element কম পড়ে, classic bug।
+9. `if (low > high) return -1;` : ভাগ করতে করতে একসময় অঞ্চলটা খালি, মানে target নেই।
+10. `mid - 1` আর `mid + 1` : mid-কে বাদই দিচ্ছি, কারণ ওটা তো এই ধাপেই চেক হয়ে গেছে। শুধু `mid` দিলে অঞ্চল ছোট হতো না, infinite recursion।
 
 ## Complexity
 
-- সমস্যাভেদে বদলায়; এখানে O(n)।
+Merge sort-এর recurrence লিখি: **T(n) = 2T(n/2) + O(n)**। দুটো অর্ধেকে recursive call (2T(n/2)), আর merge-এ সব element একবার করে ছোঁয়া (O(n))।
+
+এখন সংখ্যাটা বের করা যাক tree-level যুক্তি দিয়ে:
+
+```
+level 0:       [................n................]   মোট কাজ: n
+level 1:       [......n/2......] [......n/2......]   মোট কাজ: n/2 + n/2 = n
+level 2:       [..n/4..] [..n/4..] [..n/4..] [..n/4..]   মোট কাজ: 4 * n/4 = n
+...
+level log2(n):  n-টা এক-element টুকরো               মোট কাজ: n * 1 = n
+```
+
+- **প্রতি level-এ মোট কাজ ঠিক n**। নিচে যাওয়ার সাথে merge-গুলো ছোট হয়, কিন্তু সংখ্যায় বেড়ে ক্ষতিপূরণ দেয়।
+- **Level কতটা?** প্রতি ধাপে অর্ধেক: n, n/2, n/4, ..., 1। 1-এ পৌঁছাতে log2(n)-টা ধাপ লাগে।
+- মোট = level-এর সংখ্যা × প্রতি level-এ কাজ = **O(n log n)**। n = 10⁶ হলে মাত্র ~20-টা level, মানে ~2 × 10⁷-টা কাজ; [Brute Force](./brute-force.mdx)-ধাঁচের O(n²) হলে 10¹²-টা লাগত, প্রায় পাঁচ হাজার গুণ বেশি।
+
+Binary search-এ recurrence আরও চিকন: **T(n) = T(n/2) + O(1)**। এক পাশ পুরো ফেলে দেওয়া হয়, তাই প্রশ্ন একটাই: কতবার অর্ধেক করা যায়? log2(n) বার, অর্থাৎ **O(log n)**। 10⁹-টা element থেকেও ~30-টা তুলনায় উত্তর।
+
+**Space**: merge sort-এ O(n) (temp array, আর recursion depth log n)। Recursive binary search O(log n) call stack, iterative version O(1)। D&C-এ space-এর বিল বেশিরভাগ সময় Combine-এর জন্য লাগা temporary জায়গা থেকে আসে।
+
+## সাধারণ ভুল আর edge case
+
+**১. Base case ভুলে যাওয়া বা ভুল base case লেখা**
+`low > high` না দেখা, বা merge sort-এ length চেক না করা = ভাগ করা থামে না, "Maximum call stack size exceeded"। যে recursion-ই লেখো, প্রথম line-টাই থামার শর্ত হোক।
+
+**২. Boundary-তে ±1 গুলিয়ে infinite recursion**
+Binary search-এ যেখানে `mid - 1` দরকার সেখানে `mid` লিখলে অঞ্চলটা কোনোদিন ছোট হয় না: দুটো element নিয়ে চিরকাল ঘুরতে থাকবে। নিয়ম: mid যদি এই ধাপে চেক হয়ে যায়, পরের অঞ্চল থেকে ওকে বাদ দাও।
+
+**৩. Merge-এর leftover ভুলে যাওয়া**
+প্রথম while শেষে প্রায় সবসময় এক পাশে element পড়ে থাকে। শেষের দুটো copy-loop না লিখলে answer-এ element কম পড়বে, আর bug-টা ছোট input-এ ধরাও পড়বে না। leftover নিজে থেকে আসে না, তোমাকে তুলে দিতে হয়।
+
+**৪. D&C আর Dynamic Programming গুলিয়ে ফেলা**
+Fibonacci-কে D&C ভেবে ভাগ করলে একই সাব-সমস্যা শতবার solve হবে (overlap!), কিন্তু D&C চায় স্বাধীন সাব-সমস্যা। Overlap দেখলেই থামো: সেটা [Dynamic Programming](./dynamic-programming.mdx)-এর জমি।
+
+**৫. Precondition ভুলে যাওয়া**
+Binary search unsorted array-তে চালালে ভাগ করাটাই ভুল দিকে যাবে, কারণ এর পুরো যুক্তিই দাঁড়িয়ে আছে "ডান পাশে সব বড়" ধারণার উপর। D&C algorithm-এর প্রতিটারই এমন precondition আছে; input সত্যিই sorted কি না আগে নিশ্চিত হও, না হলে আগে sort করো।
 
 ## Animation Spec
 
 > **Animation Spec: Divide Tree**
 >
-> - **দৃশ্য:** array উপরে; নিচে নামতে নামতে ভাগ, তারপর নিচ থেকে উপরে combine।
-> - **ইনপুট:** array।
-> - **ধাপ:** divide পর্বে টুকরো আলাদা; combine পর্বে জোড়ার ফল উপরে ওঠে।
-> - **নিয়ন্ত্রণ:** speed, step, reset।
-> - **লক্ষ্য:** divide-conquer-combine চক্র।
+> - **দৃশ্য:** উপরে পুরো array-টা একটা box, ভাগ হওয়ার সাথে সাথে নিচে tree ছড়িয়ে পড়ে; পাশে live recursion depth meter আর চলমান comparison counter
+> - **ইনপুট:** ছোট array (7-8 element); binary search-এর জন্য sorted array আর target
+> - **ধাপ:** divide phase-এ box-গুলো ধীরে ফুটে দুই ভাগ হয়, base case-এ গিয়ে box সবুজ; combine phase-এ দুটো sorted টুকরো থেকে তীরচিহ্ন ধরে element একে একে নতুন box-এ মেশে; প্রতিটা level শেষে "এই level-এ মোট কাজ = n" লেখা জ্বলে ওঠে
+> - **নিয়ন্ত্রণ:** speed, step, reset; "শুধু divide" বা "শুধু combine" isolate করে দেখার toggle
+> - **লক্ষ্য:** শেখার্থী নিজে দেখুক প্রতি level-এ কাজ n-ই থাকে আর level-এর সংখ্যাই log n, অর্থাৎ O(n log n) চোখের সামনে গড়ে ওঠে
 
 ## অনুশীলন
 
-- D&C দিয়ে array-এর যোগফল বের করো।
+- **সহজ ১:** [Binary Search](https://leetcode.com/problems/binary-search/) (LeetCode 704): আজকের recursive আর iterative দুটো version-ই লিখে submit করো। হিন্ট: সব ভুল হয় `low > high` শর্ত আর `mid ± 1` boundary-তে, এই দুটো জায়গা দুইবার দেখো।
+- **সহজ ২:** [Convert Sorted Array to Binary Search Tree](https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/) (LeetCode 108): মাঝখানের element-টাই root, বাম অর্ধেক বাম subtree, ডান অর্ধেক ডান subtree। হিন্ট: গঠনটা হুবহু binary search-এর, শুধু এখানে mid-কে return না করে tree-তে বসাতে হয়।
+- **মাঝারি ১:** [Sort an Array](https://leetcode.com/problems/sort-an-array/) (LeetCode 912): built-in `sort()` ছাড়া আজকের `mergeSort` দিয়ে solve করো। হিন্ট: merge-এর leftover দুটো while ভুলো না; সময় মিললে [Quick Sort](../sorting/quick-sort.mdx) দিয়েও চেষ্টা করো।
+- **মাঝারি ২:** [Maximum Subarray](https://leetcode.com/problems/maximum-subarray/) (LeetCode 53) D&C ভাবে: উত্তর হয় পুরো বাম অর্ধেকে, নয় পুরো ডানে, নয় মাঝখান জুড়ে (crossing sum)। হিন্ট: crossing sum বের করতে mid থেকে দুইদিকে linear scan করো; এটাই এই সমস্যার Combine ধাপ। পরে [Dynamic Programming](./dynamic-programming.mdx)-এর Kadane-এর সাথে তুলনা করো।
+- **কঠিন:** [Merge k Sorted Lists](https://leetcode.com/problems/merge-k-sorted-lists/) (LeetCode 23): একে একে সব list মিলালে O(kN), কিন্তু list-গুলোকে pairwise ভাগ করে মিলালে আজকের merge trick-েই O(N log k)। হিন্ট: k-টা list-কে merge sort-এর মতো অর্ধেক করে ভাগ করো, প্রতি জোড়া আজকের `merge` function দিয়ে মিলাও।
+
+## সারসংক্ষেপ
+
+- D&C = ভাগ করো, জয় করো, মিলাও; সাব-সমস্যা যথেষ্ট ছোট হলে base case, না হলে recursion
+- Merge sort-এ কাজ Combine-এ, quicksort-এ কাজ Divide-এ, binary search-এ Combine বলে কিছু নেই
+- T(n) = 2T(n/2) + O(n) মানে প্রতি level-এ n কাজ, log n-টা level, মোট O(n log n); T(n) = T(n/2) + O(1) মানে O(log n)
+- Precondition মানা জরুরি: binary search চায় sorted input, প্রতিটা recursion চায় সঠিক base case
+- সাব-সমস্যায় overlap দেখলেই থামো: সেটা D&C না, Dynamic Programming-এর জমি

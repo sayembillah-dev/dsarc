@@ -1,51 +1,255 @@
 ---
-title: "Brute Force: আগে সব চেষ্টা, তারপর চালাকি"
-description: সব সম্ভাবনা একে একে টেনে দেখা - সরল, ভুল হয় না, আর optimize-এর বেসলাইন।
+title: "Brute Force: প্রথমে সৎ উত্তর, তারপর চালাকি"
+description: "সব সম্ভাব্য উত্তর একে একে চেক করার সবচেয়ে সৎ কৌশল; linear search-এর dry run, min-finding, naive string match, constraint-checking template, আর কেন brute force-এর complexity-ই প্রতিটা optimization-এর yardstick"
 ---
 
 ## কী শিখব
 
-- সব সম্ভাবনা একে একে পরীক্ষা করা - সরল কিন্তু ধীর বেসলাইন
+- brute force ঠিক কী, আর কেন প্রতিটা সমস্যায় প্রথম সমাধান হিসেবে এটাই লেখা উচিত
+- linear search দিয়ে পুরো dry run: প্রতিটা comparison টেবিলে গুনে গুনে দেখা
+- তিনটা জানা brute force template: খোঁজা, min/max বের করা, constraint চেক করা
+- naive string matching কীভাবে window সরিয়ে সরিয়ে কাজ করে
+- কেন brute force-এর সংখ্যাটাই সব optimization-এর মাপকাঠি (yardstick)
 
 ## ধারণা
 
-ভাবো তো, ব্যাগের চাবি হারিয়েছো, আর টেবিলে কুড়িটা চাবি পড়ে আছে। কী করবে? একটা একটা করে সব চাবি লাগিয়ে দেখবে। কোনো চালাকি নেই, তবু কাজ হবেই। এইটাই **brute force**: সব সম্ভাব্য উত্তর একে একে পরীক্ষা করে যাওয়া। প্রায়ই ধীর (O(n²), কখনো O(2ⁿ)), কিন্তু তিনটা কারণে এটাই প্রথম পছন্দ: (১) উত্তর সবসময় সঠিক, (২) সমস্যাটা বোঝার সবচেয়ে সহজ পথ, (৩) পরে optimize করার বেসলাইন।
+ভাবো তো, বাড়ির চাবি হারিয়ে ফেলেছো। হাতে আছে এক গোছা চাবির রিং, কোনটা আসল চাবি চেনার কোনো উপায় নেই। তখন করার একটাই জিনিস থাকে: প্রথম চাবিটা দরজায় ঢুকাও, না খুললে দ্বিতীয়টা, তারপর তৃতীয়টা, খোলা পর্যন্ত একে একে সবগুলো চেষ্টা করে যাও। কোনো চালাকি নেই, কোনো shortcut নেই, শুধু একটা নিশ্চয়তা আছে: আসল চাবি রিংয়ের ভেতরেই থাকলে তুমি ঠিকই ভেতরে ঢুকবে।
 
-**নিয়ম:** আগে brute force ভাবো, তারপর optimize করো।
+এই কাজটার নামই **brute force**: সম্ভাব্য সব উত্তর একে একে তৈরি করে চেক করা, যতক্ষণ না সঠিকটা পাওয়া যাচ্ছে। শোনাতে বোকামি লাগলেও algorithm-দুনিয়ায় এর একটা সম্মানজনক জায়গা আছে, তিনটা কারণে:
 
-## কোড উদাহরণ
+1. **সঠিকতার গ্যারান্টি**: সব possibility চেক করছো, তাই উত্তর থাকলে মিস করার কোনো উপায় নেই। কঠিন সমস্যায় আগে একটা brute force লিখে রাখলে পরের optimized solution-টা যাচাই করার জন্য হাতে একটা নির্ভরযোগ্য reference থেকে যায়।
+2. **সমস্যা বোঝার রাস্তা**: brute force লিখতে গেলে input, output আর constraint তোমাকে পরিষ্কারভাবে ভাবতেই হয়; অনেক সময় এই লেখার ফাঁকেই optimization-এর সূত্র ধরা পড়ে।
+3. **Optimization-এর yardstick**: যতক্ষণ না জানো brute force-এ কতটা সময় লাগছিল, ততক্ষণ নতুন algorithm-টা কতটা ভালো সেটা বোঝার কোনো scale-ই তোমার কাছে নেই। প্রতিটা দ্রুত algorithm-এর গৌরব আসলে তার brute force-এর তুলনায়ই মাপা হয়।
+
+Interview-তেও একটা নিয়ম মানা হয়: আগে brute force-টা বলো বা লিখে ফেলো, তারপর optimize করো। এটা দুর্বলতা না; এটা বোঝায় তুমি trade-off কোথায় জানো। তবে মনে রাখো, brute force মানে এলোমেলো লেখা না: ঠিকঠাক loop, পরিষ্কার constraint check, সঠিক edge case handling এখানেও লাগে। ভালো brute force-ই পরে ভালো optimization হয়।
+
+শুরু করার আগে যা জানা থাকলে ভালো:
+
+1. [Array Operations](../arrays-strings/array-operations.mdx): index দিয়ে traversal আর nested loop
+2. [Complexity হিসাব](../algorithmic-complexity/how-to-calculate.mdx): loop গুনে সময় বের করা
+3. Recursion লাগবে না, সাধারণ loop-ই যথেষ্ট
+
+## ধাপে ধাপে ড্রাই রান
+
+সবচেয়ে সরল brute force হলো **linear search**: একটা array-তে target খুঁজতে হবে, আর element-গুলো কী order-এ আছে সে সম্পর্কে কোনো ধারণা নেই। চাবির রিংয়ের মতোই: index 0 থেকে শুরু করে একে একে দেখে যাও।
+
+Array: `[3, 1, 4, 1, 5, 9, 2, 7]`, target = 7
+
+```
+index:    0   1   2   3   4   5   6   7
+value:    3   1   4   1   5   9   2   7
+          ^
+          এখান থেকে শুরু, প্রতি ধাপে এক ঘর ডানে
+```
+
+নিয়ম একটাই: **প্রতিটা ঘরে একটাই প্রশ্ন, এটা কি target? হ্যাঁ হলে থেমে যাও, না হলে পরেরটায় এগোও।**
+
+| ধাপ | index i | nums[i] | nums[i] === 7? | সিদ্ধান্ত |
+|-----|---------|---------|----------------|-----------|
+| 1 | 0 | 3 | না | পরেরটায় যাও |
+| 2 | 1 | 1 | না | পরেরটায় যাও |
+| 3 | 2 | 4 | না | পরেরটায় যাও |
+| 4 | 3 | 1 | না | পরেরটায় যাও |
+| 5 | 4 | 5 | না | পরেরটায় যাও |
+| 6 | 5 | 9 | না | পরেরটায় যাও |
+| 7 | 6 | 2 | না | পরেরটায় যাও |
+| 8 | 7 | 7 | হ্যাঁ | থামো, উত্তর index 7 |
+
+মোট comparison: 8টা। এটাই worst case-এর দৃশ্য: target একদম শেষ ঘরে বসে আছে। target 10 খুঁজলে কী হতো ভেবে দেখো: 8টা comparison শেষে loop থামত, তারপর সৎভাবে বলতে হতো "নেই", মানে -1 return। এই "সব দেখে ফেলার" নিশ্চয়তাটাই brute force-কে নিরাপদ করে।
+
+আরেকটা জিনিস লক্ষ করো: এখানে কোনো assumption লাগেনি। Array sorted না, element unique না, কিছুই দরকার না। এই "কোনো শর্ত ছাড়াই চলে" গুণটাই brute force-এর সবচেয়ে বড় শক্তি, আর সেই সুবিধার দামটাই পরে Complexity অংশে হিসাব করব।
+
+## কোড
+
+তিনটা classic brute force এক ফাইলে: খোঁজা (linear search), pair-ভিত্তিক সমস্যা (Two Sum), আর constraint গোনা (pair counting)। পুরোটা copy করে `node brute-force.js` দিয়ে চালাতে পারো।
 
 ```js
-// Two Sum - brute force
-function twoSumBrute(nums, target) {
-  for (let i = 0; i < nums.length; i++)
-    for (let j = i + 1; j < nums.length; j++)
-      if (nums[i] + nums[j] === target) return [i, j];
-  return [];                          // সব জোড়া পরীক্ষা -> O(n²)
+// ============================================================
+// brute-force.js : তিনটা classic brute force এক ফাইলে
+// ============================================================
+
+// 1) Linear search: target-এর index, না থাকলে -1
+function linearSearch(nums, target) {
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] === target) return i;    // পেয়েই সাথে সাথে থামো
+  }
+  return -1;                             // পুরো array দেখা শেষ, পাইনি
 }
-console.log(twoSumBrute([2, 7, 11, 15], 9)); // [0,1]
-// তুলনা: hash version একই কাজ O(n)-এ করে
+
+// 2) Two Sum brute force: এমন দুটো ভিন্ন index যাদের যোগফল target (LeetCode 1)
+function twoSumBrute(nums, target) {
+  for (let i = 0; i < nums.length; i++) {
+    for (let j = i + 1; j < nums.length; j++) {   // j সবসময় i-এর ডানে
+      if (nums[i] + nums[j] === target) return [i, j];
+    }
+  }
+  return [];
+}
+
+// 3) Constraint checking: যোগফল k-এর চেয়ে ছোট এমন pair কতগুলো
+function countPairsLessThan(nums, k) {
+  let count = 0;
+  for (let i = 0; i < nums.length; i++) {
+    for (let j = i + 1; j < nums.length; j++) {
+      if (nums[i] + nums[j] < k) count++;  // constraint pass করলে জমা
+    }
+  }
+  return count;
+}
+
+// ----------------- demo -----------------
+const arr = [3, 1, 4, 1, 5, 9, 2, 7];
+
+console.log(linearSearch(arr, 7));                // 7
+console.log(linearSearch(arr, 10));               // -1
+
+console.log(twoSumBrute([2, 7, 11, 15], 9));      // [0, 1]
+console.log(twoSumBrute([3, 2, 4], 6));           // [1, 2]
+
+console.log(countPairsLessThan([1, 3, 5, 2], 6)); // 3  (জোড়া: 1+3, 1+2, 3+2)
+```
+
+তিনটা function-ই একই ছক মানে: **সব candidate তৈরি করো, প্রতিটায় constraint চেক করো, মিললে উত্তর জমা করো**। এই ছকটা মুখস্থ না করে বুঝে নিলে brute force-ভিত্তিক প্রায় সব easy-medium সমস্যার প্রথম solve তুমি লিখে ফেলতে পারবে।
+
+## ভ্যারিয়েন্ট
+
+### ভ্যারিয়েন্ট ১: selection-ধাঁচের min-finding
+
+ধারণা: প্রথম element-টাকেই সাময়িক champion ধরো, তারপর বাকি সবাইকে একে একে champion-এর সাথে লড়াও; যে জিতবে সে-ই নতুন champion।
+
+```js
+function findMin(nums) {
+  if (nums.length === 0) return undefined;  // খালি array-তে champion নেই
+  let min = nums[0];                        // প্রথমটাই সাময়িক champion
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] < min) min = nums[i];       // challenger জিতলে champion বদলায়
+  }
+  return min;
+}
+console.log(findMin([3, 1, 4, 1, 5, 9, 2, 7])); // 1
+```
+
+এই champion trick-টাই বারবার চালালে (প্রতিবার champion-কে সরিয়ে রেখে) পুরো array sort হয়ে যায়: সেটাই [Selection Sort](../sorting/selection-sort.mdx)। Brute force-এর ভেতরেই অনেক সময় পরের algorithm-এর বীজ লুকিয়ে থাকে।
+
+### ভ্যারিয়েন্ট ২: naive string match
+
+Text-এর প্রতিটা সম্ভাব্য position-এ pattern-টা বসিয়ে অক্ষরে অক্ষরে মিলাও। Text `"aabaab"`, pattern `"aab"`:
+
+```
+text:      a  a  b  a  a  b
+index:     0  1  2  3  4  5
+
+window 0: [a  a  b]           মিলে গেছে
+window 1:    [a  b  a]        দ্বিতীয় অক্ষরেই ভাঙল
+window 2:       [b  a  a]     প্রথম অক্ষরেই ভাঙল
+window 3:          [a  a  b]  মিলে গেছে
+```
+
+| window i | text-এর টুকরো | pattern | ফল |
+|----------|----------------|---------|-----|
+| 0 | aab | aab | মিলল, match at 0 |
+| 1 | aba | aab | না, দ্বিতীয় অক্ষরেই ভাঙল |
+| 2 | baa | aab | না, প্রথম অক্ষরেই ভাঙল |
+| 3 | aab | aab | মিলল, match at 3 |
+
+```js
+function naiveMatch(text, pattern) {
+  const n = text.length, m = pattern.length;
+  const found = [];
+  for (let i = 0; i <= n - m; i++) {                  // window-এর শুরু
+    let j = 0;
+    while (j < m && text[i + j] === pattern[j]) j++;  // মিলাতে থাকো
+    if (j === m) found.push(i);                       // পুরো pattern মিলে গেছে
+  }
+  return found;
+}
+console.log(naiveMatch("aabaab", "aab"));  // [0, 3]
+```
+
+### ভ্যারিয়েন্ট ৩: constraint-checking template
+
+সবচেয়ে জেনেরিক রূপটা লক্ষ করো: বাইরের দুটো loop সব candidate তৈরি করে, ভেতরের if constraint চেক করে, pass করলে best উত্তর update হয়। Constraint বদলালেই নতুন সমস্যা solve:
+
+```js
+// k-এর চেয়ে ছোট এমন সব pair-এর মধ্যে সবচেয়ে বড় যোগফল
+function bestPairForSum(nums, k) {
+  let best = -Infinity;
+  for (let i = 0; i < nums.length; i++) {
+    for (let j = i + 1; j < nums.length; j++) {
+      const sum = nums[i] + nums[j];            // candidate তৈরি
+      if (sum < k && sum > best) best = sum;    // constraint + best update
+    }
+  }
+  return best === -Infinity ? -1 : best;
+}
+console.log(bestPairForSum([34, 23, 1, 24, 75, 33, 54, 8], 60)); // 58
 ```
 
 ## কোড ব্রেকডাউন
 
-- সব জোড়া (i, j) পরীক্ষা -> O(n²)।
-- মনে আছে, [Hash Tables](../hash-tables/index.mdx) chapter-এ hash দিয়ে একই কাজ O(n)-এ করেছিলাম? এটাই brute force থেকে optimize-এর ক্লাসিক উদাহরণ।
+মূল ফাইলের গুরুত্বপূর্ণ line-গুলো আবার দেখি:
+
+1. `for (let i = 0; i < nums.length; i++)` : প্রতিটা index ঠিক একবার করে দেখা; এটাই "সব চাবি একে একে চেষ্টা করা" অংশ।
+2. `if (nums[i] === target) return i;` : মিললেই সাথে সাথে return। বাকি ঘর আর দেখা হয় না; linear search-এর একমাত্র ছোট optimization এটাই।
+3. `return -1;` : loop শেষে এখানে পৌঁছানো মানে পুরো array দেখা হয়ে গেছে এবং target নেই। এই line ভুলে গেলে না-পাওয়া case-এ function `undefined` ফেরাত।
+4. `for (let j = i + 1; j < nums.length; j++)` : j শুরু হয় i-এর ডান থেকে। এতে (i, j) আর (j, i) একই pair দুইবার গোনা হয় না, আর একই element নিজের সাথেও যোগ হয় না।
+5. `if (nums[i] + nums[j] === target) return [i, j];` : প্রথম ম্যাচিং pair-টাই উত্তর। সমস্যায় "সব pair" চাইলে এখানে return না করে array-তে push করতে হতো।
+6. `let count = 0;` : constraint-ভিত্তিক সমস্যায় উত্তর জমার ঘর।
+7. `if (nums[i] + nums[j] < k) count++;` : template-এর নাড়ি: candidate তৈরি (যোগফল), constraint চেক (`< k`), pass করলে জমা (`count++`)।
+8. `return count;` : সব candidate দেখা শেষে চূড়ান্ত উত্তর। Brute force-এ "loop শেষ" নিজেই একটা তথ্য: আর কিছু বাকি নেই।
+9. `console.log(linearSearch(arr, 10));` : ইচ্ছে করে একটা না-পাওয়া case demo করা হয়েছে; শুধু positive case চালালে -1 path-এর bug ধরা পড়ে না।
+10. Demo-তে ছোট input নেওয়া হয়েছে যাতে তুমি নিজে হাতে dry run করে output মিলিয়ে দেখতে পারো; এভাবেই brute force-কে reference হিসেবে ব্যবহার করা হয়।
 
 ## Complexity
 
-- সমস্যাভেদে O(n²) থেকে O(2ⁿ) পর্যন্ত।
+সংখ্যাগুলো জাদু থেকে আসে না, গুনে দেখি:
+
+- **Linear search: O(n)**। Worst case-এ target শেষ ঘরে বা একেবারেই নেই, তখন প্রতিটা element-এর সাথে একবার করে তুলনা: n-টা comparison, প্রতিটায় O(1) কাজ, মোট n × O(1) = O(n)। Best case-এ প্রথম ঘরেই পেলে O(1), গড়ে প্রায় n/2-টা তুলনা, যেটাও O(n)-ই।
+- **Two Sum brute: O(n²)**। i = 0 হলে j ঘোরে (n - 1) বার, i = 1 হলে (n - 2) বার, এভাবে শেষে 1 বার। মোট তুলনা = (n - 1) + (n - 2) + ... + 1 = n(n - 1)/2 ≈ n²/2। n = 1000 হলে প্রায় 5,00,000-টা তুলনা।
+- **Naive string match: O(n × m)**। Window-এর সম্ভাব্য শুরু (n - m + 1)-টা, প্রতিটা window-তে worst case-এ m-টা অক্ষর মেলানো। `"aaaa...a"` text-এ `"aaa"` pattern খুঁজলে প্রতিবারই প্রায় পুরো pattern মেলাতে হয়, তখন সত্যিই n × m-এর কাছাকাছি।
+- **Space: সবগুলোতেই O(1) extra**। কয়েকটা variable ছাড়া কিছু লাগে না; এটাই brute force-এর একটা সৎ গুণ।
+
+এখন yardstick-এর কথাটা। Two Sum-এ [Hash Table](../hash-tables/hash-table-intro.mdx) দিয়ে এক pass-এ O(n)-এ নামা যায়। কিন্তু সেই O(n)-এর তাৎপর্য ঠিক তখনই অনুভব করা যায় যখন জানো brute force ছিল O(n²): n = 10⁵ হলে 10¹⁰ বনাম 10⁵-এর পার্থক্য। তাই যে কোনো optimization-এর প্রথম প্রশ্ন সবসময়: "brute force-এ কত লাগছিল?" এই সংখ্যাটাই তোমার baseline; এটা ছাড়া "দ্রুত" শব্দটা ফাঁকা।
+
+## সাধারণ ভুল আর edge case
+
+**১. ভেতরের loop-এ j কে 0 থেকে শুরু করা**
+`twoSumBrute`-এ `j = 0` দিলে একই pair দুইবার গোনা হয়, আর ভয়ংকর bug হলো `i === j`-তে একই element নিজের সাথে যোগ হয়ে মিথ্যা উত্তর দেয়: `[3, 2]`-এ target 6 দিলে `[0, 0]` return করবে। pair-ভিত্তিক brute force-এ `j = i + 1` মনে রাখো।
+
+**২. খালি বা এক-element input আগে হ্যান্ডল না করা**
+Linear search-এ খালি array-তে loop একবারও ঘোরে না, ঠিকঠাক -1-ই পড়ে। কিন্তু `findMin`-এ `nums[0]`-কে champion ধরার আগে খালি কি না দেখা জরুরি, না হলে `undefined` champion হয়ে বসে থাকে। Function-এর প্রথম কাজ: edge case-এর পাহারা।
+
+**৩. "না পেলে কী return হবে" লেখা ভুলে যাওয়া**
+Loop-এর ভেতরে শুধু "পেলে return" লিখে শেষে `return -1` বা `return []` না দিলে না-পাওয়া case-এ `undefined` ফেরে, আর সেটা পরে অন্য জায়গায় অদ্ভুত bug তৈরি করে। Loop শেষ হওয়া নিজেই একটা উত্তর: "সব দেখে ফেলেছি।"
+
+**৪. Brute force লিখে সেখানেই থেমে যাওয়া**
+Interview-এ brute force দেখিয়ে চুপ করে থাকলে ধরে নেওয়া হয় আর কিছু জানো না। Brute force হলো শুরু, শেষ না: এরপর বলতে হবে কোথায় বারবার একই কাজ হচ্ছে আর সেটা কীভাবে কমানো যায়, যেমন Two Sum-এ hash, sorted pair সমস্যায় [Two Pointer](./two-pointer.mdx)।
+
+**৫. Constraint না দেখে TLE-এ পড়া**
+মোটামুটি ধরো judge সেকেন্ডে ~10⁸-টা সহজ operation করতে পারে। n = 10⁵ হলে O(n²) মানে ~10¹⁰-টা operation, অর্থাৎ ~100 সেকেন্ড: Time Limit Exceeded পাক্কা। Submission-এর আগে constraint দেখে হিসাব করো brute force চলবে কি না; না চললে [Problem Solving](./index.mdx) অধ্যায়ের প্যাটার্ন-গুলো থেকে ছোট complexity-এর কৌশল খোঁজো।
 
 ## Animation Spec
 
-> **Animation Spec: Exhaustive Pairs**
+> **Animation Spec: Keyring এবং Exhaustive Pairs**
 >
-> - **দৃশ্য:** array; দুটো pointer (i, j) সব জোড়া ঘোরে; পরীক্ষিত জোড়া গোনা।
-> - **ইনপুট:** array, target।
-> - **ধাপ:** প্রতিটা জোড়া হলুদ; মিললে সবুজ; counter মোট চেষ্টা দেখায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset।
-> - **লক্ষ্য:** O(n²)-এর "সব জোড়া" অনুভূতি ও optimize-এর প্রেরণা।
+> - **দৃশ্য:** উপরে চাবির রিংয়ের মতো সাজানো element-গুলো; নিচে চলমান "মোট চেষ্টা" counter; pair-ভিত্তিক সমস্যায় i আর j দুটো pointer আলাদা রঙে highlight
+> - **ইনপুট:** array আর target; string match-এর জন্য text আর pattern
+> - **ধাপ:** প্রতিটা comparison-এ দুটো ঘর জ্বলে ওঠে, মিললে সবুজ, না মিললে ধূসর হয়ে সরে যায়; counter এক করে বাড়ে; মিলে গেলে "থামো" cue; string match-এ window-টা সরতে সরতে অক্ষর মেলে বা ভাঙে
+> - **নিয়ন্ত্রণ:** speed, step, reset; একটা toggle যা একই input-এ optimized version-এর counter-কে পাশাপাশি চালায়, যাতে পার্থক্য চোখে পড়ে
+> - **লক্ষ্য:** শেখার্থী নিজে অনুভব করুক "কাজ ঠিকই হয়, কিন্তু কতটা অপচয়", আর সেই অপচয়ের সংখ্যাটাই পরের অধ্যায়গুলোর optimization target
 
 ## অনুশীলন
 
-- একটা array-তে সবচেয়ে বড় জোড়ার গুণফল brute force-এ বের করো।
+- **সহজ ১:** [How Many Numbers Are Smaller Than the Current Number](https://leetcode.com/problems/how-many-numbers-are-smaller-than-the-current-number/) (LeetCode 1365): প্রতিটা element-এর জন্য বাকি সবার সাথে তুলনা করে ছোটগুলো গুনে ফেলো। হিন্ট: ভেতরের loop-এ শুধু `i === j` বাদ দাও, বাকি সব জায়গায় সোজা দুটো loop-ই যথেষ্ট।
+- **সহজ ২:** [Maximum Product Difference Between Two Pairs](https://leetcode.com/problems/maximum-product-difference-between-two-pairs/) (LeetCode 1913): সবচেয়ে বড় দুটো আর সবচেয়ে ছোট দুটো খুঁজে গুণফলের পার্থক্য বের করো। হিন্ট: champion trick-টা চালিয়ে max, second max, min, second min আলাদা করো, বা নিরাপদ brute ভাবে সব pair scan করো।
+- **মাঝারি ১:** [Two Sum](https://leetcode.com/problems/two-sum/) (LeetCode 1): আজকের `twoSumBrute` হুবহু submit করো, pass হবে। হিন্ট: `j = i + 1` ভুলো না। Submit-এর পর ভাবো একই কাজ এক pass-এ কীভাবে হয়; উত্তরটা [Hash Tables](../hash-tables/hash-table-intro.mdx) অধ্যায়ে। বোনাস হিসেবে [Merge Sorted Array](https://leetcode.com/problems/merge-sorted-array/) (LeetCode 88)-এর brute solve লেখো: দুটো array জোড়া লাগিয়ে sort করে দাও।
+- **মাঝারি ২:** [Find the Index of the First Occurrence in a String](https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/) (LeetCode 28): আজকের `naiveMatch`-ই এই সমস্যা। হিন্ট: শুধু প্রথম match-টা return করতে হবে, সবগুলো না; আর window text-এর বাইরে বেরোনোর আগেই loop থামাও।
+- **কঠিন:** [3Sum](https://leetcode.com/problems/3sum/) (LeetCode 15): তিনটা nested loop দিয়ে O(n³) brute লিখো আর নিজে দেখো কেন judge TLE দেয়। হিন্ট: duplicate triplet বাদ দিতে প্রথমে sort করে set ব্যবহার করতে পারো; কিন্তু আসল solve হলো sort + [Two Pointer](./two-pointer.mdx), যেটা সমস্যাটাকে O(n²)-এ নামিয়ে আনে।
+
+## সারসংক্ষেপ
+
+- Brute force = সম্ভাব্য সব উত্তর একে একে চেক করা; সঠিকতার গ্যারান্টি তার শক্তি, গতি তার দাম
+- প্রতিটা সমস্যায় আগে brute force লেখো: reference উত্তর পাবে, সমস্যা পরিষ্কার হবে, optimize করার baseline তৈরি হবে
+- মূল ছক একটাই: সব candidate তৈরি করো, constraint চেক করো, pass করলে উত্তর জমা করো
+- Linear search O(n), pair-ভিত্তিক brute O(n²), naive string match O(n × m); space প্রায় সবসময় O(1)
+- Brute force-এর সংখ্যাটাই yardstick: প্রতিটা optimization-এর জয় এই baseline-এর বিপরীতে মাপা হয়

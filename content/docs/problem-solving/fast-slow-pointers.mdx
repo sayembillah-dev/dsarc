@@ -1,63 +1,256 @@
 ---
-title: "Fast & Slow Pointers: কচ্ছপ ও খরগোশ"
-description: দুই গতির pointer দিয়ে linked list-এ cycle ধরা ও মাঝের node খোঁজা।
+title: "Fast & Slow Pointers: দুই গতির রেস"
+description: "Floyd-এর cycle detection থেকে মাঝের node খোঁজা, দুটো pointer আর দুই গতি দিয়েই। পুরো dry run, detectCycle-এর প্রমাণ, happy number আর duplicate খোঁজার ভ্যারিয়েন্ট।"
 ---
 
 ## কী শিখব
 
-- linked list/cycle-এ দুই গতির pointer
+- দুই গতির pointer দিয়ে linked list-এ cycle আছে কিনা ধরা (Floyd-এর cycle detection)
+- cycle-এর ঠিক কোন node থেকে শুরু, সেটাও বের করা O(1) space-এ
+- একই কৌশল দিয়ে list-এর মাঝের node এক পাসেই খুঁজে বের করা
+- কৌশলটা শুধু list-এর জন্য নয়: happy number আর find duplicate-এ implicit linked list
+- কখন Set-এর বদলে দুই pointer জিতে যায়, আর কেন
 
 ## ধারণা
 
-কচ্ছপ-খরগোশের গল্পটা মনে আছে? এখানেও দুজন দৌড়ায়, একটা এক ধাপে (slow), আরেকটা দুই ধাপে (fast)। এবার ভাবো, ট্র্যাকটা যদি গোল হয়, মানে cycle থাকে? fast তখন একসময় slow-কে পেছন থেকে ধরেই ফেলবে, দুজন একই node-এ গিয়ে মিলবে। মিললেই বুঝবে cycle আছে। এই সরল বুদ্ধিটাই [Linked List](../linked-lists/index.mdx)-এ cycle detection বা মাঝের node খোঁজার ক্লাসিক কৌশল। নাম Floyd's cycle detection।
+ভাবো তো, সাইকেল রেসে দুই রাইডার একসাথে শুরু করল। একজন দ্রুত প্যাডেলায়, একজন ধীরে। ট্র্যাকটা যদি সোজা হয়, দ্রুত রাইডার শেষপ্রান্তে গিয়ে থেমে যাবে, ধীর রাইডারকে সে আর কখনো ধরবে না। কিন্তু ট্র্যাকটা যদি বৃত্তাকার হয়? তাহলে দ্রুত রাইডার চক্কর দিতে দিতে একসময় ধীর রাইডারকে পেছন থেকে ধরেই ফেলবে। পেছন থেকে ধরা ফেললেই বুঝে যাবে: ট্র্যাকটা গোল ছিল।
 
-## কোড উদাহরণ
+এই একটা পর্যবেক্ষণের ওপর দাঁড়িয়ে আছে **Floyd-এর cycle detection**। [Linked List](../linked-lists/what-is-linked-list.mdx)-এ একই জিনিস: `slow` এক ধাপে এগোয়, `fast` দুই ধাপে। List-এর শেষে `null` থাকলে fast সেখানে পৌঁছে থেমে যায়, মানে cycle নেই। আর cycle থাকলে দুজন cycle-এর ভেতর ঘুরতে ঘুরতে একসময় একই node-এ মিলে যায়। মিলনই প্রমাণ।
+
+কেন মিলবেই? Cycle-এর ভেতর ঢুকে গেলে fast-এর চোখে slow এক ঘর করে কাছে আসছে। দুজনের ব্যবধান প্রতি ধাপে ঠিক ১ করে কমে। তাই ব্যবধান যত বড়ই হোক, একসময় শূন্য হবেই। কেউ কাউকে লাফ দিয়ে পেরিয়ে যাওয়ার সুযোগই নেই।
+
+আরেকটা জিনিস লক্ষ্য করো: এই পুরো খেলায় লাগবে শুধু দুটো pointer। কোনো visited Set নয়, কোনো অতিরিক্ত মেমরি নয়। তাই যেখানে Set দিয়ে cycle ধরলে space হতো O(n), Floyd করলে O(1)। ইন্টারভিউতে এই পার্থক্যটাই আসল প্রশ্ন।
+
+## ধাপে ধাপে ড্রাই রান
+
+হাতে হাতে একবার দেখি। List-টা ধরো 3 → 2 → 0 → -4, আর শেষ node -4 আবার 2-এর দিকে point করছে (মানে 2-ই cycle-এর মুখ):
+
+```
+head
+ |
+ v
+ 3 -> 2 -> 0 -> -4
+      ^          |
+      |----------|
+```
+
+নিয়ম: প্রতি ধাপে slow এক ঘর, fast দুই ঘর। দুজনের অবস্থান লিখে রাখি:
+
+| ধাপ | slow | fast | মিলল? |
+|-----|------|------|-------|
+| শুরু | 3 | 3 | - |
+| 1 | 2 | 0 | - |
+| 2 | 0 | 2 | - |
+| 3 | -4 | -4 | হ্যাঁ, দুজন একই node-এ |
+
+ধাপ ৩-এ দুজন -4-এ মিলে গেল। Cycle আছে, এটা প্রমাণিত। খেয়াল করো, মিলনবিন্দুটা -4, কিন্তু cycle-এর শুরু 2। মিললেই cycle আছে বোঝা যায়, কিন্তু মিলনবিন্দুই যে cycle-এর মুখ, এমন ভাবা ভুল। মুখ বের করার জন্য দ্বিতীয় পর্ব লাগে।
+
+দ্বিতীয় পর্ব: একটা নতুন pointer `p`-কে head-এ বসাও, `slow` থাক মিলনবিন্দুতেই। এবার দুজনকেই এক ধাপ এক ধাপ করে এগোতে দাও:
+
+| ধাপ | p (head থেকে) | slow (মিলনবিন্দু থেকে) | মিলল? |
+|-----|---------------|------------------------|-------|
+| শুরু | 3 | -4 | - |
+| 1 | 2 | 2 | হ্যাঁ, এটাই cycle-এর মুখ |
+
+এক ধাপেই মিলে গেছে। কেন এমন হয়, তার হিসাবটা কোড ব্রেকডাউনের পরে দেখাব।
+
+## কোড
+
+পুরো একটা ফাইল: list বানানোর ছোট helper, তারপর তিনটা ফাংশন, নিচে ডেমো:
 
 ```js
-// linked list-এ cycle আছে কিনা
+class ListNode {
+  constructor(val) {
+    this.val = val;
+    this.next = null;
+  }
+}
+
+// array থেকে list বানায়; pos দিলে শেষ node-টা pos index-এ ফিরে যায় (cycle)
+function buildList(arr, pos = -1) {
+  if (arr.length === 0) return null;
+  const nodes = arr.map(v => new ListNode(v));
+  for (let i = 0; i < nodes.length - 1; i++) {
+    nodes[i].next = nodes[i + 1];
+  }
+  if (pos >= 0) nodes[nodes.length - 1].next = nodes[pos];
+  return nodes[0];
+}
+
+// পর্ব ১: cycle আছে কিনা (LeetCode 141)
 function hasCycle(head) {
   let slow = head, fast = head;
   while (fast && fast.next) {
-    slow = slow.next;               // ১ ধাপ
-    fast = fast.next.next;          // ২ ধাপ
-    if (slow === fast) return true; // মিলে গেছে -> cycle
+    slow = slow.next;
+    fast = fast.next.next;
+    if (slow === fast) return true;
   }
-  return false;                     // fast শেষে পৌঁছেছে -> cycle নেই
+  return false;
 }
-// মাঝের node খোঁজা: fast শেষে গেলে slow ঠিক মাঝে থাকে
+
+// পর্ব ২: cycle কোথা থেকে শুরু (LeetCode 142), না থাকলে null
+function detectCycle(head) {
+  let slow = head, fast = head;
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+    if (slow === fast) {
+      let p = head;              // একজনকে head-এ পাঠাও
+      while (p !== slow) {       // দুজন এখন এক ধাপ এক ধাপ
+        p = p.next;
+        slow = slow.next;
+      }
+      return p;                  // মিলনবিন্দুই cycle-এর মুখ
+    }
+  }
+  return null;
+}
+
+// মাঝের node (LeetCode 876): fast শেষে গেলে slow ঠিক মাঝে
 function middleNode(head) {
   let slow = head, fast = head;
-  while (fast && fast.next) { slow = slow.next; fast = fast.next.next; }
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+  }
   return slow;
 }
-// ডেমো: 1 -> 2 -> 3 -> 4
-const n1 = { val: 1 }, n2 = { val: 2 }, n3 = { val: 3 }, n4 = { val: 4 };
-n1.next = n2; n2.next = n3; n3.next = n4; n4.next = null;
-console.log(middleNode(n1).val); // 3
-console.log(hasCycle(n1));       // false
-n4.next = n2;                    // cycle বানালাম (4 আবার 2-তে)
-console.log(hasCycle(n1));       // true
+
+// --- ডেমো ---
+const withCycle = buildList([3, 2, 0, -4], 1);
+console.log(hasCycle(withCycle));        // true
+console.log(detectCycle(withCycle).val); // 2
+
+const plain = buildList([1, 2, 3, 4, 5]);
+console.log(hasCycle(plain));            // false
+console.log(detectCycle(plain));         // null
+console.log(middleNode(plain).val);      // 3
+console.log(middleNode(buildList([1, 2, 3, 4])).val); // 3 (দ্বিতীয় মাঝ)
 ```
 
-## কোড ব্রেকডাউন
+## ভ্যারিয়েন্ট ১: happy number (LeetCode 202)
 
-- cycle থাকলে fast "ল্যাপ" দিয়ে slow-কে ধরে (দৌড়ের ট্র্যাকের মতো)।
-- fast যখন শেষে পৌঁছায়, slow তখন ঠিক অর্ধেক পথে, মানে মাঝের node-এ।
+প্রশ্ন: একটা সংখ্যার প্রতিটা ডিজিটের বর্গ যোগ করো, নতুন সংখ্যা পাবে, আবার একই কাজ। এভাবে চলতে চলতে 1-এ পৌঁছালে সংখ্যাটা "happy"। নাহলে? তাহলে একটা চক্রে ঘুরতে থাকবে।
+
+চাবিকাঠি: সংখ্যাগুলোর sequence-টাও আসলে একটা linked list। `next(n)` ফাংশনটাই একমাত্র edge। আর 1-এ না পৌঁছালে sequence অবশ্যই cycle-এ পড়বে, কারণ এই যোগফল ছোট হতে হতে একটা সীমার মধ্যে বন্দি হয়ে যায়। মানে এটা cycle detection-ই, শুধু node-এর বদলে সংখ্যা:
+
+```js
+function isHappy(n) {
+  const next = x => {
+    let sum = 0;
+    while (x > 0) {
+      const d = x % 10;
+      sum += d * d;
+      x = Math.floor(x / 10);
+    }
+    return sum;
+  };
+
+  let slow = n, fast = n;
+  do {
+    slow = next(slow);          // এক ধাপ
+    fast = next(next(fast));    // দুই ধাপ
+  } while (slow !== fast);
+
+  return slow === 1;            // মিলনবিন্দু 1 হলে happy, নাহলে cycle
+}
+
+console.log(isHappy(19)); // true  (19 -> 82 -> 68 -> 100 -> 1)
+console.log(isHappy(2));  // false (2 -> 4 -> 16 -> 37 -> ... -> 4)
+```
+
+এখানে `do...while` নেওয়ার কারণ: শুরুতেই slow আর fast সমান (দুজনই n), তাই আগে একবার এগিয়ে না নিলে লুপ চলবেই না। List-এর ক্ষেত্রে while-এর ভেতরেই আগে এগিয়ে নিচ্ছিলাম, একই ব্যাপার।
+
+## ভ্যারিয়েন্ট ২: find the duplicate (LeetCode 287)
+
+প্রশ্ন: `n + 1` সংখ্যক উপাদানের একটা array, প্রতিটা উপাদান 1 থেকে n-এর মধ্যে। ঠিক একটা সংখ্যা দুইবার (বা তার বেশি) আছে, সেটা খুঁজে বের করো। শর্ত: array বদলানো যাবে না, অতিরিক্ত জায়গা O(1)।
+
+জাদু এখানে: index `i` থেকে `nums[i]`-তে লাফ দাও। প্রতিটা index থেকে ঠিক একটা edge বেরোচ্ছে, মানে array-টা আসলে একটা implicit linked list। আর একটা সংখ্যা দুইবার থাকলে দুটো index একই জায়গায় point করছে, মানে সেখানেই cycle-এর মুখ। তাই Floyd-এর পুরো দুই পর্ব হুবহু চলে:
+
+```js
+function findDuplicate(nums) {
+  let slow = nums[0], fast = nums[0];
+  do {
+    slow = nums[slow];
+    fast = nums[nums[fast]];
+  } while (slow !== fast);
+
+  slow = nums[0];               // একজনকে আবার শুরুতে
+  while (slow !== fast) {
+    slow = nums[slow];
+    fast = nums[fast];
+  }
+  return slow;                  // মিলনবিন্দুই duplicate সংখ্যাটা
+}
+
+console.log(findDuplicate([1, 3, 4, 2, 2])); // 2
+console.log(findDuplicate([3, 1, 3, 4, 2])); // 3
+```
+
+Array-কে list ভাবার এই কলটা অনেক জায়গায় কাজে লাগে। [Cyclic Sort](./cyclic-sort.mdx)-এও index আর value-এর এই সম্পর্কটাই মূল চালিকাশক্তি।
+
+## কোড ব্রেকডাউন: detectCycle, লাইনে লাইনে
+
+1. `let slow = head, fast = head` : দুজনই একই জায়গা থেকে শুরু। এই সমানতার জন্যই লুপের ভেতরে আগে দুজনকে এক ধাপ এগিয়ে নিতে হয়, নাহলে প্রথম চেকেই মিলে যাওয়ার ভান করবে।
+2. `while (fast && fast.next)` : fast-ই আগে শেষরেখায় পৌঁছায়, তাই তার ওপরই চেক। `fast.next` না থাকলে `fast.next.next` লিখলেই TypeError।
+3. `slow = slow.next` : এক ধাপ। `fast = fast.next.next` : দুই ধাপ। গতির পার্থক্যটাই পুরো কৌশল।
+4. `if (slow === fast)` : ভ্যালু নয়, **reference** তুলনা। দুটো আলাদা node-এর val এক হলেও তারা সমান নয়; মিল মানে আক্ষরিকভাবে একই node।
+5. মিলে গেলে `let p = head` : দ্বিতীয় পর্বের শুরু। একজন মিলনবিন্দুতে থাকল, আরেকজন head থেকে।
+6. `while (p !== slow)` : এবার দুজনই এক ধাপে। মিলনবিন্দুতেই থামবে, আর সেটাই cycle-এর মুখ।
+
+কেন দ্বিতীয় পর্বে মুখটা পাওয়া যায়? ছোট্ট হিসাব: ধরো head থেকে cycle-এর মুখ পর্যন্ত দূরত্ব `a`, মুখ থেকে মিলনবিন্দু পর্যন্ত `b`, আর মিলনবিন্দু থেকে ঘুরে আবার মুখ পর্যন্ত `c`। মিলনের মুহূর্তে slow গেছে `a + b`, fast গেছে `2(a + b)`। আর fast slow-এর চেয়ে ঠিক কয়েকটা পুরো চক্কর বেশি ঘুরেছে, মানে `a + b` হলো `b + c`-এর একটা গুণিতক। সরল করলে পাও `a = (চক্কর সংখ্যা - 1) * (b + c) + c`। অর্থাৎ head থেকে `a` ধাপ যাওয়া মানে মিলনবিন্দু থেকে `c` ধাপ যোগ কয়েকটা পুরো চক্কর। দুজনকে একসাথে এক ধাপে চালালে মুখেই মিলবেই।
 
 ## Complexity
 
-- O(n) time, O(1) space।
+হাতে হাতে গুনে দেখি:
+
+- **Cycle নেই:** fast দুই ধাপে এগোয়, তাই সর্বোচ্চ `n / 2` চক্করে list-এর শেষে পৌঁছে যায়। O(n)।
+- **Cycle আছে:** slow cycle-এ ঢুকতে সর্বোচ্চ `n` ধাপ। ঢোকার পর fast প্রতি ধাপে ব্যবধান ১ করে কমায়, ব্যবধান সর্বোচ্চ cycle-এর দৈর্ঘ্য `C` হতে পারে। তাই আরও সর্বোচ্চ `C` ধাপে মিলন। মোট `O(n + C)`, আর `C <= n`, মানে O(n)।
+- **detectCycle-এর দ্বিতীয় পর্ব:** head থেকে মুখ পর্যন্ত সর্বোচ্চ `a <= n` ধাপ। তাই সেটাও O(n)।
+- **Space:** যত বড়ই list হোক, জমে থাকে দুটো pointer। **O(1)**। Set দিয়ে করলে প্রতিটা node জমাতে হতো, O(n)। এই পার্থক্যের জন্যই Floyd এত মূল্যবান।
+
+`middleNode`-ও একই যুক্তি: fast পুরো list পার হতে `n / 2` চক্কর, slow সেই সময়ে `n / 2` ঘর এগিয়েছে। O(n) time, O(1) space।
+
+## সাধারণ ভুল আর edge case
+
+**১. `fast.next.next` লেখার আগে null চেক না করা।**
+List-এ cycle না থাকলে fast একসময় শেষের দিকে এগোবেই। `fast.next` যদি `null` হয়, `fast.next.next` লিখতেই TypeError ফেলে পুরো প্রোগ্রাম থেমে যাবে। তাই loop condition সবসময় `fast && fast.next`।
+
+**২. শুরুতেই slow === fast, লুপে ঢোকার আগেই "মিল" ঘোষণা।**
+দুজনই head থেকে শুরু করে, তাই `while (slow !== fast)` দিয়ে লুপ লিখলে সেটা একবারও চলবে না। সমাধান দুটো: হয় লুপের ভেতরে আগে দুজনকে এক ধাপ এগিয়ে নাও (আমরা এটাই করেছি), নয়তো `do...while` ব্যবহার করো (happy number-এ যেমন করেছি)।
+
+**৩. মিলনবিন্দুকেই cycle-এর মুখ ভেবে বসা।**
+Dry run-এ দেখেছো, মিল হয় -4-এ, কিন্তু মুখ 2। দ্বিতীয় পর্ব (একজনকে head-এ পাঠিয়ে এক ধাপে চালানো) না করলে ভুল node ফেরত দেবে। এই ভুলটা LeetCode 142-এ সবচেয়ে বেশি হয়।
+
+**৪. জোড় সংখ্যক list-এ মাঝের node কোনটা, সেটা নিয়ে দ্বিধা।**
+`while (fast && fast.next)` নিয়মে 4 node-এর list-এ slow থামে 3 নম্বরে, মানে দ্বিতীয় মাঝ। LeetCode 876 ঠিক এটাই চায়। কিন্তু কোনো সমস্যায় যদি প্রথম মাঝ চাই, condition বদলে `fast.next && fast.next.next` লাগবে। প্রশ্ন পড়ে condition ঠিক করো।
+
+**৫. ভ্যালু দিয়ে তুলনা করা, reference দিয়ে নয়।**
+`slow.val === fast.val` দিলে একই ভ্যালুর দুটো আলাদা node-কেও মিল বলে ভুল করবে। Cycle detection-এ একমাত্র `slow === fast`, মানে একই object reference, কোনো বিকল্প নেই।
 
 ## Animation Spec
 
 > **Animation Spec: Tortoise & Hare**
 >
-> - **দৃশ্য:** linked list (cycle সহ/ছাড়া); দুটো pointer ভিন্ন গতিতে।
-> - **ইনপুট:** cycle on/off।
-> - **ধাপ:** slow ১, fast ২ ধাপ; cycle থাকলে মিলন highlight।
-> - **নিয়ন্ত্রণ:** speed, step, reset।
-> - **লক্ষ্য:** দুই গতির pointer-এর কৌশল।
+> - **দৃশ্য:** linked list, শেষে cycle থাকতে পারে; দুটো pointer ভিন্ন রঙে, slow ধীরে আর fast দ্বিগুণ গতিতে এগোয়।
+> - **ইনপুট:** list-এর দৈর্ঘ্য, cycle on/off, cycle-এর মুখ কোন index-এ।
+> - **ধাপ:** প্রতি ধাপে slow এক ঘর, fast দুই ঘর; cycle থাকলে মিলনবিন্দু জ্বলে ওঠে; তারপর দ্বিতীয় পর্বে নতুন pointer head থেকে এক ধাপে এসে মুখে মিলিত হয়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "দ্বিতীয় পর্ব" টগল, যাতে মুখ খোঁজার হিসাবটা আলাদা করে দেখা যায়।
+> - **লক্ষ্য:** দুই গতির pointer মানে cycle ধরা আর মুখ খোঁজা, O(1) space-এ।
 
 ## অনুশীলন
 
-- cycle-এর শুরুর node কীভাবে বের করা যায় ভাবো (Floyd-এর ২য় পর্ব)।
+- **সহজ ১:** Linked List Cycle (LeetCode 141)। হিন্ট: এই পাতার `hasCycle` হুবহু বসে যাবে; শুধু null check-গুলো মনে রেখো।
+- **সহজ ২:** Middle of the Linked List (LeetCode 876)। হিন্ট: fast শেষে পৌঁছালে slow ঠিক মাঝে; জোড় সংখ্যক list-এ কোন মাঝটা চাওয়া হয়েছে, প্রশ্নটা ভালো করে পড়ো।
+- **মাঝারি ১:** Linked List Cycle II (LeetCode 142)। হিন্ট: প্রথমে মিলনবিন্দু খোঁজো, তারপর একজনকে head-এ পাঠাও, দুজন এক ধাপে। হিসাবটা উপরের ব্রেকডাউনে আছে।
+- **মাঝারি ২:** Happy Number (LeetCode 202)। হিন্ট: সংখ্যার sequence-টাকেই linked list ভাবো, `next(n)` হলো edge; `do...while` দিয়ে মিলনবিন্দু 1 কিনা দেখো।
+- **কঠিন:** Find the Duplicate Number (LeetCode 287)। হিন্ট: index থেকে value-তে লাফ মানে implicit linked list; duplicate সংখ্যাটাই cycle-এর মুখ, Floyd-এর পুরো দুই পর্ব লাগবে।
+
+## সারসংক্ষেপ
+
+- slow এক ধাপে, fast দুই ধাপে: মিললেই cycle, fast থেমে গেলে cycle নেই।
+- cycle-এর মুখ পেতে মিলনের পর একজনকে head-এ পাঠাও, দুজনকে এক ধাপে চালাও।
+- মাঝের node: fast শেষে গেলে slow মাঝে।
+- সব জায়গায় time O(n), space O(1); Set-এর O(n) space-এর বিপরীতে এটাই Floyd-এর জয়।
+- কৌশলটা শুধু list-এর নয়: সংখ্যার sequence বা index-value সম্পর্ক, যেখানেই implicit linked list, সেখানেই চলে।
+- দুই প্রান্ত থেকে ভেতরে আসা pointer চাইলে সেটা আরেক প্যাটার্ন, দেখো [Two Pointer](./two-pointer.mdx)।

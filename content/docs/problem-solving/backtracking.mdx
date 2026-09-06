@@ -1,57 +1,282 @@
 ---
-title: "Backtracking: চেষ্টা করো, না হলে ফিরে এসো"
-description: চেষ্টা করো, না মিললে ফিরে এসো; অসম্ভব পথ আগেই কেটে ফেলা (pruning)।
+title: "Backtracking: চেষ্টা করো, না মিললে ফিরে এসো"
+description: "choose - explore - un-choose ছন্দে সম্ভাবনার গাছে ঘোরা, আর অসম্ভব শাখা আগেই কেটে ফেলা (pruning)। Subsets, permutations, combination sum, আর N-Queens-এর টিজার।"
 ---
 
 ## কী শিখব
 
-- সম্ভাবনার গাছে ঘুরে বেড়ানো: চেষ্টা করো, না হলে ফিরে এসো
+- Backtracking-এর একটাই ছন্দ: choose, explore, un-choose
+- সম্ভাবনার গাছ আসলে কেমন দেখায়: [1,2,3]-এর সব subset হাতে বানিয়ে
+- Subsets আর permutations-এর কোড কেন একই রকম, আবার পার্থক্যটা কোথায়
+- Pruning: অসম্ভব শাখা আগেই কেটে ফেলে কাজ কীভাবে কমে
+- 2^n আর n! কোথা থেকে আসে, আর কখন থেমে DP-তে যেতে হয়
 
 ## ধারণা
 
-ধরো, Sudoku solve করছো। একটা ঘরে একটা সংখ্যা বসালে, এগিয়ে গেলে, কোথাও আটকে গেলে মুছে দিয়ে ফিরে এলে, অন্য সংখ্যা বসালে। এই যে চেষ্টা-আর-পশ্চাৎপথ খেলা, এটাই **backtracking**। সমাধান ধাপে ধাপে বানাও; কোনো ধাপ ভুল বুঝলে ফিরে গিয়ে (backtrack) অন্য পথ ধরো। সহজ কথায়, brute force-এরই চালাক রূপ: অসম্ভব শাখা আগেই ছেঁটে ফেলে (এই ছাঁটাইয়ের নাম pruning), তাই সব পথ ঘোরা লাগে না। permutations, N-Queens, Sudoku, subset, সব এতে ভাসে। ভিত্তিটা [Recursion](../recursion/index.mdx) chapter-এর, ওটা পড়ে এলে মজা পাবে।
+ভাবো তো, তুমি একটা বিশাল মেজে (maze) ঢুকেছো। নিয়ম একটাই: প্রতিটা মোড়ে একটা পথ বেছে এগোবে, হাতের চক দিয়ে দেয়ালে দাগ দেবে। কোথাও গিয়ে ঠেকলে, ডেড এন্ডে, শেষ মোড়ে ফিরে এসে দাগ মুছে দেবে, তারপর অন্য পথ ধরবে। ধীরে ধীরে, পদ্ধতি মেনে, পুরো মেজেটা ঘুরে ফেলা যায় এভাবেই, একটাও পথ দুইবার হাঁটা ছাড়াই।
 
-## কোড উদাহরণ
+Backtracking ঠিক এইটা। সমাধানটা ধাপে ধাপে বানাও (চকের দাগ), নতুন ধাপে নেমে যাও (মোড় পেরোনো), আর আটকে গেলে শেষ ধাপটা বাতিল করে ফিরে এসো (দাগ মোছা)। ছন্দটা সবসময় একই:
+
+1. **choose:** সম্ভাব্য পছন্দগুলোর একটা নাও, অবস্থায় যোগ করো
+2. **explore:** নতুন অবস্থা নিয়ে recursion-এ গভীরে যাও
+3. **un-choose:** ফিরে এসে পছন্দটা বাতিল করো, যেন পরের পছন্দ পরিষ্কার জায়গায় চেষ্টা হয়
+
+কোডে ছন্দটা এমন দেখায় (template, সব backtracking-এরই গা):
 
 ```js
-// সব permutation
-function permutations(arr) {
-  const result = [];
-  function backtrack(current, remaining) {
-    if (remaining.length === 0) { result.push([...current]); return; } // পূর্ণ সমাধান
-    for (let i = 0; i < remaining.length; i++) {
-      current.push(remaining[i]);                                  // চেষ্টা করি
-      const rest = [...remaining.slice(0, i), ...remaining.slice(i + 1)];
-      backtrack(current, rest);                                   // গভীরে
-      current.pop();                                              // backtrack (ফিরি)
-    }
+function backtrack(state) {
+  if (isComplete(state)) return save(state);   // পূর্ণ সমাধান জমাও
+  for (const choice of optionsFrom(state)) {
+    apply(choice);            // choose: সিদ্ধান্ত নিলাম
+    backtrack(nextOf(state)); // explore: গভীরে গেলাম
+    undo(choice);             // un-choose: সিদ্ধান্ত বাতিল
   }
-  backtrack([], arr);
-  return result;
 }
-console.log(permutations([1, 2, 3]));
-// [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
 ```
 
-## কোড ব্রেকডাউন
+এই তিন লাইনের নাচ (choose, recursion, un-choose) বুঝলে subsets, permutations, combination sum, N-Queens, Sudoku, সব একই গানের আলাদা কথা। আর অসম্ভব শাখা আগেই কেটে ফেলার নাম **pruning**: মেজের যে গলিটা শুরুতেই দেয়াল দেখা যাচ্ছে, সেখানে ঢোকাই নেই। [Brute force](./brute-force.mdx) সব পথ হাঁটে; backtracking হাঁটে শুধু যেখানে হাঁটার মানে আছে।
 
-- `push` = সিদ্ধান্ত নিই; recursion = গভীরে যাই; `pop` = সিদ্ধান্ত বাতিল করে ফিরি।
-- এই "choose - explore - un-choose" ছন্দটাই backtracking-এর হৃদয়।
+ভিত্তিটা recursion-এর, তাই [Recursion-এর ভূমিকা](../recursion/recursion-intro.mdx) পড়ে থাকলে এখানে সব চেনা লাগবে।
 
-## Complexity
+## ধাপে ধাপে ড্রাই রান: [1,2,3]-এর সব subset
 
-- সমস্যাভেদে বদলায় (permutation-এ O(n * n!)); তবে pruning প্রচুর কাজ কমিয়ে দেয়।
+সমস্যা: [1, 2, 3]-এর **সব** subset বের করো। প্রতিটা সংখ্যার জন্য সিদ্ধান্ত দুটোই: নেব, নয় বাদ। index 0 থেকে শুরু, একেক স্তরে একেকটা সংখ্যা। গাছটা আগে দেখো (bk মানে backtrack):
+
+```
+                      bk(0, [])
+                 1 নেব /        \ 1 বাদ
+              bk(1, [1])          bk(1, [])
+            2 নেব /  \ 2 বাদ    2 নেব /  \ 2 বাদ
+        bk(2,[1,2])  bk(2,[1])  bk(2,[2])  bk(2,[])
+          /    \       /    \     /    \     /    \
+      [1,2,3] [1,2] [1,3] [1]  [2,3] [2]  [3]    []
+```
+
+শেষ স্তরের বাঁশাখা = 3 নেব (বামে) / 3 বাদ (ডানে)। পাতাগুলোই result: ৮টা subset। এবার পুরো হাঁটাটা ধাপে ধাপে (গভীর-আগে, মানে DFS):
+
+| ধাপ | কী হলো | চলতি path | result-এ যোগ |
+|-----|--------|-----------|---------------|
+| 1 | শুরু: bk(0, []) | [] | - |
+| 2 | 1 নেব, bk(1) | [1] | - |
+| 3 | 2 নেব, bk(2) | [1,2] | - |
+| 4 | 3 নেব, bk(3), index শেষ | [1,2,3] | [1,2,3] |
+| 5 | ফিরে এসে 3 un-choose, তারপর 3 বাদ, bk(3) | [1,2] | [1,2] |
+| 6 | ফিরে, 2 un-choose, 2 বাদ, bk(2) | [1] | - |
+| 7 | 3 নেব, bk(3) | [1,3] | [1,3] |
+| 8 | 3 un-choose, 3 বাদ, bk(3) | [1] | [1] |
+| 9 | ফিরে, 1 un-choose, 1 বাদ, bk(1) | [] | - |
+| 10 | 2 নেব, bk(2) | [2] | - |
+| 11 | 3 নেব, bk(3) | [2,3] | [2,3] |
+| 12 | 3 un-choose, 3 বাদ, bk(3) | [2] | [2] |
+| 13 | ফিরে, 2 un-choose, 2 বাদ, bk(2) | [] | - |
+| 14 | 3 নেব, bk(3) | [3] | [3] |
+| 15 | 3 un-choose, 3 বাদ, bk(3) | [] | [] |
+
+১৫টা ধাপ, ৮টা পাতা। খেয়াল করো ধাপ ৫-এ: ফিরে এসে আগে 3-কে **un-choose** করা হয়েছে (path থেকে pop), তখনই "3 বাদ" শাখায় যাওয়া গেল। un-choose না করলে path-এ 3 পড়েই থাকত, আর পরের শাখার সব subset ভুল হয়ে যেত। এই ছোট্ট pop-ই পুরো খেলার চাবিকাঠি।
+
+আরেকটা জিনিস: প্রতিটা নোডে recursion দুইবার ডাকা হয়েছে, নেব আর বাদ। তাই নোড সংখ্যা প্রতি স্তরে দ্বিগুণ, গভীরতা n, পাতা 2^n। Complexity-এর সময় এই ছবিটা আবার কাজে লাগবে।
+
+## কোড: পুরো implementation (এক ফাইলে)
+
+```js
+// ---- Subsets: প্রতি উপাদানের জন্য নেব / বাদ ----
+function subsets(nums) {
+  const result = [];
+  const path = [];
+
+  function backtrack(index) {
+    if (index === nums.length) {      // সব সংখ্যার সিদ্ধান্ত শেষ
+      result.push([...path]);         // কপি করে রাখো, reference নয়
+      return;
+    }
+    path.push(nums[index]);           // choose: এটা নিলাম
+    backtrack(index + 1);             // explore
+    path.pop();                       // un-choose
+    backtrack(index + 1);             // explore: এটা বাদ
+  }
+
+  backtrack(0);
+  return result;
+}
+
+// ---- Permutations: প্রতি স্তরে যেকোনো অব্যবহৃত সংখ্যা ----
+function permutations(nums) {
+  const result = [];
+  const path = [];
+  const used = new Array(nums.length).fill(false);
+
+  function backtrack() {
+    if (path.length === nums.length) { // পুরো arrangement বানল
+      result.push([...path]);
+      return;
+    }
+    for (let i = 0; i < nums.length; i++) {
+      if (used[i]) continue;           // আগেই ব্যবহৃত, এড়িয়ে যাও
+      used[i] = true;                  // choose
+      path.push(nums[i]);
+      backtrack();                     // explore
+      path.pop();                      // un-choose
+      used[i] = false;
+    }
+  }
+
+  backtrack();
+  return result;
+}
+
+// ---- ডেমো ----
+console.log(subsets([1, 2, 3]));
+// [[1,2,3],[1,2],[1,3],[1],[2,3],[2],[3],[]]
+console.log("subset সংখ্যা:", subsets([1, 2, 3]).length); // 8
+
+console.log(permutations([1, 2, 3]));
+// [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+console.log("permutation সংখ্যা:", permutations([1, 2, 3]).length); // 6
+```
+
+দুটো ফাংশনের গা একই, পার্থক্য দুটো জায়গায়। Subsets-এ প্রতি উপাদান **একবারই** সিদ্ধান্ত পায়, তাই index সামনে বাড়ে। Permutations-এ প্রতি স্তরে **যেকোনো** অব্যবহৃত উপাদান চলতে পারে, তাই পুরো array-তে loop আর used দাগ। আর subsets-এ নেওয়া/বাদ দুটো আলাদা recursion call, permutations-এ choose আর un-choose loop-এর ভেতরে জোড়ায় জোড়ায়।
+
+## ভ্যারিয়েন্ট ১: combination sum (একই সংখ্যা বারবার)
+
+[2, 3, 6, 7] থেকে যেকোনো সংখ্যা যতবার খুশি নিয়ে যোগফল 7 বানাও। পার্থক্য একটাই: সংখ্যা reuse করা যায়, তাই recursion-এ index সরে না, **থেমে থাকে** ওই index-এই। আর ডুপ্লিকেট এড়াতে loop শুরু হয় start থেকে, আগে কখনো ফিরে তাকায় না।
+
+```js
+function combinationSum(candidates, target) {
+  candidates.sort((a, b) => a - b);    // pruning-এর জন্য sort
+  const result = [];
+  const path = [];
+
+  function backtrack(start, remaining) {
+    if (remaining === 0) {
+      result.push([...path]);
+      return;
+    }
+    for (let i = start; i < candidates.length; i++) {
+      if (candidates[i] > remaining) break;   // pruning: পরেরগুলো আরও বড়
+      path.push(candidates[i]);
+      backtrack(i, remaining - candidates[i]); // i-ই, i+1 নয়: reuse allowed
+      path.pop();
+    }
+  }
+
+  backtrack(0, target);
+  return result;
+}
+
+console.log(combinationSum([2, 3, 6, 7], 7)); // [[2,2,3],[7]]
+```
+
+`backtrack(i, ...)` আর `backtrack(i + 1, ...)`-এর পার্থক্য এখানেই আসল: প্রথমটায় একই সংখ্যা আবার নেওয়া যায়, দ্বিতীয়টায় যায় না। আর start থেকে শুরু করায় [2,2,3] আসে, কিন্তু [2,3,2] আসে না; 2-এর পরে আবার 2 নেওয়া মানে আগে ফিরে যাওয়া, আর সেটা start-এর বাইরে।
+
+## ভ্যারিয়েন্ট ২: N-Queens, n = 4 (টিজার)
+
+4x4 দাবার বোর্ডে ৪টা রাণী বসাতে হবে, কেউ যেন কাউকে আক্রমণ না করতে পারে: একই row, column, বা diagonal-এ দুজন নয়। Row ধরে ধরে এগোই (প্রতি row-তে একটাই রাণী, এটাই প্রথম pruning), আর conflict চেক হয় তিনটা Set দিয়ে:
+
+```js
+function solveNQueens(n) {
+  const cols = new Set(), diag = new Set(), anti = new Set();
+  const place = [];            // place[r] = r-তম row-তে রাণীর column
+  const solutions = [];
+
+  function backtrack(r) {
+    if (r === n) { solutions.push([...place]); return; }
+    for (let c = 0; c < n; c++) {
+      if (cols.has(c) || diag.has(r - c) || anti.has(r + c)) continue; // pruning
+      cols.add(c); diag.add(r - c); anti.add(r + c); place.push(c); // choose
+      backtrack(r + 1);                                             // explore
+      place.pop(); anti.delete(r + c); diag.delete(r - c); cols.delete(c); // un-choose
+    }
+  }
+
+  backtrack(0);
+  return solutions;
+}
+```
+
+Diagonal চেনার চমৎকার কৌশলটা দেখো: একই diagonal-এ থাকলে r - c সমান, আরেক diagonal-এ r + c সমান। n = 4-এ উত্তর দুটো:
+
+```
+. Q . .     . . Q .
+. . . Q     Q . . .
+Q . . .     . . . Q
+. . Q .     . Q . .
+```
+
+পুরোটা নিজে বানাতে চাইলে নিচের অনুশীলনে কঠিনটা তোমার জন্যই।
+
+## ভ্যারিয়েন্ট ৩: pruning, অর্থাৎ শাখা আগেই কাটা
+
+combination sum-এ আগেই দুটো pruning দেখেছো: sort করা, আর `candidates[i] > remaining` হলে `break`। Break-টা কেন নিরাপদ? Sort করা থাকলে এর পরের সংখ্যাগুলো আরও বড়, ওদের দিয়েও remaining মেটানো অসম্ভব, তাই loop-ই থেমে যাওয়া যায়। Sort না থাকলে `continue` দিতে হত, আর শাখাটা কাটত না, শুধু এড়িয়ে যেত।
+
+Pruning-এর হিসাবটা মেজে ফিরে গিয়ে ভাবো: দেয়াল দেখা যায় এমন গলিতে ঢুকলে হাঁটা লাগে, আবার ফিরেও আসতে হয়, দ্বিগুণ কাজ। শুরুতেই চিনে ফেললে কাজ শূন্য। N-Queens-এর `continue`-ও একই জিনিস: conflict-ওয়ালা column-এ বসিয়ে দেখা হলে পুরো sub-tree ঘুরে নিষ্ফলা হত। Backtracking-এর বাস্তব গতির প্রায় সবটাই pruning-এর; কাঁচা গাছে পাতা n! বা 2^n, আর ভালো pruning সেটাকে মানুষের মতো সংখ্যায় নামিয়ে আনে।
+
+## কোড ব্রেকডাউন: subsets, লাইনে লাইনে
+
+1. `const result = []` : সব পূর্ণ সমাধান এখানে জমা হবে। এটা সব recursion call-এর শেয়ার করা জায়গা।
+2. `const path = []` : চলতি সিদ্ধান্তের স্ট্যাক। মেজের চকের দাগের মতো, ঢোকার পথটা এখানেই লেখা।
+3. `function backtrack(index)` : index = এখন কোন সংখ্যার সিদ্ধান্তের পালা। Recursion-এর state পুরোটা এই একটা সংখ্যা আর path-এ।
+4. `if (index === nums.length)` : base case। সব সংখ্যার সিদ্ধান্ত শেষ মানে path-এ একটা পূর্ণ subset।
+5. `result.push([...path])` : **কপি** push করা। শুধু path push করলে reference যেত, পরে pop হলে result-এর ভেতরেরটাও বদলে যেত। Backtracking-এর সবচেয়ে ক্লাসিক bug।
+6. `path.push(nums[index])` : choose। "এই সংখ্যাটা subset-এ থাক" বলে সিদ্ধান্ত নিলাম।
+7. `backtrack(index + 1)` : explore। পরের সংখ্যার সিদ্ধান্তে নেমে গেলাম, নেওয়া সংখ্যাটাসহ।
+8. `path.pop()` : un-choose। ফিরে এসে সিদ্ধান্ত বাতিল। এই লাইন না থাকলে পরের শাখা নোংরা path পেত।
+9. `backtrack(index + 1)` : দ্বিতীয় explore, এবার "বাদ" শাখা। এই দুটো call মিলেই গাছের দুই সন্তান।
+
+Permutations-এ অতিরিক্ত শুধু `used` array: সেখানে index-এর সিদ্ধান্ত নেই, প্রতি স্তরে সব অব্যবহৃত সংখ্যাই প্রার্থী, তাই দাগ রাখতে হয় কে ব্যবহৃত। আর choose/un-choose জোড়াটা `used[i] = true` / `used[i] = false` আকারেও আছে, push/pop-এর পাশাপাশি।
+
+## Complexity: হিসাবটা গাছ থেকে আসে
+
+**Subsets: সময় O(n · 2^n), জায়গা O(n) (output ছাড়া)।** উপরের গাছটাই দেখো:
+
+- গভীরতা n, প্রতি স্তরে একটা সংখ্যার সিদ্ধান্ত। প্রতি নোডের সন্তান ২টা, তাই স্তর i-তে নোড 2^i।
+- মোট নোড 1 + 2 + 4 + ... + 2^n = 2^(n+1) - 1, মানে O(2^n)-টা recursion call। প্রতি call-এ O(1) কাজ, push আর pop।
+- কিন্তু প্রতিটা পাতায় path-এর কপি হয়, কপিতে সর্বোচ্চ n-টা উপাদান। পাতা 2^n-টা, তাই কপির খরচ O(n · 2^n), এটাই dominate করে।
+- জায়গা: recursion stack সর্বোচ্চ গভীরতা n, path-ও সর্বোচ্চ n, তাই O(n)। (Output-এর জায়গা O(n · 2^n), কিন্তু উত্তরই তত বড়, ওটা আলাদা কথা।)
+
+**Permutations: O(n · n!)।** একই যুক্তি: প্রথম স্তরে n-টা পছন্দ, পরেরটায় n-1, তারপর n-2, পাতা n!-টা, প্রতি পাতায় O(n) কপি।
+
+আর কঠিন সত্যিটা: এই exponent-গুলো ফেলানো যায় না, কারণ **উত্তরের সংখ্যাই** তত। 2^n-টা subset ছাপতেই O(2^n) লাগবে। তাই প্রশ্ন হওয়া উচিত "কমানো যায় কিনা" নয়, "আমাকে কি সত্যিই সবগুলো লাগবে কিনা"। শুধু সেরাটা বা একটা গণনা চাইলে, আর subproblem-গুলো overlap করলে, সেখানে backtracking নয়, [memoization](../recursion/memoization.mdx) আর [Dynamic Programming](./dynamic-programming.mdx)। Backtracking তখনই, যখন সব পথ বা সব বিন্যাস সত্যিই দরকার।
+
+## সাধারণ ভুল আর edge case
+
+**১. `result.push(path)` দিয়ে reference push করা।**
+পরে path থেকে pop হলে result-এর ভেতরের array-টাও শূন্য হয়ে যায়, শেষে দেখবে সব subset []। সবসময় কপি push করো: `[...path]`।
+
+**২. un-choose ভুলে যাওয়া।**
+push আছে, pop নেই; used[i] = true আছে, false নেই। তাহলে পরের শাখাগুলো নোংরা state পায়, উত্তরে অদ্ভুত ডুপ্লিকেট আর হারানো কেস। ছন্দ মনে রাখো: choose আর un-choose সবসময় জোড়া, recursion-এর দুই পাশে।
+
+**৩. ভুল index পাঠানো (reuse বনাম ডুপ্লিকেট)।**
+combination sum-এ `backtrack(i + 1)` দিলে সংখ্যা reuse বন্ধ, উত্তর কমে যাবে; `backtrack(0)` দিলে [2,2,3]-র পাশে [2,3,2] আর [3,2,2]-ও ঘুরে আসবে। Reuse চাইলে `i`, আর loop শুরু `start` থেকে, আগে কখনো ফিরে তাকাবে না।
+
+**৪. base case ভুল, বা index না বাড়ানো।**
+index না বাড়ালে একই সংখ্যার সিদ্ধান্ত চিরকাল ঘুরবে: stack overflow। আর উত্তর কোথায় জমা হবে, সেটাও স্টাইলভেদে আলাদা: আমাদের মতো পাতায় (index === n) জমা করলে প্রতি subset একবারই আসে; অন্য স্টাইলে (প্রতি call-এই জমা) করলে start-index ছাড়া লিখলে ডুপ্লিকেট। দুটো স্টাইল গুলিও না।
+
+**৫. ডুপ্লিকেট উপাদান, আর খালি input।**
+[1,2,2]-এর সব subset চাইলে একই স্তরে দুটো 2 আলাদাভাবে নিলে [1,2] দুইবার আসবে। ওড়ানো উপায়: আগে sort, তারপর একই স্তরে আগেরটার সমান মান skip (`i > start && nums[i] === nums[i-1]` হলে continue)। আর edge case: খালি input-এ উত্তর [[]], একটা খালি subset, শূন্যটা নয়।
 
 ## Animation Spec
 
 > **Animation Spec: Decision Tree Walk**
 >
-> - **দৃশ্য:** সিদ্ধান্ত-গাছ; একটা পথ ধরে নামা, ডেড-এন্ডে লাল হয়ে backtrack।
-> - **ইনপুট:** সমস্যা (permutation / N-Queens preset)।
-> - **ধাপ:** choose (নিচে), explore, un-choose (উপরে) - ছন্দ দৃশ্যমান; pruning-এ শাখা কাটা।
-> - **নিয়ন্ত্রণ:** speed, step, reset; preset বদলানো।
-> - **লক্ষ্য:** backtracking = গাছ-অন্বেষণ + pruning।
+> - **দৃশ্য:** সিদ্ধান্ত-গাছ বাম থেকে ডানে গজায়; চলতি পথ সবুজ, ফিরে আসা (backtrack) কমলা, ডেড এন্ড লাল; পাশে path স্ট্যাক আর result তালিকা live।
+> - **ইনপুট:** সমস্যা preset: subsets / permutations / combination sum; ছোট input নিজে বদলানো যায়।
+> - **ধাপ:** choose-এ নোড নিচে নামে, explore-এ ক্যামেরা গভীরে যায়, un-choose-এ নোড ধূসর হয়ে উঠে আসে; pruning চালু থাকলে কাটা শাখা কৈফিয়তসহ মিলিয়ে যায়।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "pruning on/off" টগল, কত নোড বাঁচল তার গণনাসহ।
+> - **লক্ষ্য:** backtracking = গাছে DFS + জোড়ায় জোড়ায় choose/un-choose + অসম্ভব শাখা আগেই কাটা।
 
 ## অনুশীলন
 
-- একটা set-এর সব subset backtracking-এ বের করো।
+- **সহজ ১:** Subsets (LeetCode 78)। হিন্ট: আজকের কোডটাই; প্রতি উপাদানে নেব/বাদ, গাছের ছবিটা মাথায় রেখে লিখো।
+- **সহজ ২:** Permutations (LeetCode 46)। হিন্ট: used[] দিয়ে দাগ; প্রতি স্তরে সব অব্যবহৃত প্রার্থী; path ভরে গেলেই কপি করে জমাও।
+- **মাঝারি ১:** Combination Sum (LeetCode 39)। হিন্ট: reuse চাইলে recursion-এ `i`-ই পাঠাও, `i + 1` নয়; sort করে `candidates[i] > remaining` হলে break দাও, এটাই pruning।
+- **মাঝারি ২:** Combinations (LeetCode 77)। হিন্ট: 1 থেকে n, ঠিক k-টা নিতে হবে; `path.length === k` হলেই থামো, আর বাকি সংখ্যা k - path.length-এর কম হয়ে গেলে আগেই শাখা কাটো।
+- **কঠিন:** N-Queens (LeetCode 51)। হিন্ট: row ধরে এগোও; cols, r - c, r + c তিনটা Set দিয়ে conflict চেক; কোডের আগে n = 4-এর দুটো সমাধান হাতে বোর্ডে বসিয়ে দেখো।
+
+## সারসংক্ষেপ
+
+- Backtracking = সিস্টেম্যাটিক exhaustive search: choose, explore, un-choose; মেজের চকের দাগ আর দাগ মোছা।
+- প্রতিটা backtracking সমস্যা আসলে একটা সিদ্ধান্ত-গাছ, তুমি সেখানে DFS করছো। পাতা = পূর্ণ সমাধান।
+- Pruning-ই গতি: অসম্ভব শাখায় ঢোকাই নেই; sort করে break, conflict Set, এগুলোই হাতিয়ার।
+- Subsets O(n · 2^n), permutations O(n · n!): উত্তরের সংখ্যাই exponent, ফেলানো যায় না।
+- সব পথ বা বিন্যাস দরকার হলে backtracking; শুধু সেরাটা বা গণনা চাইলে আর subproblem overlap করলে [Dynamic Programming](./dynamic-programming.mdx)।
+- দুটো bug প্রায় সবাই করে: reference push, আর un-choose ভোলা। তুমি করো না।

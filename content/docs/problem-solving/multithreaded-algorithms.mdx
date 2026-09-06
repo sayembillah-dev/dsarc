@@ -1,60 +1,296 @@
 ---
-title: "Multi-threaded: ভাগ করে সমান্তরালে"
-description: কাজ ভাগ করে সমান্তরালে চালানোর ধারণা - JavaScript-এর event loop থেকে worker পর্যন্ত।
+title: "Multithreaded Algorithms: কাজ ভাগ করে সমান্তরালে"
+description: "বড় কাজ টুকরো করে একসাথে চালানোর ধারণা - single thread আর event loop, worker দিয়ে আসল parallelism, race condition আর deadlock-এর সাবধানতা, আর speedup-এর হিসাব।"
 ---
 
 ## কী শিখব
 
-- কাজ ভাগ করে সমান্তরালে চালানোর ধারণা
+- কেন কাজ ভাগ করে সমান্তরালে চালালে সময় কমে, আর কখন এক ফোঁটাও কমে না
+- JavaScript-এর single thread আর event loop: concurrency আর parallelism-এর পার্থক্য
+- Race condition কীভাবে চুপচাপ হিসাব নষ্ট করে, deadlock কীভাবে সবাইকে চিরকাল আটকে দেয়
+- Embarrassingly parallel প্রবলেম চেনার সহজ লক্ষণ
+- Work, span, parallelism আর Amdahl-এর সূত্র: worker বাড়ালেও speedup-এর ছাদ কোথায়
 
 ## ধারণা
 
-ধরো, দশ লক্ষ সংখ্যার যোগফল বের করতে হবে। একাই সব যোগ করবে, নাকি চার বন্ধু মিলে ভাগ করে নেবে? চারজনে চার ভাগে যোগ করে শেষে জোড়া লাগালেই সময় কমে যায়। এইটাই multi-threaded ভাবনা: বড় কাজ টুকরো করে একাধিক thread-এ একসাথে চালানো, যেমন merge sort-এর দুই অর্ধেক আলাদা thread-এ। JavaScript মূলত **single-threaded** (event loop), তবু browser-এ Web Worker, Node-এ worker_threads দিয়ে আসল parallelism পাওয়া যায়। DSA interview-তে ব্যাপারটা গভীরে আসে না, তবে কয়েকটা ধারণা জানা দরকার: race condition (একই ডেটা একসাথে পাল্টানোর বিপদ), shared state, আর [Divide & Conquer](./divide-and-conquer.mdx)-এর সাথে এর মিল।
+ভাবো তো, একটা ব্যস্ত দোকানে ক্যাশিয়ার একজন। ত্রিশজনের লাইন, সবাইকে সে একাই একে একে সারছে। এখন তিনজন ক্যাশিয়ার তিনটা কাউন্টারে বসলে, লাইন তিন ভাগ হয়ে যায়, মোট অপেক্ষা প্রায় তিন ভাগের এক ভাগে নেমে আসে। কাজের পরিমাণ একই, শুধু একসাথে তিনজন করছে। এইটাই multithreaded ভাবনা: বড় কাজ এমন টুকরো করা যাতে টুকরোগুলো পরস্পরের অপেক্ষায় না থাকে, তারপর সব একসাথে চালানো, শেষে ফল জোড়া লাগানো।
 
-## কোড উদাহরণ
+এবার JavaScript-এর সত্যিটা। JavaScript চলে **একটাই thread**-এ, যাকে বলে main thread। তাহলে `await` দিয়ে "একসাথে" অনেক কাজ করি কীভাবে? Event loop একটা ব্যস্ত রাঁধুনির মতো: চুলায় তরকারি বসিয়ে পানি গরম হওয়ার অপেক্ষায় না বসে অন্য কাজে চলে যায়, টাইমার বাজলে ফিরে আসে। একে **concurrency**: কাজগুলো পরস্পরের ফাঁকে ফাঁকে এগোয়, এক মুহূর্তে হাতে থাকে একটাই। আর **parallelism** হলো সত্যিই দুইজন রাঁধুনি দুই চুলায় একই মুহূর্তে কাজ করা। JS-এ আসল parallelism আনতে হয় browser-এ **Web Worker**, Node-এ **worker_threads** দিয়ে: আলাদা thread, আলাদা মেমরি, খবর শুধু message-এ।
+
+কোন কাজ ভাগ করা সহজ? যেগুলো **embarrassingly parallel**: প্রতিটা টুকরো পুরোপুরি নিজের মতো চলে, কারো ফলের জন্য কারো অপেক্ষা নেই। দশ লক্ষ সংখ্যার বর্গ, বড় array-এর আংশিক যোগফল, ছবির প্রতি পিক্সেলে ফিল্টার: সবাই এমন। [Merge Sort](../sorting/merge-sort.mdx)-এর দুই অর্ধেকও আলাদা thread-এ sort করা যায়, কিন্তু শেষে merge-এ দুটোরই ফল লাগে, মানে নির্ভরতা আছে। ভাবনাটা [Divide & Conquer](./divide-and-conquer.mdx)-এরই সমান্তরাল ভাই: ভাগ করো, আলাদা আলাদা সমাধান, শেষে combine।
+
+কিন্তু এই দুনিয়ায় দুটো ভয়ংকর বাস করছে। প্রথমটা **race condition**: ধরো দুজন ক্যাশিয়ার একই খাতায় মোট বিক্রি লিখছে। `counter++` দেখতে এক ধাপ, ভেতরে তিন ধাপ: পড়ো, এক যোগ করো, লেখো। দুজন একই মুহূর্তে পড়ে ফেললে দুজনেই পুরোনো মানের ওপর লিখে দেয়: দুইবার যোগের জায়গায় বাড়ে একবার। এক update হারিয়ে গেল, একে বলে **lost update**। সবচেয়ে বিরক্তিকর: প্রতিবার ঘটে না, টাইমিং-নির্ভর, তাই ধরাও কঠিন।
+
+দ্বিতীয়টা **deadlock**। দুটো তালা: ক আর খ। নিয়ম: কাজের সময় দুটোই ধরে রাখতে হবে। Thread A তালা ক ধরে খ-এর অপেক্ষায়, Thread B তালা খ ধরে ক-এর অপেক্ষায়। কেউ ছাড়বে না, কেউ পাবে না: চিরকালের অচলাবস্থা।
+
+```
+Thread A: [তালা ক ধরে আছে] ---- অপেক্ষায় ----> তালা খ
+Thread B: [তালা খ ধরে আছে] ---- অপেক্ষায় ----> তালা ক
+              ↑ দুজনেই অপেক্ষায়, কেউ নড়ছে না ↑
+```
+
+রক্ষার সহজ উপায়: সব thread **একই ক্রমে** তালা ধরবে (আগে ক, তারপর খ)। তাহলে অপেক্ষার চক্রই তৈরি হয় না। আরও ভালো: shared মেমরিই না রাখা। Worker-দের মডেলটাই এমন: প্রত্যেকে নিজের কপি নিয়ে কাজ করে, ফল message-এ ফেরত দেয়। Shared কিছু নেই মানে race-ই নেই। এভাবে ভাবতেই শেখাটাই **thread-safe thinking**: হয় share-ই করো না, নয়তো share-এর জায়গাটা এক মুহূর্তে একজনের হাতে দাও।
+
+## ধাপে ধাপে ড্রাই রান
+
+কোডে যাওয়ার আগে ছোট্ট উদাহরণ হাতে হাতে চালাই। Array-টা `[1, 2, 3, 4, 5, 6, 7, 8]`, যোগফল বের করতে হবে, worker দুইজন।
+
+```
+[1,  2,  3,  4 | 5,  6,  7,  8]
+ └─ chunk 0 ──┘ └─ chunk 1 ──┘
+    worker A       worker B
+   (index 0-3)    (index 4-7)
+```
+
+| ধাপ | কী হচ্ছে | worker A | worker B | মোট |
+|-----|-----------|----------|----------|------|
+| 1 | array দুই chunk-এ ভাগ হলো | [1,2,3,4] পেল | [5,6,7,8] পেল | - |
+| 2 | দুজনেই যোগ শুরু করল (একই সময়ে) | 1+2=3 | 5+6=11 | - |
+| 3 | যোগ চলছে | 3+3=6 | 11+7=18 | - |
+| 4 | দুজনের শেষ যোগ | 6+4=10 | 18+8=26 | - |
+| 5 | আংশিক ফল দুটো ফেরত এলো | 10 দিল | 26 দিল | - |
+| 6 | combine: 10 + 26 | - | - | 36 |
+
+যাচাই: 1 থেকে 8 পর্যন্ত যোগফল = 8 × 9 / 2 = 36। মিলে গেছে। আর খেয়াল করো, দুজন একই সময়ে কাজ করেছে, কে আগে শেষ করবে তার ঠিক নেই, তবু ফল একই থাকে।
+
+দুটো জিনিস মাথায় রাখো। প্রথম, **combine-এর ধাপটা serial**: সবাই শেষ না করা পর্যন্ত শুরুই হয় না। একটু পরে দেখবে, এই ছোট্ট serial অংশই speedup-এর ছাদ টেনে দেয়। দ্বিতীয়, দুজনের ডেটা কারো সাথে কারো মিশেনি: A কখনো chunk 1 ছোঁয়নি। ছুঁলেই race condition-এর দরজা খুলত।
+
+## কোড
+
+একটাই ফাইলে পুরো গল্প: সমান্তরাল যোগফল, race condition-এর লাইভ নমুনা, lock দিয়ে মেরামত, শেষে deadlock আর তার সার্জারি।
 
 ```js
-// বড় যোগফল ৪ টুকরোয় ভাগ করে সমান্তরালে, শেষে combine
-function sumChunk(arr, from, to) {
-  return new Promise(resolve => {
-    let s = 0;
-    for (let i = from; i < to; i++) s += arr[i];
-    setTimeout(() => resolve(s), 0); // event loop-কে সুযোগ দিলাম
-  });
+// ---------- ১. সমান্তরাল যোগফল (worker সিমুলেশন) ----------
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
-async function parallelSum(arr, chunks = 4) {
-  const size = Math.ceil(arr.length / chunks);
-  const parts = [];
-  for (let c = 0; c < chunks; c++) {
-    parts.push(sumChunk(arr, c * size, Math.min(arr.length, (c + 1) * size)));
+
+// একটা chunk-এর যোগফল; আসল worker-এ এই কাজ আলাদা thread-এ চলত
+async function chunkSum(arr, from, to, name) {
+  let sum = 0;
+  for (let i = from; i < to; i++) sum += arr[i];
+  await sleep(0); // event loop-কে ফাঁক দিলাম, বাকিরা এগোক
+  console.log(name + " শেষ: যোগফল " + sum);
+  return sum;
+}
+
+async function parallelSum(arr, workers = 2) {
+  const size = Math.ceil(arr.length / workers);
+  const jobs = [];
+  for (let w = 0; w < workers; w++) {
+    const from = w * size;
+    const to = Math.min(arr.length, from + size); // শেষ chunk ছোট হতে পারে
+    if (from < arr.length) jobs.push(chunkSum(arr, from, to, "worker-" + w));
   }
-  const sums = await Promise.all(parts); // সব টুকরো শেষ হলে combine
-  return sums.reduce((a, b) => a + b, 0);
+  const partials = await Promise.all(jobs); // সবাই শেষ পর্যন্ত অপেক্ষা
+  return partials.reduce((a, b) => a + b, 0);
 }
-parallelSum(Array.from({ length: 1000000 }, (_, i) => i + 1))
-  .then(total => console.log(total)); // 500000500000
+
+// ---------- ২. Race condition আর lock দিয়ে মেরামত ----------
+
+class Lock {
+  constructor() { this.locked = false; this.waiters = []; }
+  acquire() {
+    if (!this.locked) { this.locked = true; return Promise.resolve(); }
+    return new Promise(resolve => this.waiters.push(resolve));
+  }
+  release() {
+    const next = this.waiters.shift();
+    if (next) next(); // তালা হাত বদলাল, locked = true-ই থাকে
+    else this.locked = false;
+  }
+}
+
+let counter = 0; // সবার shared জিনিস
+const counterLock = new Lock();
+
+// useLock = false দিলে race ঘটে, true দিলে তালার ভেতরে নিরাপদ
+async function addOne(times, useLock) {
+  for (let t = 0; t < times; t++) {
+    if (useLock) await counterLock.acquire(); // এক মুহূর্তে একজনই ভেতরে
+    const snapshot = counter; // পড়ল
+    await sleep(0);           // ফাঁক: এখানে অন্যজন ঢুকে যায়
+    counter = snapshot + 1;   // পুরোনো পড়ার ওপর লিখল
+    if (useLock) counterLock.release();
+  }
+}
+
+// ---------- ৩. Deadlock: দুটো তালা, উল্টো ক্রম ----------
+
+async function taskInOrder(l1, l2) { // আগে l1, তারপর l2
+  await l1.acquire();
+  await sleep(10); // এই ফাঁকে অপরজন নিজের তালাটা ধরে ফেলে
+  await l2.acquire();
+  l2.release();
+  l1.release();
+}
+
+// 300ms-এ শেষ না হলে ধরে নেব আটকে গেছে
+async function withAlarm(promise, msg) {
+  const alarm = new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), 300));
+  try { await Promise.race([promise, alarm]); return true; }
+  catch (e) { console.log(e.message); return false; }
+}
+
+// ---------- সব demo একসাথে ----------
+
+async function main() {
+  console.log("মোট:", await parallelSum([1, 2, 3, 4, 5, 6, 7, 8], 2)); // 36
+
+  counter = 0;
+  await Promise.all([addOne(50, false), addOne(50, false)]);
+  console.log("race না থাকলে 100 আসার কথা, এলো: " + counter);
+
+  counter = 0;
+  await Promise.all([addOne(50, true), addOne(50, true)]);
+  console.log("lock দিয়ে ঠিকমতো এলো: " + counter);
+
+  // উল্টো ক্রমে তালা: একজন ক-খ, আরেকজন খ-ক
+  let a = new Lock(), b = new Lock();
+  await withAlarm(Promise.all([taskInOrder(a, b), taskInOrder(b, a)]),
+    "DEADLOCK! কেউ চিরকাল আর নড়বে না");
+
+  // মেরামত: দুজনেই একই ক্রমে (আগে ক, তারপর খ)
+  a = new Lock(); b = new Lock();
+  const ok = await withAlarm(Promise.all([taskInOrder(a, b), taskInOrder(a, b)]),
+    "এবারও আটকে গেল?");
+  if (ok) console.log("একই ক্রমে তালা ধরলে deadlock হয় না");
+}
+
+main();
 ```
+
+raceDemo-র সংখ্যাটা দেখো: প্রায় প্রতিবার 100-এর কম আসে, আর কত কম আসবে তার ঠিক নেই। Race condition-এর এটাই স্বভাব: ভুলও এলোমেলো।
+
+## ভ্যারিয়েন্ট ১: আসল parallelism, Node-এর worker_threads
+
+উপরের `sleep(0)` কৌশল শুধু ধারণা বোঝায়, কাজ তো main thread-ই করে। আসল CPU parallelism চাইলে Node-এ `worker_threads`। একই ফাইল main thread আর worker, দুই রূপেই চলতে পারে:
+
+```js
+// node দিয়ে চালাও: main thread দুটো worker বানায়
+const { Worker, isMainThread, parentPort, workerData } = require("worker_threads");
+
+if (isMainThread) {
+  const arr = [1, 2, 3, 4, 5, 6, 7, 8];
+  const size = Math.ceil(arr.length / 2);
+  let done = 0;
+  let total = 0;
+  for (let w = 0; w < 2; w++) {
+    const chunk = arr.slice(w * size, (w + 1) * size);
+    const worker = new Worker(__filename, { workerData: chunk });
+    worker.on("message", partial => {
+      total += partial;
+      done++;
+      if (done === 2) console.log("worker_threads দিয়ে মোট:", total); // 36
+    });
+  }
+} else {
+  // এই অংশ চলে আলাদা thread-এ
+  const sum = workerData.reduce((a, b) => a + b, 0);
+  parentPort.postMessage(sum);
+}
+```
+
+ছাঁচটা চেনা লাগছে না? একই ভাগ করো, আলাদা আলাদা চালাও, combine করো। পার্থক্য শুধু এবার কাজ সত্যিই দুই thread-এ, দুই CPU core-এ চলতে পারে। আর মনে রাখো, যোগফলের মতো **commutative** কাজে (ক্রম বদলালেও ফল একই) কে আগে শেষ করল তা বিষয় নয়; কিন্তু map-এর মতো কাজে ফল ঠিক জায়গায় বসাতে প্রতি অংশের সাথে তার শুরুর index-ও পাঠাতে হয়।
+
+## ভ্যারিয়েন্ট ২: browser-এ Web Worker
+
+Browser-এ একই ভূমিকায় Web Worker। API আলাদা, ভাবনা হুবহু একই:
+
+```text
+main.js:
+  const worker = new Worker("worker.js");
+  worker.postMessage([5, 6, 7, 8]);            // কাজ দিলাম message-এ
+  worker.onmessage = e => console.log(e.data); // ফল এলো message-এ
+
+worker.js:
+  onmessage = e => {
+    const sum = e.data.reduce((a, b) => a + b, 0);
+    postMessage(sum);                          // ফল পাঠিয়ে দিলাম
+  };
+```
+
+মনে রাখো, worker-এর সাথে main thread-এর shared ভ্যারিয়েবল নেই। যা দরকার message-এ কপি হয়ে যায়। ঝামেলা আছে, কিন্তু race condition-এর দরজা বন্ধ।
 
 ## কোড ব্রেকডাউন
 
-- [Divide & Conquer](./divide-and-conquer.mdx)-এরই সমান্তরাল রূপ: কাজ ভাগ, আলাদা আলাদা সমাধান, শেষে combine।
-- `Promise.all` সব টুকরো শেষ না হওয়া পর্যন্ত অপেক্ষা করে; আসল CPU-parallelism চাইলে worker_threads (Node) বা Web Worker (browser) - ভাগ-কর-combine-কর ছাঁচ একই।
-- সাবধানতা: একই ডেটা একসাথে পাল্টালে race condition - তাই প্রতিটা worker আলাদা ডেটা-অংশে কাজ করে।
+মূল ফাইলের গুরুত্বপূর্ণ লাইনগুলো কেন আছে:
+
+1. `async function chunkSum(arr, from, to, name)` : একটা worker-এর ভূমিকা। শুধু নিজের সীমানা `[from, to)` জানে, অন্য অংশ ছোঁয় না। এই আত্মসীমাবদ্ধতাই thread-safe ভাবনা।
+2. `await sleep(0)` : event loop-কে ফাঁক দেওয়া, বাকি chunk-গুলো যাতে এগোতে পারে। আসল worker হলে লাইনটা লাগত না, কাজটাই তখন অন্য thread-এ চলত।
+3. `Math.ceil` আর `Math.min` : ভগ্নাংশ কেটে গেলে শেষের element বাদ পড়ত; শেষ chunk-এর সীমানা না আটকালে শেষ worker array-এর বাইরে পড়তে যেত।
+4. `await Promise.all(jobs)` : combine-এর দরজা। সবাই শেষ না করা পর্যন্ত এক ধাপও এগোয় না। এই অপেক্ষাটাই serial অংশ।
+5. `const snapshot = counter; await sleep(0); counter = snapshot + 1` : race-এর তিন ধাপ ইচ্ছে করে ভেঙে লেখা, যাতে ফাঁকটা চোখে পড়ে।
+6. `if (useLock) await counterLock.acquire()` : তালা ছাড়া চালালে দুজন একই পড়ার ওপর লিখে update হারায়; তালা দিলে এক মুহূর্তে একজনই পড়া-লেখার অংশে, ফল ঠিক 100।
+7. `if (next) next(); else this.locked = false;` : release-এ অপেক্ষারতজন সরাসরি তালা পায়; তালা কখনো পুরো মুক্ত হয় না, শুধু হাত বদলায়, ফাঁকে তৃতীয়জন ঢোকার পথ নেই।
+8. `Promise.race([promise, alarm])` : deadlock শেষ হওয়ার নাম করে না, তাই পাশে ঘড়ি। ঘড়ি আগে বাজলেই বুঝবে আটকে গেছে। বাস্তবে deadlock ধরার প্রথম হাতিয়ারই timeout।
 
 ## Complexity
 
-- আদর্শে সময় ~T/p (p = worker-সংখ্যা) + ভাগ/জোড়ার overhead; বাস্তবে overhead মাথায় রাখো।
+সমান্তরাল হিসাবের তিনটা সংখ্যা:
+
+- **Work (T1)**: একটাই thread থাকলে মোট সময়। যোগফলে T1 = O(n), n-টা সংখ্যা একবার করে যোগ হয়।
+- **Span (T∞)**: অসীম worker থাকলেও যার নিচে নামা যায় না; আসলে সবচেয়ে লম্বা নির্ভরতার চেইন। এখানে প্রতি worker নিজের chunk যোগ করে O(n/p) সময়ে (p = worker-সংখ্যা), তারপর combine O(p)-তে। তাই T∞ = O(n/p + p)।
+- **Parallelism = T1 / T∞**: সর্বোচ্চ সম্ভাব্য গতির অনুপাত। n বিশাল আর p ছোট হলে প্রায় p: p-জন worker দিয়ে প্রায় p গুণ। কিন্তু p বাড়াতেই লাভ থেমে যায় যখন combine-এর খরচ chunk-এর কাজের কাছাকাছি আসে।
+- **Space**: chunk সাধারণত index-এর সীমানা দিয়ে বোঝানো হয়, কপি হয় না, তাই অতিরিক্ত O(p)। কিন্তু worker_threads-এ ডেটা message-এ কপি হয়, তখন খরচ O(n) পর্যন্ত। Parallelism ফ্রি নয়: মেমরি আর overhead, দুটোই দাম।
+
+| p | chunk-এর কাজ | combine | আদর্শ মোট |
+|---|---------------|---------|------------|
+| 1 | O(n) | O(1) | O(n) |
+| 2 | O(n/2) | O(2) | O(n/2) |
+| 4 | O(n/4) | O(4) | O(n/4) |
+| n | O(1) | O(n) | O(n) |
+
+শেষ সারিটা দেখো: n-টা worker নিলেও মোট আবার O(n), কারণ n-টা আংশিক ফল জোড়া লাগাতেই O(n)। তাই বাস্তবে প্রতি worker-কে যথেষ্ট বড় chunk দেওয়া হয়, যাতে ভাগ-জোড়ার overhead নগণ্য থাকে।
+
+এবার **Amdahl-এর সূত্র**। কাজের s অংশ কোনোভাবেই সমান্তরাল হয় না (combine, ইনপুট পড়া)। বাকি (1 - s) অংশ p ভাগে ভাগ হয়। তাহলে:
+
+speedup = 1 / (s + (1 - s) / p)
+
+কষে দেখো: s = 0.1 মানে দশ ভাগের এক ভাগ serial। p = 10-এ speedup = 1 / (0.1 + 0.09), প্রায় 5.3। দশ worker দিয়েও দশ গুণ নয়। p অসীমের দিকে ঠেললেও 1/s = 10 ছাড়ানো যায় না। দোকানের ভাষায়: ত্রিশজন ক্যাশিয়ার বসালেও, শেষে দোকান বন্ধ করার এককাজটা একজনকেই করতে হয়, আর সেটুকুই দিনের সময় আর ছোট করতে দেয় না। শিক্ষা: **worker বাড়ানোর আগে serial অংশ কমাও।**
+
+## সাধারণ ভুল আর edge case
+
+**১. Shared ভ্যারিয়েবল lock ছাড়া পাল্টানো।**
+Race condition-এর সবচেয়ে সাধারণ উৎস। `counter++` নির্দোষ দেখায়, ভেতরে পড়া-যোগ-লেখা তিন ধাপ। দুজন ফাঁকে ঢুকে গেলে এক update হারায়। JS-এ event loop-এর ফাঁকেও (দুটো `await`-এর মাঝে) একই ঘটনা ঘটে, উপরের demo-তেই দেখেছ। নিয়ম: shared জিনিস হয় রাখোই না, নয়তো এক মুহূর্তে একজন।
+
+**২. তালা উল্টো ক্রমে ধরা।**
+A: আগে ক তারপর খ; B: আগে খ তারপর ক। দুজন মিলে deadlock। মেরামত শৃঙ্খলার ব্যাপার: পুরো প্রজেক্টে তালা ধরার **একটাই ক্রম** ঠিক করো, সবাই সেটাই মানবে। আরও নিরাপদ: যত কম তালা, তত ভালো।
+
+**৩. async লিখলেই কাজ দ্রুত হবে, এই ভ্রম।**
+`Promise.all` concurrency দেয়, CPU parallelism নয়। CPU-bound কাজ main thread-ই গুঁড়ে দেয়, chunk করা থাক না থাক। দশ লক্ষ সংখ্যার যোগফলে `parallelSum` আর সরল লুপ প্রায় সমান সময় নেবে। আসল গতি চাইলে worker_threads বা Web Worker, সেটাও শুধু কাজ যথেষ্ট ভারী হলে।
+
+**৪. Chunk-এর সীমানার ভুল।**
+`Math.min` দিয়ে শেষ সীমানা না আটকালে শেষ worker অস্তিত্বহীন index পড়তে যায়। worker-সংখ্যা array-এর চেয়ে বড় হলে খালি chunk তৈরি হয়। `if (from < arr.length)` চেকটা এজন্যই আছে।
+
+**৫. নির্ভরশীল কাজে জোর করে সমান্তরাল করা।**
+Fibonacci-র প্রতিটা পদ আগের দুই পদের ওপর নির্ভরশীল: ভাগ করার মতো স্বাধীন টুকরো নেই, worker বসালে সবাই পরস্পরের অপেক্ষায় বসে থাকবে। ভাগ করার আগে প্রশ্নটা করো: টুকরোগুলো কি সত্যিই একে অপর ছাড়া চলতে পারে? না পারলে এটা embarrassingly parallel নয়, লাভও নেই।
 
 ## Animation Spec
 
 > **Animation Spec: Parallel Lanes**
 >
-> - **দৃশ্য:** একটা বড় কাজ-বার চারটা worker লেনে ভাগ; লেনগুলো সমান্তরালে ভরে ওঠে; শেষে combine ধাপ।
-> - **ইনপুট:** কাজের আকার, worker-সংখ্যা।
-> - **ধাপ:** ভাগ -> সমান্তরাল অগ্রগতি (সব লেন একসাথে) -> combine।
-> - **নিয়ন্ত্রণ:** worker-সংখ্যা বাড়ানো/কমানো, speed।
-> - **লক্ষ্য:** parallelism কেন রৈখিক গতি দেয় না - ভাগ ও জোড়ার overhead।
+> - **দৃশ্য:** একটা লম্বা কাজ-বার (array) নিচে p-টা সমান্তরাল লেনে ভাগ হয়ে যায়; প্রতি লেনে একজন worker; পাশে live আংশিক ফল আর একটা "combine" বাক্স।
+> - **ইনপুট:** কাজের আকার (n), worker-সংখ্যা (p), serial অংশের অনুপাত (s): তিনটাই স্লাইডার।
+> - **ধাপ:** আগে ভাগের ঝলক; তারপর সব লেন একসাথে ভরতে শুরু করে, যে শেষ করল তার লেন সবুজ; সবাই শেষ হলে combine বাক্স সক্রিয় হয়ে মোট দেখায়। টগল "race condition চালু" করলে দুই লেন একই ঘরে লিখতে গিয়ে সংখ্যা হারিয়ে ফেলে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; worker-সংখ্যা বদলালে পাশের গ্রাফে আদর্শ বনাম বাস্তব সময়ের দুই রেখা (Amdahl-এর ছাদ দেখাতে)।
+> - **লক্ষ্য:** speedup কখনোই রৈখিক নয়: ভাগ আর combine-এর overhead, আর serial অংশই আসল ছাদ।
 
 ## অনুশীলন
 
-- একই যোগফল chunks=1 বনাম chunks=8-এ চালিয়ে সময় মাপো (console.time) - পার্থক্য কেন?
+নিচের সমস্যাগুলো LeetCode-এর concurrency সিরিজের। JS-এ আসল thread API না থাকলেও ধারণা হুবহু একই: কে কখন কার অপেক্ষায় থাকবে, সংকেত দেবে কীভাবে। প্রতিটার আগে ভাবো: shared জিনিসটা কী, কোন ক্রমের গ্যারান্টি চাই?
+
+- **সহজ ১:** Print in Order (LeetCode 1114)। তিনটা method তিন thread থেকে ডাকা হয়, ছাপা চাই "first, second, third" ক্রমে। হিন্ট: দুটো পতাকা (বা এক-আসনের lock); `second` ছাপে শুধু `first` শেষের সংকেত পেলে।
+- **সহজ ২:** Print FooBar Alternately (LeetCode 1115)। দুই thread n-বার করে ছাপায়, পর্যায়ক্রমে: FooBar FooBar। হিন্ট: দুটো lock পরস্পরকে পালা বুঝিয়ে দেবে; Foo নিজের পালা শেষে Bar-এর তালা খুলে দেয়, Bar-ও উল্টোটা।
+- **মাঝারি ১:** Print Zero Even Odd (LeetCode 1116)। তিন thread: একজন শুধু 0, একজন জোড়, একজন বিজোড়; ছাপা হবে 0102030405 ক্রমে n পর্যন্ত। হিন্ট: 0 ছাপার পর জোড় না বিজোড়, সেটা বর্তমান সংখ্যা ঠিক করে; তিনজনের পালা তিনটা lock-এ সাজাও।
+- **মাঝারি ২:** Fizz Buzz Multithreaded (LeetCode 1195)। চার thread চার শর্তে ছাপায় (fizz, buzz, fizzbuzz, সংখ্যা)। হিন্ট: একটা shared বর্তমান সংখ্যা আর একটা lock; শর্ত মিললেই ছাপিয়ে সংখ্যা এক বাড়াও, না মিললে তালা ছেড়ে অপেক্ষা।
+- **কঠিন:** Design Bounded Blocking Queue (LeetCode 1188)। সীমিত আকারের queue: ভর্তি থাকলে enqueue আটকে থাকে, খালি থাকলে dequeue। হিন্ট: দুটো অপেক্ষার সারি লাগবে (প্রযোজক আর ভোক্তার), প্রতি enqueue/dequeue-এর পর অপর পক্ষকে জাগাও; উপরের Lock class-টাই বাড়াও।
+
+## সারসংক্ষেপ
+
+- Multithreading মানে বড় কাজ এমন টুকরো করা যাতে টুকরোগুলো পরস্পরের অপেক্ষায় না থাকে, তারপর একসাথে চালিয়ে ফল জোড়া লাগানো।
+- JS-এ একটাই main thread: `async` দেয় concurrency, আসল parallelism দেয় Web Worker বা worker_threads।
+- Race condition ঠেকায় share না করা বা lock দিয়ে; deadlock ঠেকায় তালা ধরার এক নির্দিষ্ট ক্রমে।
+- Work (T1), span (T∞), parallelism (T1/T∞) দিয়ে হিসাব করো; Amdahl বলে দেয় serial অংশই speedup-এর ছাদ।
+- ছোট কাজে worker-এর overhead-ই লাভ হজম করে: আগে মাপো, তারপর সমান্তরাল করো।
