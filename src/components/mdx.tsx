@@ -1,9 +1,12 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
+import { IfElseAnim, SwitchAnim } from './anim/control-flow';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
+    IfElseAnim,
+    SwitchAnim,
     ...components,
   } satisfies MDXComponents;
 }
