@@ -66,6 +66,8 @@ console.log("Stack (LIFO):", fromStack); // [ 3, 2, 1 ]
 console.log("Queue (FIFO):", fromQueue); // [ 1, 2, 3 ]
 ```
 
+<StackVsQueueAnim />
+
 Demo-টা সরল রাখতে queue-তে `shift()` ব্যবহার করেছি। বাস্তব কাজে [Queue](./queue-fifo.mdx)-এর pointer version নেবে, `shift()` প্রতি বারে সবাইকে সরায়।
 
 ## Classic কৌশল: দুই stack দিয়ে queue
@@ -118,6 +120,8 @@ console.log(q.dequeue()); // 1
 q.enqueue(4);
 console.log(q.dequeue()); // 2
 ```
+
+<TwoStackQueueAnim />
 
 ## কোড ব্রেকডাউন: QueueWithStacks, লাইনে লাইনে
 

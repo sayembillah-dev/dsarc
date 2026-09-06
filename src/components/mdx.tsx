@@ -11,6 +11,16 @@ import {
   SinglyLinkedListAnim,
   WhatIsLinkedListAnim,
 } from './anim/linked-list';
+import {
+  BalancedParenAnim,
+  DequeOpsAnim,
+  MonotonicStackAnim,
+  PriorityQueueAnim,
+  QueueOpsAnim,
+  StackOpsAnim,
+  StackVsQueueAnim,
+  TwoStackQueueAnim,
+} from './anim/stacks-queues';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -28,6 +38,14 @@ export function getMDXComponents(components?: MDXComponents) {
     DoublyLinkedListAnim,
     CircularLinkedListAnim,
     ArrayVsLinkedListAnim,
+    StackOpsAnim,
+    QueueOpsAnim,
+    StackVsQueueAnim,
+    TwoStackQueueAnim,
+    BalancedParenAnim,
+    DequeOpsAnim,
+    MonotonicStackAnim,
+    PriorityQueueAnim,
     ...components,
   } satisfies MDXComponents;
 }
