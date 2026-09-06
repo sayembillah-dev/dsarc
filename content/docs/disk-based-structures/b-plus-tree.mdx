@@ -256,7 +256,7 @@ console.log(loaded.range(10, 35));  // [ 10, 15, 20, 25, 30, 35 ]
 
 ## Complexity: disk read-এর ভাষায় হিসাব
 
-**Height কত?** ধরো fanout m (প্রতি internal node-এ সর্বোচ্চ m-টা child), n-টা record। Fill factor-এর নিয়মে প্রতিটা node (root ছাড়া) অন্তত অর্ধেক ভরা, মানে কমপক্ষে ceil(m/2)-টা child। তাহলে height h-এর গাছে leaf-এর সংখ্যা অন্তত 2 · (m/2)^(h-2) (root-এর অন্তত 2 child, বাকি স্তরে অন্তত m/2 করে)। উল্টো হিসাব: **h ≈ log_{m/2}(n) + কয়েকটা ধ্রুবক**, মানে search-এর খরচ O(log_m n)। ধরো একটা node = একটা 16KB page, key+pointer মিলে ~16 byte, fanout m ≈ 1000:
+**Height কত?** ধরো fanout m (প্রতি internal node-এ সর্বোচ্চ m-টা child), n-টা record। Fill factor-এর নিয়মে প্রতিটা node (root ছাড়া) অন্তত অর্ধেক ভরা, মানে কমপক্ষে ceil(m/2)-টা child। তাহলে height h-এর গাছে leaf-এর সংখ্যা অন্তত 2 · (m/2)^(h-2) (root-এর অন্তত 2 child, বাকি স্তরে অন্তত m/2 করে)। উল্টো হিসাব: **h ≈ log_`{m/2}`(n) + কয়েকটা ধ্রুবক**, মানে search-এর খরচ O(log_m n)। ধরো একটা node = একটা 16KB page, key+pointer মিলে ~16 byte, fanout m ≈ 1000:
 
 ```js
 function minHeight(n, fanout) {
