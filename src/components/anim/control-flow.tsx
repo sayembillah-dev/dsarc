@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Pause, Play, RotateCcw } from 'lucide-react';
 
-const BASE_MS = 950;
+const BASE_MS = 1150;
 
-/* ------------------------------ shared player ------------------------------ */
+/* ------------------------------ player ------------------------------ */
 
 function useStepPlayer(total: number) {
   const [step, setStep] = useState(0);
@@ -20,9 +20,7 @@ function useStepPlayer(total: number) {
       setPlaying(false);
       return;
     }
-    timer.current = window.setTimeout(() => {
-      setStep((s) => Math.min(s + 1, total));
-    }, BASE_MS);
+    timer.current = window.setTimeout(() => setStep((s) => Math.min(s + 1, total)), BASE_MS);
     return () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
     };
@@ -32,16 +30,14 @@ function useStepPlayer(total: number) {
     if (!playing && step >= total) setStep(0);
     setPlaying((p) => !p);
   };
-
   const reset = () => {
     setPlaying(false);
     setStep(0);
   };
-
   return { step, playing, toggle, reset, done: step >= total };
 }
 
-/* ------------------------------ shared pieces ------------------------------ */
+/* ------------------------------ atoms ------------------------------ */
 
 function C({ t }: { t: string }) {
   return (
@@ -51,79 +47,113 @@ function C({ t }: { t: string }) {
   );
 }
 
-function StatusChip({
-  playing,
-  done,
-  started,
-}: {
-  playing: boolean;
-  done: boolean;
-  started: boolean;
-}) {
-  const { text, cls, pulse } = playing
-    ? { text: 'চলছে', cls: 'bg-sky-100 text-sky-700', pulse: true }
-    : done
-      ? { text: 'শেষ', cls: 'bg-emerald-100 text-emerald-700', pulse: false }
-      : started
-        ? { text: 'থেমেছে', cls: 'bg-amber-100 text-amber-700', pulse: false }
-        : { text: 'প্রস্তুত', cls: 'bg-zinc-100 text-zinc-500', pulse: false };
+function EvalBubble({ expr, res }: { expr: string; res: boolean | null }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}
+    <motion.span
+      initial={{ opacity: 0, y: 5, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+      className="ml-auto inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 font-mono text-xs shadow-sm"
     >
-      <span className={`size-1.5 rounded-full bg-current ${pulse ? 'animate-pulse' : ''}`} />
-      {text}
-    </span>
+      <span className="text-zinc-500">{expr}</span>
+      <AnimatePresence mode="popLayout">
+        {res !== null && (
+          <motion.span
+            key="result"
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            className={`font-semibold ${res ? 'text-emerald-600' : 'text-rose-600'}`}
+          >
+            → {res ? 'true' : 'false'}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.span>
   );
 }
 
-function PlayControls({
-  playing,
-  done,
-  onToggle,
-  onReset,
+function Line({
+  n,
+  code,
+  cursorId,
+  active,
+  dim,
+  taken,
+  bubble,
 }: {
-  playing: boolean;
-  done: boolean;
-  onToggle: () => void;
-  onReset: () => void;
+  n: number;
+  code: string;
+  cursorId: string;
+  active?: boolean;
+  dim?: boolean;
+  taken?: boolean;
+  bubble?: { expr: string; res: boolean | null };
 }) {
   return (
-    <div className="flex items-center gap-2">
-      {done && (
-        <button
-          type="button"
-          onClick={onReset}
-          aria-label="আবার চালাও"
-          className="inline-flex size-8 items-center justify-center rounded-full border border-zinc-300 text-zinc-500 transition hover:bg-zinc-100 active:scale-95"
-        >
-          <RotateCcw className="size-3.5" />
-        </button>
+    <li
+      className={`relative flex h-9 items-center gap-3 rounded-lg px-2 transition-all duration-500 ${
+        dim ? 'opacity-35' : 'opacity-100'
+      } ${taken ? 'bg-emerald-50' : ''}`}
+    >
+      {active && (
+        <motion.span
+          layoutId={cursorId}
+          transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+          className="absolute inset-0 rounded-lg bg-sky-100/80 ring-1 ring-sky-200"
+        />
       )}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={playing ? 'থামাও' : 'চালাও'}
-        className="inline-flex size-9 items-center justify-center rounded-full bg-zinc-900 text-white shadow-sm transition hover:bg-zinc-700 active:scale-95"
+      {taken && (
+        <motion.span
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-emerald-500"
+        />
+      )}
+      <span className="relative z-10 w-5 shrink-0 select-none text-right text-xs text-zinc-300">
+        {n}
+      </span>
+      <code
+        className={`relative z-10 font-mono text-sm sm:text-[15px] ${
+          taken ? 'font-medium text-emerald-950' : 'text-zinc-700'
+        }`}
       >
-        {playing ? <Pause className="size-4" /> : <Play className="size-4 translate-x-[1px]" />}
-      </button>
-    </div>
+        {code}
+      </code>
+      <AnimatePresence>
+        {bubble && (
+          <span className="relative z-10 ml-auto">
+            <EvalBubble expr={bubble.expr} res={bubble.res} />
+          </span>
+        )}
+      </AnimatePresence>
+    </li>
   );
 }
 
-function Dots({ total, step }: { total: number; step: number }) {
+function Console({ lines }: { lines: string[] }) {
   return (
-    <span className="ml-auto inline-flex items-center gap-1.5">
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={`size-1.5 rounded-full transition-colors duration-300 ${
-            i < step ? 'bg-zinc-800' : 'bg-zinc-300'
-          }`}
-        />
-      ))}
-    </span>
+    <div className="rounded-xl bg-zinc-950 px-4 py-3">
+      <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">কনসোল</div>
+      <div className="mt-1 min-h-7 font-mono text-sm">
+        {lines.length === 0 ? (
+          <span className="text-zinc-600">...</span>
+        ) : (
+          lines.map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+              className="flex items-center gap-2 text-emerald-300"
+            >
+              <span className="select-none text-zinc-500">&gt;</span>
+              {t}
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -136,7 +166,8 @@ function Stage({
   onToggle,
   onReset,
   caption,
-  children,
+  lines,
+  consoleLines,
 }: {
   title: string;
   step: number;
@@ -146,203 +177,74 @@ function Stage({
   onToggle: () => void;
   onReset: () => void;
   caption: ReactNode;
-  children: ReactNode;
+  lines: ReactNode;
+  consoleLines: string[];
 }) {
   return (
-    <div className="not-prose my-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-sm font-semibold text-zinc-800">{title}</span>
-          <StatusChip playing={playing} done={done} started={step > 0} />
-        </div>
-        <PlayControls playing={playing} done={done} onToggle={onToggle} onReset={onReset} />
-      </div>
-      <div className="grid gap-4 p-4 lg:grid-cols-2">{children}</div>
-      <div className="flex min-h-11 flex-wrap items-center gap-x-2 gap-y-1 border-t border-zinc-100 bg-zinc-50/70 px-4 py-2 text-[13px] text-zinc-700">
-        {caption}
-        <Dots total={total} step={step} />
-      </div>
-    </div>
-  );
-}
-
-function CodePanel({ lines, active }: { lines: string[]; active: number }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-      <div className="border-b border-zinc-200 bg-zinc-100/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-        কোড
-      </div>
-      <ol className="p-2 font-mono text-[13px] leading-6">
-        {lines.map((ln, i) => (
-          <li
-            key={i}
-            className={`flex gap-3 rounded-md px-2 transition-all duration-300 ${
-              i === active
-                ? 'translate-x-1 bg-sky-100/80 font-medium text-sky-950'
-                : 'text-zinc-600'
-            }`}
-          >
-            <span className="w-4 shrink-0 select-none text-right text-zinc-400">{i + 1}</span>
-            <span className="whitespace-pre">{ln || ' '}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-function VizPanel({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white">
-      <div className="border-b border-zinc-100 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-        {label}
-      </div>
-      <div className="p-3">{children}</div>
-    </div>
-  );
-}
-
-function FlowArrow({ lit, label }: { lit: boolean; label?: string }) {
-  return (
-    <div className="flex items-center gap-2 py-0.5">
-      <span className="ml-6 flex flex-col items-center">
-        <span
-          className={`block h-3.5 w-px transition-colors duration-300 ${
-            lit ? 'bg-zinc-700' : 'bg-zinc-300'
-          }`}
-        />
-        <span
-          className={`block size-0 border-x-[5px] border-t-[6px] border-x-transparent transition-colors duration-300 ${
-            lit ? 'border-t-zinc-700' : 'border-t-zinc-300'
-          }`}
-        />
-      </span>
-      {label ? (
-        <span
-          className={`rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors duration-300 ${
-            lit ? 'bg-rose-100 text-rose-700' : 'bg-zinc-100 text-zinc-400'
-          }`}
-        >
-          {label}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function OutputBar({ printed, text }: { printed: boolean; text: string }) {
-  return (
-    <div
-      className={`rounded-xl border p-3 transition-colors duration-300 ${
-        printed ? 'border-emerald-300 bg-emerald-50' : 'border-dashed border-zinc-200 bg-zinc-50/50'
-      }`}
-    >
-      <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">আউটপুট</div>
-      {printed ? (
+    <div className="not-prose my-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="h-[3px] bg-zinc-100">
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-1 font-mono text-sm font-semibold text-emerald-900"
-        >
-          {text}
-        </motion.div>
-      ) : (
-        <div className="mt-1 font-mono text-sm text-zinc-400">...</div>
-      )}
+          className="h-full bg-zinc-800"
+          style={{ transformOrigin: 'left' }}
+          animate={{ scaleX: total === 0 ? 0 : step / total }}
+          transition={{ type: 'spring', stiffness: 120, damping: 24 }}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3 px-5 pt-4">
+        <span className="text-sm font-semibold text-zinc-900">{title}</span>
+        <div className="flex items-center gap-2">
+          {done && (
+            <motion.button
+              type="button"
+              onClick={onReset}
+              aria-label="আবার চালাও"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex size-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 active:scale-95"
+            >
+              <RotateCcw className="size-4" />
+            </motion.button>
+          )}
+          <motion.button
+            type="button"
+            onClick={onToggle}
+            aria-label={playing ? 'থামাও' : 'চালাও'}
+            whileTap={{ scale: 0.92 }}
+            className="inline-flex size-10 items-center justify-center rounded-full bg-zinc-900 text-white shadow-sm transition hover:bg-zinc-700"
+          >
+            {playing ? (
+              <Pause className="size-4" />
+            ) : (
+              <Play className="size-4 translate-x-[1px]" />
+            )}
+          </motion.button>
+        </div>
+      </div>
+      <div className="min-h-6 px-5 pt-2 text-[13px] text-zinc-500">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={step}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            className="block"
+          >
+            {caption}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+      <ol className="px-3 pb-1 pt-2">{lines}</ol>
+      <div className="px-5 pb-5 pt-2">
+        <Console lines={consoleLines} />
+      </div>
     </div>
-  );
-}
-
-/* ------------------------------ branch pieces ------------------------------ */
-
-type BranchStatus = 'upcoming' | 'checking' | 'rejected' | 'taken' | 'skipped';
-
-function BranchTag({
-  status,
-  isElse,
-  takenLabel,
-}: {
-  status: BranchStatus;
-  isElse?: boolean;
-  takenLabel?: string;
-}) {
-  if (status === 'checking')
-    return (
-      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
-        যাচাই চলছে
-      </span>
-    );
-  if (status === 'rejected')
-    return (
-      <span className="rounded-full bg-rose-100 px-2 py-0.5 font-mono text-[10px] font-medium text-rose-700">
-        false
-      </span>
-    );
-  if (status === 'taken')
-    return (
-      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-        {takenLabel ?? (isElse ? 'চলবে' : 'true · চলবে')}
-      </span>
-    );
-  if (status === 'skipped')
-    return (
-      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-400">
-        বাদ গেল
-      </span>
-    );
-  return (
-    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-400">অপেক্ষমাণ</span>
-  );
-}
-
-function branchBox(status: BranchStatus): string {
-  if (status === 'checking') return 'border-sky-300 bg-sky-50 shadow-[0_0_0_3px] shadow-sky-100';
-  if (status === 'rejected') return 'border-rose-200 bg-rose-50/60';
-  if (status === 'taken')
-    return 'border-emerald-300 bg-emerald-50 shadow-[0_0_0_3px] shadow-emerald-100';
-  if (status === 'skipped') return 'border-zinc-200 bg-zinc-50/50 opacity-50';
-  return 'border-zinc-200 bg-zinc-50/50 opacity-60';
-}
-
-function BranchRow({
-  condition,
-  body,
-  status,
-  isElse,
-}: {
-  condition?: string;
-  body: string;
-  status: BranchStatus;
-  isElse?: boolean;
-}) {
-  return (
-    <motion.div
-      animate={{ scale: status === 'checking' || status === 'taken' ? 1.02 : 1 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-      className={`rounded-xl border p-3 transition-colors duration-300 ${branchBox(status)}`}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <code className="font-mono text-[13px] font-medium text-zinc-800">
-          {isElse ? 'else' : condition}
-        </code>
-        <BranchTag status={status} isElse={isElse} />
-      </div>
-      <div
-        className={`mt-1.5 rounded-lg px-2 py-1 font-mono text-xs transition-colors duration-300 ${
-          status === 'taken'
-            ? 'bg-emerald-100/80 font-semibold text-emerald-900'
-            : 'bg-white/70 text-zinc-500'
-        }`}
-      >
-        {body}
-      </div>
-    </motion.div>
   );
 }
 
 /* ------------------------------ if / else ------------------------------ */
 
-const IF_LINES = [
+const IF_CODE = [
   'const marks = 75;',
   '',
   'if (marks >= 80) {',
@@ -354,153 +256,75 @@ const IF_LINES = [
   '}',
 ];
 
-const IF_TL = ['pick', 'q0', 'v0', 'q1', 'v1', 'body', 'print'] as const;
-type IfEntry = (typeof IF_TL)[number];
+// step: 0 idle · 1 pick · 2 q0 · 3 v0 · 4 q1 · 5 v1 · 6 body · 7 print
+const IF_CURSOR = [-1, 0, 2, 2, 4, 4, -1, -1];
+const IF_TOTAL = 7;
 
-const IF_CODE: Record<IfEntry, number> = {
-  pick: 0,
-  q0: 2,
-  v0: 2,
-  q1: 4,
-  v1: 4,
-  body: 5,
-  print: 5,
-};
-
-function IfElseViz({ step }: { step: number }) {
-  let picked = false;
-  let bodyOn = false;
-  let printed = false;
-  const res: (boolean | null)[] = [null, null];
-  const flash: boolean[] = [false, false];
-  for (let k = 0; k < step; k++) {
-    const e = IF_TL[k];
-    if (e === 'pick') picked = true;
-    else if (e === 'q0') flash[0] = true;
-    else if (e === 'v0') {
-      res[0] = false;
-      flash[0] = false;
-    } else if (e === 'q1') flash[1] = true;
-    else if (e === 'v1') {
-      res[1] = true;
-      flash[1] = false;
-    } else if (e === 'body') bodyOn = true;
-    else if (e === 'print') printed = true;
-  }
-
-  const st0: BranchStatus = flash[0] ? 'checking' : res[0] === false ? 'rejected' : 'upcoming';
-  const st1: BranchStatus = flash[1]
-    ? 'checking'
-    : res[1] === true
-      ? 'taken'
-      : res[1] === false
-        ? 'rejected'
-        : 'upcoming';
-  const stE: BranchStatus = bodyOn
-    ? res[0] === true || res[1] === true
-      ? 'skipped'
-      : 'taken'
-    : 'upcoming';
-
-  return (
-    <div className="flex flex-col">
-      <motion.div
-        animate={{ scale: picked ? 1.03 : 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-        className={`w-fit rounded-lg px-3 py-1.5 font-mono text-xs transition-colors duration-300 ${
-          picked ? 'bg-zinc-900 text-zinc-50 shadow' : 'bg-zinc-100 text-zinc-500'
-        }`}
-      >
-        marks = 75
-      </motion.div>
-      <FlowArrow lit={picked} />
-      <BranchRow condition="marks >= 80" body='console.log("A+ গ্রেড")' status={st0} />
-      <FlowArrow lit={res[0] === false} label="false" />
-      <BranchRow condition="marks >= 60" body='console.log("A গ্রেড")' status={st1} />
-      <FlowArrow lit={res[1] === false} label="false" />
-      <BranchRow isElse body='console.log("আরও চেষ্টা করো")' status={stE} />
-      <FlowArrow lit={printed} />
-      <OutputBar printed={printed} text="A গ্রেড" />
-    </div>
-  );
-}
-
-function IfCaption({ step }: { step: number }) {
-  const e: IfEntry | null = step === 0 ? null : IF_TL[step - 1];
-  if (e === null)
-    return (
-      <>
-        প্লে চাপো: <C t="marks = 75" /> নিয়ে শর্তগুলো উপর থেকে নিচে চেক হবে।
-      </>
-    );
-  if (e === 'pick')
-    return (
-      <>
-        <C t="marks = 75" />, ভ্যারিয়েবলটা তৈরি হলো।
-      </>
-    );
-  if (e === 'q0')
-    return (
-      <>
-        প্রথম শর্ত যাচাই চলছে: <C t="75 >= 80" />
-      </>
-    );
-  if (e === 'v0')
-    return (
-      <>
-        <C t="75 >= 80 → false" />, তাই এই block বাদ। পরের শর্তে যাও।
-      </>
-    );
-  if (e === 'q1')
-    return (
-      <>
-        পরের শর্ত যাচাই চলছে: <C t="75 >= 60" />
-      </>
-    );
-  if (e === 'v1')
-    return (
-      <>
-        <C t="75 >= 60 → true" />, এই block-টাই চলবে।
-      </>
-    );
-  if (e === 'body')
-    return (
-      <>
-        <C t='console.log("A গ্রেড")' /> চলছে।
-      </>
-    );
-  return (
-    <>
-      আউটপুটে <C t="A গ্রেড" /> ছাপা হলো। বাকি অংশ আর চলে না।
-    </>
-  );
-}
+const IF_CAPTIONS: ReactNode[] = [
+  <>
+    প্লে চাপলে <C t="marks = 75" /> দিয়ে পুরো চেইনটা এক লাইন করে চলবে।
+  </>,
+  <>
+    <C t="marks = 75" /> তৈরি হলো।
+  </>,
+  <>
+    প্রথম শর্ত চেক হচ্ছে: <C t="75 >= 80" /> ?
+  </>,
+  <>
+    <C t="false" />। তাই <C t='console.log("A+ গ্রেড")' /> বাদ।
+  </>,
+  <>
+    পরের শর্ত চেক হচ্ছে: <C t="75 >= 60" /> ?
+  </>,
+  <>
+    <C t="true" />। আর নিচে যাওয়া হবে না, এই block-টাই চলবে।
+  </>,
+  <>
+    <C t='console.log("A গ্রেড")' /> চলছে। বাকি block গুলো বাদ পড়ল।
+  </>,
+  <>
+    কনসোলে <C t="A গ্রেড" />। if / else চেইন শেষ।
+  </>,
+];
 
 export function IfElseAnim() {
-  const total = IF_TL.length;
-  const { step, playing, toggle, reset, done } = useStepPlayer(total);
+  const { step, playing, toggle, reset, done } = useStepPlayer(IF_TOTAL);
+  const cursor = IF_CURSOR[step];
+
+  const bubbles: Record<number, { expr: string; res: boolean | null }> = {};
+  if (step >= 2) bubbles[2] = { expr: '75 >= 80', res: step >= 3 ? false : null };
+  if (step >= 4) bubbles[4] = { expr: '75 >= 60', res: step >= 5 ? true : null };
+
   return (
     <Stage
-      title="if / else ফ্লো"
+      title="if / else চেইন"
       step={step}
-      total={total}
+      total={IF_TOTAL}
       playing={playing}
       done={done}
       onToggle={toggle}
       onReset={reset}
-      caption={<IfCaption step={step} />}
-    >
-      <CodePanel lines={IF_LINES} active={step === 0 ? -1 : IF_CODE[IF_TL[step - 1]]} />
-      <VizPanel label="ফ্লোচার্ট">
-        <IfElseViz step={step} />
-      </VizPanel>
-    </Stage>
+      caption={IF_CAPTIONS[step]}
+      consoleLines={step >= 7 ? ['A গ্রেড'] : []}
+      lines={IF_CODE.map((code, i) => (
+        <Line
+          key={i}
+          n={i + 1}
+          code={code}
+          cursorId="if-cursor"
+          active={cursor === i}
+          bubble={bubbles[i]}
+          dim={(step >= 3 && i === 3) || (step >= 6 && (i === 6 || i === 7 || i === 8))}
+          taken={step >= 6 && i === 5}
+        />
+      ))}
+    />
   );
 }
 
 /* ------------------------------ switch ------------------------------ */
 
-const SW_LINES = [
+const SW_CODE = [
   'const day = 3;',
   'switch (day) {',
   '  case 1: console.log("শনিবার"); break;',
@@ -509,221 +333,71 @@ const SW_LINES = [
   '}',
 ];
 
-const SW_TL = ['pick', 'jump', 'q0', 'v0', 'q1', 'v1', 'run', 'print'] as const;
-type SwEntry = (typeof SW_TL)[number];
+// step: 0 idle · 1 pick · 2 jump · 3 q0 · 4 v0 · 5 q1 · 6 v1 · 7 run · 8 print
+const SW_CURSOR = [-1, 0, 1, 2, 2, 3, 3, -1, -1];
+const SW_TOTAL = 8;
 
-const SW_CODE: Record<SwEntry, number> = {
-  pick: 0,
-  jump: 1,
-  q0: 2,
-  v0: 2,
-  q1: 3,
-  v1: 3,
-  run: 3,
-  print: 3,
-};
-
-function Station({
-  head,
-  compare,
-  body,
-  status,
-  showBreak,
-}: {
-  head: string;
-  compare?: string;
-  body: string;
-  status: BranchStatus;
-  showBreak?: boolean;
-}) {
-  return (
-    <motion.div
-      animate={{ scale: status === 'checking' || status === 'taken' ? 1.04 : 1 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-      className={`rounded-xl border p-2.5 transition-colors duration-300 ${branchBox(status)}`}
-    >
-      <div className="flex items-center justify-between gap-1">
-        <code className="font-mono text-xs font-semibold text-zinc-800">{head}</code>
-        <BranchTag status={status} takenLabel="মিললো · চলবে" />
-      </div>
-      {compare ? (
-        <div className="mt-1 font-mono text-[11px] text-zinc-500">{compare}</div>
-      ) : (
-        <div className="mt-1 text-[11px] text-zinc-400">কোনোটাই না মিললে</div>
-      )}
-      <div
-        className={`mt-1.5 rounded-lg px-2 py-1 font-mono text-[11px] transition-colors duration-300 ${
-          status === 'taken'
-            ? 'bg-emerald-100/80 font-semibold text-emerald-900'
-            : 'bg-white/70 text-zinc-500'
-        }`}
-      >
-        {body}
-      </div>
-      {showBreak && status === 'taken' && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-1.5 inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] text-emerald-800"
-        >
-          break, থামো
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
-
-function SwitchViz({ step }: { step: number }) {
-  let picked = false;
-  let jumped = false;
-  let runBody = false;
-  let printed = false;
-  const res: (boolean | null)[] = [null, null];
-  const flash: boolean[] = [false, false];
-  for (let k = 0; k < step; k++) {
-    const e = SW_TL[k];
-    if (e === 'pick') picked = true;
-    else if (e === 'jump') jumped = true;
-    else if (e === 'q0') flash[0] = true;
-    else if (e === 'v0') {
-      res[0] = false;
-      flash[0] = false;
-    } else if (e === 'q1') flash[1] = true;
-    else if (e === 'v1') {
-      res[1] = true;
-      flash[1] = false;
-    } else if (e === 'run') runBody = true;
-    else if (e === 'print') printed = true;
-  }
-
-  const st0: BranchStatus = flash[0] ? 'checking' : res[0] === false ? 'rejected' : 'upcoming';
-  const st1: BranchStatus = flash[1]
-    ? 'checking'
-    : res[1] === true
-      ? 'taken'
-      : res[1] === false
-        ? 'rejected'
-        : 'upcoming';
-  const matched = res[0] === true || res[1] === true;
-  const stD: BranchStatus = runBody || printed ? (matched ? 'skipped' : 'taken') : 'upcoming';
-
-  return (
-    <div className="flex flex-col">
-      <motion.div
-        animate={{ scale: picked ? 1.03 : 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-        className={`w-fit rounded-lg px-3 py-1.5 font-mono text-xs transition-colors duration-300 ${
-          picked ? 'bg-zinc-900 text-zinc-50 shadow' : 'bg-zinc-100 text-zinc-500'
-        }`}
-      >
-        day = 3
-      </motion.div>
-      <FlowArrow lit={picked} />
-      <motion.div
-        key={jumped ? 'value' : 'expr'}
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`w-fit rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors duration-300 ${
-          jumped
-            ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-[0_0_0_3px] shadow-sky-100'
-            : 'border-zinc-200 bg-zinc-50/60 text-zinc-500'
-        }`}
-      >
-        {jumped ? 'switch (3)' : 'switch (day)'}
-      </motion.div>
-      <FlowArrow lit={jumped} />
-      <div className="grid grid-cols-3 gap-2">
-        <Station head="case 1" compare="3 === 1" body='console.log("শনিবার")' status={st0} />
-        <Station
-          head="case 3"
-          compare="3 === 3"
-          body='console.log("সোমবার")'
-          status={st1}
-          showBreak={runBody || printed}
-        />
-        <Station head="default" body='console.log("অন্য দিন")' status={stD} />
-      </div>
-      <FlowArrow lit={printed} />
-      <OutputBar printed={printed} text="সোমবার" />
-    </div>
-  );
-}
-
-function SwCaption({ step }: { step: number }) {
-  const e: SwEntry | null = step === 0 ? null : SW_TL[step - 1];
-  if (e === null)
-    return (
-      <>
-        প্লে চাপো: <C t="day = 3" /> কোন case-এ মেলে, একে একে দেখো।
-      </>
-    );
-  if (e === 'pick')
-    return (
-      <>
-        <C t="day = 3" />, ভ্যারিয়েবলটা তৈরি হলো।
-      </>
-    );
-  if (e === 'jump')
-    return (
-      <>
-        <C t="switch (3)" /> : এবার case-গুলোর সাথে মেলানো হবে।
-      </>
-    );
-  if (e === 'q0')
-    return (
-      <>
-        প্রথম case যাচাই চলছে: <C t="3 === 1" />
-      </>
-    );
-  if (e === 'v0')
-    return (
-      <>
-        <C t="3 === 1 → false" />, মেলেনি। পরের case-এ যাও।
-      </>
-    );
-  if (e === 'q1')
-    return (
-      <>
-        পরের case যাচাই চলছে: <C t="3 === 3" />
-      </>
-    );
-  if (e === 'v1')
-    return (
-      <>
-        <C t="3 === 3 → true" />, মিলে গেছে!
-      </>
-    );
-  if (e === 'run')
-    return (
-      <>
-        <C t='console.log("সোমবার")' /> চলছে, তারপর <C t="break" /> এ থামবে।
-      </>
-    );
-  return (
-    <>
-      আউটপুটে <C t="সোমবার" /> ছাপা হলো। <C t="break" /> থাকায় বাকি case আর চলে না।
-    </>
-  );
-}
+const SW_CAPTIONS: ReactNode[] = [
+  <>
+    প্লে চাপলে <C t="day = 3" /> কোন case-এ মেলে, একটা একটা করে দেখা যাবে।
+  </>,
+  <>
+    <C t="day = 3" /> তৈরি হলো।
+  </>,
+  <>
+    <C t="switch (3)" /> : মেলানো শুরু হলো।
+  </>,
+  <>
+    প্রথম case চেক হচ্ছে: <C t="3 === 1" /> ?
+  </>,
+  <>
+    <C t="false" />। <C t="case 1" /> বাদ, পরের case-এ যাও।
+  </>,
+  <>
+    পরের case চেক হচ্ছে: <C t="3 === 3" /> ?
+  </>,
+  <>
+    <C t="true" />। এই case-টাই চলবে।
+  </>,
+  <>
+    <C t='console.log("সোমবার")' /> চলছে, তারপর <C t="break" /> থামিয়ে দেবে।
+  </>,
+  <>
+    কনসোলে <C t="সোমবার" />। <C t="break" /> থাকায় <C t="default" /> আর চলেনি।
+  </>,
+];
 
 export function SwitchAnim() {
-  const total = SW_TL.length;
-  const { step, playing, toggle, reset, done } = useStepPlayer(total);
+  const { step, playing, toggle, reset, done } = useStepPlayer(SW_TOTAL);
+  const cursor = SW_CURSOR[step];
+
+  const bubbles: Record<number, { expr: string; res: boolean | null }> = {};
+  if (step >= 3) bubbles[2] = { expr: '3 === 1', res: step >= 4 ? false : null };
+  if (step >= 5) bubbles[3] = { expr: '3 === 3', res: step >= 6 ? true : null };
+
   return (
     <Stage
       title="switch ম্যাচিং"
       step={step}
-      total={total}
+      total={SW_TOTAL}
       playing={playing}
       done={done}
       onToggle={toggle}
       onReset={reset}
-      caption={<SwCaption step={step} />}
-    >
-      <CodePanel lines={SW_LINES} active={step === 0 ? -1 : SW_CODE[SW_TL[step - 1]]} />
-      <VizPanel label="case মেলানো">
-        <SwitchViz step={step} />
-      </VizPanel>
-    </Stage>
+      caption={SW_CAPTIONS[step]}
+      consoleLines={step >= 8 ? ['সোমবার'] : []}
+      lines={SW_CODE.map((code, i) => (
+        <Line
+          key={i}
+          n={i + 1}
+          code={code}
+          cursorId="sw-cursor"
+          active={cursor === i}
+          bubble={bubbles[i]}
+          dim={(step >= 4 && i === 2) || (step >= 7 && i === 4)}
+          taken={step >= 7 && i === 3}
+        />
+      ))}
+    />
   );
 }
