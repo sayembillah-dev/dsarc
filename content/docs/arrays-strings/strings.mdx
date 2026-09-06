@@ -174,15 +174,6 @@ const t = a.join(""); // "Hello"
 **৫. Unicode-এ `length`-এর ধোঁকা।**
 JavaScript অক্ষর গোনে UTF-16 code unit দিয়ে। অনেক emoji আসলে কয়েকটা unit মিলে একটা, তাই `length` চোখের দেখার চেয়ে বড় আসে। বাংলা যুক্তাক্ষরেও মিলতে পারে। আসল অক্ষর (code point) ধরতে চাইলে `[...s]` বা `Array.from(s)` দিয়ে ভাঙো, তাহলে গোনাটা মানুষের গোনার সঙ্গে মিলে যায়।
 
-## Animation Spec
-
-> **Animation Spec: String as Char Boxes**
->
-> - **দৃশ্য:** প্রতিটা character আলাদা box-এ, নিচে index; পাশে "নতুন string" জন্ম নেওয়ার জায়গা।
-> - **ইনপুট:** string টাইপ করা; অপারেশন নির্বাচন (reverse / palindrome / concat-in-loop বনাম array-join)।
-> - **ধাপ:** reverse-এ box জোড়ায় জোড়ায় বদলাবে; palindrome-এ দুই প্রান্তের pointer প্রতি জোড়ার মিল-অমিল দেখাবে; concat মোডে প্রতি ধাপে পুরানো string পুরোটা কপি হয়ে নতুন row-তে বসবে, কপি কাউন্টার চৌকো হারে বাড়বে; array-join মোডে একই কাজ সরলরেখায় বাড়বে।
-> - **লক্ষ্য:** immutable মানে "পরিবর্তন = নতুন কপি", আর সেই কপির বিল কখন চৌকো হয়, চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** একটা string-এ কতগুলো vowel আছে গুনো। (হিন্ট: `for..of` দিয়ে ঘোরো, `"aeiou".includes(ch)` দিয়ে চেক করো।)

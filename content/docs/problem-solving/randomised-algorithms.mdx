@@ -258,16 +258,6 @@ i-তম আইটেমকে 1/i সম্ভাবনায় রাখত�
 **৫. টেস্টে আর security-তে Math.random সরাসরি।**
 টেস্টে Math.random দিলে ফল মাঝে মাঝে বদলায়, ফেলের কারণ খুঁজে পাবে না; seeded RNG রাখো (কোডে যেমন দেখালাম)। আর token, password, key-এর মতো security-র কাজে Math.random কখনোই না, সেটা অনুমানযোগ্য; সেখানে crypto-এর randomValues লাগে।
 
-## Animation Spec
-
-> **Animation Spec: Randomness at Work**
->
-> - **দৃশ্য:** তিনটা প্যানেল; quicksort-এ random pivot বাছাই (রেঞ্জ highlight, pivot লাফিয়ে শেষে), stream-এ reservoir (একটা স্লট, প্রতি আইটেমে 1/i সম্ভাবনার চক্র ঘোরে), আর shuffle-এ i pointer আর প্রতি swap।
-> - **ইনপুট:** array/stream preset; seed ইনপুট, একই এলোমেলোতা পুনরুত্পাদনের জন্য।
-> - **ধাপ:** প্রতি random call-এর মুহূর্তে থামা; সম্ভাবনার ভগ্নাংশ দেখা; শেষে পরীক্ষার histogram (60000 রানে ছয়টা বিন্যাস প্রায় সমান)।
-> - **নিয়ন্ত্রণ:** speed, step, reset; reshuffle/re-run; seed বদল।
-> - **লক্ষ্য:** এলোমেলোতা অনুমান না, হিসাবসহ অস্ত্র; fairness গাণিতিকভাবে যাচাইযোগ্য।
-
 ## অনুশীলন
 
 - **সহজ ১:** Shuffle an Array (LeetCode 384)। হিন্ট: Fisher-Yates-ই সরাসরি; reset()-এর জন্য মূল array-টার একটা copy জমিয়ে রাখো, shuffle সবসময় কপির ওপর।

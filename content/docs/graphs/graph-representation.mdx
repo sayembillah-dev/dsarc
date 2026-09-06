@@ -114,7 +114,6 @@ console.log(g.hasEdge("B", "D")); // true
 console.log(g.hasEdge("A", "F")); // false
 ```
 
-
 ## ভ্যারিয়েন্ট ১: weighted edge
 
 edge-এর সাথে weight থাকলে neighbor-এর জায়গায় একটা জোড়া `[neighbor, weight]` রাখো:
@@ -229,16 +228,6 @@ Lookup সত্যিই O(1), কিন্তু দামটা আগেই 
 
 **৫. weighted আর unweighted format গুলিয়ে ফেলা।**
 List-এ কোথাও neighbor জমা আছে `B`, কোথাও `[B, 4]`। Traversal-এর লুপে একবার node পাচ্ছে, একবার array। আবার matrix-এ "edge নেই" বোঝাতে 0 বসিয়েছ, অথচ ইনপুটে weight-0-এর আসল edge আছে। নিয়ম একটাই: একটা graph-এ একটাই format। Unweighted মানে শুধু node, weighted মানে সব জায়গায় `[node, weight]` জোড়া, আর matrix-এ অনুপস্থিতির জন্য `Infinity`।
-
-## Animation Spec
-
-> **Animation Spec: List বনাম Matrix Morph**
->
-> - **দৃশ্য:** মাঝখানে graph; বাঁয়ে adjacency list, ডানে adjacency matrix; একই graph তিন রূপে।
-> - **ইনপুট:** edge যোগ বা বাদ; directed/undirected টগল; weighted টগল।
-> - **ধাপ:** edge যোগ করলে graph-এ নতুন রেখা আঁকা হয়, সাথে সাথে list-এর দুটো entry আর matrix-এর দুটো ঘর হাইলাইট হয়ে বদলায়; undirected হলে দুই দিক, directed হলে একটাই ঘর জ্বলে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; node সংখ্যা বাড়ানোর slider, যাতে matrix-এর ঘর সংখ্যা দ্রুত ফুলে যাওয়াটা চোখে দেখা যায়।
-> - **লক্ষ্য:** একই তথ্য তিনভাবে রাখা যায়, আর V বাড়লে matrix-এর দাম কীভাবে আকাশছোঁয়া হয়।
 
 ## অনুশীলন
 

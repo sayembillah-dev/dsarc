@@ -75,16 +75,6 @@ Merge-এর O(n) বাড়তি জায়গা ছোট ডেটা�
 **৫. নিজের sort লেখার দুষ্টসাহস।**
 Production-এ built-in `sort()` ব্যবহার করো। নিজেরটা শেখার জন্য, benchmark ছাড়া বদলাবে না। যে সমস্যায় আসলেই দরকার (বিশেষ ডেটা, বিশেষ সীমাবদ্ধতা), সেখানে জ্ঞানটা কাজে লাগবে।
 
-## Animation Spec
-
-> **Animation Spec: Grand Race**
->
-> - **দৃশ্য:** ছয়টা panel পাশাপাশি, একই input-এর copy সবার কাছে; প্রতিটায় algorithm-এর নাম, কাউন্টার আর অগ্রগতি বার।
-> - **ইনপুট:** array-র আকার আর গঠন (random / near-sorted / reversed / সব-সমান); speed।
-> - **ধাপ:** সবাই একসাথে দৌড়ে; near-sorted ইনপুটে insertion ছুটে এগোয়, reversed-এ bubble দমে যায়, সব-সমান-এ quick (নিয়মিত pivot) হোঁচট খায়।
-> - **নিয়ন্ত্রণ:** play, reset; পৃথক panel বন্ধ/চালু।
-> - **লক্ষ্য:** "সেরা algorithm" বলে কিছু নেই, আছে "এই ডেটায় সেরা", চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** নিজের কথায় লেখো: কেন selection sort-এর best case আর worst case একই, অথচ insertion-এর না?

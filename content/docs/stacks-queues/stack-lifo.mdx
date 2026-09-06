@@ -147,16 +147,6 @@ JavaScript ক্রাশ করে না, নিরবে `undefined` দে�
 **৫. Recursion-এ stack overflow ভুলে যাওয়া।**
 তোমার লেখা stack যেমন memory খায়, তেমনি প্রতিটা function call-ও call stack-এ জায়গা খায়। Base case ভুললে বা অতিরিক্ত গভীর recursion হলে `Maximum call stack size exceeded`, এটাও আসলে stack-এরই সীমা ফুরিয়ে যাওয়া।
 
-## Animation Spec
-
-> **Animation Spec: Plate Stack**
->
-> - **দৃশ্য:** উল্লম্ব স্তূপ; উপরে top-এর তীর; পাশে অপারেশন লগ আর size কাউন্টার।
-> - **ইনপুট:** মান টাইপ করে push; pop/peek/isEmpty বাটন; স্বয়ংক্রিয় demo সিকোয়েন্স।
-> - **ধাপ:** push-এ নতুন plate উপর থেকে নেমে বসে, top-তীর এক ঘর ওঠে; pop-এ উপরের plate উঠে গিয়ে ফেরত মানের ঘরে ঢোকে; peek-এ plate কাঁপে কিন্তু নড়ে না। খালি stack-এ pop চাপলে লাল ঝলক।
-> - **নিয়ন্ত্রণ:** step, play, reset; speed slider।
-> - **লক্ষ্য:** সব নড়াচড়া যে এক প্রান্তেই, আর LIFO ক্রমটা চোখে পড়ুক।
-
 ## অনুশীলন
 
 - **সহজ ১:** কাগজে dry run করো: `push(5)`, `push(9)`, `pop()`, `push(7)`, `peek()`, `pop()`, `pop()`। প্রতি ধাপে stack আঁকো, শেষে কী ফেরত পাবে লিখো।

@@ -224,16 +224,6 @@ Fixed window-এ k array-এর চেয়ে বড় হলে প্রথ
 **৫. Shrink লুপে `while` না লিখে `if` লেখা।**
 একবার left সরালেই যে window valid হয়ে যাবে, এমন নয়। Invalid condition যতক্ষণ সত্য, left সরতেই থাকবে। `if` লিখলে invalid window নিয়েই `best` আপডেট করে ফেলবে। নিয়ম: expand `for`, contract `while`।
 
-## Animation Spec
-
-> **Animation Spec: Sliding Window**
->
-> - **দৃশ্য:** array-এর উপর একটা আধা-স্বচ্ছ রঙিন জানালা; বাঁ প্রান্ত লাল, ডান প্রান্ত সবুজ; নিচে running sum বা length-এর live মান।
-> - **ইনপুট:** array বা string, fixed হলে k, variable হলে শর্ত (যেমন "কোনো repeat নেই")।
-> - **ধাপ:** ডান প্রান্ত এগিয়ে নতুন উপাদান সবুজ হয়ে ঢুকে; invalid হলে বাঁ প্রান্ত এগিয়ে পুরনো উপাদান লাল হয়ে বেরিয়ে যায়; সেরা মানটা পাশে ট্র্যাক হয়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; fixed/variable টগল; naive mode টগল যাতে O(n * k) আর O(n)-এর পার্থক্য চোখে দেখা যায়।
-> - **লক্ষ্য:** পুরো নয়, শুধু পরিবর্তন হিসাব; right expands, left contracts only when invalid।
-
 ## অনুশীলন
 
 - **সহজ ১:** Maximum Average Subarray I (LeetCode 643)। হিন্ট: এই পাতার fixed window-ই, শুধু ভাগফলটা একদম শেষে একবারই করো, প্রতি ধাপে নয়।

@@ -288,16 +288,6 @@ key-এর ভেতরটা বদলালে তার hash-ও বদলে
 **৫. linear probing-এ primary clustering অবজ্ঞা করা।**
 ভরা ঘরের ব্লক জমতে জমতে লম্বা হলে probe-এর হাঁটাও লম্বা হয়, average O(1) আর থাকে না। ক্ষতি বুঝতে পারলে quadratic probing বা double hashing-এ সরে যাও (ভ্যারিয়েন্ট ২)।
 
-## Animation Spec
-
-> **Animation Spec: Collision, Chain আর Resize**
->
-> - **দৃশ্য:** নিচে slot-গুলোর সারি; collision হলে নতুন entry সেই slot থেকে ডানদিকে chain হয়ে বাড়ে; পাশে load factor-এর বার ক্রমশ ভরছে।
-> - **ইনপুট:** key-value জোড়ার ধারা; table-এর শুরুর size; চাইলে একটা ভুলানো hash function, যা সবাইকে একই slot-এ ঠেলে দেয়।
-> - **ধাপ:** key এলে আগে hash-রেখা নেমে তার slot-এ পড়ে; ঘর ভরা থাকলে chain-এর আড়ালে গিয়ে বসে; get চালালে chain বেয়ে একটা একটা key-এর তুলনা চোখে দেখা যায়; load factor 0.7 টপকালেই পুরো table দ্বিগুণ হয়ে সব entry নতুন করে ছড়িয়ে পড়ে, লম্বা chain-গুলো ভেঙে ছোট হয়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; chaining আর linear probing-এর টগল, যাতে একই input-এ দুই রকম ছবি তুলনা করা যায়।
-> - **লক্ষ্য:** collision স্বাভাবিক, লম্বা chain-ই আসল শত্রু, আর resize সেই লড়াইয়ের নিয়মিত ঔষধ।
-
 ## অনুশীলন
 
 - **সহজ ১:** size 5-এর chaining table-এ হাতে হাতে trace করো। hash দিয়ে দেওয়া আছে: "a" → 2, "b" → 4, "c" → 2, "d" → 3, "e" → 4, "f" → 2। প্রতি insert-এর পর ৫টা slot-এর chain আঁকো। হিন্ট: 2 নম্বর slot-এ শেষে তিনটে entry-র chain দাঁড়াবে।

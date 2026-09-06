@@ -228,16 +228,6 @@ Interview-এ brute force দেখিয়ে চুপ করে থাকল
 **৫. Constraint না দেখে TLE-এ পড়া**
 মোটামুটি ধরো judge সেকেন্ডে ~10⁸-টা সহজ operation করতে পারে। n = 10⁵ হলে O(n²) মানে ~10¹⁰-টা operation, অর্থাৎ ~100 সেকেন্ড: Time Limit Exceeded পাক্কা। Submission-এর আগে constraint দেখে হিসাব করো brute force চলবে কি না; না চললে [Problem Solving](./index.mdx) অধ্যায়ের প্যাটার্ন-গুলো থেকে ছোট complexity-এর কৌশল খোঁজো।
 
-## Animation Spec
-
-> **Animation Spec: Keyring এবং Exhaustive Pairs**
->
-> - **দৃশ্য:** উপরে চাবির রিংয়ের মতো সাজানো element-গুলো; নিচে চলমান "মোট চেষ্টা" counter; pair-ভিত্তিক সমস্যায় i আর j দুটো pointer আলাদা রঙে highlight
-> - **ইনপুট:** array আর target; string match-এর জন্য text আর pattern
-> - **ধাপ:** প্রতিটা comparison-এ দুটো ঘর জ্বলে ওঠে, মিললে সবুজ, না মিললে ধূসর হয়ে সরে যায়; counter এক করে বাড়ে; মিলে গেলে "থামো" cue; string match-এ window-টা সরতে সরতে অক্ষর মেলে বা ভাঙে
-> - **নিয়ন্ত্রণ:** speed, step, reset; একটা toggle যা একই input-এ optimized version-এর counter-কে পাশাপাশি চালায়, যাতে পার্থক্য চোখে পড়ে
-> - **লক্ষ্য:** শেখার্থী নিজে অনুভব করুক "কাজ ঠিকই হয়, কিন্তু কতটা অপচয়", আর সেই অপচয়ের সংখ্যাটাই পরের অধ্যায়গুলোর optimization target
-
 ## অনুশীলন
 
 - **সহজ ১:** [How Many Numbers Are Smaller Than the Current Number](https://leetcode.com/problems/how-many-numbers-are-smaller-than-the-current-number/) (LeetCode 1365): প্রতিটা element-এর জন্য বাকি সবার সাথে তুলনা করে ছোটগুলো গুনে ফেলো। হিন্ট: ভেতরের loop-এ শুধু `i === j` বাদ দাও, বাকি সব জায়গায় সোজা দুটো loop-ই যথেষ্ট।

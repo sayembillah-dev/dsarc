@@ -226,16 +226,6 @@ BFS-এর সেই একই ভুল, শুধু stack-এ। ধরো A-
 **৫. disconnected graph-এ outer loop ভুলে যাওয়া।**
 `dfs(g, "A")` শুধু A-এর component-টুকু ঘোরে। বাকি node-রা visited-ই হলো না, চুপচাপ। পুরো graph কভার করতে হলে সব vertex-এর ওপর loop চালিয়ে যে-টা unvisited সেখান থেকে নতুন DFS শুরু করতে হয়, ঠিক ওপরের `dfsTimestamps`-এর মতো। এই কৌশল দিয়েই component গোনা হয়, দেখো [Connected Components](./connected-components.mdx)।
 
-## Animation Spec
-
-> **Animation Spec: DFS Deep Dive**
->
-> - **দৃশ্য:** graph; একটা পথ ধরে গভীরে নামা, ডেড-এন্ডে তীর পিছিয়ে আসা; পাশে live stack-এর অবস্থা।
-> - **ইনপুট:** start node; চাইলে graph preset (চেইন / চওড়া / cycle-ওয়ালা)।
-> - **ধাপ:** current পথ কমলা রঙে; visited বেগুনি; backtrack হলে পিছিয়ে আসা ফ্রেম ফ্রেম দেখানো; পাশের stack view-তে push/pop চোখে পড়ে; node-এ ঢুকলেই order list-এ যোগ।
-> - **নিয়ন্ত্রণ:** speed, step, reset; recursive/iterative টগল; সাথে BFS-এর সাথে পাশাপাশি race mode, একই graph-এ দুটো order তুলনার জন্য।
-> - **লক্ষ্য:** "গভীরে যাও, আটকে গেলে ফিরে এসো" ধারণাটা; আর stack বসালেই BFS থেকে DFS হয়ে যায়, এই পার্থক্যটা।
-
 ## অনুশীলন
 
 - **সহজ ১:** দুটো node দেওয়া আছে, DFS দিয়ে বলো একটা থেকে আরেকটায় পথ আছে কিনা। হিন্ট: target পেলেই তখনই return করে দাও, পুরো graph ঘোরার দরকার নেই।

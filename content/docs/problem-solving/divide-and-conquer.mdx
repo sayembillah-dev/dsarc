@@ -257,16 +257,6 @@ Fibonacci-কে D&C ভেবে ভাগ করলে একই সাব-স
 **৫. Precondition ভুলে যাওয়া**
 Binary search unsorted array-তে চালালে ভাগ করাটাই ভুল দিকে যাবে, কারণ এর পুরো যুক্তিই দাঁড়িয়ে আছে "ডান পাশে সব বড়" ধারণার উপর। D&C algorithm-এর প্রতিটারই এমন precondition আছে; input সত্যিই sorted কি না আগে নিশ্চিত হও, না হলে আগে sort করো।
 
-## Animation Spec
-
-> **Animation Spec: Divide Tree**
->
-> - **দৃশ্য:** উপরে পুরো array-টা একটা box, ভাগ হওয়ার সাথে সাথে নিচে tree ছড়িয়ে পড়ে; পাশে live recursion depth meter আর চলমান comparison counter
-> - **ইনপুট:** ছোট array (7-8 element); binary search-এর জন্য sorted array আর target
-> - **ধাপ:** divide phase-এ box-গুলো ধীরে ফুটে দুই ভাগ হয়, base case-এ গিয়ে box সবুজ; combine phase-এ দুটো sorted টুকরো থেকে তীরচিহ্ন ধরে element একে একে নতুন box-এ মেশে; প্রতিটা level শেষে "এই level-এ মোট কাজ = n" লেখা জ্বলে ওঠে
-> - **নিয়ন্ত্রণ:** speed, step, reset; "শুধু divide" বা "শুধু combine" isolate করে দেখার toggle
-> - **লক্ষ্য:** শেখার্থী নিজে দেখুক প্রতি level-এ কাজ n-ই থাকে আর level-এর সংখ্যাই log n, অর্থাৎ O(n log n) চোখের সামনে গড়ে ওঠে
-
 ## অনুশীলন
 
 - **সহজ ১:** [Binary Search](https://leetcode.com/problems/binary-search/) (LeetCode 704): আজকের recursive আর iterative দুটো version-ই লিখে submit করো। হিন্ট: সব ভুল হয় `low > high` শর্ত আর `mid ± 1` boundary-তে, এই দুটো জায়গা দুইবার দেখো।

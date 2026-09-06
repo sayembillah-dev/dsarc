@@ -236,16 +236,6 @@ DAG disconnected হতে পারে, তখন আলাদা component-এ
 **৫. undirected graph-এ topological sort চাওয়া।**
 Undirected edge মানে দুই দিকেই তীর, মানে প্রতিটা edge-ই আসলে দুই node-এর একটা cycle। Direction-ই topological sort-এর প্রাণ, তাই undirected graph-এ প্রশ্নটাই অর্থহীন। আগে নিশ্চিত হও graph-টা directed, তারপর DAG কিনা ভাবো।
 
-## Animation Spec
-
-> **Animation Spec: Topological Assembly Line**
->
-> - **দৃশ্য:** DAG, প্রতিটা node-এর গায়ে indegree সংখ্যাটা লেখা; ডানদিকে output order-এর খালি ঘরগুলো; নিচে queue-এর live অবস্থা।
-> - **ইনপুট:** course/task preset DAG; "cycle যোগ করো" toggle।
-> - **ধাপ:** indegree 0 হতেই node সবুজ জ্বলে queue-তে ঢোকে। বের হলে ফ্যাকাশে হয়ে output-এর পরের খালি ঘরে বসে যায়, তার তীরগুলো মিলিয়ে যাওয়ার সাথে সাথে neighbor-দের সংখ্যা এক এক করে কমে; 0 হতেই নতুন node জ্বলে ওঠে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; cycle toggle চালু করলে দেখা যায় কোনো node-ই 0-তে পৌঁছায় না, queue খালি হয়ে সব থেমে যায়, আটকে থাকা node-গুলো লাল হয়ে cycle-টা উজ্জ্বল করে দেখায়।
-> - **লক্ষ্য:** "indegree 0 মানে সব prerequisite শেষ" অনুভূতিটা পাকা করা, আর cycle কেন পুরো লাইন থামিয়ে দেয় তা দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** Course Schedule (LeetCode 207): শুধু বলতে হবে সব course শেষ করা যায় কিনা। হিন্ট: order বের করারও দরকার নেই, `topoSort` চালিয়ে output-এর দৈর্ঘ্য numCourses-এর সমান কিনা দেখলেই চলে।

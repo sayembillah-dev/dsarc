@@ -141,16 +141,6 @@ function searchAnswer(low, high) {
 **৫. mid হিসাবে overflow বা ভগ্নাংশ।**
 `mid * mid` বড় n-এ সংখ্যার সীমা টপকাতে পারে অন্য ভাষায়; JS-এ নিরাপদ, তবু বড় হলে `mid > n / mid` রূপে তুলনা নিরাপদ। আর `Math.floor` ভুললে আগের পেজের ফাঁদই।
 
-## Animation Spec
-
-> **Animation Spec: Search the Answer Range**
->
-> - **দৃশ্য:** সংখ্যারেখা low..high; true অংশ সবুজ, false লাল, অজানা ধূসর; ans-এর ঘর আলাদা চিহ্নে।
-> - **ইনপুট:** সমস্যা নির্বাচন (sqrt / koko-style demo); speed।
-> - **ধাপ:** mid-এ শর্ত চেক হলে ওই দাগ সবুজ বা লাল হয়, অর্ধেক ধূসরে বাদ যায়; সবুজ মিললে ans-চিহ্ন ওখানে এগিয়ে যায়, তারপর খোঁজা ডানে চলে।
-> - **নিয়ন্ত্রণ:** step, play, reset; "শেষ true vs প্রথম true" দিক-টগল।
-> - **লক্ষ্য:** array ছাড়াও binary search, আর সীমার দাগটাই আসল শিকার, চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** `sqrtFloor(50)`-এর dry run টেবিল বানাও: low, high, mid, ans প্রতি ধাপে।

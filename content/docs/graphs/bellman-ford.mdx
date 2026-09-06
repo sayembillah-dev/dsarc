@@ -224,16 +224,6 @@ Non-negative graph-এ Bellman-Ford চালালে ভুল হবে ন�
 **৫. এক পাসেই সব ঠিক হয়ে যাবে ভাবা।**
 Edge-গুলো দুর্ভাগ্যক্রমে এমন ক্রমে আসতে পারে যে এক পাসে পেছনের node-গুলো আপডেটই হয় না। ছোট উদাহরণ: `edges = [[B, C, 1], [A, B, 1]]`, source A। এক পাসে B→C আগে আসে, তখন B-ই Infinity, তাই C আপডেট হয় না; পরে A→B-এ B=1 হয়, কিন্তু পাস শেষ। C থেকে যায় Infinity। দ্বিতীয় রাউন্ডেই C=2 হয়ে যায়। এই জন্যই রাউন্ড লাগে, আর রাউন্ড যথেষ্ট হলে edge-এর ক্রম উত্তর বদলায় না।
 
-## Animation Spec
-
-> **Animation Spec: Relaxation Rounds**
->
-> - **দৃশ্য:** graph আর পাশে edge list; প্রতি রাউন্ডে edge list উপর থেকে নিচে স্ক্যান হয়; node-এর ওপর dist লেবেল বদলায়; পাশে রাউন্ড কাউন্টার।
-> - **ইনপুট:** graph preset (negative edge-ওয়ালা / negative cycle-ওয়ালা), source node।
-> - **ধাপ:** relax হলে edge সবুজ flash আর dist কমে যায়; relax না হলে edge ধূসর হয়ে যায়; রাউন্ড শেষে dist টেবিলের snapshot; early exit-এ "কিছু বদলায়নি" ব্যানার; check রাউন্ডে relax হলে cycle-এর edge-গুলো লাল flash।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "এক রাউন্ড করে" বোতাম, যাতে রাউন্ড-ভিত্তিক ছড়ানোটা পরিষ্কার দেখা যায়।
-> - **লক্ষ্য:** V-1 রাউন্ডের যুক্তি, early exit, আর negative cycle detection-এর মুহূর্ত।
-
 ## অনুশীলন
 
 - **সহজ ১:** Negative edge-ওয়ালা একটা graph-এ `bellmanFord` চালিয়ে dist মিলাও। হিন্ট: উপরের dry run ১-ই তোমার টেস্ট কেস; উত্তর [0, 2, 7, 4, -2] আসা চাই।

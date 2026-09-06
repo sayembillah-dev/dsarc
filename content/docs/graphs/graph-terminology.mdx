@@ -195,16 +195,6 @@ Sparse মানে E ≈ V (প্রতি vertex-এ মুঠোভর্ত
 **৫. tree-কে graph থেকে আলাদা ভাবা।**
 Tree হলো connected, cycle-বিহীন undirected graph, ব্যস। তাই graph-এর সব traversal (BFS, DFS) tree-তেও চলে। উল্টোদিকে tree-র সুন্দর গুণগুলো, যেমন দুই node-এর মাঝে ঠিক একটাই simple path, আসে cycle না থাকা থেকে। বিস্তারিত [Tree পরিভাষা](../trees/tree-terminology.mdx)-তে।
 
-## Animation Spec
-
-> **Animation Spec: Term Highlighter**
->
-> - **দৃশ্য:** পাশাপাশি দুটো ছোট graph: বামে undirected বন্ধু-জাল, ডানে directed Twitter-জাল। পাশে পরিভাষার তালিকা (degree, path, cycle, component, in-degree...)।
-> - **ইনপুট:** তালিকার যেকোনো শব্দে hover বা click; চাইলে নতুন edge যোগ-বাদ।
-> - **ধাপ:** শব্দ ছুঁলেই graph-এ তার অংশটা জ্বলে ওঠে: "degree" ছুঁলে নির্বাচিত node-এর লেগে থাকা edge-গুলো রঙিন হয়, "cycle" ছুঁলে A → B → C → A ত্রিভুজে একটা বিন্দু ঘুরে ঘুরে চক্কর দেয়, "component" ছুঁলে প্রতিটা টুকরো আলাদা রঙে ভাগ হয়ে যায়।
-> - **নিয়ন্ত্রণ:** directed/undirected toggle, weighted toggle (edge-এ সংখ্যা ফুটে ওঠে), reset।
-> - **লক্ষ্য:** শব্দ আর ছবির মিল চোখে পাকা করা; edge যোগ দিলে degree আর connected সাথে সাথে বদলে যায়, সেটা দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** এই graph-এর প্রতিটা vertex-এর degree বের করো: edge-গুলো হলো A-B, B-C, C-D, D-A, A-C। যোগফল দিয়ে মিলিয়ে দেখো 2 × E পাও কিনা। হিন্ট: আগে ছবি এঁকে নাও, তারপর প্রতিটা vertex-এ লেগে থাকা লাইন গোনো।

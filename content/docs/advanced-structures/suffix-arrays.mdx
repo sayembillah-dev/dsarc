@@ -193,16 +193,6 @@ binary search যেকোনো একটা মিল দেয়, কিন�
 **৫. খালি pattern আর pattern > text edge case।**
 খালি pattern-এ m = 0, তখন `piece` সবসময় "" ফেরায়, সব মিলে যায়, যেটা হয়তো তুমি চাও না। আর pattern টেক্সটের চেয়ে লম্বা হলে slice ছোট হয়ে আসে, তুলনা আজগুবি হয়। শুরুতেই গার্ড দাও: `if (m === 0 || m > s.length) return []`।
 
-## Animation Spec
-
-> **Animation Spec: Sorted Suffixes**
->
-> - **দৃশ্য:** বামে মূল string, index সহ; ডানে suffix-দের লিস্ট; নিচে pattern ইনপুট।
-> - **ইনপুট:** string আর pattern; প্রিসেট হিসেবে "banana", "mississippi"।
-> - **ধাপ:** suffix-গুলো একে একে জন্মায়, তারপর বুদবুদের মতো ভেসে বর্ণানুক্রমে বসে যায়, মূল index ট্যাগ সাথে থাকে; search-এর সময় lo-hi জানালা সরু হয়, মাঝের suffix হলুদ হয়, তুলনার অক্ষরগুলো একে একে সবুজ বা লাল; মিলের ব্লকটা শেষে একসাথে জ্বলে ওঠে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "পুরো suffix তুলনা" টগল, ভুল নম্বর ২টা বাস্তবে দেখানোর জন্য।
-> - **লক্ষ্য:** sort করলে একই শুরুর suffix জড়ো হয়, আর sorted মানেই binary search।
-
 ## অনুশীলন
 
 - **সহজ ১:** Find the Index of the First Occurrence in a String (LeetCode 28)। হিন্ট: আগে সাধারণ window সরিয়ে করে ফেলো; তারপর ভাবো, একই কাজ suffix array আর binary search-এ করলে কী পাও।

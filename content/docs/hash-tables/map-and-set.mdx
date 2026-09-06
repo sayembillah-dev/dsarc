@@ -281,16 +281,6 @@ console.log(JSON.stringify(new Map([["a", 1]])));   // "{}" : সব হার�
 
 আগে convert করো: `JSON.stringify(Object.fromEntries(map))` অথবা জোড়ার array চাইলে `JSON.stringify([...map])`।
 
-## Animation Spec
-
-> **Animation Spec: Object বনাম Map**
->
-> - **দৃশ্য:** পাশাপাশি দুটো প্যানেল; বামে plain object, ডানে Map; একই data দুটোতেই একসাথে ঢোকে।
-> - **ইনপুট:** key-value জোড়ার তালিকা; key-এর টাইপ মিশিয়ে দেওয়া যায় (integer-সদৃশ string, সাধারণ string, object)।
-> - **ধাপ:** প্রতি insert-এ দুই পাশে entry বসে; integer-সদৃশ key দিলে object প্যানেলে জায়গা বদলে যায় (2 আগে, 10 পরে), Map-এ ক্রম অটল; object key দিলে object প্যানেলে entry-টা "[object Object]" হয়ে শুষ্ক নীরে বসে, Map-এ আসল object-টাই key হয়ে ঝুলছে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; key-এর টাইপ বাছাইয়ের বোতাম।
-> - **লক্ষ্য:** পার্থক্য বাক্যে নয়, চোখে: ক্রম আর key-এর টাইপ নিয়ে কে কীভাবে খেলে।
-
 ## অনুশীলন
 
 - **সহজ ১:** একটা array থেকে duplicate সরাও, প্রথম দেখার ক্রম অক্ষত রেখে। হিন্ট: `[...new Set(arr)]`-ই যথেষ্ট; ক্রম কেন অক্ষত থাকে, সেটা ব্যাখ্যা করতে পারাটা আসল।

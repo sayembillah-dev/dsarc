@@ -152,16 +152,6 @@ console.log(reverseInPlace(a)); // [5, 4, 3, 2, 1]
 **৫. `for..in` দিয়ে array ঘোরা।**
 `for..in` object-এর key ঘোরার জন্য, index স্ট্রিং হিসেবে দেয় (`"0"`, `"1"`), আর inheritance-এর ঝামেলাও আছে। Array-এর জন্য `for..of`। এক শব্দের পার্থক্য, ভিন্ন জগৎ।
 
-## Animation Spec
-
-> **Animation Spec: Traversal Patterns**
->
-> - **দৃশ্য:** একটা array; উপরে pointer-এর তীর (single মোডে একটা, two-pointer মোডে দুটো); পাশে running aggregate প্যানেল (max/min/sum লাইভ আপডেট)।
-> - **ইনপুট:** pattern নির্বাচন (single pass / two-pointer reverse); নিজের array টাইপ করা; speed।
-> - **ধাপ:** single pass-এ প্রতি ঘরে গিয়ে ঘরটা জ্বলবে, aggregate প্যানেলে তুলনা জিতলে মান বদলে যাবে। Reverse মোডে দুই প্রান্তের ঘর জোড়ায় জোড়ায় লিংক হয়ে বদলাবে, মাঝে মিলিত হলে "থামো" ব্যানার।
-> - **নিয়ন্ত্রণ:** step, play, reset; প্রতি ধাপে "তুলনা: X, swap: Y" কাউন্টার।
-> - **লক্ষ্য:** এক পাসে যে যত তথ্য তোলা যায়, আর lower bound কেন O(n), দুটোই চোখে পড়ুক।
-
 ## অনুশীলন
 
 - **সহজ ১:** একটাই pass-এ array-র যোগফল আর গড় বের করো। (হিন্ট: গড়ের জন্য আলাদা pass লাগে না, length তো জানাই আছে।)

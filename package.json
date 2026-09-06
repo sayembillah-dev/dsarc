@@ -2,7 +2,7 @@
   "name": "dsarc",
   "version": "0.1.0",
   "private": true,
-  "description": "DSArc - JavaScript based DSA learning platform in Bangla with interactive visualizers",
+  "description": "DSArc - JavaScript based DSA learning platform in Bangla",
   "scripts": {
     "build": "next build",
     "dev": "next dev",

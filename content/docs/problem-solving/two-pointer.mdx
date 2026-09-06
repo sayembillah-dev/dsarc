@@ -191,16 +191,6 @@ removeDuplicates-এ filter করে নতুন array দিলে প্র�
 **৫. Palindrome-এ ছোট-বড় হাতের আর বিরামচিহ্ন ভুলে যাওয়া।**
 "A" আর "a" আলাদা; কমা-স্পেস বাদ না দিলে "A man, a plan, a canal: Panama"-ও false বলে দেবে। আগে normalize করো, তারপর pointer ছাড়ো।
 
-## Animation Spec
-
-> **Animation Spec: Converging Pointers**
->
-> - **দৃশ্য:** sorted array-র বার; বাঁ প্রান্তে নীল L, ডান প্রান্তে লাল R; নিচে চলতি sum আর target-এর তুলনা দেখা যায়।
-> - **ইনপুট:** sorted array আর target; sorted নয় এমন ইনপুট দিলে সতর্কবার্তা।
-> - **ধাপ:** প্রতি চেষ্টায় sum জ্বলে ওঠে; কোন pointer সরবে তার সিদ্ধান্ত লেখা হয়; বাদ পড়া অংশ ধূসর হয়ে যায়, কেন বাদ পড়ল তা tooltip-এ।
-> - **নিয়ন্ত্রণ:** speed, step, reset; brute force মোড টগল, যাতে 21 বনাম 4 চেষ্টা পাশাপাশি দেখা যায়।
-> - **লক্ষ্য:** sorted-এ প্রতিটা সরা যুক্তিসহ; O(n) কেন তা চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** Two Sum II (LeetCode 167)। এই পাতার pairSum-ই, শুধু উত্তরে index 1-based। হিন্ট: array sorted দেওয়াই আছে, sort লাগবে না।

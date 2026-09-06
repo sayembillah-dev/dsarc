@@ -252,16 +252,6 @@ Sum tree-তে বাইরে মানে 0, ঠিক আছে। কিন
 **৫. update-এ ফিরতি পথের হিসাব ভুলে যাওয়া।**
 Leaf-এ মান বসিয়ে return করে ফেললে উপরের node-গুলো পুরনো যোগফল নিয়েই বসে থাকে। তারপরের query-গুলো আসবে ভুল, আর ভুলটা দেখাবে এলোমেলো, কখনো ঠিক কখনো ভুল। শেখার সেরা উপায়: recursion-এর শেষ লাইনটা (`this.tree[node] = ...`) মুছে একবার চালিয়ে দেখো, ভুলটা চোখে দেখা যাবে।
 
-## Animation Spec
-
-> **Animation Spec: Segment Tree Query Walk**
->
-> - **দৃশ্য:** নিচে মূল array, উপরে গাছ; প্রতিটা node-এর গায়ে তার range; query range array-র ওপর রঙিন ব্যান্ড হিসেবে।
-> - **ইনপুট:** array (preset [2,4,1,3,5]); query range; update index আর নতুন মান।
-> - **ধাপ:** build-এ গাছ নিচ থেকে ভরে ওঠে; query-তে recursion-এর পথ নীল, পুরো-ভেতরে node সবুজ হয়ে তার মান পাশের হিসাবে যোগ হয়, বাইরের node ধূসর; update-এ root-থেকে-leaf পথ লাল হয়ে একে একে মান বদলায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; পাশে "prefix sum হলে কত ঘর বদলাতে হতো" কাউন্টার টগল।
-> - **লক্ষ্য:** query মানে কয়েকটা node মেলানো, update মানে একটা পথ মেরামত; দুটোই উচ্চতার সমান, তাই O(log n)।
-
 ## অনুশীলন
 
 - **সহজ ১:** Range Sum Query - Immutable (LeetCode 303)। হিন্ট: এখানে update-ই নেই, তাই [prefix sum](../problem-solving/prefix-sum.mdx) দিয়েই O(1) query; segment tree নিলে overkill হবে, সেই পার্থক্যটা অনুভব করাই লক্ষ্য।

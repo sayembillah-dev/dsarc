@@ -162,16 +162,6 @@ pq.push({ task: "রিপোর্ট", priority: 2 });
 **৫. Heap থেকে "মাঝের মান" আশা করা।**
 Heap median দেয় না, k-তম দেয় না, শুধু চরমটা দেয়। Median লাগলে দুই heap-এর খেলা ([Two Heaps](../problem-solving/two-heaps.mdx)-এ আসবে), এক heap দিয়ে জোর করবে না।
 
-## Animation Spec
-
-> **Animation Spec: Full Heap Ops**
->
-> - **দৃশ্য:** tree + array সিঙ্কে; push/pop/peek বাটন; min/max টগল (comparator-এর ছোট কোড-কার্ড সহ)।
-> - **ইনপুট:** মান; speed।
-> - **ধাপ:** push-এ bubble up, pop-এ bubble down, দুটোই আগের পেজের অ্যানিমেশনের জোড়া; পাশে অপারেশন লগ আর "ফেরত ক্রম" সারি, যেখানে sorted ফুটে ওঠে।
-> - **নিয়ন্ত্রণ:** step, play, reset; ধারাবাহিক random অপারেশন।
-> - **লক্ষ্য:** দুই কৌশল এক class-এ গেঁথে যাওয়া, আর comparator-এর এক লাইনে min/max বদলে যাওয়া, চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** `[9, 4, 7, 1, 6]` দিয়ে MinHeap ভরো, তারপর তিনবার pop। প্রতি ধাপে data লিখো, আমার টেবিলের মতো।

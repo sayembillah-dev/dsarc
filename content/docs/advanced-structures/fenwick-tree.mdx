@@ -217,16 +217,6 @@ rangeSum কাজ করে কারণ যোগফল বিয়োগয�
 **৫. rangeSum-এ off-by-one।**
 rangeSum(l, r) = prefixSum(r) - prefixSum(l - 1), এখানে l - 1, l নয়। ভুলে prefixSum(l) বাদ দিলে arr[l]-টা গোনাই হলো না, উত্তর এক ঘর কমে গেল। এই ভুল l = 0-এ ধরা পড়ে না, কারণ তখন দুটোই এক; তাই নতুন Fenwick কোড প্রথমে l = 1 দিয়ে পরীক্ষা করো।
 
-## Animation Spec
-
-> **Animation Spec: Lowbit Ladder**
->
-> - **দৃশ্য:** নিচে মূল array, উপরে tree array; প্রতিটা slot-এর নিচে তার দায়িত্ব-range রঙিন ব্র্যাকেটে; পাশে i-এর binary হাল্কা করে দেখানো।
-> - **ইনপুট:** array (preset [2,4,1,3,5]); prefixSum index; update index আর delta।
-> - **ধাপ:** query-তে নিচের লাফগুলো (i -= i & -i): যে slot থেকে সংগ্রহ হচ্ছে সবুজে জ্বলে ওঠে, তার ব্র্যাকেট array-র ওপর highlight হয়; update-এ ওপরের লাফ (i += i & -i) কমলায়, বদলানো মান লিখে দেখায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; binary দেখাও/লুকাও টগল; পাশাপাশি segment tree-এর node-ছোঁয়া গোনার তুলনা মোড।
-> - **লক্ষ্য:** শেষ set bit-ই দায়িত্বের মাপ; লাফ মানে log n-টা ধাপ, তাই এত কম কোডে এত গতি।
-
 ## অনুশীলন
 
 - **সহজ ১:** Running Sum of 1d Array (LeetCode 1480)। হিন্ট: খাঁটি [prefix sum](../problem-solving/prefix-sum.mdx), Fenwick লাগবেই না; লক্ষ্য হলো prefix-চিন্তাটা গরম করা, কারণ Fenwick-এর সব কিছু prefix-এর টুকরো।

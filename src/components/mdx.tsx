@@ -1,34 +1,9 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
-import {
-  ArrayOpsPlayground,
-  ClassBlueprint,
-  CodeToOutput,
-  DecisionFlow,
-  FunctionMachine,
-  LoopTracer,
-  PseudoToCode,
-  TruthTableExplorer,
-  VariableBoxes,
-} from './viz/js-fundamentals';
-import { DataShapes, RecipeSteps, SearchRace, SolverFlow } from './viz/intro-to-dsa';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
-    ArrayOpsPlayground,
-    ClassBlueprint,
-    CodeToOutput,
-    DecisionFlow,
-    FunctionMachine,
-    LoopTracer,
-    PseudoToCode,
-    TruthTableExplorer,
-    VariableBoxes,
-    DataShapes,
-    RecipeSteps,
-    SearchRace,
-    SolverFlow,
     ...components,
   } satisfies MDXComponents;
 }

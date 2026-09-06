@@ -293,16 +293,6 @@ Plain queue দিলে "কাছেরটা আগে" গ্যারান
 **৫. "Popped মানেই final" সব জায়গায় ধরে নেওয়া।**
 এই invariant-টা শুধু non-negative weight-এ সত্য। Negative weight থাকলে, কিংবা নিজে কোড বদলে visited-set-ভিত্তিক করে ফেললে, আগে থামো আর ভাবো: শর্তটা কি এখনো টিকছে?
 
-## Animation Spec
-
-> **Animation Spec: Dijkstra Wavefront**
->
-> - **দৃশ্য:** weighted graph; প্রতিটা node-এর ওপরে live distance লেবেল; পাশে heap-এর বিষয়বস্তু; stale entry ধূসর হয়ে pop-এর মুহূর্তে ছুঁড়ে ফেলা দেখা যায়।
-> - **ইনপুট:** start node; edge weight বদলানো যায়; negative weight দিলে সতর্ক ব্যানার।
-> - **ধাপ:** প্রতি রাউন্ডে সবচেয়ে কম দামের node সবুজ হয়ে "settle"; relax হলে neighbor-এর লেবেল কমে হলুদ flash; বাসি entry ফেলে দেওয়ার অ্যানিমেশন।
-> - **নিয়ন্ত্রণ:** speed, step, reset; early-exit টগল, যাতে target pop হলেই থামে।
-> - **লক্ষ্য:** "কাছেরটা আগে, popped মানেই final" আর relaxation-এর ছড়ে পড়া চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** একটা edge list দেওয়া আছে (node-গুলো 0 থেকে n-1)। Graph বানিয়ে `dijkstra` চালাও আর start থেকে সবার দূরত্ব ছাপাও। হিন্ট: উপরের কোড না দেখে আগে নিজে লেখার চেষ্টা করো; আটকে গেলে dry run-এর টেবিলটা মাথায় আনো।

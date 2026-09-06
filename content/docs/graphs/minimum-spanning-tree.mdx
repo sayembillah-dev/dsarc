@@ -272,16 +272,6 @@ graph-ই connected না হলে spanning "tree" বলে কিছু ন�
 **৫. MST একটাই, এই ধারণা।**
 সমান ওজনের edge থাকলে MST কয়েকটা হতে পারে। তিন node-এর triangle যেখানে তিন edge-ই ১, সেখানে যেকোনো দুটো নিলেই MST, মানে ৩টা সম্ভাব্য MST। যেটা unique, সেটা হলো সর্বনিম্ন **মোট** ওজনটা। আমাদের উদাহরণে দুটো algorithm একই tree দিয়েছে, কিন্তু অন্য tie-তে অন্য রকমও হতে পারত।
 
-## Animation Spec
-
-> **Animation Spec: MST, দুই পদ্ধতি পাশাপাশি**
->
-> - **দৃশ্য:** weighted undirected graph; দুই প্যানেল, বামে Kruskal আর ডানে Prim, একই graph-এ; নিচে running total।
-> - **ইনপুট:** graph preset বা নিজে edge ওজন বসানো; "শুধু Kruskal" / "শুধু Prim" / "দুটো একসাথে" নির্বাচন।
-> - **ধাপ:** Kruskal প্যানেলে sorted edge list পাশে দেখা যায়; বর্তমান edge হলুদ, নেওয়া হলে সবুজ, cycle-এর কারণে বাদ হলে লাল কাঁপুনি; Union-Find-এর দলগুলো node-এর রঙে ফুটে ওঠে। Prim প্যানেলে tree একটা blob-এর মতো বাড়ে, crossing edge-গুলো heap-এর সাজানো অবস্থায় পাশে থাকে। শেষে দুই প্যানেলের final tree-টা হাইলাইট হয়, আর দুটোর total মিলিয়ে দেখায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "সমান ওজনের edge" toggle, যাতে MST একাধিক হতে পারে সেটা দেখা যায়।
-> - **লক্ষ্য:** দুই রাস্তা, একই cut property, একই সর্বনিম্ন মোট।
-
 ## অনুশীলন
 
 - **সহজ ১:** এই পাতার edge list নিয়ে Kruskal নিজে implement করো (DSU সহ), মোট ওজন আর edge-গুলো ছাপাও। হিন্ট: DSU আগে আলাদা class হিসেবে লিখে test করো, তারপর Kruskal-এ বসাও।

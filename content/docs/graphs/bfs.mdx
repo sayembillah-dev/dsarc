@@ -274,16 +274,6 @@ BFS-এর গ্যারান্টি শুধু unweighted (বা সব
 **৫. Directed vs undirected।**
 `addEdge`-এ দুই দিকেই push করলে undirected, এক দিকে করলে directed। BFS দুটোতেই চলে, কিন্তু directed-এ shortest path-এর মানে বদলে যায়: ফিরতি পথ নাও থাকতে পারে।
 
-## Animation Spec
-
-> **Animation Spec: BFS Ripple**
->
-> - **দৃশ্য:** graph; start থেকে ঢেউয়ের মতো স্তরে স্তরে রঙ ছড়ায়; পাশে queue-এর live অবস্থা।
-> - **ইনপুট:** start node; চাইলে graph preset (সরু / চওড়া / cycle-ওয়ালা)।
-> - **ধাপ:** প্রতিটা স্তর আলাদা রঙে; visited node বেগুনি; queue-এর enqueue/dequeue চোখে দেখা যায়; node বের হলে পাশের order list-এ যোগ হয়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে "visited দাগ পড়ে dequeue-এ" টগল, ভুলটা কেমন দেখায় তা দেখানোর জন্য।
-> - **লক্ষ্য:** BFS মানে স্তর-ভিত্তিক প্রসার, মানে unweighted shortest।
-
 ## অনুশীলন
 
 - **সহজ ১:** BFS দিয়ে দেখো graph connected কিনা। হিন্ট: BFS শেষে visited-এর size আর মোট node সংখ্যা মিলিয়ে দেখো।

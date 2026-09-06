@@ -150,16 +150,6 @@ Queue-এ object-এর reference ঢোকালে পরে বাইরে �
 **৫. ছোট কাজে পুরো কাঠামো টানা।**
 মাত্র একবার "সবচেয়ে বড়টা" লাগলে priority queue নয়, একটা স্ক্যানই যথেষ্ট, O(n)। Priority queue-র দাম তখনই যখন বারবার insert আর বারবার সর্বোত্তম-তোলা পর্যায়ক্রমে চলবে, যেমন simulation বা Dijkstra।
 
-## Animation Spec
-
-> **Animation Spec: Priority Line**
->
-> - **দৃশ্য:** লাইন, প্রতিটা উপাদানের উপরে priority ব্যাজ; পাশে তিন mode-এর টগল: sort-on-enqueue, scan-on-dequeue, heap (placeholder পাখা উড়ানো আইকনে, section 12-এর আমন্ত্রণ)।
-> - **ইনপুট:** value আর priority; enqueue/dequeue বাটন।
-> - **ধাপ:** sort mode-এ নতুনজন ঢুকে তালিকা কেঁপে নিজের জায়গায় সরে যায়; scan mode-এ dequeue চাপলে তালিকার উপর দিয়ে স্ক্যানার এগিয়ে সবচেয়ে জরুরিটা চিহ্নিত করে; dequeue-এর মুহূর্তে priority ব্যাজ জ্বলে ওঠে। পাশে খরচ কাউন্টার।
-> - **নিয়ন্ত্রণ:** step, play, reset।
-> - **লক্ষ্য:** "অর্ডার দরকার শুধু বের হওয়ার মুহূর্তে", আর সেই মুহূর্ত সস্তা করার লড়াইয়েই heap।
->
 ## অনুশীলন
 
 - **সহজ ১:** কাগজে dry run (min-priority): enqueue(X,4), enqueue(Y,2), enqueue(Z,2), dequeue(), dequeue()। প্রতি ধাপে তালিকা আর ফেরত লিখো। সমান priority-তে কে আগে গেল, কেন?

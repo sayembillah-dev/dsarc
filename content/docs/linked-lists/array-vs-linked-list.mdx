@@ -101,15 +101,6 @@ Linked list-এর node গুলো **ছড়ানো**। একটা node
 4. **Cache-এর কথা না ভাবা।** CPU cache পাশাপাশি থাকা ডেটা পছন্দ করে, তাই array traversal আসলে Big-O-র চেয়েও দ্রুত অনুভব হয়। Linked list-এ প্রতিবার লাফিয়ে লাফিয়ে যেতে হয়, cache miss বেশি।
 5. **JS-এ linked list দরকার হয় না ভেবে উড়িয়ে দেওয়া।** সত্যি কথা, JavaScript-এ built-in array যথেষ্ট শক্তিশালী। কিন্তু linked list শেখা জরুরি, কারণ এটাই pointer দিয়ে ভাবার প্রথম আসল ব্যায়াম। [Tree](/docs/trees) আর [Graph](/docs/graphs)-এ এই একই pointer-ভাবনা সোজাসুজি লাগবে।
 
-## Animation Spec
-
-> **Animation Spec: Side-by-side Decision**
->
-> - **দৃশ্য:** বাঁয়ে array (একটানা ব্লক), ডানে linked list (ছড়ানো node)। দুটোই ডিফল্ট #64748b।
-> - **ইনপুট:** অপারেশন বেছে নেওয়া: `access i` / `insert front` / `delete front`।
-> - **ধাপ:** একই অপারেশন দুই দিকে চলবে। Array-তে unshift হলে সব ব্লক ডানে সরতে দেখাবে (সব #f97316 জ্বলবে একসাথে), step counter বাড়বে n পর্যন্ত। Linked list-এ শুধু দুটো তীর জুড়বে, counter থামবে ২-এ। access-এ উল্টোটা, array-তে সরাসরি লাফ, list-এ হাঁটা #eab308 দিয়ে।
-> - **লক্ষ্য:** একই অপারেশনের step counter-এর পার্থক্য চোখে দেখা, আর কাঠামোভেদে trade-offটা আত্মস্থ করা।
-
 ## অনুশীলন
 
 1. **সহজ:** তোমাকে ১০০০ বার একটা ডেটার **শুরুতে** insert করতে হবে। Array নাকি linked list, কেন? *Hint: প্রতিবার কত ধাপ, সেটা হিসাব করো।*

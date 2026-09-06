@@ -10,7 +10,7 @@ if (!section) { console.log('usage: node check-section.js <section>'); process.e
 const dir = path.join(__dirname, 'content', 'docs', section);
 const files = fs.readdirSync(dir).filter(f => f.endsWith('.mdx'));
 const problems = [];
-const need = ['কী শিখব', 'ধারণা', 'ধাপে ধাপে', 'কোড', 'ভ্যারিয়েন্ট', 'কোড ব্রেকডাউন', 'Complexity', 'সাধারণ ভুল আর edge case', 'Animation Spec', 'অনুশীলন', 'সারসংক্ষেপ'];
+const need = ['কী শিখব', 'ধারণা', 'ধাপে ধাপে', 'কোড', 'ভ্যারিয়েন্ট', 'কোড ব্রেকডাউন', 'Complexity', 'সাধারণ ভুল আর edge case', 'অনুশীলন', 'সারসংক্ষেপ'];
 for (const f of files) {
   const txt = fs.readFileSync(path.join(dir, f), 'utf8');
   for (const [name, ch] of [['em-dash', EM], ['en-dash', EN], ['fffd', FFFD]]) {
@@ -32,11 +32,9 @@ for (const f of files) {
     const heads = [...txt.matchAll(/^## .+$/gm)].map(m => m[0].slice(3));
     const mistakes = (txt.match(/\*\*[১২৩৪৫০-৯]+\./g) || []).length;
     const tiers = ['সহজ ১', 'সহজ ২', 'মাঝারি ১', 'মাঝারি ২', 'কঠিন'].filter(x => txt.includes(x)).length;
-    const anim = txt.includes('দৃশ্য') && txt.includes('নিয়ন্ত্রণ');
     const missing = need.filter(h => !heads.some(x => x.startsWith(h)));
     if (mistakes < 5) problems.push(`${f}: only ${mistakes} mistakes`);
     if (tiers < 5) problems.push(`${f}: only ${tiers}/5 practice tiers`);
-    if (!anim) problems.push(`${f}: Animation Spec fields missing`);
     if (missing.length) problems.push(`${f}: missing headings: ${missing.join(', ')}`);
   }
 }

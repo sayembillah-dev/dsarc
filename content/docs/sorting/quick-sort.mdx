@@ -104,16 +104,6 @@ Worst case-টা বুঝি। ধরো array ইতিমধ্যে sorte
 **৫. Stability আশা করা।**
 Partition-এ swap লাফ দিয়ে ঘটে, সমানদের ক্রম নষ্ট হয়: quick sort unstable। Stability লাগলে [Merge Sort](./merge-sort.mdx), অথবা record-এর সঙ্গে মূল index জুড়ে দাও।
 
-## Animation Spec
-
-> **Animation Spec: Pivot Partition**
->
-> - **দৃশ্য:** bar-এর সারি; pivot বেগুনি; ছোটদের এলাকা সবুজ সীমানায়; i আর j দুই রঙের তীর; পাশে recursion tree-র ছোট মানচিত্র।
-> - **ইনপুট:** array; pivot কৌশল (শেষ / random / median-of-three); speed।
-> - **ধাপ:** j এগিয়ে গেলে ছোট bar-গুলো সবুজ এলাকায় ভিড়ে আসে; শেষে pivot লাফিয়ে মাঝে বসে, স্থির সবুজ হয়; তারপর দুই পাশে recursion-এর আলো বিভক্ত হয়। Sorted input-এ লাঠিগাছ vs random-এ ভারসাম্যপূর্ণ গাছ, পাশাপাশি দেখা যায়।
-> - **নিয়ন্ত্রণ:** step, play, reset।
-> - **লক্ষ্য:** কাজ ভাগের সময়ই, মেলানো কিছু নেই; আর pivot-এর ভাগ্যেই গাছের ভাগ্য।
-
 ## অনুশীলন
 
 - **সহজ ১:** `[4, 9, 2, 6, 3]`-এ Lomuto partition (pivot = শেষ) হাতে চালাও: প্রতি ধাপে i, j আর array লিখো।

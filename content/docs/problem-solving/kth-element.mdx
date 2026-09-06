@@ -236,16 +236,6 @@ partition in-place। ইনপুট array পরে লাগলে বিপ�
 **৫. heap-এর দিক উল্টে দেওয়া, আর k-এর guard।**
 k-তম **বড়** চাইলে লাগবে min-heap (ছোটগুলো বেরিয়ে যায়, বড়রা টিকে থাকে)। max-heap নিলে পেয়ে যাবে k-তম ছোট। আর edge case: `k <= 0` বা `k > n` হলে কী হবে, আগেই ঠিক করো; নাহলে `peek()` ফেরত দেবে `undefined`, আর সেটা চুপচাপ বসে থাকবে। ডুপ্লিকেট থাকা সমস্যা নয়, `[3, 3]`-এর ২য় বৃহত্তম 3-ই।
 
-## Animation Spec
-
-> **Animation Spec: QuickSelect Shrink**
->
-> - **দৃশ্য:** bar array; pivot হলুদ; partition-এর পর ছোট-সমান নীলে বাঁয়ে, বড়গুলো সবুজে ডানে; ফেলে-দেওয়া ভাগ ধুসর হয়ে ম্লান।
-> - **ইনপুট:** array (random / sorted / custom), k-এর slider; পাশে heap-পথ toggle।
-> - **ধাপ:** প্রতি রাউন্ডে pivot তার চূড়ান্ত ঘরে লাল ফ্রেমে বসে; target index-এর দাগ নিচে দেখা; এলাকা কোন দিকে সঙ্কুচিত হলো সেটা তীর দিয়ে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "random pivot" on/off সুইচ, sorted input-এ off করলে O(n^2) কেমন দেখায় তা অনুভব করার জন্য।
-> - **লক্ষ্য:** পুরো sort নয়, এক ভাগে খোঁজ; কাজ কমানোই গতি।
-
 ## অনুশীলন
 
 - **সহজ ১:** Kth Largest Element in an Array (LeetCode 215)। হিন্ট: আগে sort পথে solve করো (দুই লাইন), তারপর একই টেস্টে quickSelect বসাও। দুটোর runtime তুলনা করো।

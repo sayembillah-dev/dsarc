@@ -243,16 +243,6 @@ minCoins(5, [3, 4]) চালালে while-গুলো শেষে amount = 
 **৫. fractional আর 0/1 গুলিয়ে ফেলা।**
 দুটোর নামই knapsack, কিন্তু একটায় জিনিস ভাগা যায়, আরেকটায় যায় না। Ratio-greedy শুধু fractional-এ ঠিক। 0/1-এ লাগালে ভ্যারিয়েন্ট ২-র counterexample-এর মতোই ব্যাগের এক চিলতে কোণা ফাঁকা থেকে গিয়ে optimal হারাবে।
 
-## Animation Spec
-
-> **Animation Spec: Greedy Timeline Picker**
->
-> - **দৃশ্য:** horizontal timeline-এ interval bar-গুলো স্তূপাকার; sort হলে শেষের সময়ে সাজে; নেওয়া কাজ সবুজ, বাদ পড়া ধূসর; lastEnd-এ উল্লম্ব দাগ যা ডানে সরে।
-> - **ইনপুট:** interval সেট (preset বা নিজে টানা); আলাদা ট্যাবে coin-set: canonical বনাম [1,3,4] toggle।
-> - **ধাপ:** sort অ্যানিমেশন, তারপর প্রতি interval-এ start আর lastEnd তুলনা ফ্ল্যাশ, নেব/বাদ রঙে ঠিক; coin ট্যাবে বড় নোট একে একে পড়ে, আর শেষে [1,3,4]-এ greedy-র ৩ কয়েনের পাশে optimal ২ কয়েন দেখিয়ে মুখোশ খোলে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; sort key বদলানোর ড্রপডাউন (start / duration / end), ভুল key-তে উত্তর কীভাবে ভাঙে তা দেখার জন্য।
-> - **লক্ষ্য:** locally সেরা কখন globally সেরা, কখন নয়; আর প্রমাণের জায়গাটা কোথায়।
-
 ## অনুশীলন
 
 - **সহজ ১:** Assign Cookies (LeetCode 455)। হিন্ট: বাচ্চাদের greed factor আর কুকির size, দুটোই sort করো; প্রতি বাচ্চাকে মানানসই **সবচেয়ে ছোট** কুকি দাও, না মিললে পরের কুকিতে যাও।

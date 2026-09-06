@@ -259,16 +259,6 @@ nums sorted হলে Two Sum-এ hash লাগবেই না: দুই প�
 **৫. Set/Map-এ object key-র value-ভিত্তিক তুলনা আশা করা।**
 `new Set([[1, 2]]).has([1, 2])` দিলে false আসবে। JavaScript-এ object আর array-এর তুলনা হয় reference দিয়ে, ভেতরের মান দিয়ে নয়; দুটো আলাদা [1, 2] মেমরিতে আলাদা জিনিস। মান দিয়ে গ্রুপ করতে হলে key বানিয়ে নিতে হয়, যেমন "1,2" (ঠিক যেমন প্যাটার্ন ৫-এ করেছি)। বিস্তারিত [Map ও Set](./map-and-set.mdx)-এ।
 
-## Animation Spec
-
-> **Animation Spec: Hash Pattern Lab**
->
-> - **দৃশ্য:** তিনটা lane পাশাপাশি। বামে input array বা string, pointer বাম থেকে ডানে sweep করছে, চলমান উপাদান হলুদ। ডানে hash table ধীরে ধীরে ভরছে, নতুন entry সবুজ ফ্ল্যাশ, hit হলে সোনালি। মাঝের lane-এ উত্তরটা পপ হয়ে ওঠে (যেমন [0, 1] বা true)।
-> - **ইনপুট:** পাঁচটা প্যাটার্নের টগল: frequency, seen-set, complement, prefix sum, grouping; প্রতিটার নিজস্ব preset input, চাইলে custom।
-> - **ধাপ:** প্রতি ধাপে তিনটা ঘটনা একসাথে: pointer সরল, need বা key হিসাব হলো, table-এ lookup (miss হলে নতুন entry ঢুকল, hit হলে entry জ্বলে উঠল)। prefix sum মোডে উপরে P আর P - k দুটোই ভাসে, আর seed `{0: 1}` শুরু থেকেই table-এ বসে থাকে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে দুটো "ভুলের" টগল: seed বন্ধ করা, আর complement-এ আগে জমানো। ভুলটা কেমন দেখায়, নিজের চোখে দেখার জন্য।
-> - **লক্ষ্য:** পাঁচটা প্যাটার্নের গভীরে একটাই চাল, loop-এর খোঁজ table-এ জমানো। সেটা চোখে নয়, হাতে ঢুকে যাওয়া।
-
 ## অনুশীলন
 
 - **সহজ ১:** Contains Duplicate (LeetCode 217)। হিন্ট: seen-set, একটা pass, hit পেলেই true।

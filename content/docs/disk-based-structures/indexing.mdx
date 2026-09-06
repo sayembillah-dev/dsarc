@@ -263,16 +263,6 @@ Sparse-এর পুরো যুক্তি দাঁড়িয়ে আছ
 **৫. secondary index-এ শুধু index দেখেই উত্তর মিলবে ভাবা।**
 Primary বা clustered index-এ data-ই index-এর ক্রমে সাজানো। কিন্তু secondary index-এ entry বলে শুধু record কোথায়। Covering না হলে index থেকে pointer নিয়ে আবার data block পড়তে হয়, মানে প্রতি lookup-এ বাড়তি I/O। এই খরচটা query plan-এ দেখা যায়; চোখ বুজে secondary index বানালে ধরা খাবে।
 
-## Animation Spec
-
-> **Animation Spec: Dense বনাম Sparse Lookup Race**
->
-> - **দৃশ্য:** নিচে block-ভাগ করা data file; উপরে বাঁয়ে dense index, ডানে sparse index; মাঝে shared step counter আর block-read counter।
-> - **ইনপুট:** lookup key; record সংখ্যা আর block capacity-র slider; "unsorted করো" টগল (sparse-এর ভাঙন দেখানোর জন্য)।
-> - **ধাপ:** দুই পক্ষ একসাথে দৌড়ায়: dense binary search-এ লাফ দেয়, sparse আগে ছোট index scan করে তারপর block-এ নামে; প্রতি তুলনায় counter বাড়ে; block read হলে সেই block জ্বলে ওঠে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; key বদলে দৌড় আবার।
-> - **লক্ষ্য:** sparse ছোট index দিয়ে প্রায় dense-এর গতি পায়; আর unsorted টগল অন করলেই sparse-এর ভুল উত্তর নিজের চোখে দেখা যায়।
-
 ## অনুশীলন
 
 - **সহজ ১:** 12টা record নাও (roll 201 থেকে 212), block capacity 4। কাগজে dense আর sparse দুটো index-ই বানাও, তারপর key 209-এর জন্য দুটোর ধাপ গুনে তুলনা করো। হিন্ট: sparse-এ থাকবে মাত্র 3টা entry।

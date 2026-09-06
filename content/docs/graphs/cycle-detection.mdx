@@ -272,16 +272,6 @@ n→n edge মানেই cycle, length এক হলেও। ভালো খ
 **৫. Undirected-এর লজিক directed-এ কপি করা।**
 Undirected-এ parent-passing যথেষ্ট, কারণ সেখানে ফেরত edge মানেই cycle। Directed-এ ফেরত edge অন্য পথেরও হতে পারে, তাই "আমি ঠিক কোন পথে আছি" ট্র্যাক করতেই হয়। দুটো আলাদা সমস্যা, আলাদা হাতিয়ার; একটা আরেকটার জায়গায় বসালে নিঃশব্দে ভুল উত্তর আসবে।
 
-## Animation Spec
-
-> **Animation Spec: Cycle Detector**
->
-> - **দৃশ্য:** directed graph; node-গুলো রঙ বদলায়, white থেকে gray থেকে black; recursion path হলুদ ঝলকানি; back edge পাওয়ামাত্র সেই edge লাল হয়ে চক্রটা ঘিরে জ্বলে ওঠে।
-> - **ইনপুট:** directed/undirected টগল; preset graph (চক্র আছে / diamond / disconnected দুই টুকরো / self-loop)।
-> - **ধাপ:** প্রতি dfs call-এ node gray; gray node-এ ফেরত edge দেখলে cycle detect, চক্রের node-গুলো একসাথে pulse করে; backtrack হলে node black হয়ে শান্ত।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "visited-only mode" টগল, diamond-এ ভুল alarm কেমন দেখায় তা প্রত্যক্ষ করার জন্য।
-> - **লক্ষ্য:** directed-এ gray মানেই বিপদের সম্ভাবনা, আর undirected-এ parent ছাড়া visited মানেই চক্র।
-
 ## অনুশীলন
 
 - **সহজ ১:** edge list দেওয়া আছে, undirected graph-এ cycle আছে কিনা বলো। হিন্ট: আগে adjacency list বানাও ([Graph Representation](./graph-representation.mdx)), তারপর `hasCycleUndirected` চালাও।

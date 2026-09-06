@@ -228,16 +228,6 @@ Dry run-এ দেখেছো, মিল হয় -4-এ, কিন্তু �
 **৫. ভ্যালু দিয়ে তুলনা করা, reference দিয়ে নয়।**
 `slow.val === fast.val` দিলে একই ভ্যালুর দুটো আলাদা node-কেও মিল বলে ভুল করবে। Cycle detection-এ একমাত্র `slow === fast`, মানে একই object reference, কোনো বিকল্প নেই।
 
-## Animation Spec
-
-> **Animation Spec: Tortoise & Hare**
->
-> - **দৃশ্য:** linked list, শেষে cycle থাকতে পারে; দুটো pointer ভিন্ন রঙে, slow ধীরে আর fast দ্বিগুণ গতিতে এগোয়।
-> - **ইনপুট:** list-এর দৈর্ঘ্য, cycle on/off, cycle-এর মুখ কোন index-এ।
-> - **ধাপ:** প্রতি ধাপে slow এক ঘর, fast দুই ঘর; cycle থাকলে মিলনবিন্দু জ্বলে ওঠে; তারপর দ্বিতীয় পর্বে নতুন pointer head থেকে এক ধাপে এসে মুখে মিলিত হয়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "দ্বিতীয় পর্ব" টগল, যাতে মুখ খোঁজার হিসাবটা আলাদা করে দেখা যায়।
-> - **লক্ষ্য:** দুই গতির pointer মানে cycle ধরা আর মুখ খোঁজা, O(1) space-এ।
-
 ## অনুশীলন
 
 - **সহজ ১:** Linked List Cycle (LeetCode 141)। হিন্ট: এই পাতার `hasCycle` হুবহু বসে যাবে; শুধু null check-গুলো মনে রেখো।

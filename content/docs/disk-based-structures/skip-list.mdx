@@ -286,16 +286,6 @@ dry run-এর ধাপ 5 মনে করো: `17 < 17` মিথ্যা ব
 **৫. duplicate-এর নীতি না ঠিক করা।**
 `insert(17)` দুইবার ডাকলে কী হওয়া উচিত? reject, allow, নাকি count? আমরা reject করেছি। নীতি যেটাই হোক, search/delete-কেও সেই নীতিতেই চলতে হবে; নইলে delete একটা 17 মুছে দিলো, আরেকটা ভূতের মতো ভাসতে রইলো। খালি list-এ delete, সবচেয়ে ছোট বা বড় node-এর delete: এগুলো আমাদের কোডে নিজে থেকেই সামলানো, কিন্তু টেস্ট করে নিও।
 
-## Animation Spec
-
-> **Animation Spec: Express Lane Express**
->
-> - **দৃশ্য:** বহু-স্তর list; search pointer express lane দিয়ে লাফায়, দরকারে নিচে নামে; পাশে live visits counter, আর insert-এর সময় চিহ্নিত `update[]` node-গুলো।
-> - **ইনপুট:** target (search), value (insert/delete); insert-এ coin-flip-এর animation, চাইলে seed ইনপুট বক্স।
-> - **ধাপ:** প্রতি সিদ্ধান্তে "এগোই নাকি নামি" highlight; insert-এ কয়েন ঘুরে নতুন node উপরে ওঠে; splice-এর দুই লাইন দুই ফ্রেমে, যাতে ক্রমটা চোখে পড়ে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; p-এর স্লাইডার (1/2 বনাম 1/4) নাড়ালেই গঠন মোটা/চিকন হয়, সেটা live।
-> - **লক্ষ্য:** express lane + coin-flip = ভারসাম্য, rotation ছাড়াই।
-
 ## অনুশীলন
 
 - **সহজ ১:** উপরের গঠনটায় হাতে `search(25)` আর `search(10)` চালিয়ে দুটো dry-run টেবিল বানাও। হিন্ট: প্রতিবার সবচেয়ে উপরের স্তর থেকে শুরু; সমান মানে থামো। কোডের output (৩ আর ৩ বার) দিয়ে যাচাই করো।

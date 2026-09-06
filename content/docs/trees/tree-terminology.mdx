@@ -114,16 +114,6 @@ A → B → C → A হলে সেটা tree না, graph। Tree-র গ্
 **৫. `null` child চেক না করে ডট চাপানো।**
 `b.right.left.value` লিখলে TypeError, কারণ `b.right.left` হলো null। প্রতি ডট-এর আগে ভাবো: এখানে null হতে পারে কিনা। Tree-র অর্ধেক bug এই এক জায়গা থেকে।
 
-## Animation Spec
-
-> **Animation Spec: Tree Anatomy**
->
-> - **দৃশ্য:** একটা পূর্ণাঙ্গ tree; পাশে পরিভাষার কার্ডগুলো (root, leaf, height, depth, subtree, edge count)।
-> - **ইনপুট:** node নির্বাচন; পরিভাষা নির্বাচন।
-> - **ধাপ:** node নির্বাচনে তার depth-এর পথ নীলে, subtree সবুজে, ancestors কমলায় জ্বলে; height নির্বাচনে নিচের দিকের দীর্ঘতম পথ দেখা যায়; পাশে live edge/node কাউন্টার।
-> - **নিয়ন্ত্রণ:** reset; edge বনাম node গোনার টগল।
-> - **লক্ষ্য:** পরিভাষা আর গোনার নিয়ম একই গাছে গেঁথে যাওয়া।
-
 ## অনুশীলন
 
 - **সহজ ১:** উপরের গাছে F-এর depth, height, ancestors আর subtree-এর node-সংখ্যা লিখো।

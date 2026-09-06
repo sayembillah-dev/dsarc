@@ -247,16 +247,6 @@ Key হতে হলে তাকে hash করা যেতে হবে, আ�
 **৫. JS-এর plain object আর Map-কে এক ভাবা।**
 `{}` দিয়ে অনেক কাজ চলে ঠিকই, কিন্তু object-এর key সবসময় string-এ বদলে যায় (সংখ্যা 1 আর "1" এক হয়ে যায়), আর prototype থেকে অদ্ভুত key ঢুকে যেতে পারে। আসল key-value কাজে `Map` অনেক নিরাপদ। পার্থক্য বিস্তারিত [Map and Set](./map-and-set.mdx)-এ।
 
-## Animation Spec
-
-> **Animation Spec: Key Drops Into Slots**
->
-> - **দৃশ্য:** বামে key-এর তালিকা, মাঝে "hash function" মেশিন, ডানে ১০টা slot-এর array; নিচে load factor-এর মিটার।
-> - **ইনপুট:** key (string বা সংখ্যা) আর value; table size বদলানো যায়।
-> - **ধাপ:** key মেশিনে ঢুকে char code-গুলো জমা হতে দেখা যায়, `% size` হলো, index বের হলো; তারপর key+value বল হয়ে গিয়ে সেই slot-এ পড়ে; দুটো key একই slot-এ পড়লে slot লাল ঝলকে ওঠে (collision flash) আর আগেরটা মুছে যায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; "key-ও জমাও" টগল (ভ্যারিয়েন্ট ২); "size বদলাও" স্লাইডার, যাতে load factor-এর প্রভাব চোখে পড়ে।
-> - **লক্ষ্য:** hash table মানে key → index → array, আর collision মানে দুজনে একই ঘর।
-
 ## অনুশীলন
 
 - **সহজ ১:** হাতে হাতে trace করো: `"cat"`, `"dog"`, `"cow"`, `"ant"`, `"eel"` এই ৫টা key ToyHash-এর (sum % 10) কোন কোন slot-এ পড়বে? কোনো collision হলো তো? হিন্ট: প্রতিটা অক্ষরের char code যোগ করো, শেষে % 10।

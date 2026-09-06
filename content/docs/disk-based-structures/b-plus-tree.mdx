@@ -294,16 +294,6 @@ Internal key শুধু রাস্তার signpost। Record পেতে 
 **৫. Delete-এ underflow উপেক্ষা করা।**
 Leaf থেকে record সরিয়ে fill factor ceil(m/2)-এর নিচে ফেললে sibling থেকে borrow বা merge করতে হয়। না করলে গাছ আধাখালি node-এ ভরে যায়, height অযথা বাড়ে, invariant ভাঙে। (Insert-এর split-এর উল্টো খেলা; ধারণাটা [2-3 tree](./two-three-tree.mdx)-র delete ভ্যারিয়েন্টে পেয়েছ।)
 
-## Animation Spec
-
-> **Animation Spec: Copy Up, Sweep Right**
->
-> - **দৃশ্য:** তিন স্তরের B+ tree; internal node-গুলো ধূসর (signpost), leaf-গুলো সবুজ (record), leaf-দের মাঝে তীরচিহ্নের লিঙ্ক।
-> - **ইনপুট:** insert sequence (preset: উপরের ১১টা) আর একটা range query [lo, hi]।
-> - **ধাপ:** leaf split-এ ডানদিকের প্রথম key-র একটা ছায়া-কপি উপরে ভেসে ওঠে; internal split-এ key নিজে উঠে যায়; range query-তে lo-তে নেমে লিঙ্ক ধরে ডানে হাঁটা, পড়া leaf-গুলো জ্বলে ওঠে।
-> - **নিয়ন্ত্রণ:** speed, step, reset; order স্লাইডার (3/4/5); সাথে "B-tree mode" টগল, record কোথায় বসে তার তুলনা দেখানোর জন্য।
-> - **লক্ষ্য:** কপি বনাম চলে যাওয়া, আর linked leaf-ই range query-র আসল শক্তি।
-
 ## অনুশীলন
 
 - **সহজ ১:** Order-3 B+ tree-তে হাতে [1..8] insert করে আঁকো। কোন key-গুলোর কপি উপরে উঠল তালিকা করো। হিন্ট: leaf split-ই একমাত্র সময়, যখন কপি ওঠে।

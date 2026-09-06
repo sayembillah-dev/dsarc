@@ -109,16 +109,6 @@ Tree traversal loop-এ লিখতে গেলে তোমাকে নি�
 **৫. Hybrid ভুলে যাওয়া।**
 অনেক বাস্তব সমাধান দুটো মেশায়: বাইরে loop, ভেতরে ছোট recursion, বা recursion-এর গভীরতা সীমাবদ্ধ করে বাকিটা loop। সবসময় দুই চরমের একটা বাছতে হবে, এমন নিয়ম নেই।
 
-## Animation Spec
-
-> **Animation Spec: Two Paths**
->
-> - **দৃশ্য:** বামে recursion, ডানে loop; recursion-এর নিচে call stack বাড়ছে-কমছে, loop-এর নিচে একটাই accumulator ঘর; উপরে একই n।
-> - **ইনপুট:** n; speed; "memory used" মিটার।
-> - **ধাপ:** দুই পদ্ধতি তালে তালে চলে; recursion-এ frame জমে আর pop হয়, loop-এ একই ঘর বারবার বদলায়; মিটারে দুটোর সর্বোচ্চ জায়গা দাগানো থাকে।
-> - **নিয়ন্ত্রণ:** step, play, reset।
-> - **লক্ষ্য:** একই সময়, ভিন্ন জায়গা, আর "recursion = লুকানো stack" এই যোগসূত্র চোখে পড়ুক।
-
 ## অনুশীলন
 
 - **সহজ ১:** [Recursion Examples](./recursion-examples.mdx)-এর `sum` এবার loop দিয়ে লেখো। দুটোর space তুলনা করো, এক লাইনে।

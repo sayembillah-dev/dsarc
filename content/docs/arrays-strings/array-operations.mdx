@@ -157,16 +157,6 @@ for (let i = 0; i < arr.length; i++) {
 **৫. খালি array-তে pop/shift।**
 ক্রাশ করে না, `undefined` দেয়। কিন্তু সেই `undefined` নিয়ে হিসাব করলে পরে NaN-এর দলা। আগে length চেক করা নিরাপদ।
 
-## Animation Spec
-
-> **Animation Spec: Insert/Delete Shifting**
->
-> - **দৃশ্য:** array box-এর সারি; উপরে capacity-এর আলাদা দাগ; পাশে "মোট সরানো" কাউন্টার।
-> - **ইনপুট:** index আর মান; অপারেশন নির্বাচন (insert/delete/push)।
-> - **ধাপ:** মাঝে insert-এ ডান থেকে একে একে box স্লাইড করে (প্রতি স্লাইডে কাউন্টার বাড়ে); শেষে push-এ কেউ নড়ে না; capacity ফুরালে পুরো array নতুন বড় জায়গায় কপি হওয়ার দৃশ্য, তারপর কাউন্টার reset।
-> - **নিয়ন্ত্রণ:** speed, step, reset; capacity দেখা/লুকানো টগল।
-> - **লক্ষ্য:** "সরানোর খরচ"-ই complexity-র উৎস, আর amortized push চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** কাগজে dry run করো: `[5, 15, 25, 35]`-এ index 2-তে `20` insert। প্রতি ধাপে array আঁকো।

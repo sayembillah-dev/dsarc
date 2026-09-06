@@ -149,16 +149,6 @@ Object version-এ `items.length` বলে কিছু নেই (`Object.keys
 **৫. Queue আর stack-এর প্রান্ত গুলিয়ে ফেলা।**
 দুটোই তো array দিয়ে বানানো যায়, কিন্তু stack-এ ঢোকা-বেরা এক প্রান্তে, queue-তে দুই প্রান্তে। চাপে পড়ে `push`/`pop` দিয়ে queue বানিয়ে ফেললে পাবে LIFO, ফলাফল উল্টো যাবে, BFS হয়ে যাবে DFS। পুরো তুলনাটা [Stack vs Queue](./stack-vs-queue.mdx)-এ।
 
-## Animation Spec
-
-> **Animation Spec: Ticket Line**
->
-> - **দৃশ্য:** অনুভূমিক লাইন; বামে front-এর আঙুল, ডানে back-এর আঙুল; উপরে দুই মোডের টগল: `shift()` বনাম pointer।
-> - **ইনপুট:** enqueue মান; dequeue বাটন; speed।
-> - **ধাপ:** `shift()` মোডে dequeue-তে পুরো লাইন বামে সরে আসে, সরানো কাউন্টার বাড়ে; pointer মোডে লাইন স্থির, শুধু front-আঙুল এগোয় আর পুরনো ঘর মুছে যায়। দুই মোডে একই সিকোয়েন্স চালিয়ে মোট সরানোর সংখ্যা পাশাপাশি দেখা।
-> - **নিয়ন্ত্রণ:** step, play, reset; কাউন্টার reset।
-> - **লক্ষ্য:** "কাউকে সরাবো না, pointer সরাবো" এই এক বাক্যটা চোখে দেখা।
-
 ## অনুশীলন
 
 - **সহজ ১:** কাগজে dry run: খালি queue-তে `enqueue(5)`, `enqueue(8)`, `dequeue()`, `enqueue(2)`, `peek()`, `dequeue()`। প্রতি ধাপে front, back আর ফেরত মান লিখো।

@@ -262,16 +262,6 @@ ISAM-এ delete মানে page থেকে record সরিয়ে ঘর�
 **৫. ভেবে বসা "ISAM মানেই পুরনো আর খারাপ"।**
 না। Data প্রায় বদলায় না (বছরে দুইবার আপডেট হয় এমন archive, static অভিধান, read-only reporting) হলে ISAM সরল, compact, আর index-এ split-এর কোনো overhead নেই। ভুল জায়গায় (write-heavy) বসালে খারাপ; ঠিক জায়গায় এখনো দারুণ।
 
-## Animation Spec
-
-> **Animation Spec: ISAM Lookup আর Overflow-এর পতন**
->
-> - **দৃশ্য:** উপরে static index টেবিল, নিচে sorted data page-গুলো, প্রতি page-এর পাশে খালি overflow স্লট; কোণায় একটা step counter।
-> - **ইনপুট:** lookup key; insert key; "একগুচ্ছ insert" বাটন; "Reorganize" বাটন।
-> - **ধাপ:** lookup হলে index entry highlight → page-এ লাফ → page scan → দরকার হলে chain বরাবর হাঁটা; প্রতি তুলনায় counter বাড়ে; insert-এ chain-এ নতুন বাক্স জুড়ে যায়।
-> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে chain length-এর histogram টগল।
-> - **লক্ষ্য:** ছোট chain-এ ISAM দ্রুত; chain বাড়লে lookup ধীর; reorganize চাপলেই আবার তাজা। ব্যবহারকারী নিজে অনুভব করবে static index-এর বিলটা কোথায় আসে।
-
 ## অনুশীলন
 
 - **সহজ ১:** কাগজে 9টা key নাও (5, 10, 15, ..., 45), page capacity 3। ISAM বানাও, তারপর 20 আর 45-এর lookup-এ ধাপ গুনো। হিন্ট: index-এ থাকবে শুধু প্রতি page-এর প্রথম key, মানে 3টা entry।
