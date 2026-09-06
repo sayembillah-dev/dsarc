@@ -1,10 +1,24 @@
 'use client';
 
 import { cn } from 'cn';
+import { MousePointerClick } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { spring } from './palette';
+
+/**
+ * One-line instruction at the top of a visualizer stage, so a first-time
+ * visitor immediately knows what to click/drag. Always pair with controls.
+ */
+export function HintLine({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex items-center justify-center gap-1.5 text-center text-xs text-fd-muted-foreground">
+      <MousePointerClick className="size-3.5 shrink-0" style={{ color: '#f97316' }} />
+      <span>{children}</span>
+    </p>
+  );
+}
 
 /** Small outline button for visualizer actions (push, assign, create...). */
 export function OpButton({

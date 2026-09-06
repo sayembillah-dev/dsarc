@@ -11,6 +11,7 @@ import {
   TruthTableExplorer,
   VariableBoxes,
 } from './viz/js-fundamentals';
+import { DataShapes, RecipeSteps, SearchRace, SolverFlow } from './viz/intro-to-dsa';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -24,6 +25,10 @@ export function getMDXComponents(components?: MDXComponents) {
     PseudoToCode,
     TruthTableExplorer,
     VariableBoxes,
+    DataShapes,
+    RecipeSteps,
+    SearchRace,
+    SolverFlow,
     ...components,
   } satisfies MDXComponents;
 }
