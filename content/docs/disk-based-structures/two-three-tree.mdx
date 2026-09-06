@@ -1,118 +1,320 @@
 ---
-title: "2-3 Tree: split/merge দিয়ে সবসময় balanced tree"
-description: প্রতিটা node-এ ১-২টা key আর ২-৩টা চাইল্ড। ভারসাম্য আসে split/merge দিয়ে, তাই উচ্চতা কখনো O(log n)-এর বাইরে যায় না।
+title: "2-3 Tree: split দিয়ে নিজে নিজে balanced থাকা tree"
+description: প্রতিটা node-এ ১-২টা key আর ২-৩টা child; node ভরে গেলে split, median উপরে ওঠে। rotation ছাড়াই সব leaf সবসময় একই গভীরে, উচ্চতা guaranteed O(log n)।
 ---
+
+BST-র সবচেয়ে বড় দুর্বলতা ঠিক করতে গিয়ে 2-3 tree-র জন্ম: গাছ যেন কখনোই একপাশে হেলে লাঠি না হয়ে যায়। AVL যেখানে rotation দিয়ে ভারসাম্য ধরে, 2-3 tree যায় একদম উল্টো পথে: node-কে একাধিক key ধরতে দাও, ভরে গেলে ভেঙে ফেলো।
 
 ## কী শিখব
 
-- যে multi-way search tree কখনো হেলে পড়ে না, সে কীভাবে সম্ভব
+- 2-node আর 3-node কী, আর কেন সব leaf সবসময় একই স্তরে থাকে
+- Insert-এ overflow হলে split কীভাবে কাজ করে, median কীভাবে উপরে ওঠে
+- Root split-ই কেন গাছকে লম্বা করার একমাত্র পথ
+- হাতে হাতে পুরো dry run: ৮টা insert, দুইবার leaf split, একবার root split
+- O(log n) কেন guaranteed, আর AVL-এর rotation-এর সাথে তুলনা
 
 ## ধারণা
 
-ভাবো তো, sorted ডেটা (১, ২, ৩, ৪...) একটা সাধারণ binary search tree-তে ঢোকালে কী হয়। গাছটা একপাশে হেলে লম্বা লাঠি হয়ে যায়, search আর O(log n) থাকে না। AVL এই সমস্যা মেটে rotation দিয়ে। 2-3 Tree মেটে একদম অন্য কায়দায়: node-কে একটু বেশি key ধরতে দাও, ভরে গেলে **ভেঙে ফেলো (split)**, দরকারে আবার **জোড়া লাগাও (merge)**।
+ধরো তুমি একটা লাইব্রেরির তাক সাজাচ্ছ। নিয়ম: প্রতিটা তাকে সর্বোচ্চ ২টা বই। নতুন বই এলে সঠিক তাকে বসাও। তাকে ৩টা বই জমে গেলেই তাকটা দুই টুকরো: একটা বই বাম টুকরোয়, একটা ডানে, আর মাঝের বইটা উঠে যায় উপরের সূচিপত্রে। সূচিপত্রও ভরে গেল? সেটাও ভাঙো। একদম উপরের সূচিপত্র ভাঙলে নতুন একটা মাস্টার সূচিপত্র বানাও। কোনো তাক কখনো অন্য তাকের চেয়ে নিচে বা উপরে চলে যায় না, সব তাক সবসময় একই সারিতে।
 
-নিয়মটা সরল। প্রতিটা internal node দুই রকমের একটা হবেই:
+এটাই 2-3 tree-র পুরো ফিলসফি। node দুই রকমের একটা হবেই:
 
-- **2-node:** ১টা key, ২টা চাইল্ড
-- **3-node:** ২টা key, ৩টা চাইল্ড
+- **2-node:** ১টা key, ২টা child
+- **3-node:** ২টা key, ৩টা child
 
-আর সবচেয়ে গুরুত্বপূর্ণ শর্ত: **সব leaf সবসময় একই স্তরে থাকে।** গাছ হেলে যাওয়ার সুযোগই নেই, তাই উচ্চতা guaranteed O(log n)। লক্ষ্য AVL-এর মতোই, শুধু পথটা আলাদা। আর মজার কথা, এটাই B-Tree-র (পরের পাতায় বিস্তারিত) সবচেয়ে সরল রূপ।
+আর সোনার শর্ত: **সব leaf একই গভীরে থাকে।** গাছ হেলে যাওয়ার কোনো পথই নেই, কারণ height বাড়ার একটাই রাস্তা আছে: root ভেঙে নতুন root তৈরি হওয়া। সেটা ঘটলে সব পথ একসাথে এক ঘর লম্বা হয়, কেউ বাদ পড়ে না।
 
 ```text
-2-node:  [10]        3-node:  [10 | 20]
-        /    \               /    |    \
-     <10     >10          <10  10-20  >20
+2-node:    [10]          3-node:    [10 | 20]
+          /    \                    /    |    \
+       <10      >10              <10   10-20   >20
 ```
 
-## কোড উদাহরণ
+[BST](../trees/binary-search-tree.mdx)-এর নিয়ম মনে আছে? বামে ছোট, ডানে বড়। 2-3 tree সেটারই সাধীকরণ: 3-node-এর তিনটা child ঠিক তিনটা ব্যবধান ভাগ করে, ছোটদের, মাঝেরদের, বড়দের। Search তাই আগের মতোই, শুধু প্রতি ধাপে দুই-তিনটা দরজার একটা বেছে নিতে হয়।
+
+একটা প্রশ্ন মাথায় রাখো: sorted ডেটা (1, 2, 3, 4...) ঢোকালে BST লাঠি হয়ে যায়, [AVL](../trees/avl-tree.mdx)-কে ব্যস্ত rotation করতে হয়। 2-3 tree-র কী হয়? dry run-এর শেষে উত্তরটা নিজেই বলতে পারবে।
+
+## ধাপে ধাপে: [10, 20, 5, 15, 25, 30, 8, 35] insert করি
+
+নিয়ম: নতুন key সবসময় **leaf-এ** বসে। Leaf-এ ৩টা key জমলেই split: মাঝের (median) key উপরে ওঠে, বাকি দুটো দুই দিকে। উপরের node-ও ৩ key-তে ভরে গেলে সে-ও split, যত উপরে ওঠার দরকার।
+
+```text
+insert 10:   [10]
+insert 20:   [10 | 20]          (3-node, এখনো ঠিক আছে)
+insert 5:    [5 | 10 | 20]  →  overflow!  median 10 ওঠে
+
+                [10]
+               /    \
+            [5]      [20]
+```
+
+এখানেই প্রথম root split: গাছ height 1 থেকে 2 হলো, আর সব পথ সমানভাবেই লম্বা হলো। বাকি ধাপগুলো টেবিলে:
+
+| ধাপ | Insert | কী ঘটল | গাছের অবস্থা (স্তরে স্তরে) |
+|-----|--------|---------|------------------------------|
+| 1 | 10 | খালি গাছে নতুন leaf root | [10] |
+| 2 | 20 | root-এ জায়গা ছিল | [10 20] |
+| 3 | 5 | overflow, median 10 ওঠে, root split | [10] / [5] [20] |
+| 4 | 15 | 10-এর ডান child-এ বসে | [10] / [5] [15 20] |
+| 5 | 25 | leaf overflow, median 20 ওঠে | [10 20] / [5] [15] [25] |
+| 6 | 30 | 20-এর ডান child-এ বসে | [10 20] / [5] [15] [25 30] |
+| 7 | 8 | 10-এর বাম child-এ বসে | [10 20] / [5 8] [15] [25 30] |
+| 8 | 35 | leaf split → root-ও overflow → আবার root split | নিচে দেখো |
+
+ধাপ 8-টা আলাদা করে দেখি, কারণ এখানেই আসল জাদু:
+
+```text
+35 বসে:  [25 | 30 | 35] overflow → median 30 উপরে
+
+root হয়: [10 | 20 | 30]  →  এটাও overflow!  median 20 ওঠে
+
+             [20]                    ← নতুন root, height 3
+            /    \
+        [10]      [30]
+       /   \      /   \
+    [5 8] [15] [25] [35]
+```
+
+দেখো কী সুন্দর: split নিচে শুরু হয়ে জ্বলে উঠল উপরে, root পর্যন্ত। আর root ভাঙা মানেই height এক বাড়া, সবার পথ সমান বাড়ল। গাছ হেলে যাওয়ার কোনো পথই এখানে নেই। এটাই AVL-এর rotation-এর বিকল্প উত্তর।
+
+## কোড: পুরো implementation
 
 ```js
-class TwoThreeNode {
+class Node {
   constructor() {
-    this.keys = [];       // 1 বা 2 টা key (sorted)
-    this.children = [];   // 2 বা 3 টা চাইল্ড
+    this.keys = [];       // 1 বা 2টা key (সাজানো); split-এর মুহূর্তে 3টা
+    this.children = [];   // internal হলে keys.length + 1 টা child
   }
   isLeaf() { return this.children.length === 0; }
-  is3Node() { return this.keys.length === 2; }
 }
 
 class TwoThreeTree {
   constructor() { this.root = null; }
 
+  search(key) {
+    let node = this.root;
+    while (node) {
+      let i = 0;
+      while (i < node.keys.length && key > node.keys[i]) i++;
+      if (i < node.keys.length && node.keys[i] === key) return true;
+      node = node.isLeaf() ? null : node.children[i];
+    }
+    return false;
+  }
+
   insert(key) {
     if (!this.root) {
-      this.root = new TwoThreeNode();
-      this.root.keys.push(key);
+      this.root = new Node();
+      this.root.keys = [key];
       return;
     }
     const split = this._insert(this.root, key);
     if (split) {
-      // root split: নতুন root, height সবার জন্য সমানভাবে বাড়ে
-      const newRoot = new TwoThreeNode();
+      // root-ও ভেঙে গেছে: এটাই গাছ লম্বা হওয়ার একমাত্র মুহূর্ত
+      const newRoot = new Node();
       newRoot.keys = [split.mid];
-      newRoot.children = [this.root, split.right];
+      newRoot.children = [split.left, split.right];
       this.root = newRoot;
     }
   }
 
   _insert(node, key) {
     if (node.isLeaf()) {
-      node.keys.push(key);
-      node.keys.sort((a, b) => a - b);
+      let i = 0;
+      while (i < node.keys.length && key > node.keys[i]) i++;
+      node.keys.splice(i, 0, key);          // sorted রেখে বসালাম
       return node.keys.length === 3 ? this._split(node) : null;
     }
     let i = 0;
     while (i < node.keys.length && key > node.keys[i]) i++;
     const split = this._insert(node.children[i], key);
     if (!split) return null;
-    // child split হলে মাঝের key এই node-এ ওঠে
-    node.keys.splice(i, 0, split.mid);
-    node.children.splice(i + 1, 0, split.right);
+    node.keys.splice(i, 0, split.mid);      // median এই node-এ উঠল
+    node.children[i] = split.left;          // পুরোনো child-এর জায়গায় বাম টুকরো
+    node.children.splice(i + 1, 0, split.right); // ডান টুকরো পাশে ঢুকল
     return node.keys.length === 3 ? this._split(node) : null;
   }
 
-  _split(node) {                  // 3-key node ভাঙা: মাঝের key parent-এ ওঠে
-    const right = new TwoThreeNode();
+  _split(node) {
+    // node-এ এখন 3টা key; internal হলে 4টা child
+    const left = new Node();
+    const right = new Node();
     const mid = node.keys[1];
+    left.keys = [node.keys[0]];
     right.keys = [node.keys[2]];
-    node.keys = [node.keys[0]];
-    if (!node.isLeaf()) right.children = node.children.splice(2, 2);
-    return { mid, right };
+    if (!node.isLeaf()) {
+      left.children = node.children.slice(0, 2);   // প্রথম ২টা বামে
+      right.children = node.children.slice(2, 4);  // শেষ ২টা ডানে
+    }
+    return { mid, left, right };
   }
 
   height() {
     let h = 0, node = this.root;
-    while (node) { h++; node = node.children[0]; }
+    while (node) { h++; node = node.children[0] || null; }
     return h;
+  }
+
+  levelOrder() {
+    if (!this.root) return [];
+    const result = [];
+    const queue = [this.root];
+    let head = 0;
+    while (head < queue.length) {
+      const size = queue.length - head;
+      const level = [];
+      for (let k = 0; k < size; k++) {
+        const node = queue[head++];
+        level.push("[" + node.keys.join(" ") + "]");
+        for (const c of node.children) queue.push(c);
+      }
+      result.push(level.join("  "));
+    }
+    return result;
   }
 }
 
 const tree = new TwoThreeTree();
-for (const k of [10, 20, 30, 40, 50, 60, 70]) tree.insert(k);
-console.log("root keys:", tree.root.keys);  // root keys: [ 40 ]
-console.log("height:", tree.height());      // height: 3 (সব leaf একই স্তরে)
+for (const k of [10, 20, 5, 15, 25, 30, 8, 35]) tree.insert(k);
+console.log(tree.levelOrder());
+// [ '[20]', '[10]  [30]', '[5 8]  [15]  [25]  [35]' ]
+console.log("height:", tree.height());    // 3
+console.log(tree.search(15));             // true
+console.log(tree.search(17));             // false
+// sorted ডেটা দিয়ে পরীক্ষা: BST হলে এখনই লাঠি হয়ে যেত
+const t2 = new TwoThreeTree();
+for (const k of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) t2.insert(k);
+console.log(t2.levelOrder());
+// [ '[4]', '[2]  [6 8]', '[1]  [3]  [5]  [7]  [9 10]' ]
+console.log("height:", t2.height());      // 3 (BST হলে থাকত 10)
 ```
 
-## কোড ব্রেকডাউন
+## ভ্যারিয়েন্ট ১: delete (merge আর redistribute)
 
-- insert হলে আগে সঠিক leaf খুঁজে key বসায়। node-এ ৩টা key জমে গেলেই **split**: মাঝের key-টা parent-এ উঠে যায়।
-- split উপরের দিকে ছড়াতে পারে। root-ও split হলে height বাড়ে, কিন্তু সবার জন্য সমানভাবে।
-- `is3Node()` দিয়ে বোঝা যায় node-এ ২টা key (মানে ৩টা চাইল্ড) আছে কি না।
-- গাছ কখনো একপাশে হেলে যায় না, তাই worst case-ও চোখ বন্ধ করে O(log n) বলতে পারো।
+Insert-এর উল্টোটা delete, আর সেটা একটু বেশি প্যাঁচের। Key-টা leaf-এ থাকলে সরে দাও। সরানোর পর leaf খালি হয়ে গেলে (underflow) দুইটা চাল:
 
-## Complexity
+1. **Redistribute (borrow):** পাশের sibling-এ বাড়তি key থাকলে parent দিয়ে ঘুরিয়ে একটা নিয়ে আসো।
+2. **Merge:** sibling-ও কেবল বেঁচে আছে? তাহলে sibling-এর সাথে জোড়া লাগাও, parent থেকে একটা key নেমে আসে। Merge-ও উপরে ছড়াতে পারে, আর root যদি key-শূন্য হয়ে যায়, গাছ এক স্তর **খাটো** হয়।
 
-- search/insert/delete: O(log n), guaranteed।
+```js
+// borrow-এর মুহূর্তটা (node-এর ডানে sibling):
+const parent  = { keys: [10, 20] };
+const node    = { keys: [] };        // এখান থেকে key delete হয়ে খালি
+const sibling = { keys: [15, 18] };  // ডান sibling, বাড়তি key আছে
+node.keys = [parent.keys[1]];          // parent-এর 20 নামল
+parent.keys[1] = sibling.keys.shift(); // sibling-এর 15 উঠল
+console.log(parent.keys, node.keys, sibling.keys);
+// [ 10, 15 ] [ 20 ] [ 18 ]
+```
+
+## ভ্যারিয়েন্ট ২: 2-3-4 tree, B-tree-র দিকে পথ
+
+Node-কে ৩টা key (৪টা child) পর্যন্ত ধরতে দিলেই পাও **2-3-4 tree**। ভারসাম্যের যুক্তি হুবহু একই, শুধু split-এর আগে আরেকটু বেশি জায়গা। মজার ব্যাপার: 2-3-4 tree-র সাথে red-black tree-র এক-এক মিল আছে, red-black আসলে 2-3-4-এর binary ছদ্মবেশ।
+
+```js
+class TwoThreeFourNode {
+  constructor() {
+    this.keys = [];                     // 1-3টা
+    this.children = [];                 // keys.length + 1 টা
+  }
+  isFull() { return this.keys.length === 3; }
+}
+```
+
+2-3-4 tree-তে একটা স্মার্ট কায়দা চলে: insert-এ নিচে নামার পথে যে full node পাও, ওখানেই split করে দাও। তাহলে leaf-এ পৌঁছানোর সময় parent-এ জায়গা guaranteed। আর এই "আরো চওড়া node" ধারণাটাই এগিয়ে গিয়ে হয়েছে [B-tree](../trees/b-tree.mdx), তারপর database-এর রাজা [B+ tree](./b-plus-tree.mdx)।
+
+## ভ্যারিয়েন্ট ৩: rotation বনাম split (AVL-এর সাথে তুলনা)
+
+দুটো tree-ই O(log n) guarantee দেয়, কিন্তু পথ দুই রকম:
+
+- **[AVL](../trees/avl-tree.mdx):** প্রতি node-এ height-এর হিসাব রাখে, ভারসাম্য ভাঙলে rotation ঘুরিয়ে ঠিক করে।
+- **2-3 tree:** কোনো height হিসাবই নেই, node ভরলে split। ভারসাম্য আলাদা করে বজায় রাখার দরকারই পড়ে না, কারণ সব leaf গঠনতন্ত্র দিয়েই একই স্তরে থাকে।
+
+```js
+// পরীক্ষা: sorted ডেটা সাধারণ BST-তে (কোনো ভারসাম্য নেই) ঢোকালে কী হয়
+class BSTNode {
+  constructor(key) { this.key = key; this.left = null; this.right = null; }
+}
+function bstInsert(node, key) {
+  if (!node) return new BSTNode(key);
+  if (key < node.key) node.left = bstInsert(node.left, key);
+  else node.right = bstInsert(node.right, key);
+  return node;
+}
+function bstHeight(node) {
+  return node ? 1 + Math.max(bstHeight(node.left), bstHeight(node.right)) : 0;
+}
+let bst = null;
+for (const k of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) bst = bstInsert(bst, k);
+console.log("BST height:", bstHeight(bst));       // 10 - পুরো লাঠি
+// একই ডেটায় 2-3 tree-র height ছিল মাত্র 3 (উপরের ডেমো দেখো)
+```
+
+## কোড ব্রেকডাউন: insert আর split, লাইনে লাইনে
+
+1. `if (!this.root)` : খালি গাছে প্রথম key-ই root leaf।
+2. `const split = this._insert(this.root, key)` : recursion-এর return value-তেই সব খেলা। `null` মানে কিছু ভাঙেনি, object মানে child ভেঙেছে।
+3. `if (split) { ... this.root = newRoot }` : root নিজে ভেঙে গেছে মানে নতুন root, height এক বাড়ল। এটাই গাছ লম্বা হওয়ার একমাত্র পথ।
+4. `_insert`-এ leaf case: `splice(i, 0, key)` দিয়ে sorted জায়গায় বসালাম। 2-3 tree-র সব নিয়মের ভিত sorted key, এটা ভুললে search-ও ভুল child-এ নামবে।
+5. `return node.keys.length === 3 ? this._split(node) : null` : বসানোর পর ৩টা key হলে overflow, split করো; নাহলে শান্তি।
+6. Internal case: প্রথম loop দিয়ে ঠিক করলাম কোন child-এ নামবো। BST-র সেই যুক্তিই, শুধু দরজা দুই-তিনটা।
+7. `node.keys.splice(i, 0, split.mid)` : child ভাঙলে তার median-এর জায়গা ঠিক এই position-ই, child[i]-এর key-গুলোর ঠিক পরে।
+8. `node.children[i] = split.left` আর `splice(i + 1, 0, split.right)` : ভাঙা child-এর জায়গায় বাম টুকরো, ডান টুকরো তার পাশে। এখন invariant ঠিক: keys = children - 1।
+9. `_split`-এ `mid = node.keys[1]` : ৩টা key-র মাঝেরটাই median, সে-ই উপরে ওঠে। আর internal node-এর ৪টা child-এর প্রথম দুটো যায় বামে (`slice(0, 2)`), শেষ দুটো ডানে (`slice(2, 4)`); boundary গুললে গাছ ভাঙা রাস্তা নিয়ে ঘুরবে।
+
+## Complexity: O(log n) কেন guaranteed
+
+Height-এর হিসাবটা দুই দিক থেকে চাপ দিয়ে বের করা যায়। ধরো height h (স্তরের সংখ্যা):
+
+- **সব node 2-node হলে** (১ key, ২ child): i-তম স্তরে node 2^i টা, key-ও 2^i টা। মোট key n ≥ 2^0 + 2^1 + ... + 2^(h-1) = 2^h - 1। মানে **h ≤ log2(n + 1)**।
+- **সব node 3-node হলে** (২ key, ৩ child): i-তম স্তরে key 2·3^i টা। মোট n ≤ 2·(3^h - 1)/(3 - 1) = 3^h - 1। মানে **h ≥ log3(n + 1)**।
+
+দুটো মিলিয়ে: log3(n+1) ≤ h ≤ log2(n+1)। যেভাবেই insert করো, height সবসময় Θ(log n)। ব্যবহারিক মজার বিষয়: একই n-এর জন্য পুরো 3-node-দের গাছ প্রায় অর্ধেক খাটো হয়।
+
+- **Search:** প্রতি স্তরে সর্বোচ্চ ২টা comparison, মোট O(h) = O(log n)।
+- **Insert:** নামা O(h), তারপর split। প্রতিটা split O(1) কাজ (কয়েকটা key আর pointer সরানো), আর split সর্বোচ্চ h-বার। মোট O(log n)।
+- **Delete:** একই যুক্তিতে O(log n), শুধু split-এর বদলে borrow/merge।
+- **Space:** O(n), প্রতি key-র জন্য এক ঘর।
+
+## সাধারণ ভুল আর edge case
+
+**১. Root split-টা handle করা ভুলে যাওয়া।**
+`_insert` যদি split return করে আর তুমি নতুন root না বানাও, median হারিয়ে যাবে, গাছ কখনো লম্বাই হবে না। মনে রাখো: 2-3 tree-এ height বাড়ে শুধুমাত্র root ভাঙলে, আর সেটা ধরার একটাই জায়গা: `insert`-এর শেষ চেক।
+
+**২. Node-র ভেতরে key sorted না রাখা।**
+শুধু `push` করে দিলে (sort বা সঠিক index-এ `splice` না করলে) search-এর "কোন child-এ নামবো" হিসাবটাই ভেঙে যায়। Insert-এর প্রথম কাজ সঠিক position খোঁজা।
+
+**৩. Internal split-এ children ভুল ভাগ করা।**
+৩ key-র internal node-এর ৪টা child থাকে: প্রথম ২টা median-এর বামে, শেষ ২টা ডানে। `slice(0, 2)` আর `slice(2, 4)` - এই boundary গুললে গাছ দেখতে ঠিক, কিন্তু কিছু key আর খুঁজেই পাবে না। আর leaf split-এর সাথে গুলিয়ো না, leaf-এর child-ই নেই।
+
+**৪. AVL-এর মতো rotation খোঁজা।**
+2-3 tree-তে rotation বলে কিছু নেই, "ভারসাম্য ভাঙা" বলেও কিছু নেই। সব leaf গঠনতন্ত্র দিয়েই একই স্তরে থাকে। কোডে নিজেকে height balance করতে দেখলে বুঝবে ভুল tree লিখছ।
+
+**৫. Duplicate key-এর সিদ্ধান্ত না নেওয়া।**
+একই key দুইবার insert হলে কী হবে? উপরের কোডে দ্বিতীয়টা পাশে বসে যাবে, search প্রথমটাই পাবে। Set হিসেবে চাইলে insert-এর আগে `search` দিয়ে চেক করো; count দরকার হলে key-র সাথে count জমাও।
 
 ## Animation Spec
 
-> **Animation Spec: Split & Grow**
+> **Animation Spec: Split That Climbs**
 >
-> - **দৃশ্য:** 2-3 tree; একটা full (3-key) node-এ insert করলে split হয়ে মাঝের key উপরে ওঠে।
-> - **ইনপুট:** insert sequence।
-> - **ধাপ:** node overflow, তারপর split animation; height সমানভাবে বাড়ছে দেখা।
-> - **লক্ষ্য:** rotation ছাড়াই ভারসাম্য, শুধু split/merge দিয়ে।
+> - **দৃশ্য:** 2-3 tree; leaf-এ নতুন key বসছে, ভরে গেলে node কাঁপছে, তারপর median উপরে ভেসে উঠছে।
+> - **ইনপুট:** insert sequence (preset: উপরের ৮টা); চাইলে sorted preset, যাতে 1 থেকে 10 ঢোকালেও গাছ লাঠি না হয়।
+> - **ধাপ:** key leaf-এ বসা (সবুজ), overflow হলে node লাল, split-এ median উপরে ওঠা (হলুদ), root split হলে পুরো গাছ এক স্তর নিচে নামার ইফেক্ট।
+> - **নিয়ন্ত্রণ:** speed, step, reset; সাথে "sorted mode" টগল, যাতে sorted input-এও গাছ balanced থাকা চোখে দেখা যায়।
+> - **লক্ষ্য:** ভারসাম্য মানে rotation নয়, split; আর height বাড়ে শুধু root ভাঙলে।
 
 ## অনুশীলন
 
-- 1 থেকে 7 পরপর insert করলে height কীভাবে বাড়ে ভাবো (উপরের কোড চালিয়ে মিলিয়ে দেখো)।
+- **সহজ ১:** হাতে হাতে [1, 2, 3, 4, 5, 6, 7] insert করে গাছ এঁকে ফেলো। তারপর উপরের কোডে sequence বদলে চালিয়ে মিলিয়ে দেখো। হিন্ট: 3 আর 7 insert-এই split ঘটে।
+- **সহজ ২:** `min()` আর `max()` লেখো। হিন্ট: সবসময় leftmost child-এ নামতে থাকলে কী পাওয়া যায়? Complexity কত হবে ভেবে বলো।
+- **মাঝারি ১:** In-order traversal লেখো, যাতে সব key sorted ক্রমে print হয়। হিন্ট: 3-node-র জন্য ক্রমটা: c0 → k1 → c1 → k2 → c2।
+- **মাঝারি ২:** একটা validator লেখো: গাছটা সত্যিই 2-3 কিনা চেক করে (প্রতি node-এ keys = children - 1, keys sorted, সব leaf একই গভীরে)। হিন্ট: LeetCode 98 (Validate Binary Search Tree)-র সেই recursive ধারণা, শুধু এখানে depth-ও মেলাতে হবে।
+- **কঠিন:** `delete` implement করো, borrow আর merge দুটোই সহ। হিন্ট: key internal node-এ থাকলে predecessor দিয়ে বদলে দাও (LeetCode 450-র কায়দা), তারপর leaf-এর underflow ঠিক করো; underflow উপরে উঠলে root খাটো হতে পারে।
+
+## সারসংক্ষেপ
+
+- 2-3 tree = B-tree-র order 3 রূপ: node-এ ১-২টা key, ২-৩টা child, সব leaf সবসময় একই স্তরে।
+- Insert leaf-এ, overflow হলে split, median উপরে; split উপরের দিকে ছড়াতে পারে।
+- Height বাড়ে একমাত্র root split-এ, তাই গাছ কখনো হেলে পড়তে পারে না।
+- Search, insert, delete সব guaranteed O(log n), sorted input-এও।
+- AVL rotation দিয়ে ভারসাম্য ধরে, 2-3 tree split/merge দিয়ে। পরের পাতায় দেখবে [B+ tree](./b-plus-tree.mdx) এই একই ধারণাকে disk-এর রাজা বানিয়ে ফেলেছে।
