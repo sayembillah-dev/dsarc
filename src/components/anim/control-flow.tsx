@@ -9,7 +9,7 @@ const BASE_MS = 1150;
 
 /* ------------------------------ player ------------------------------ */
 
-function useStepPlayer(total: number) {
+export function useStepPlayer(total: number) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const timer = useRef<number | null>(null);
@@ -39,7 +39,7 @@ function useStepPlayer(total: number) {
 
 /* ------------------------------ atoms ------------------------------ */
 
-function C({ t }: { t: string }) {
+export function C({ t }: { t: string }) {
   return (
     <code className="rounded bg-zinc-200/70 px-1 py-0.5 font-mono text-[12px] text-zinc-800">
       {t}
@@ -73,7 +73,7 @@ function EvalBubble({ expr, res }: { expr: string; res: boolean | null }) {
   );
 }
 
-function Line({
+export function Line({
   n,
   code,
   cursorId,
@@ -157,7 +157,7 @@ function Console({ lines }: { lines: string[] }) {
   );
 }
 
-function Stage({
+export function Stage({
   title,
   step,
   total,
