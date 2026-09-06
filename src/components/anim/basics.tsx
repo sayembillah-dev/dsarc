@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 import { C, Line, Stage, useStepPlayer } from './control-flow';
 
 /* ------------------------------ functions ------------------------------ */
@@ -247,7 +248,7 @@ export function ArrayOpsAnim() {
   );
 }
 
-/* ------------------------------ OOP ------------------------------ */
+/* ------------------------------ OOP (blueprint → object) ------------------------------ */
 
 const OOP_CODE = [
   'class Student {',
@@ -263,56 +264,196 @@ const OOP_CODE = [
   'console.log(s1.introduce());',
 ];
 
-// 0 idle · 1 new · 2 ctor · 3 this.name · 4 this.roll · 5 s1 ready · 6 call · 7 enter method · 8 return · 9 back · 10 print
-const OOP_CURSOR = [-1, 9, 1, 2, 3, 9, 10, 5, 6, 10, -1];
-const OOP_TOTAL = 10;
+// cursor কখনো পেছনে যায় না: উপরে থেকে নিচে এক দিকে।
+// call অন্য লাইন চালু করলে সেই লাইন amber হলোয় জ্বলে (running), cursor ডাকের জায়গায়ই থাকে।
+// 0 idle · 1 class · 2 ctor · 3 this.name · 4 this.roll · 5 method · 6 return line ·
+// 7 class শেষ · 8 new (ctor চলছে) · 9 name বসল · 10 roll বসল · 11 introduce() ডাক · 12 return · 13 print
+const OOP_CURSOR = [-1, 0, 1, 2, 3, 5, 6, 8, 9, 9, 9, 10, 10, 10];
+const OOP_TOTAL = 13;
 
 const OOP_CAPTIONS: ReactNode[] = [
   <>
-    প্লে চাপলে <C t="new Student(...)" /> থেকে object তৈরি হয়ে method চালানো পর্যন্ত দেখো।
+    প্লে চাপলে দেখো class (ছাঁচ) থেকে কীভাবে আসল object বানে, আর তার method চলে।
   </>,
   <>
-    <C t='new Student("Rahim", 5)' /> ডাকা হলো।
+    <C t="class Student" /> মানে একটা ছাঁচ তৈরি হলো। এখনো কোনো object নেই।
   </>,
   <>
-    আগে <C t="constructor" /> চলে: <C t='name = "Rahim", roll = 5' />।
+    <C t="constructor" /> হলো object বানানোর নিয়ম: <C t="name" /> আর <C t="roll" /> নিয়ে বসাবে।{' '}
+    <C t="new" /> ডাকলেই চলবে।
   </>,
   <>
-    <C t='this.name = "Rahim"' /> বসল।
+    <C t="this" /> মানে "যে object বানছে ঠিক সেটা"। তার <C t="name" /> বসবে।
   </>,
   <>
-    <C t="this.roll = 5" /> বসল। object প্রস্তুত।
+    একইভাবে <C t="roll" /> বসবে। বানানোর নিয়ম লেখা শেষ।
   </>,
   <>
-    <C t="s1" /> এখন পূর্ণাঙ্গ object।
+    <C t="introduce()" /> হলো method, মানে ভবিষ্যের object-গুলোর নিজের কাজ।
   </>,
   <>
-    <C t="s1.introduce()" /> ডাকা হলো।
+    নিজের <C t="name" /> আর <C t="roll" /> দিয়ে একটা বাক্য <C t="return" /> করবে।
   </>,
   <>
-    method-এর ভেতরে ঢুকল।
+    ছাঁচ সম্পূর্ণ! মনে রাখো: এখনো একটাও object নেই, শুধু নিয়ম লেখা আছে।
   </>,
   <>
-    <C t="return" /> হবে: <C t="আমি Rahim, roll 5" />।
+    <C t='new Student("Rahim", 5)' /> ডাকতেই constructor চলে গেল (amber লাইন), <C t="s1" /> বানছে।
   </>,
   <>
-    ফলাফল ফিরে এলো ডাকার জায়গায়।
+    <C t='this.name = "Rahim"' /> বসে গেল <C t="s1" />-এ।
   </>,
   <>
-    কনসোলে <C t="আমি Rahim, roll 5" />। class থেকে object, object থেকে কাজ।
+    <C t="this.roll = 5" /> বসল। <C t="s1" /> এখন পূর্ণাঙ্গ object!
+  </>,
+  <>
+    <C t="s1.introduce()" /> ডাকল। method-টা <C t="s1" />-এর নিজের ডেটা ব্যবহার করবে।
+  </>,
+  <>
+    এখানে <C t="this" /> মানে <C t="s1" />, তাই বাক্যটা বানল তার নিজের name আর roll দিয়ে।
+  </>,
+  <>
+    কনসোলে <C t="আমি Rahim, roll 5" />। একটা ছাঁচ থেকে যত খুশি object বানানো যায়!
   </>,
 ];
 
+function oopRunning(step: number, i: number): boolean {
+  if (step === 8) return i === 1;
+  if (step === 9) return i === 2;
+  if (step === 10) return i === 3;
+  if (step === 11) return i === 5;
+  if (step === 12) return i === 6;
+  return false;
+}
+
+function OopChip({
+  t,
+  on,
+  running,
+}: {
+  t: string;
+  on: boolean;
+  running?: boolean;
+}) {
+  return (
+    <span
+      className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors duration-500 ${
+        running
+          ? 'border-amber-300 bg-amber-50 text-amber-700'
+          : on
+            ? 'border-zinc-300 bg-zinc-50 text-zinc-700'
+            : 'border-dashed border-zinc-200 text-zinc-300'
+      }`}
+    >
+      {t}
+    </span>
+  );
+}
+
+function OopViz({ step }: { step: number }) {
+  if (step < 1) {
+    return (
+      <div className="flex h-[132px] items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 text-center text-[13px] text-zinc-400">
+        আগে ছাঁচ (class) বানবে, তারপর সেখান থেকে আসল object
+      </div>
+    );
+  }
+  const ctorBusy = step >= 8 && step <= 10;
+  const methodBusy = step === 11 || step === 12;
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-4">
+      <div className="flex min-h-[100px] flex-col items-center justify-center gap-3 sm:flex-row sm:gap-5">
+        {/* ছাঁচ */}
+        <div
+          className={`w-full max-w-56 rounded-xl border-2 bg-white p-3 transition-colors duration-500 sm:w-52 ${
+            step >= 7 ? 'border-zinc-400' : 'border-dashed border-zinc-300'
+          }`}
+        >
+          <div className="font-mono text-[13px] font-semibold text-zinc-800">class Student</div>
+          <div className="mt-0.5 text-[11px] text-zinc-400">ছাঁচ (blueprint)</div>
+          <div className="mt-2 flex flex-col gap-1.5">
+            <OopChip t="constructor(name, roll)" on={step >= 2} running={ctorBusy} />
+            <OopChip t="introduce()" on={step >= 5} running={methodBusy} />
+          </div>
+        </div>
+
+        {/* new এর তীর */}
+        <AnimatePresence>
+          {step >= 8 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+              className="flex flex-col items-center gap-0.5 text-emerald-600"
+            >
+              <ArrowRight className="hidden size-5 sm:block" />
+              <ArrowDown className="size-5 sm:hidden" />
+              <span className="font-mono text-[11px] font-semibold">new</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* object */}
+        <AnimatePresence>
+          {step >= 8 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7, x: -20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+              className="w-full max-w-56 rounded-xl border-2 border-emerald-300 bg-white p-3 shadow-sm sm:w-52"
+            >
+              <div className="font-mono text-[13px] font-semibold text-emerald-700">
+                s1: Student
+              </div>
+              <div className="mt-0.5 text-[11px] text-zinc-400">আসল object</div>
+              <div className="mt-2 flex flex-col gap-1.5 font-mono text-[11px]">
+                <div className="flex items-center justify-between rounded-md bg-zinc-50 px-2 py-1">
+                  <span className="text-zinc-500">name</span>
+                  <span
+                    className={`transition-colors duration-500 ${step >= 9 ? 'font-semibold text-zinc-800' : 'text-zinc-300'}`}
+                  >
+                    {step >= 9 ? '"Rahim"' : '?'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-zinc-50 px-2 py-1">
+                  <span className="text-zinc-500">roll</span>
+                  <span
+                    className={`transition-colors duration-500 ${step >= 10 ? 'font-semibold text-zinc-800' : 'text-zinc-300'}`}
+                  >
+                    {step >= 10 ? '5' : '?'}
+                  </span>
+                </div>
+                <OopChip t="introduce()" on running={methodBusy} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* return মান */}
+      <AnimatePresence>
+        {step >= 12 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+            className="mt-3 flex justify-center"
+          >
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[11px] font-medium text-emerald-700">
+              return "আমি Rahim, roll 5"
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function OopAnim() {
   const { step, playing, toggle, reset, done } = useStepPlayer(OOP_TOTAL);
-  const ctor = step >= 2 && step < 5 ? { expr: 'name = "Rahim", roll = 5', res: null } : undefined;
-  const s1 =
-    step >= 5
-      ? { expr: 's1 = Student { name: "Rahim", roll: 5 }', res: true }
-      : step >= 1
-        ? { expr: 'new Student("Rahim", 5)', res: null }
-        : undefined;
-  const ret = step >= 8 ? { expr: 'আমি Rahim, roll 5', res: true } : undefined;
   return (
     <Stage
       title="class থেকে object"
@@ -323,7 +464,8 @@ export function OopAnim() {
       onToggle={toggle}
       onReset={reset}
       caption={OOP_CAPTIONS[step]}
-      consoleLines={step >= 10 ? ['আমি Rahim, roll 5'] : []}
+      consoleLines={step >= 13 ? ['আমি Rahim, roll 5'] : []}
+      viz={<OopViz step={step} />}
       lines={OOP_CODE.map((code, i) => (
         <Line
           key={i}
@@ -331,7 +473,8 @@ export function OopAnim() {
           code={code}
           cursorId="oop-cursor"
           active={OOP_CURSOR[step] === i}
-          bubble={i === 1 ? ctor : i === 9 ? s1 : i === 6 ? ret : undefined}
+          running={oopRunning(step, i)}
+          taken={step >= 13 && i === 10}
         />
       ))}
     />

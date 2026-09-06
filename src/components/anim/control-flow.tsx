@@ -82,6 +82,7 @@ export function Line({
   taken,
   bubble,
   tag,
+  running,
 }: {
   n: number;
   code: string;
@@ -89,6 +90,7 @@ export function Line({
   active?: boolean;
   dim?: boolean;
   taken?: boolean;
+  running?: boolean;
   bubble?: { expr: string; res: boolean | null };
   tag?: ReactNode;
 }) {
@@ -96,7 +98,7 @@ export function Line({
     <li
       className={`relative flex h-9 items-center gap-3 rounded-lg px-2 transition-all duration-500 ${
         dim ? 'opacity-35' : 'opacity-100'
-      } ${taken ? 'bg-emerald-50' : ''}`}
+      } ${taken ? 'bg-emerald-50' : ''} ${running ? 'bg-amber-50 ring-1 ring-amber-200' : ''}`}
     >
       {active && (
         <motion.span
@@ -110,6 +112,13 @@ export function Line({
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
           className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-emerald-500"
+        />
+      )}
+      {running && (
+        <motion.span
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-amber-400"
         />
       )}
       <span className="relative z-10 w-5 shrink-0 select-none text-right text-xs text-zinc-300">
