@@ -1,62 +1,318 @@
 ---
-title: "সময় নাকি মেমরি: Time vs Space"
-description: Time Complexity আর Space Complexity কী, আর দুটোর মধ্যে trade-off কীভাবে কাজ করে।
+title: "Time বনাম Space: খরচের আদানপ্রদান"
+description: "Time complexity আর space complexity কী কী মাপে, একটা কমালে অন্যটা কেন বাড়ে, আর ধাপ আর মেমরি-কাউন্টার দিয়ে নিজে trade-off মাপা।"
 ---
+
+আগের পাতায় দেখেছি [সময়ের খরচ](./why-complexity.mdx) কীভাবে মাপি। কিন্তু algorithm-এর বিল একটাই নয়: পাশাপাশি আছে জায়গার খরচ। আর মজার ব্যাপার হলো, একটা কমাতে গেলে অন্যটা প্রায়ই বাড়িয়ে দিতে হয়।
 
 ## কী শিখব
 
-- সময় বনাম মেমরি, দুই ধরনের খরচ
+- Time complexity আর space complexity ঠিক কী কী মাপে
+- একই সমস্যার দুই সমাধান: একটা সময় বাঁচায়, আরেকটা জায়গা বাঁচায়
+- ধাপ-কাউন্টার আর মেমরি-কাউন্টার দিয়ে নিজে trade-off মাপা
+- auxiliary space আর total space-এর পার্থক্য, আর input-এর জায়গা কার বিলে যায়
+- recursion-এর সেই লুকানো মেমরি-বিল, যেটা প্রায় সবাই মিস করে
 
 ## ধারণা
 
-ধরো, একটা array-তে duplicate আছে কি না বের করতে হবে। তুমি দুইভাবে লিখতে পারো: একদম কম মেমরিতে, কিন্তু একটু ধীরে। অথবা একটু বাড়তি মেমরি নিয়ে, অনেক দ্রুত।
+ধরো, তোমাকে জিজ্ঞেস করলাম: ৭ × ৮ কত? মুখস্থ থাকলে পলকে বলবে ৫৬। না থাকলে খাতা বের করে ৮-কে সাতবার যোগ করে বের করতে হবে। উত্তর দুই ক্ষেত্রেই এক, কিন্তু খরচের ধরন আলাদা: মুখস্থ রাখাটা মাথায় জায়গা খরচ করে সময় বাঁচায়, প্রতিবার হিসাব করাটা জায়গা বাঁচিয়ে সময় খরচ করে।
 
-এই দুই ধরনের খরচেরই আলাদা নাম আছে:
+Algorithm-এর জগতেও এই একই আদানপ্রদান। দুই ধরনের খরচের দুইটা নাম আছে:
 
-- **Time Complexity**: code চালাতে কত ধাপ/অপারেশন লাগে (গতির খরচ)
-- **Space Complexity**: চলার সময় কত অতিরিক্ত মেমরি লাগে (জায়গার খরচ)
+- **Time complexity:** input-এর সাইজ n বাড়লে ধাপের সংখ্যা কীভাবে বাড়ে (আগের পাতার গল্প)
+- **Space complexity:** input-এর সাইজ n বাড়লে **বাড়তি** মেমরি কীভাবে বাড়ে
 
-এখানেই আসল জিনিস: দুটোর মধ্যে প্রায়ই **trade-off** থাকে। বেশি মেমরি খরচ করে গতি বাড়ানো যায়, যেমন cache বা Set ব্যবহার করে। নিচের code-টা দেখলেই পরিষ্কার হবে।
+দুটোই একই ভাষায় লেখা হয় (Big-O), কারণ দুটোই "কত খরচ" প্রশ্নের উত্তর, শুধু মুদ্রা আলাদা।
 
-## কোড উদাহরণ
+একটা আসল সমস্যা নিই: একটা array-তে duplicate আছে কিনা। দুইজন দুইভাবে লিখল। প্রথমজন nested loop দিয়ে প্রতি জোড়া তুলনা করল: মেমরি প্রায় শূন্য, কিন্তু সময় n²-এর মতো বাড়ে। দ্বিতীয়জন একটা [Set](../hash-tables/hash-table-intro.mdx)-এ দেখা সংখ্যাগুলো জমিয়ে রাখল: সময় n-এর মতো, কিন্তু সেই Set-টা জায়গা খায় n-এর মতো। একই উত্তর, ভিন্ন বিল। কোনটা নেবে সেটা ঠিক করার আগে বিল দুটো হাতে হাতে দেখি।
 
-```js
-// কম space, কিন্তু নেস্টেড loop, তাই বেশি time (O(n²))
-function hasDupSlow(arr) {
-  for (let i = 0; i < arr.length; i++)
-    for (let j = i + 1; j < arr.length; j++)
-      if (arr[i] === arr[j]) return true;
-  return false;              // Space: O(1), Time: O(n²)
-}
+## ধাপে ধাপে: একই array-তে দুই পদ্ধতি
 
-// বেশি space (Set), কিন্তু কম time (O(n))
-function hasDupFast(arr) {
-  const seen = new Set();    // অতিরিক্ত মেমরি
-  for (const x of arr) {
-    if (seen.has(x)) return true;
-    seen.add(x);
-  }
-  return false;              // Space: O(n), Time: O(n)
-}
+Array-টা ধরো: `[3, 1, 4, 1, 5]`। duplicate আছে (1 দুইবার)। প্রথমে nested loop পদ্ধতি: প্রতিটা উপাদানকে তার ডানের সবার সাথে তুলনা করি।
 
-console.log(hasDupSlow([1, 2, 3, 2])); // true
-console.log(hasDupFast([1, 2, 3, 2])); // true
+| ধাপ | i | j | তুলনা | মিলল? | বাড়তি ঘর |
+|-----|---|---|-------|-------|-----------|
+| 1 | 0 | 1 | 3 বনাম 1 | না | 0 |
+| 2 | 0 | 2 | 3 বনাম 4 | না | 0 |
+| 3 | 0 | 3 | 3 বনাম 1 | না | 0 |
+| 4 | 0 | 4 | 3 বনাম 5 | না | 0 |
+| 5 | 1 | 2 | 1 বনাম 4 | না | 0 |
+| 6 | 1 | 3 | 1 বনাম 1 | হ্যাঁ, থামো | 0 |
+
+মোট ৬ ধাপ, বাড়তি মেমরি ০ ঘর (শুধু i আর j নামের দুইটা ভেরিয়েবল)।
+
+এবার Set পদ্ধতি: একে একে পড়ি, দেখা হয়ে গেছে কিনা জিজ্ঞেস করি, না হলে Set-এ জমা করি।
+
+| ধাপ | হাতে | Set-এ আগে থেকে আছে? | Set এখন | বাড়তি ঘর |
+|-----|------|---------------------|---------|-----------|
+| 1 | 3 | না | {3} | 1 |
+| 2 | 1 | না | {3, 1} | 2 |
+| 3 | 4 | না | {3, 1, 4} | 3 |
+| 4 | 1 | হ্যাঁ, থামো | {3, 1, 4} | 3 |
+
+মোট ৪ ধাপ, কিন্তু বাড়তি ৩ ঘর মেমরি দখলে রইল।
+
+ছোট চিত্রটা এমন:
+
+```
+nested loop:   ধাপ ######        ঘর (প্রায় শূন্য)
+Set:           ধাপ ####          ঘর ###
 ```
 
-## কোড ব্রেকডাউন
+এই ক্ষুদে input-এ ফারক তুচ্ছ (৬ বনাম ৪)। আসল নাটকটা ট্রেন্ডে। ধরো duplicate একদম নেই, অর্থাৎ worst case: nested পদ্ধতিকে তখন সব জোড়া দেখতেই হবে, n-টা উপাদানে জোড়া প্রায় n²/২-টা। Set পদ্ধতি ঘুরবে ঠিক n বার, কিন্তু তার Set-টাও ফুলে যাবে n-টা ঘরে:
 
-- প্রথমটা মেমরি বাঁচায়, কিন্তু ধীর।
-- দ্বিতীয়টা Set রাখে বলে মেমরি বেশি খায়, কিন্তু অনেক দ্রুত। এটাই **time-space trade-off**।
+| n | nested ধাপ | nested ঘর | Set ধাপ | Set ঘর |
+|------|----------|-----------|---------|--------|
+| 10 | 45 | 0 | 10 | 10 |
+| 100 | 4950 | 0 | 100 | 100 |
+| 1000 | 499500 | 0 | 1000 | 1000 |
+
+এক পদ্ধতির ধাপ বিস্ফোরিত হচ্ছে, অন্য পদ্ধতির ঘর রৈখিক হারে ফুলছে। "কোনটা ভালো" ভুল প্রশ্ন। ঠিক প্রশ্ন হলো: তোমার কাছে কোন সীমাবদ্ধতাটা বেশি শক্ত, সময় না মেমরি?
+
+## কোড: দুই পদ্ধতির বিল নিজে গুনি
+
+আগের পাতার মতোই ধাপ-কাউন্টার, সাথে এবার মেমরি-কাউন্টারও: Set-এ সর্বোচ্চ কত ঘর জমা ছিল।
+
+```js
+// পদ্ধতি ১: nested loop, মেমরি প্রায় শূন্য কিন্তু ধাপ বেশি
+function hasDuplicateSlow(arr) {
+  let steps = 0;
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = i + 1; j < arr.length; j++) {
+      steps++;                      // প্রতিটা জোড়া-তুলনা = ১ ধাপ
+      if (arr[i] === arr[j]) return { found: true, steps, extraCells: 0 };
+    }
+  }
+  return { found: false, steps, extraCells: 0 };
+}
+
+// পদ্ধতি ২: Set, ধাপ কম কিন্তু জমা ঘর বাড়ে
+function hasDuplicateFast(arr) {
+  let steps = 0;
+  let maxCells = 0;                 // Set-এ সর্বোচ্চ কত ঘর জমা ছিল
+  const seen = new Set();
+  for (const x of arr) {
+    steps++;                        // প্রতিটা lookup = ১ ধাপ
+    if (seen.has(x)) return { found: true, steps, extraCells: maxCells };
+    seen.add(x);
+    if (seen.size > maxCells) maxCells = seen.size;
+  }
+  return { found: false, steps, extraCells: maxCells };
+}
+
+// ছোট উদাহরণটা আগে
+const demo = [3, 1, 4, 1, 5];
+console.log("slow:", JSON.stringify(hasDuplicateSlow(demo)));
+console.log("fast:", JSON.stringify(hasDuplicateFast(demo)));
+
+// এবার বড় input-এ লড়াই; ইচ্ছে করে duplicate-বিহীন array, মানে worst case
+const sizes = [10, 100, 1000];
+console.log("n".padEnd(8) + "slow-steps".padEnd(13) + "slow-cells".padEnd(12) + "fast-steps".padEnd(12) + "fast-cells");
+for (const n of sizes) {
+  const arr = Array.from({ length: n }, (_, i) => i);
+  const slow = hasDuplicateSlow(arr);
+  const fast = hasDuplicateFast(arr);
+  console.log(String(n).padEnd(8) + String(slow.steps).padEnd(13) + String(slow.extraCells).padEnd(12) + String(fast.steps).padEnd(12) + String(fast.extraCells));
+}
+```
+
+Output:
+
+```
+slow: {"found":true,"steps":6,"extraCells":0}
+fast: {"found":true,"steps":4,"extraCells":3}
+n       slow-steps   slow-cells  fast-steps  fast-cells
+10      45           0           10          10
+100     4950         0           100         100
+1000    499500       0           1000        1000
+```
+
+n দশগুণ হলেই দেখো কী হয়: slow-এর ধাপ প্রায় **শতগুণ** (45 → 4950 → 499500), fast-এর ধাপ ঠিক দশগুণ। বিনিময়ে fast-এর ঘরও দশগুণ দশগুণ ফুলছে। এই ছবিটাই time-space trade-off: এক মুদ্রার বিল কমালে অন্য মুদ্রার বিল বাড়ে।
+
+## ভ্যারিয়েন্ট ১: মনে রাখা মানেই সময় কেনা (memoization)
+
+Trade-off-এর সবচেয়ে নাটকীয় রূপটা [recursion](../recursion/recursion-intro.mdx)-এ দেখা যায়। Fibonacci-র প্রতিটা সংখ্যা আগের দুইটার যোগফল। সোজাসুজি recursive লিখলে একই হিসাব বারবার হয়; আগের ফল একটা Map-এ মনে রাখলে (এটাই [memoization](../recursion/memoization.mdx)) হিসাব প্রায় ভ্যানিশ করে যায়:
+
+```js
+let naiveCalls = 0;
+function fibNaive(n) {
+  naiveCalls++;
+  if (n <= 1) return n;
+  return fibNaive(n - 1) + fibNaive(n - 2);   // একই n বারবার হিসাব হচ্ছে
+}
+
+const memo = new Map();
+let memoCalls = 0;
+function fibMemo(n) {
+  memoCalls++;
+  if (n <= 1) return n;
+  if (memo.has(n)) return memo.get(n);        // আগে করেছি, ফলটাই ফেরত
+  const value = fibMemo(n - 1) + fibMemo(n - 2);
+  memo.set(n, value);                         // জমিয়ে রাখি
+  return value;
+}
+
+console.log("fibNaive(20) =", fibNaive(20), "| মোট call:", naiveCalls);
+console.log("fibMemo(20)  =", fibMemo(20), "| মোট call:", memoCalls);
+console.log("memo-তে জমা ঘর:", memo.size);
+```
+
+Output:
+
+```
+fibNaive(20) = 6765 | মোট call: 21891
+fibMemo(20)  = 6765 | মোট call: 39
+memo-তে জমা ঘর: 19
+```
+
+মাত্র ১৯টা ঘর জমা রেখে call-এর সংখ্যা ২১ হাজার থেকে নেমে এল ৩৯-এ। n বড় হলে এই ফারক আকাশছোঁয়া: fibNaive-এর সময় O(2ⁿ)-এর দিকে যায়, fibMemo-এর O(n)। দামটা দিলাম মেমরি দিয়ে: O(n) ঘর। এটাই trade-off-এর রাজা।
+
+## ভ্যারিয়েন্ট ২: recursion-এর লুকানো বিল (call stack)
+
+এবার একটা সূক্ষ্ম ব্যাপার। নিচের code-এ কোনো Set, Map বা array নেই:
+
+```js
+let maxDepth = 0;
+function factorial(n, depth = 1) {
+  if (depth > maxDepth) maxDepth = depth;   // কত গভীরে নামলাম
+  if (n <= 1) return 1;
+  return n * factorial(n - 1, depth + 1);   // প্রতিটা call stack-এ এক ঘর জায়গা নেয়
+}
+
+console.log("factorial(10) =", factorial(10), "| সর্বোচ্চ গভীরতা:", maxDepth);
+```
+
+Output:
+
+```
+factorial(10) = 3628800 | সর্বোচ্চ গভীরতা: 10
+```
+
+তাহলে কি space O(1)? **না।** প্রতিটা recursive call-এর তথ্য (কোন n-এ আছি, কোথায় ফিরতে হবে) [call stack](../recursion/call-stack.mdx)-এ একটা করে frame-এ জমা থাকে। factorial(10) চলার সবচেয়ে গভীর মুহূর্তে stack-এ ১০টা frame। অর্থাৎ বাড়তি জায়গা O(n), যদিও code-এ একটাও অতিরিক্ত ভেরিয়েবল চোখে পড়ে না। একই কাজ iterative loop দিয়ে করলে সত্যিই O(1) হতো। interview-তে "তোমার recursion-এর space কত?" প্রশ্নটা এই ফাঁদেই ফেলার জন্য।
+
+## ভ্যারিয়েন্ট ৩: in-place, জায়গা না কেনার উপায়
+
+কখনও কখনও উত্তরটা input-এর ভেতরেই গেঁথে দেওয়া যায়, তখন বাড়তি জায়গা প্রায় শূন্য থাকে। array উল্টে দেওয়ার দুই পদ্ধতি দেখো:
+
+```js
+function reverseCopy(arr) {
+  const out = [];
+  for (let i = arr.length - 1; i >= 0; i--) out.push(arr[i]);
+  return out;                     // নতুন array, O(n) বাড়তি জায়গা
+}
+
+function reverseInPlace(arr) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  while (lo < hi) {
+    const t = arr[lo];            // শুধু একটা temp ভেরিয়েবল
+    arr[lo] = arr[hi];
+    arr[hi] = t;
+    lo++;
+    hi--;
+  }
+  return arr;                     // একই array-তেই, O(1) বাড়তি
+}
+
+const a = [1, 2, 3, 4, 5];
+console.log("copy দিয়ে:", reverseCopy(a), "| মূল অক্ষত:", a);
+console.log("in-place:", reverseInPlace(a), "| মূলটাও উল্টে গেল:", a);
+```
+
+Output:
+
+```
+copy দিয়ে: [ 5, 4, 3, 2, 1 ] | মূল অক্ষত: [ 1, 2, 3, 4, 5 ]
+in-place: [ 5, 4, 3, 2, 1 ] | মূলটাও উল্টে গেল: [ 5, 4, 3, 2, 1 ]
+```
+
+দ্বিতীয় output-এর শেষ অংশটা লক্ষ করো: in-place পদ্ধতিতে caller-এর array-টাই বদলে গেল। জায়গা বাঁচল ঠিকই, কিন্তু এই দামটা (input নষ্ট হওয়া) আগে বলে না নিলে bug-এর খোরাক। এই ধরনের আরও কাজ আছে [Array Operations](../arrays-strings/array-operations.mdx)-এ।
+
+## কোড ব্রেকডাউন: মূল experiment-টা লাইনে লাইনে
+
+1. `function hasDuplicateSlow(arr)` : প্রথম পদ্ধতি, কোনো বাড়তি ডেটা স্ট্রাকচার নেই।
+2. `for (let j = i + 1; ...)` : j শুরু হয় i-এর ঠিক পরের ঘর থেকে। এতে একই জোড়া দুইবার তুলনা হয় না, কোনো উপাদান নিজের সাথেও তুলনা হয় না। কাজ প্রায় অর্ধেক কমে, তবু মোট জোড়া প্রায় n²/২, মানে পরিবার O(n²)-ই থাকে।
+3. `steps++` ভেতরের লুপে : প্রতিটা জোড়া-তুলনা এক ধাপ।
+4. `return { found: true, steps, extraCells: 0 }` : পেয়ে গেলে সাথে সাথে থামো। `extraCells: 0` কারণ এই পদ্ধতি i, j ছাড়া কিছুই জমায় না, input যত বড়ই হোক।
+5. `const seen = new Set()` : দ্বিতীয় পদ্ধতির "স্মৃতি"। দেখা সংখ্যাগুলো এখানে জমে।
+6. `if (seen.has(x))` : আগে দেখেছি কিনা জিজ্ঞেস। Set-এর lookup গড়ে O(1), এই গুণের জন্যই পুরো জিনিসটা দ্রুত।
+7. `seen.add(x)` : না দেখে থাকলে জমিয়ে রাখো। এই লাইনেই জায়গার খরচ।
+8. `if (seen.size > maxCells) maxCells = seen.size` : আমাদের মেমরি-কাউন্টার। Set সবচেয়ে ফুলে কত ঘরে পৌঁছেছিল, সেটা ধরে রাখি।
+9. `Array.from({ length: n }, (_, i) => i)` : [0, 1, ..., n-1], ইচ্ছে করে duplicate-বিহীন। মানে slow পদ্ধতি পুরো শেষ পর্যন্ত ঘুরতে বাধ্য, worst case।
+10. `padEnd(...)` গুলো শুধু টেবিল সাজানোর জন্য, algorithm-এর অংশ নয়।
+
+## Complexity: দুই পদ্ধতির time আর space, দুটোই গেঁথে দেখি
+
+**Slow-এর time: O(n²)।** বাইরের লুপ n বার ঘোরে। i = 0-এ ভেতরে n-1 বার, i = 1-এ n-2 বার, ... শেষে ০ বার। মোট:
+
+```
+(n-1) + (n-2) + ... + 1 + 0 = n(n-1)/2 ≈ n²/2
+```
+
+n²/২-কেও আমরা O(n²) পরিবারে রাখি, কারণ বৃদ্ধির হার n²-ই, ভাগের ২ শুধু ধ্রুবক। output-এও দেখেছি: n দশগুণে ধাপ প্রায় শতগুণ, ঠিক n²-এর আচরণ।
+
+**Slow-এর space: O(1)।** বাড়তি জমে শুধু i আর j। input এক লক্ষের হলেও এই দুইটাই থাকে।
+
+**Fast-এর time: O(n)।** লুপ ঘোরে n বার, প্রতি ঘুরে একটা lookup আর সর্বোচ্চ একটা add, দুটোই গড়ে O(1)। মোট n-এর সমানুপাতিক।
+
+**Fast-এর space: O(n)।** duplicate না থাকলে Set-এ সব n-টা উপাদান জমে।
+
+**কোন জায়গাটা গোনায় ঢোকে?** দুইটা ধারণা আলাদা করো:
+
+- **Total space:** input-এর জায়গা + বাড়তি জায়গা।
+- **Auxiliary space:** শুধু বাড়তিটা, মানে algorithm নিজে যা নতুন করে জমায়।
+
+আমরা যখন "space complexity" বলি, সাধারণত auxiliary-টাই বোঝি। hasDuplicateSlow-এর total space O(n) (input-টা তো জায়গা খাচ্ছেই), কিন্তু auxiliary O(1)। input-এর জায়গা algorithm-এর বিলে ধরা হয় না, সেটা সমস্যারই অংশ। তবে সতর্কতা: যদি নতুন করে output বানাতে হয় (যেমন `reverseCopy`-র `out`), সেটা auxiliary-তেই ঢুকে। কেউ জিজ্ঞেস করলে স্পষ্ট করে বলো তুমি কোন অর্থে বলছ, দ্বিধা কেটে যাবে। ধাপ গোনার পুরো পদ্ধতিটা আছে [How to Calculate](./how-to-calculate.mdx)-এ।
+
+শেষ টেবিল:
+
+| পদ্ধতি | time | space (auxiliary) |
+|--------|------|-------------------|
+| nested loop | O(n²) | O(1) |
+| Set | O(n) | O(n) |
+
+কোনটা নেবে? মেমরি শক্ত (পুরোনো ডিভাইস, embedded system) হলে slow-ও চলে, যদি input ছোট হয়। সময় শক্ত (real-time, বড় input) হলে Set-ই একমাত্র পথ। দুটোই শক্ত হলে ভাবতে হবে মধ্যপথ আছে কিনা, যেমন sort করে পাশাপাশি ঘর তুলনা: O(n log n) সময়, O(1) জায়গা।
+
+## সাধারণ ভুল আর edge case
+
+**১. recursion-এর stack-এর জায়গা ভুলে যাওয়া।**
+"আমি তো কোনো Set বানাইনি" বলে space O(1) দাবি করা সবচেয়ে বেশি হওয়া ভুল। factorial(n)-এ call stack n গভীরে যায়, মানে O(n)। আর fibNaive-এর space O(n) (সবচেয়ে গভীর শাখা যত নিচে), অথচ সময় O(2ⁿ)। মনে রাখো: **recursion-এর গভীরতাই তার মেমরি-বিল।**
+
+**২. input-এর জায়গাটাকে বাড়তি ধরে ফেলা (আর তার উল্টোটা)।**
+hasDuplicateSlow-এর space O(1), O(n) নয়: `arr` তো input, algorithm-এর বিলে যাবে না। আবার উল্টো দিকের ভুলও হয়: `reverseCopy`-তে নতুন array বানিয়েছি, সেটা চিনতে না পেরে O(1) বলে ফেলা। মনে রাখার নিয়ম: input ফ্রি, নতুন জিনিস ফ্রি নয়।
+
+**৩. না বলে input বদলে ফেলা।**
+`reverseInPlace` O(1) জায়গায় চলে ঠিকই, কিন্তু caller-এর হাতের array-টা উল্টে গেল। এটা বলে না দিলে, ডকুমেন্টে না লিখলে, পরে যে সেই array আসল ক্রমে আশা করবে তার জন্য তৈরি হলো একটা নিঃশব্দ bug। interview-তেও "input modify করার অনুমতি আছে?" প্রশ্নটা করাটা অর্ধেক উত্তর।
+
+**৪. hash lookup-কে পুরো ফ্রি ভাবা।**
+`has` আর `add` গড়ে O(1) ঠিক, কিন্তু সেই ধ্রুবকটা মোটামুটি ভারী: hash বের করা, collision সামলানো, মেমরি বরাদ্দ। ছোট input-এ (ধরো ২০টা উপাদান) nested loop-ও Set-কে হারিয়ে দিতে পারে। Big-O বৃদ্ধির হার বলে, ছোট নাটের গাই না।
+
+**৫. ভাবা যে trade-off সবসময় মেলে।**
+সব সমস্যার Set-জাতীয় shortcut নেই; কখনও কখনও সময় আর জায়গা দুটোই কমানো যায় না, অথবা কমানোর দরকারই নেই। আর edge case দুটো নিজে চালিয়ে দেখো: খালি array-তে দুই পদ্ধতিই ০ ধাপে "duplicate নেই" বলে দেয়, ভাঙে না; আর `[7, 7, 7]`-এর মতো input-এ দুটোই প্রথম এক-দুই ধাপেই থেমে যায়, worst case-এর কাছাকাছিও যায় না।
 
 ## Animation Spec
 
-> **Animation Spec: Time vs Space Balance**
+> **Animation Spec: খরচের দাঁড়িপাল্লা**
 >
-> - **দৃশ্য:** একটা দাঁড়িপাল্লা; এক পাল্লায় "Time", অন্যটায় "Space"।
-> - **ইনপুট:** algorithm variant নির্বাচন।
-> - **ধাপ:** variant বদলালে পাল্লা হেলবে; পাশে দুই metric-এর মান দেখাবে।
-> - **লক্ষ্য:** trade-off ধারণা।
+> - **দৃশ্য:** বামে একটা দাঁড়িপাল্লা, এক পাল্লায় "সময়", অন্যটায় "জায়গা"; ডানে [3, 1, 4, 1, 5]-এ nested আর Set পদ্ধতি পাশাপাশি চলছে, প্রতিটার কাউন্টার জ্বলছে।
+> - **ইনপুট:** array বানানোর editor, n-এর slider, আর "duplicate আছে" টগল।
+> - **ধাপ:** nested-এ প্রতি জোড়া-তুলনায় সময়-পাল্লা একটু করে নামে; Set-এ প্রতি add-এ জায়গা-পাল্লা নামে, কিন্তু সময়-পাল্লা প্রায় স্থির থাকে।
+> - **নিয়ন্ত্রণ:** speed, step, reset; "n × 10" বাটন; "recursion দেখাও" টগল চালু করলে call stack-এর স্তম্ভ ওঠানামা করে।
+> - **লক্ষ্য:** এক মুদ্রা কমালে অন্যটা বাড়ে, সেটা চোখে দেখা; আর call stack-এর লুকানো খরচটা ধরতে পারা।
 
 ## অনুশীলন
 
-- ভাবো তো: input অনেক বড় হলে উপরের দুটো version-এর মধ্যে কোনটা আগে শেষ হবে?
+- **সহজ ১:** Contains Duplicate (LeetCode 217) দুইভাবে লিখো: nested loop আর Set। দুটোতেই steps আর extraCells-এর কাউন্টার বসিয়ে নিজে verify করো। হিন্ট: এই পাতার code-টাই, কিন্তু না দেখে লিখে তারপর মিলাও।
+- **সহজ ২:** Valid Anagram (LeetCode 242): দুটো string পরস্পরের অক্ষর-বদলানি কিনা। একবার sort দিয়ে করো, আরেকবার frequency map দিয়ে; দুটোর time আর space আলাদা করে লেখো। হিন্ট: ছোট হাতের ইংরেজি অক্ষর তো ২৬টাই, তাহলে frequency map-এর জায়গা আসলে constant কিনা ভেবে দেখো।
+- **মাঝারি ১:** Single Number (LeetCode 136): সব সংখ্যা ঠিক দুইবার করে আছে, একটাই একবার; সেটা খুঁজবে। আগে Set দিয়ে O(n) জায়গায় করো, তারপর XOR দিয়ে O(1) জায়গায়। হিন্ট: a ^ a = 0, আর XOR-এ ক্রম বদলালে ফল বদলায় না।
+- **মাঝারি ২:** Reverse String (LeetCode 344): জায়গাটা in-place উল্টাও, O(1) বাড়তি জায়গায়। হিন্ট: দুই মাথা থেকে দুইটা pointer আনো, swap করে ভেতরে ঢুকতে থাকো।
+- **কঠিন:** Majority Element (LeetCode 169): n-এর অর্ধেকের বেশিবার আসা উপাদানটা খুঁজবে, শর্ত হলো O(n) সময় আর O(1) জায়গা। হিন্ট: map দিলে জায়গা O(n) হয়ে যাবে; ভাবো একটা candidate আর একটা counter রাখো, অন্য কেউ এলে counter কমে, শূন্য হলে candidate বদলে যায় (Boyer-Moore)।
+
+## সারসংক্ষেপ
+
+- Algorithm-এর বিল দুই মুদ্রায় আসে: সময় আর জায়গা। দুটোই Big-O ভাষায় মাপা হয়, দুটোই input-এর সাথে কীভাবে বাড়ে সেটাই বলে।
+- জায়গা দিয়ে সময় কেনা যায়: duplicate খোঁজা O(n²)/O(1) থেকে O(n)/O(n)-এ নেমে এল শুধু একটা Set-এর বিনিময়ে।
+- "space complexity" বলতে সাধারণত auxiliary space বোঝায়: input-এর জায়গা বিলে ধরা হয় না, কিন্তু নতুন বানানো output ধরা হয়।
+- recursion মানেই call stack-এ O(depth) জায়গা, code-এ কিছু না লেখা থাকলেও।
+- memoization হলো এই trade-off-এর রাজা: O(n) ঘর জমিয়ে O(2ⁿ) সময় কেটে O(n)-এ নামানো। বিস্তারিত [Memoization](../recursion/memoization.mdx)-এ।
+- দুটো মুদ্রার হিসাব নিজে করতে শেখা: [How to Calculate](./how-to-calculate.mdx)।
