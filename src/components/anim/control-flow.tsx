@@ -81,6 +81,7 @@ export function Line({
   dim,
   taken,
   bubble,
+  tag,
 }: {
   n: number;
   code: string;
@@ -89,6 +90,7 @@ export function Line({
   dim?: boolean;
   taken?: boolean;
   bubble?: { expr: string; res: boolean | null };
+  tag?: ReactNode;
 }) {
   return (
     <li
@@ -127,6 +129,7 @@ export function Line({
           </span>
         )}
       </AnimatePresence>
+      {!bubble && tag && <span className="relative z-10 ml-auto">{tag}</span>}
     </li>
   );
 }
@@ -168,6 +171,8 @@ export function Stage({
   caption,
   lines,
   consoleLines,
+  viz,
+  hideConsole,
 }: {
   title: string;
   step: number;
@@ -179,6 +184,8 @@ export function Stage({
   caption: ReactNode;
   lines: ReactNode;
   consoleLines: string[];
+  viz?: ReactNode;
+  hideConsole?: boolean;
 }) {
   return (
     <div className="not-prose my-8 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -235,9 +242,12 @@ export function Stage({
         </AnimatePresence>
       </div>
       <ol className="px-3 pb-1 pt-2">{lines}</ol>
-      <div className="px-5 pb-5 pt-2">
-        <Console lines={consoleLines} />
-      </div>
+      {viz && <div className={`px-5 pt-1 ${hideConsole ? 'pb-5' : 'pb-2'}`}>{viz}</div>}
+      {!hideConsole && (
+        <div className="px-5 pb-5 pt-2">
+          <Console lines={consoleLines} />
+        </div>
+      )}
     </div>
   );
 }

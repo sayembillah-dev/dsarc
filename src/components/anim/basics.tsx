@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { C, Line, Stage, useStepPlayer } from './control-flow';
 
 /* ------------------------------ functions ------------------------------ */
@@ -72,50 +73,150 @@ export function FunctionAnim() {
   );
 }
 
-/* ------------------------------ array ops ------------------------------ */
+/* ------------------------------ array ops (box / block) ------------------------------ */
 
-const AR_CODE = ['const nums = [10, 20, 30];', 'nums.push(40);', 'nums.pop();'];
+const AR_CODE = [
+  'const nums = [10, 20, 30];',
+  'nums.push(40);',
+  'nums.pop();',
+  'nums.unshift(5);',
+  'nums.shift();',
+];
 
-// 0 idle · 1 init · 2 push · 3 state · 4 pop · 5 state · 6 done
-const AR_CURSOR = [-1, 0, 1, 0, 2, 0, -1];
-const AR_TOTAL = 6;
+// 0 idle · 1 init · 2 push · 3 push done · 4 pop mark · 5 pop done ·
+// 6 unshift mark (সবাই সরবে) · 7 unshift done · 8 shift mark · 9 shift done · 10 end
+const AR_CURSOR = [-1, 0, 1, 1, 2, 2, 3, 3, 4, 4, -1];
+const AR_TOTAL = 10;
+
+const AR_VALUES: number[][] = [
+  [],
+  [10, 20, 30],
+  [10, 20, 30, 40],
+  [10, 20, 30, 40],
+  [10, 20, 30, 40],
+  [10, 20, 30],
+  [10, 20, 30],
+  [5, 10, 20, 30],
+  [5, 10, 20, 30],
+  [10, 20, 30],
+  [10, 20, 30],
+];
+
+type Tone = 'default' | 'new' | 'leaving' | 'moving';
+
+function arTone(step: number, v: number): Tone {
+  if (step === 2 && v === 40) return 'new';
+  if (step === 4 && v === 40) return 'leaving';
+  if (step === 6) return 'moving';
+  if (step === 7) return v === 5 ? 'new' : 'moving';
+  if (step === 8) return v === 5 ? 'leaving' : 'moving';
+  return 'default';
+}
+
+const AR_TONES: Record<Tone, string> = {
+  default: 'border-zinc-300 bg-white text-zinc-800',
+  new: 'border-emerald-400 bg-emerald-50 text-emerald-700',
+  leaving: 'border-rose-400 bg-rose-50 text-rose-600',
+  moving: 'border-amber-400 bg-amber-50 text-amber-700',
+};
 
 const AR_CAPTIONS: ReactNode[] = [
   <>
-    প্লে চাপলে <C t="push" /> আর <C t="pop" /> array-কে কীভাবে বদলায় দেখো।
+    প্লে চাপলে <C t="push" />, <C t="pop" />, <C t="unshift" />, <C t="shift" /> চারটা অপারেশনে{' '}
+    <C t="nums" /> কীভাবে বদলায়, ঘরে ঘরে দেখো।
   </>,
   <>
-    <C t="nums = [10, 20, 30]" /> তৈরি হলো।
+    <C t="nums = [10, 20, 30]" /> তৈরি হলো, তিনটা ঘর পাশাপাশি বসল।
   </>,
   <>
-    <C t="push(40)" /> : শেষে <C t="40" /> ঢুকছে।
+    <C t="push(40)" /> : শেষ প্রান্তে নতুন ঘর <C t="40" /> ঢুকল।
   </>,
   <>
-    এখন <C t="nums = [10, 20, 30, 40]" />।
+    এখন <C t="[10, 20, 30, 40]" />। শুধু শেষে কাজ হলো, বাকি ঘরগুলো অটল, তাই <C t="O(1)" />।
   </>,
   <>
-    <C t="pop()" /> : শেষেরটা বাদ।
+    <C t="pop()" /> : শেষের ঘর <C t="40" /> বাদ যাচ্ছে।
   </>,
   <>
-    আবার <C t="nums = [10, 20, 30]" />।
+    আবার <C t="[10, 20, 30]" />। এটাও শুধু শেষ প্রান্তের কাজ, <C t="O(1)" />।
   </>,
   <>
-    শেষ। <C t="push" /> শেষে যোগ করে, <C t="pop" /> শেষ থেকে বাদ দেয়। দুটোই O(1)।
+    <C t="unshift(5)" /> : শুরুতে জায়গা বানাতে এবার সবাইকে এক ঘর ডানে সরাতে হবে।
+  </>,
+  <>
+    সবাই সরে গেল, <C t="5" /> বসল শুরুতে: <C t="[5, 10, 20, 30]" />। n টা ঘর সরল, তাই{' '}
+    <C t="O(n)" />।
+  </>,
+  <>
+    <C t="shift()" /> : শুরুর ঘর <C t="5" /> বাদ, বাকিগুলোকে এক ঘর বামে সরাতে হবে।
+  </>,
+  <>
+    আবার <C t="[10, 20, 30]" />। এখানেও সবাইকে সরাতে হলো, তাই <C t="O(n)" />।
+  </>,
+  <>
+    মনে রাখো: <C t="push/pop" /> শেষ প্রান্তে কাজ করে <C t="O(1)" />, আর <C t="unshift/shift" />{' '}
+    সবাইকে সরায় <C t="O(n)" />।
   </>,
 ];
 
-function arBubble(step: number): { expr: string; res: boolean | null } | undefined {
-  if (step >= 5) return { expr: '[10, 20, 30]', res: null };
-  if (step >= 3) return { expr: '[10, 20, 30, 40]', res: null };
-  if (step >= 1) return { expr: '[10, 20, 30]', res: null };
-  return undefined;
+function BigO({ t, on, warm }: { t: string; on: boolean; warm?: boolean }) {
+  return (
+    <span
+      className={`inline-flex h-6 items-center rounded-full border px-2.5 font-mono text-[11px] font-medium transition-colors duration-500 ${
+        on
+          ? warm
+            ? 'border-amber-300 bg-amber-50 text-amber-700'
+            : 'border-emerald-300 bg-emerald-50 text-emerald-700'
+          : 'border-zinc-200 text-zinc-400'
+      }`}
+    >
+      {t}
+    </span>
+  );
+}
+
+function ArrayBlocks({ step }: { step: number }) {
+  const values = AR_VALUES[step];
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-5">
+      {values.length === 0 ? (
+        <div className="flex h-[76px] items-center justify-center text-[13px] text-zinc-400">
+          প্লে চাপলে nums-এর ঘরগুলো এখানে জমা হবে
+        </div>
+      ) : (
+        <div className="flex h-[76px] items-start justify-center gap-3">
+          <span className="mt-3 select-none font-mono text-sm text-zinc-400">nums =</span>
+          <AnimatePresence mode="popLayout">
+            {values.map((v, i) => (
+              <motion.div
+                key={v}
+                layout
+                initial={{ opacity: 0, scale: 0.5, y: -16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.5, y: 16 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                className="flex w-12 shrink-0 flex-col items-center gap-1"
+              >
+                <div
+                  className={`flex size-12 items-center justify-center rounded-xl border-2 font-mono text-lg font-semibold transition-colors duration-300 ${AR_TONES[arTone(step, v)]}`}
+                >
+                  {v}
+                </div>
+                <span className="select-none font-mono text-[11px] text-zinc-400">{i}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ArrayOpsAnim() {
   const { step, playing, toggle, reset, done } = useStepPlayer(AR_TOTAL);
   return (
     <Stage
-      title="array অপারেশন"
+      title="array অপারেশন: ঘরে ঘরে"
       step={step}
       total={AR_TOTAL}
       playing={playing}
@@ -124,6 +225,8 @@ export function ArrayOpsAnim() {
       onReset={reset}
       caption={AR_CAPTIONS[step]}
       consoleLines={[]}
+      hideConsole
+      viz={<ArrayBlocks step={step} />}
       lines={AR_CODE.map((code, i) => (
         <Line
           key={i}
@@ -131,7 +234,13 @@ export function ArrayOpsAnim() {
           code={code}
           cursorId="ar-cursor"
           active={AR_CURSOR[step] === i}
-          bubble={i === 0 ? arBubble(step) : undefined}
+          tag={
+            i === 1 || i === 2 ? (
+              <BigO t="O(1)" on={step >= (i === 1 ? 3 : 5)} />
+            ) : i === 3 || i === 4 ? (
+              <BigO t="O(n)" warm on={step >= (i === 3 ? 7 : 9)} />
+            ) : undefined
+          }
         />
       ))}
     />
