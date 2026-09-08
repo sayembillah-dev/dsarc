@@ -1,0 +1,151 @@
+---
+title: Edit Distance
+description: "এক স্ট্রিং থেকে আরেকটায় যেতে ন্যূনতম কত insert, delete, replace - spell-checker আর autocorrect-এর ভেতরের DP।"
+---
+
+## কী শিখব
+
+- Edit distance (Levenshtein) কী: তিনটা অপারেশনের সংজ্ঞা
+- DP স্টেট: dp[i][j] = s1-এর প্রথম i অক্ষর থেকে s2-এর প্রথম j অক্ষর বানাতে ন্যূনতম edit
+- recurrence: মিললে free diagonal, না মিললে 1 + min(delete, insert, replace)
+- LCS-এর সাথে সম্পর্ক: replace নিষিদ্ধ করলে উত্তর m + n - 2 × LCS
+- spell-checker, autocorrect, DNA mutation analysis - সব এখানেই
+
+## ধারণা
+
+চ্যাটে তুমি লিখলে "sittin", আর ফোন ভেসে উঁচুল দিলো: "sitting"? ফোন জানে কীভাবে? সে dictionary-র প্রতিটা শব্দের সাথে তোমার লেখার **দূরত্ব** মেপেছে, আর সবচেয়ে কাছেরটা suggest করেছে। দূরত্ব মানে: একটা থেকে আরেকটা বানাতে **ন্যূনতম কতটা edit** লাগে - কোনো অক্ষর **insert**, কোনোটা **delete**, নয় একটাকে আরেকটা দিয়ে **replace**।
+
+দাঁত ভাঙা উদাহরণ: "kitten" থেকে "sitting" বানাতে -
+
+1. k → s (replace): "sitten"
+2. e → i (replace): "sittin"
+3. শেষে g যোগ (insert): "sitting"
+
+মোট 3 edit - এটাই দুটোর edit distance, Levenshtein distance নামেও পরিচিত। প্রশ্ন হলো: প্রতি জোড়া শব্দের জন্য হাতে হাতে গুনবে? DNA sequence-এ হাজার হাজার বেজ হলে? আবারও দুই স্ট্রিং, আবারও overlap-যুক্ত subproblem - [LCS](./lcs.mdx)-এর গন্ধ পাচ্ছ তো? ঠিক ধরেছো, এটাও সেই একই টেবিল-পরিবারের [Dynamic Programming](./dynamic-programming.mdx)।
+
+## ধাপে ধাপে dry run
+
+স্টেট: **dp[i][j] = s1-এর প্রথম i টা অক্ষর থেকে s2-এর প্রথম j টা অক্ষর বানাতে ন্যূনতম edit।**
+
+দুই কেস:
+
+- **শেষ অক্ষর মিলে গেলে** (s1-এর i-তম = s2-এর j-তম): কোনো খরচ নেই → dp[i][j] = dp[i-1][j-1]
+- **মিলল না**: একটা edit লাগবেই, তারপর তিন পথের সেরাটা → dp[i][j] = 1 + min( dp[i-1][j] (delete: s1-এর i-তম অক্ষর বাদ), dp[i][j-1] (insert: s2-এর j-তম অক্ষর যোগ), dp[i-1][j-1] (replace: বদলে দাও) )
+
+Base: খালি থেকে j অক্ষর বানাতে j টা insert, আর i অক্ষর থেকে খালি করতে i টা delete - শূন্যম সারি-কলামই সেটা (ε = খালি)।
+
+s1 = "kitten", s2 = "sitting":
+
+| s1 \ s2 | ε | s | i | t | t | i | n | g |
+|---------|---|---|---|---|---|---|---|---|
+| **ε** | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| **k** | 1 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| **i** | 2 | 2 | 1 | 2 | 3 | 4 | 5 | 6 |
+| **t** | 3 | 3 | 2 | 1 | 2 | 3 | 4 | 5 |
+| **t** | 4 | 4 | 3 | 2 | 1 | 2 | 3 | 4 |
+| **e** | 5 | 5 | 4 | 3 | 2 | 2 | 3 | 4 |
+| **n** | 6 | 6 | 5 | 4 | 3 | 3 | 2 | **3** |
+
+কয়েকটা ঘর হাতে গুণি:
+
+- dp[1][1] (k বনাম s): মেলেনি → 1 + min(উপরে 1, বাঁয়ে 1, diagonal 0) = **1** (এক replace-ই যথেষ্ট)।
+- dp[4][4] ("kitt" → "sitt"): শেষে t = t মিলেছে → dp[3][3] = 2... থামো, টেবিলে dp[3][3] = 2 দেখা যাচ্ছে, কিন্তু আসলে "kitt"→"sitt" এক replace-এই হয় - তাহলে? খেয়াল করো, dp[4][4] = **1**, কারণ মিলের ঘরে আমরা diagonal dp[3][3]-এ যাই... dp[3][3] হলো "kit"→"sit" = 1 (শুধু k→s)। হ্যাঁ, dp[4][4] = dp[3][3] = 1 - free ride!
+- dp[5][5] ("kitte" → "sitti"): e বনাম i মেলেনি → 1 + min(উপরে dp[4][5] = 2, বাঁয়ে dp[5][4] = 2, diagonal dp[4][4] = 1) = 1 + 1 = **2** (e→i replace, আগের k→s মিলেই 2)।
+- dp[6][7] (পুরোটা): n বনাম g মেলেনি → 1 + min(উপরে 4, বাঁয়ে dp[6][6] = 2, diagonal 3) = **3** (শেষে g insert)।
+
+উত্তর dp[6][7] = 3 - আমাদের হাতে-গোনা তিনটা edit-এর সাথে মিলে গেল।
+
+## কোড
+
+```js
+function editDistance(s1, s2) {
+  const m = s1.length, n = s2.length;
+  // base: 0-নং সারি = 0,1,2,... (insert); 0-নং কলাম = 0,1,2,... (delete)
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1]; // মিলে গেল - free
+      } else {
+        dp[i][j] = 1 + Math.min(
+          dp[i - 1][j],     // delete
+          dp[i][j - 1],     // insert
+          dp[i - 1][j - 1]  // replace
+        );
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+console.assert(editDistance("kitten", "sitting") === 3, "classic");
+console.assert(editDistance("sunday", "saturday") === 3, "ছুটির দিন");
+console.assert(editDistance("horse", "ros") === 3, "LC 72 উদাহরণ");
+console.assert(editDistance("intention", "execution") === 5, "LC 72 বড়");
+console.assert(editDistance("", "abc") === 3, "খালি থেকে");
+console.assert(editDistance("abc", "") === 3, "খালি করতে");
+console.assert(editDistance("abc", "abc") === 0, "একই");
+console.assert(editDistance("cat", "cut") === 1, "এক replace");
+console.log("সব assert পাস!");
+```
+
+## কোড ব্রেকডাউন, লাইনে লাইনে
+
+- `Array.from({ length: m + 1 }, (_, i) => Array.from(...))` - টেবিল বানানোর সাথে সাথে base case-ও ভরা: শূন্যম সারিতে j, শূন্যম কলামে i, ভেতরে 0 (পরে ভরবে)। ভেতরের array যেন প্রতি সারিতে নতুন হয় - পুরনো সেই রেফারেন্স-ফাঁদ মনে আছে তো?
+- `s1[i - 1] === s2[j - 1]` - টেবিলের i মানে দৈর্ঘ্য, স্ট্রিং ইনডেক্স তার এক কম। LCS-এ যেমন ছিল, এখানেও তেমন।
+- মিলের ঘরে `dp[i - 1][j - 1]` - **কোনো +1 নেই**। অক্ষরটা ফ্রি-তে মিলে গেছে, আগের অবস্থা যেমন ছিল তেমনই।
+- না-মিলের ঘরে তিন পড়োশির min-এর সাথে 1: উপরে = s1-এর এই অক্ষরটা **delete** করলাম, বাঁয়ে = s2-এর এই অক্ষরটা **insert** করলাম, diagonal = **replace** করলাম। সব পথে একটা করে edit খরচ হলো, তার আগের সেরা যেটা, সেটার সাথে যোগ।
+- উত্তর dp[m][n] - পুরো s1 থেকে পুরো s2।
+
+## ভ্যারিয়েন্ট
+
+- **কোন edit-গুলো করতে হবে:** LCS-এর মতো ডান-নিচ থেকে উল্টো হাঁটো - diagonal-এ নামলে replace (বা free match), উপরে উঠলে delete, বাঁয়ে সরলে insert। (অনুশীলনে।)
+- **Space O(min(m,n)):** i-তম সারি শুধু (i-1)-তম দেখে - দুই সারি ঘুরিয়ে ফিরিয়ে যথেষ্ট। (অনুশীলনে।)
+- **Replace নিষিদ্ধ হলে:** শুধু delete + insert চাললে উত্তর হয় m + n - 2 × LCS - দুটো স্ট্রিং-ই LCS-পর্যন্ত নামাও, মাঝখানটা বদলাও। [LCS](./lcs.mdx) পাতার অনুশীলনের LeetCode 583 ঠিক এটাই।
+- **Weighted edit distance:** প্রতি অপারেশনের আলাদা দাম (যেমন replace-এর দাম 2) - recurrence-এর 1-এর জায়গায় দাম বসাও, বাকি সব একই।
+- **Damerau-Levenshtein:** পাশাপাশি দুই অক্ষরের অদলবদল ("ab" → "ba")-কেও এক edit ধরে - টাইপিস্টের typo ধরতে দারুণ, recurrence-এ একটা পথ বাড়ে।
+
+## Complexity
+
+| বাস্তবায়ন | Time | Space |
+|------------|------|-------|
+| Brute recursion (তিন পথে ডাক) | O(3^max(m,n)) এর আশেপাশে | O(m + n) stack |
+| DP টেবিল | O(m·n) | O(m·n) |
+| শুধু দূরত্ব, দুই সারি | O(m·n) | O(min(m,n)) |
+
+LCS-এর মতোই - টেবিলের মাপ সরাসরি ইনপুট সাইজের, তাই O(m·n) পুরোপুরি practical। Reconstruction চাইলে পুরো টেবিল রাখো, শুধু সংখ্যা চাইলে দুই সারি।
+
+## সাধারণ ভুল আর edge case
+
+**১. Replace-এর খরচ 2 ধরে নেওয়া।**
+"replace মানে একটা delete আর একটা insert" - ভাবনাটা স্বাভাবিক, কিন্তু Levenshtein-এ replace একটাই অপারেশন, খরচ 1। খরচ 2 ধরলে তোমার distance-টা আর Levenshtein থাকবে না (সেটা delete+insert-only মডেল হয়ে যাবে, LCS-সূত্রের জগত)।
+
+**২. মিলের ঘরেও min নেওয়া।**
+অক্ষর মিলে গেলে সোজা diagonal - 1 + min(...) বসিয়ে দিলে free মিলের ঘরেও খরচ ঢুকে যাবে, টেবিল আর edit-এর সংজ্ঞা মিলবে না।
+
+**৩. Base সারি-কলাম ভুলে যাওয়া।**
+খালি থেকে "abc" বানাতে 3 টা insert - এই সারিটা না ভরলে প্রথম সারির হিসাবই ভুল ভিত্তিতে দাঁড়ায়। উপরের কোডের initializer-এর কারণটা এবার পরিষ্কার?
+
+**৪. s1[i] বনাম s1[i-1]।**
+টেবিল 1-ভিত্তিক (0 = খালি prefix), স্ট্রিং 0-ভিত্তিক। তুলনায় i-1 লেখা ভুললে প্রথম অক্ষরই দেখা হলো না।
+
+**৫. Delete আর insert উল্টে বোঝা।**
+উপরের ঘর = delete (s1 ছোট হলো), বাঁয়ের ঘর = insert (s2-এর দিকে বড় হলো)। দূরত্বের সংখ্যায় কোনো ফারাক আসে না, কিন্তু reconstruction লিখতে গেলে এই উল্টো-বোঝাই তোমার অপারেশন-তালিকা উল্টো করে দেবে।
+
+## অনুশীলন
+
+- **সহজ ১:** হাতে টেবিল ভরো: "cat" → "cut" (উত্তর 1), আর "abc" → "" (উত্তর 3)। দ্বিতীয়টায় টেবিলের একটা কলামই আছে - কেন?
+- **সহজ ২:** দুই-সারির space-অপ্টিমাইজড সংস্করণ লেখো। হিন্ট: prev আর curr দুইটা array; প্রতি i-তে curr[0] = i ভুলবে না।
+- **মাঝারি ১:** Edit Distance (LeetCode 72) - এই পাতার কোডই; নিজে লিখে submit করো।
+- **মাঝারি ২:** Delete Operation for Two Strings (LeetCode 583) - replace নিষিদ্ধ। দুই পথে করো: (ক) এই পাতার DP-কে delete/insert-only বানিয়ে, (খ) [LCS](./lcs.mdx) দিয়ে m + n - 2 × LCS। দুটোর উত্তর মিলছে কি না দেখো।
+- **কঠিন:** উল্টো হেঁটে আসল অপারেশনের তালিকা ফেরত দাও: কোন অক্ষর delete, কোনটা insert, কোনটা কী দিয়ে replace। হিন্ট: প্রতি ঘরে জিজ্ঞেস করো, মানটা কোথা থেকে এসেছে - diagonal (match/replace), উপরে (delete), না বাঁয়ে (insert)।
+
+## সারসংক্ষেপ
+
+- Edit distance: insert, delete, replace - তিন অপারেশনে এক স্ট্রিং থেকে আরেকটা, ন্যূনতম কত খরচে।
+- dp[i][j] দুই prefix-এর দূরত্ব; মিললে free diagonal, না মিললে 1 + min(তিন পড়োশি); O(m·n)।
+- Replace নিষিদ্ধ করলেই LCS-এর জগত: m + n - 2 × LCS - দুই পাতার টেবিল আসলে একই পরিবার।
+- Spell-checker, autocorrect, DNA mutation - সবখানে এই একই DP।
+- মিল মাপার ভাই-পাতা: [LCS](./lcs.mdx); টেবিল-DP-র আরেক classic: [0/1 Knapsack](./knapsack.mdx)।

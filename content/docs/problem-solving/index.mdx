@@ -1,11 +1,11 @@
 ---
 title: Problem Solving Techniques
-description: "Interview হোক বা বাস্তব সমস্যা, যে ১৮টা প্যাটার্ন বারবার ঘুরেফিরে আসে - brute force থেকে DP, two pointer থেকে bit manipulation পর্যন্ত।"
+description: "Interview হোক বা বাস্তব সমস্যা, যে ২৫টা প্যাটার্ন বারবার ঘুরেফিরে আসে - brute force থেকে DP, two pointer থেকে bit manipulation পর্যন্ত।"
 ---
 
 কাঠামো শেখা শেষ, এবার **প্যাটার্ন**-এর পালা। ভাবো তো, interview-তে একদম নতুন সমস্যা পড়েছে, আর তুমি দেখামাত্র বুঝে গেলে "এই তো ওই প্যাটার্ন!" এই chapter-এর কৌশলগুলো ঠিক সেই কাজটাই করবে। প্যাটার্ন চিনতে পারলে অচেনা সমস্যাও চেনা লাগবে, সমাধানের পথও দ্রুত খুঁজে পাবে। তবে Recursion-টা জানা থাকা দরকার; লাগলে আগে [Recursion](../recursion/index.mdx) chapter-টা ঝালিয়ে নাও।
 
-**Section Roadmap:** Brute Force, Divide & Conquer, Greedy, Backtracking, Dynamic Programming, Two Pointer, Fast & Slow Pointer, Sliding Window, Prefix Sum, Merge Intervals, Cyclic Sort, Kth Element, Two Heaps, Island (Grid) Traversal, Randomised, Number Theory, Bit Manipulation, Multi-threaded।
+**Section Roadmap:** Brute Force, Divide & Conquer, Greedy, Backtracking, Dynamic Programming, Knapsack, LCS, LIS, Edit Distance, TSP, Catalan, Online Algorithms, Two Pointer, Fast & Slow Pointer, Sliding Window, Prefix Sum, Merge Intervals, Cyclic Sort, Kth Element, Two Heaps, Island (Grid) Traversal, Randomised, Number Theory, Bit Manipulation, Multi-threaded।
 
 ## এই Chapter-এ যা যা আছে
 
@@ -14,22 +14,29 @@ description: "Interview হোক বা বাস্তব সমস্যা, 
 3. [Greedy](./greedy.mdx): প্রতি ধাপে সেরা বাছাই; কখন কাজ করে, কখন ফেল
 4. [Backtracking](./backtracking.mdx): চেষ্টা করো, ফিরে এসো, pruning করো
 5. [Dynamic Programming](./dynamic-programming.mdx): overlapping subproblem জমিয়ে optimize
-6. [Two Pointer](./two-pointer.mdx): sorted array-তে জোড়া, এক pass-এ
-7. [Fast & Slow Pointers](./fast-slow-pointers.mdx): cycle ধরা ও মাঝের node খোঁজা
-8. [Sliding Window](./sliding-window.mdx): টানা subarray/substring-এ চলমান হিসাব
-9. [Prefix Sum](./prefix-sum.mdx): একবার জমিয়ে রাখো, range query-কে O(1) বানাও
-10. [Merge Intervals](./merge-intervals.mdx): sort + sweep দিয়ে overlap একত্র
-11. [Cyclic Sort](./cyclic-sort.mdx): 1..n রেঞ্জে প্রতিটা সংখ্যা নিজের ঘরে
-12. [Kth Element](./kth-element.mdx): quickselect ও heap দিয়ে k-তম উপাদান
-13. [Two Heaps](./two-heaps.mdx): দুই heap-এ চলমান median
-14. [Island (Grid) Traversal](./island-traversal.mdx): grid-কে graph ভেবে flood fill
-15. [Randomised Algorithms](./randomised-algorithms.mdx): এলোমেলোতা দিয়ে adversarial প্রতিরোধ
-16. [Number Theory](./number-theory.mdx): gcd, sieve আর fast power - সংখ্যার গভীর কৌশল
-17. [Bit Manipulation](./bit-manipulation.mdx): XOR আর mask দিয়ে ৩২টা সুইচের খেলা
-18. [Multi-threaded](./multithreaded-algorithms.mdx): ভাগ করে সমান্তরালে - পরিচিতি
+6. [0/1 Knapsack](./knapsack.mdx): সীমিত ক্যাপাসিটিতে সর্বোচ্চ মূল্য - DP-র বিখ্যাত প্রয়োগ, 2D টেবিল থেকে 1D অপ্টিমাইজেশন
+7. [Longest Common Subsequence](./lcs.mdx): দুই স্ট্রিং-এর মিল মাপার DP - git diff-এর ভেতরের ইঞ্জিন
+8. [Longest Increasing Subsequence](./lis.mdx): সবচেয়ে লম্বা বাড়তি ধারা - O(n²) DP থেকে tails + binary search-এ O(n log n)
+9. [Edit Distance](./edit-distance.mdx): insert, delete, replace - এক স্ট্রিং থেকে আরেকটায় ন্যূনতম edit
+10. [Traveling Salesman](./tsp.mdx): সব শহর একবার ঘুরে ফিরে আসা - bitmask DP-তে n! থেকে 2^n
+11. [Catalan Numbers](./catalan.mdx): বন্ধনী মেলানো থেকে BST গোনা - একই ধারা 1, 1, 2, 5, 14, 42
+12. [Online Algorithms](./online-algorithms.mdx): ভবিষ্যৎ না জেনে সিদ্ধান্ত - cache eviction আর competitive ratio
+13. [Two Pointer](./two-pointer.mdx): sorted array-তে জোড়া, এক pass-এ
+14. [Fast & Slow Pointers](./fast-slow-pointers.mdx): cycle ধরা ও মাঝের node খোঁজা
+15. [Sliding Window](./sliding-window.mdx): টানা subarray/substring-এ চলমান হিসাব
+16. [Prefix Sum](./prefix-sum.mdx): একবার জমিয়ে রাখো, range query-কে O(1) বানাও
+17. [Merge Intervals](./merge-intervals.mdx): sort + sweep দিয়ে overlap একত্র
+18. [Cyclic Sort](./cyclic-sort.mdx): 1..n রেঞ্জে প্রতিটা সংখ্যা নিজের ঘরে
+19. [Kth Element](./kth-element.mdx): quickselect ও heap দিয়ে k-তম উপাদান
+20. [Two Heaps](./two-heaps.mdx): দুই heap-এ চলমান median
+21. [Island (Grid) Traversal](./island-traversal.mdx): grid-কে graph ভেবে flood fill
+22. [Randomised Algorithms](./randomised-algorithms.mdx): এলোমেলোতা দিয়ে adversarial প্রতিরোধ
+23. [Number Theory](./number-theory.mdx): gcd, sieve আর fast power - সংখ্যার গভীর কৌশল
+24. [Bit Manipulation](./bit-manipulation.mdx): XOR আর mask দিয়ে ৩২টা সুইচের খেলা
+25. [Multi-threaded](./multithreaded-algorithms.mdx): ভাগ করে সমান্তরালে - পরিচিতি
 
 ## সারাংশ
 
-চলো এক নিঃশ্বাসে ঝালিয়ে নিই। Brute force-ই সবসময় বেসলাইন, আগে সেটা ভাবো তারপর optimize। Divide & Conquer মানেই ভাগ-জয়-জোড়া। Greedy প্রতি ধাপে সেরাটা বাছে, কিন্তু সব সমস্যায় কাজ করে না। Backtracking হলো choose-explore-unchoose, সাথে pruning। DP মানে overlapping subproblem-এর ফল জমিয়ে রাখা, memoization হোক বা tabulation। Two Pointer sorted জিনিসে জোড়া খোঁজে, Fast & Slow cycle বা মাঝখান ধরে, Sliding Window টানা অংশে O(n) দেয়। Prefix Sum-এ একবার জমিয়ে রাখলে range sum হয় O(1)। Merge Intervals হলো sort তারপর sweep, Cyclic Sort-এ 1..n রেঞ্জে প্রত্যেকে নিজের ঘরে, Kth Element-এ quickselect না হলে heap, Two Heaps দিয়ে চলমান median, Island-এ grid-এ flood fill, Randomised মানে এলোমেলো দিয়ে প্রতিরোধ। Number Theory দিয়ে gcd আর prime খোঁজা লগারিদমিকে, Bit Manipulation-এ XOR আর mask-এর খেলা, আর Multi-threaded হলো ভাগ করে সমান্তরালে চালানো। কোন ইঙ্গিতে কোন প্যাটার্ন লাগবে, সেই চিটশিট পরের chapter-এ।
+চলো এক নিঃশ্বাসে ঝালিয়ে নিই। Brute force-ই সবসময় বেসলাইন, আগে সেটা ভাবো তারপর optimize। Divide & Conquer মানেই ভাগ-জয়-জোড়া। Greedy প্রতি ধাপে সেরাটা বাছে, কিন্তু সব সমস্যায় কাজ করে না। Backtracking হলো choose-explore-unchoose, সাথে pruning। DP মানে overlapping subproblem-এর ফল জমিয়ে রাখা, memoization হোক বা tabulation। Knapsack সেই DP-র বিখ্যাত প্রয়োগ: জিনিস ভাঙা চলে না, সীমিত ব্যাগে মূল্য সর্বোচ্চ। LCS দুই স্ট্রিং-এর সবচেয়ে লম্বা common subsequence বের করে - git diff-এর ভেতরের ইঞ্জিন। LIS খুঁজে ক্রম ঠিক রেখে সবচেয়ে লম্বা বাড়তি ধারা, tails আর binary search-এ O(n log n)। Edit Distance মাপে এক স্ট্রিং থেকে আরেকটায় ন্যূনতম edit - spell-checker-এর ভিত্তি। TSP-এ bitmask DP n!-কে নামিয়ে আনে 2^n-এ, তবু exponential-ই - কারণ সমস্যাটা NP-hard। Catalan একটাই ধারা বন্ধনী, BST, ত্রিভুজায়ন গোনে - recurrence আর closed form দুই পথে। আর Online Algorithms-এ ভবিষ্যৎ অজানা, তাই competitive ratio দিয়ে মাপা হয় worst case-এ কতটা পিছিয়ে পড়া যায়। Two Pointer sorted জিনিসে জোড়া খোঁজে, Fast & Slow cycle বা মাঝখান ধরে, Sliding Window টানা অংশে O(n) দেয়। Prefix Sum-এ একবার জমিয়ে রাখলে range sum হয় O(1)। Merge Intervals হলো sort তারপর sweep, Cyclic Sort-এ 1..n রেঞ্জে প্রত্যেকে নিজের ঘরে, Kth Element-এ quickselect না হলে heap, Two Heaps দিয়ে চলমান median, Island-এ grid-এ flood fill, Randomised মানে এলোমেলো দিয়ে প্রতিরোধ। Number Theory দিয়ে gcd আর prime খোঁজা লগারিদমিকে, Bit Manipulation-এ XOR আর mask-এর খেলা, আর Multi-threaded হলো ভাগ করে সমান্তরালে চালানো। কোন ইঙ্গিতে কোন প্যাটার্ন লাগবে, সেই চিটশিট পরের chapter-এ।
 
 **পরবর্তী:** [Practice & Roadmap to Expertise](../practice-roadmap/index.mdx) - শেখা প্যাটার্নগুলো প্র্যাকটিসে রূপান্তরের পথ।

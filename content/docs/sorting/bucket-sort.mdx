@@ -1,0 +1,175 @@
+---
+title: "Bucket Sort: বালতি ভরে ভরে সাজানো"
+description: "মানগুলো আগে range-ভিত্তিক কয়েকটা bucket-এ ছিটিয়ে দাও, প্রতিটা bucket আলদা সাজাও, তারপর ধারে ধারে জোড়া লাগাও। Uniform ডেটায় গড়ে রৈখিক O(n), আর counting sort যেখানে পারে না সেখানে এটাই ভরসা।"
+---
+
+## কী শিখব
+
+- Counting sort-এর ছাড়পত্র কোথায় শেষ, আর bucket sort ঠিক সেখান থেকে শুরু কেন
+- মূল কৌশল: scatter → ভেতরে sort → concat, তিন ধাপের পুরো খেলা
+- Bucket index-এর হিসাব, আর `floor(x * k)` কখন সীমানা ছাড়িয়ে যায়
+- কেন uniform distribution-এ গড়ে O(n), আর skewed ডেটায় O(n²)-এ ভেঙে পড়ে
+- ভেতরের sort-এর পছন্দ কেন insertion, আর bucketCount কত রাখা যুক্তিযুক্ত
+
+## ধারণা
+
+আগের পাতায় [Counting Sort](./counting-sort.mdx) দেখেছ: মানকেই সরাসরি index বানিয়ে গোনা। দারুণ, কিন্তু দুটো শর্তে বাঁধা — মান পূর্ণসংখ্যা হতে হবে, আর range ছোট হতে হবে। বাস্তব তো সবসময় এমন নয়: ধরো 0.0 থেকে 1.0-এর মধ্যে হাজারটা float, কিংবা 0–10⁹ range-এ ছড়ানো মাত্র একশোটা সংখ্যা। প্রতিটা সম্ভাব্য মানের জন্য ঘর বানানোর সুযোগ নেই।
+
+এখানে ডাকঘরের চিঠি-বাছাইয়ের কথা ভাবো। সাজকর্মী প্রতিটা চিঠি সরাসরি চূড়ান্ত ঠিকানার সিরিয়ালে বসায় না; আগে জেলা অনুযায়ী কয়েকটা বালতিতে (bucket) ছুঁড়ে দেয় — ঢাকার এদিকে, চট্টগ্রামের ওদিকে। তারপর প্রতিটা বালতির ভেতরের সামান্য কয়েকটা চিঠি আলদা করে সাজায়। শেষে বালতিগুলো ধারে ধারে খালি করলেই পুরো তালিকা sorted।
+
+Bucket sort এই কাজটাই করে, তিন ধাপে:
+
+1. **Scatter:** প্রতিটা মান তার range-ভাগ অনুযায়ী একটা bucket-এ ফেলা।
+2. **ভেতরে sort:** প্রতিটা bucket আলদা সাজানো — bucket ছোট, তাই সরল [Insertion Sort](./insertion-sort.mdx)-ই যথেষ্ট।
+3. **Concat:** bucket 0 থেকে শেষ পর্যন্ত ধারে ধারে পড়ে ফেলা।
+
+Counting sort-এর সঙ্গে সম্পর্কটা স্পষ্ট করে রাখি: counting sort আসলে bucket sort-এর চরম রূপ, যেখানে প্রতিটা সম্ভাব্য মানের নিজস্ব ঘর আছে — তাই ভেতরে sort-এর প্রশ্নই ওঠে না। Bucket sort-এ এক bucket-এ অনেক মান জমা হয়, তাই ভেতরে sort লাগে; বদলে যোগ্য হয় float আর বড় range সামলানোর ক্ষমতা।
+
+## ধাপে ধাপে: scatter → sort → concat
+
+Input: `[0.78, 0.17, 0.39, 0.26, 0.72, 0.94, 0.21, 0.12, 0.23, 0.68]` — দশটা float, সব 0 ≤ x < 1। নেব ১০টা bucket (index 0..9)। মান x যাবে bucket `floor(x * 10)`-এ: 0.78 যায় bucket 7-এ, 0.17 যায় bucket 1-এ।
+
+| bucket | scatter-এর পর (আসার ক্রমে) | ভেতরে sort-এর পর |
+|--------|------------------------------|-------------------|
+| 0 | — | — |
+| 1 | 0.17, 0.12 | 0.12, 0.17 |
+| 2 | 0.26, 0.21, 0.23 | 0.21, 0.23, 0.26 |
+| 3 | 0.39 | 0.39 |
+| 4 | — | — |
+| 5 | — | — |
+| 6 | 0.68 | 0.68 |
+| 7 | 0.78, 0.72 | 0.72, 0.78 |
+| 8 | — | — |
+| 9 | 0.94 | 0.94 |
+
+**Concat:** bucket 0 থেকে 9 পর্যন্ত ধারে ধারে পড়ো:
+
+`[0.12, 0.17, 0.21, 0.23, 0.26, 0.39, 0.68, 0.72, 0.78, 0.94]` — sorted!
+
+দুটো জিনিস লক্ষ করো। প্রথম, বড় ভাগজন্যের কাজ scatter-এই শেষ: bucket 2-এর সবাই bucket 7-এর সবার চেয়ে ছোট, তাই bucket-গুলোর **মধ্যে** আর কোনো তুলনাই লাগে না — লাগে শুধু ভেতরে, সামান্য কয়েকটার মধ্যে। দ্বিতীয়, scatter-এ আসার ক্রমটা বজায় থাকে (0.17 আগে এসে আগেই আছে); ভেতরের sort-ও stable হলে পুরো জিনিসটা stable থাকে — insertion sort আমাদের সেই ভরসা দেয়।
+
+## কোড: পুরো implementation
+
+আগে ভেতরের sort-টা। [Insertion Sort](./insertion-sort.mdx)-এর পুরো তত্ত্ব সেখানে; এখানে স্বয়ংসম্পূর্ণ রাখতে সংক্ষিপ্ত রূপটা:
+
+```js
+function insertionSort(a) {
+  for (let i = 1; i < a.length; i++) {
+    const x = a[i];
+    let j = i - 1;
+    while (j >= 0 && a[j] > x) {   // x-এর চেয়ে বড়দের এক ঘর ডানে
+      a[j + 1] = a[j];
+      j--;
+    }
+    a[j + 1] = x;                  // x নিজের ফাঁকে বসল
+  }
+  return a;
+}
+```
+
+এবার আসল bucket sort (মান 0 ≤ x < 1 ধরে):
+
+```js
+function bucketSort(arr, bucketCount = 10) {
+  const buckets = Array.from({ length: bucketCount }, () => []);
+
+  for (const x of arr) {                          // ১) scatter
+    const i = Math.floor(x * bucketCount);        //     কোন bucket-এ যাবে
+    buckets[i].push(x);
+  }
+
+  for (const b of buckets) insertionSort(b);      // ২) প্রতিটা bucket আলদা সাজাও
+
+  return buckets.flat();                          // ৩) ধারে ধারে জোড়া
+}
+
+console.log(bucketSort([0.78, 0.17, 0.39, 0.26, 0.72, 0.94, 0.21, 0.12, 0.23, 0.68]));
+// [0.12, 0.17, 0.21, 0.23, 0.26, 0.39, 0.68, 0.72, 0.78, 0.94]
+```
+
+## কোড ব্রেকডাউন, লাইনে লাইনে
+
+1. `Array.from({ length: bucketCount }, () => [])` : k-টা খালি bucket। খেয়াল করো, `new Array(k).fill([])` লিখলে একই array-র k-টা রেফারেন্স বানত — এক bucket-এ ঢোকালে সবগুলোয় ঢুকে যেত। প্রতিটার জন্য আলদা `[]` বানাতে হবে, তাই `Array.from`।
+2. `Math.floor(x * bucketCount)` : bucket index-এর হিসাব। x = 0.78 হলে 7.8-এর floor, মানে 7। Range 0 ≤ x < 1 হলে index 0 থেকে k-1-এর মধ্যেই থাকে।
+3. `buckets[i].push(x)` : আসার ক্রমে append — stability-এর প্রথম শর্ত এখানেই।
+4. `for (const b of buckets) insertionSort(b)` : প্রতিটা bucket-এ গড়ে n/k-টা উপাদান। Uniform ডেটায় k ≈ n হলে এটা প্রায় ১, মানে insertion sort প্রায় ফ্রি।
+5. `buckets.flat()` : bucket-এর index-ই তো ক্রম — তাই ধারে ধারে জোড়া লাগালেই চূড়ান্ত sorted array, আলদা merge-এর দরকার নেই।
+
+## ভ্যারিয়েন্ট: যেকোনো range-এর পূর্ণসংখ্যা বা float
+
+0–1 না হলে? মানগুলো min থেকে max-এর মধ্যে ছড়ানো থাকলে আগে মানটাকে 0–1-এর স্কেলে নামিয়ে (normalize) তারপর একই খেলা:
+
+```js
+function bucketSortRange(arr, bucketCount = 10) {
+  if (arr.length === 0) return arr;
+
+  const min = Math.min(...arr);
+  const max = Math.max(...arr);
+  const span = max - min + 1;                 // +1: max-ও শেষ bucket-এর ভেতরে রাখতে
+
+  const buckets = Array.from({ length: bucketCount }, () => []);
+  for (const x of arr) {
+    const i = Math.min(bucketCount - 1,       // সীমানা-রক্ষা: বাইরে যাওয়া নিষেধ
+      Math.floor(((x - min) / span) * bucketCount));
+    buckets[i].push(x);
+  }
+
+  for (const b of buckets) insertionSort(b);
+  return buckets.flat();
+}
+
+console.log(bucketSortRange([29, 25, 3, 49, 9, 37, 21, 43]));
+// [3, 9, 21, 25, 29, 37, 43, 49]
+```
+
+`Math.min(bucketCount - 1, ...)`-টা কেন? ভাসমান হিসাবের গোলকধাঁধায় (বা span ভুলে গেলে) index কখনো হুবহু `bucketCount` হয়ে যেতে পারে — array-র বাইরে। এক লাইনের রক্ষা, যেমনটা [Counting Sort](./counting-sort.mdx)-এর `k + 1` ঘরের হিসাবে দেখেছ।
+
+## Complexity: distribution-এর ওপর নির্ভরশীল ভাগ্য
+
+| কেস | Time | কেন |
+|-----|------|-----|
+| গড় (uniform ছড়ানো) | O(n + k) | প্রতি bucket-এ গড়ে n/k ≈ ১টা, ভেতরের sort প্রায় ফ্রি |
+| Worst (সবাই এক bucket-এ) | O(n²) | ভেতরের insertion-এর worst case; ভেতরে merge/heap দিলে O(n log n) |
+| Space | O(n + k) | k-টা bucket-তে মোট n-টা উপাদান |
+
+গড়ের হিসাবটা একটু ভেঙে দেখি। scatter O(n), concat O(n + k), আর ভেতরের sort-গুলোর মোট দাম Σ O(nᵢ²), যেখানে nᵢ = i-তম bucket-এর আকার। Uniform distribution-এ প্রতিটা nᵢ-এর প্রত্যাশা n/k; k ≈ n রাখলে প্রতি bucket-এ প্রায় ধ্রুবক সংখ্যক উপাদান, তাই Σ O(nᵢ²) ≈ k × O(1) = O(k)। মোট **O(n + k) ≈ O(n)**।
+
+কিন্তু ডেটা skewed হলে — ধরো সব মান 0.90 থেকে 0.99-এর ভেতর — সবাই এক-দুই bucket-এ জমা হয়, আর ভেতরে চলে পুরো insertion sort: **O(n²)**। একই দুর্ভাগ্য [Hash Table](../hash-tables/hash-function.mdx)-এও দেখেছ: bucket index আসলে hash-এরই আত্মীয়, collision-এ সবাই এক ঘরে জমলে সুবিধাই শেষ। তাই bucket sort তখনই, যখন ডেটার distribution সম্পর্কে আগে থেকে ধারণা আছে — random float, percentage, hash-ফল এমন কিছু যা range জুড়ে মোটামুটি সমানভাবে ছড়ায়।
+
+আর একটা সম্পর্ক-টেনে-দেওয়া: counting sort-এর কঠিন অনুশীলনে radix sort-এর কথা এসেছিল — প্রতি digit-এ stable counting sort। সেখানে counting sort-ই নির্ভরযোগ্য কারণ digit-এর range নিশ্চিত ছোট (0–9)। Bucket sort-কে ভেতরের sort হিসেবে বসানো যায় না, কারণ তার নিজেরই আবার ভেতরের sort লাগে। কোন ছোট হাতিয়ার কোন বড় মেশিনের ভেতরে বসে — এই স্বীকৃতিটা interview-তে দামি।
+
+## সাধারণ ভুল আর edge case
+
+**১. Bucket index সীমানা ছাড়ানো।**
+`floor(x * k)` ধরে নেয় x < 1। Input-এ হুবহু 1.0 থাকলে index হয়ে যায় k — array-র বাইরে, চুপচাপ `undefined` bucket-এ push। সীমানা-রক্ষা `Math.min(k - 1, ...)` অথবা range-ভ্যারিয়েন্ট ব্যবহার করো।
+
+**২. `new Array(k).fill([])` দিয়ে bucket বানানো।**
+সব bucket একই array-র রেফারেন্স — একটায় push মানে সবগুলোয় push। প্রতি bucket-এর আলদা array চাই: `Array.from(..., () => [])`।
+
+**৩. Distribution না জেনে আশা করা।**
+"Bucket sort তো O(n)!" — শুধু uniform ছড়ানো ডেটায়। Skewed ডেটায় worst case O(n²), অথচ কোনো warning-ও পাবে না। ডেটার ছড়ানোটা আগে দেখো; সন্দেহ হলে [Quick Sort](./quick-sort.mdx) নিরাপদ।
+
+**৪. bucketCount-এর অন্ধ পছন্দ।**
+খুব কম bucket মানে প্রতি bucket মোটা — ভেতরের sort দামী, সুবিধা ম্লান। খুব বেশি মানে খালি bucket-এর সারিতে মেমরি আর concat-এর সময় নষ্ট। থাম্ব রুল: k ≈ n, অর্থাৎ উপাদান যতটা, bucket প্রায় ততটা।
+
+**৫. ভেতরে ভুল sort বসানো।**
+ছোট bucket-এ insertion-ই সেরা (adaptive, ছোট constant)। কিন্তু stability লাগলে unstable sort (যেমন quick) বসালে পুরো bucket sort-ের stability-ও চলে যায় — scatter-এর append-ক্রম আর stable ভেতরের sort, দুটোই লাগে।
+
+**৬. Counting sort-এর জায়গায় bucket, bucket-এর জায়গায় counting।**
+মান পূর্ণসংখ্যা আর range ছোট → counting sort সোজাসুজি জেতে (ভেতরের sort-ই লাগে না)। Float বা বড় range-এ ছড়ানো মান → bucket sort। সীমারেখাটা [আগের পাতার](./counting-sort.mdx) সাথে মিলিয়ে রাখো।
+
+## অনুশীলন
+
+- **সহজ ১:** `[0.42, 0.32, 0.33, 0.52, 0.37, 0.47, 0.51]`-এ হাতে dry run চালাও, bucketCount = 10। প্রতিটা মান কোন bucket-এ গেল, ভেতরে sort-এর পর bucket-গুলো কেমন দেখায়, লিখো।
+- **সহজ ২:** Top K Frequent Elements (LeetCode 347): সবচেয়ে বেশিবার আসা k-টা উপাদান। হিন্ট: frequency গুনে, frequency-টাকেই bucket index বানাও (frequency সর্বোচ্চ n, তাই n+1-টা bucket) — তারপর সবচেয়ে ভরা bucket থেকে নামো। Bucket sort-এর ছাঁচ সরাসরি।
+- **মাঝারি ১:** Maximum Gap (LeetCode 164): unsorted array-তে sort করলে পাশাপাশি দুটোর সর্বোচ্চ ব্যবধান কত, O(n) সময়ে। হিন্ট: bucket width ধরো `ceil((max - min) / (n - 1))`; প্রতি bucket-এ শুধু min আর max রাখলেই চলে — উত্তর কখনো একই bucket-এর ভেতরে থাকে না। কেন, pigeonhole দিয়ে ভাবো।
+- **মাঝারি ২:** একই random ডেটায় bucketCount = 1, 10, n বদলে বদলে সময় মাপো। k = 1-এ আসলে কোন algorithm-এ পরিণত হলে সেটা, আর কেন?
+- **কঠিন:** এমন একটা input বানাও যেখানে bucket sort তার worst case-এ পড়ে, আর দেখাও ভেতরের sort insertion হলে কী ঘটে। তারপর ভেতরে ভাষার built-in `sort()` বসাও — worst case তখন কী দাঁড়ায়, আর গড় ক্ষেত্রে কী পাল্টাল?
+
+## সারসংক্ষেপ
+
+- Bucket sort: scatter → প্রতি bucket-এ আলদা sort → concat। Bucket-এর index-ই ক্রম ধরে রাখে, তাই শেষে merge লাগে না।
+- গড়ে O(n + k), কিন্তু শুধু uniform distribution-এ; skewed ডেটায় সবাই এক bucket-এ জমে worst case O(n²)।
+- ভেতরের sort ছোট bucket-এ insertion-ই, আর stability চাইলে ভেতরের sort-কেও stable হতে হয়।
+- Counting sort = প্রতি মানের নিজস্ব ঘরওয়ালা চরম bucket sort; পূর্ণসংখ্যা + ছোট range হলে counting, float/ছড়ানো মান হলে bucket।
+- bucketCount ≈ n থাম্ব রুল; index-এর সীমানা-রক্ষা (`Math.min(k - 1, ...)`) ভুলো না।

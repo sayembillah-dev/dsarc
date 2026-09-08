@@ -1,4 +1,4 @@
 {
   "title": "Tree Data Structures",
-  "pages": ["index", "tree-terminology", "binary-tree-traversal", "level-order-traversal", "binary-search-tree", "avl-tree", "b-tree", "bfs-dfs-on-tree"]
+  "pages": ["index", "tree-terminology", "binary-tree-traversal", "level-order-traversal", "binary-search-tree", "avl-tree", "b-tree", "bfs-dfs-on-tree", "lca"]
 }

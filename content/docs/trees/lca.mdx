@@ -1,0 +1,155 @@
+---
+title: "Lowest Common Ancestor: দুজনের সবচেয়ে কাছের জনক"
+description: "Binary tree-এ দুটো node-এর সর্বনিম্ন common জনক খোঁজা — post-order recursion-এর সবচেয়ে ক্লাসিক প্রয়োগ। পুরো dry run, BST-তে এক লাইনের shortcut, আর 'node-টা আদৌ আছে তো?' ভুলটা।"
+---
+
+## কী শিখব
+
+- Lowest Common Ancestor (LCA) মানে কী — আর কেন এটা post-order recursion-এর পোস্টার-বয়
+- পাঁচ লাইনের recursion যা দুই subtree-এর খোঁজ মিলিয়ে junction ধরে
+- কেন টার্গেট পেয়েই থেমে যাওয়াটা ভুল নয়, বরং সৌন্দর্য
+- [BST](./binary-search-tree.mdx)-তে একই প্রশ্নের O(h) loop-ভিত্তিক shortcut
+- "node-ই গাছে নেই" edge case, আর parent-pointer-ওয়ালা বিকল্প
+
+## ধারণা
+
+পারিবারিক গাছ ভাবো। প্রশ্ন: "তোমার আর তোমার খালাতো ভাইয়ের সবচেয়ে কাছের common জনক কে?" উত্তর: দাদা। কাকা নয় (সে শুধু একজনের জনক), প্রপিতামহও নয় (সে common ঠিকই, কিন্তু অনেক উপরের — "lowest" নয়)। **LCA হলো সেই সর্বনিম্ন node যার নিচের দিকে (নিজেসহ) দুটো target-ই পড়ে।**
+
+এই প্রশ্নটা শুধু গাছের ঝুঁত পরীক্ষা নয় — file system-এ দুটো path-এর common prefix directory, DOM-এ দুটো element-এর common parent, version control-এ দুই branch-এর merge base — সবই LCA।
+
+সাধারণ binary tree-এ (কোনো ordering নেই) খোঁজার একটাই পথ: দুই দিকই ঘুরে দেখো। কৌশল হলো **নিচে থেকে ওপরে খবর পাঠানো** — প্রতিটা node তার বাবাকে বলে "আমার নিচে কাকে পেলে?" — আর যে node-এ প্রথম দুই দিক থেকে দুজনের খবর মিলল, সে-ই জনক। এই "আগে সন্তান, পরে সিদ্ধান্ত" ছাঁচটা চিনে গেল? এটা [Binary Tree Traversal](./binary-tree-traversal.mdx)-এর post-order-ই, শুধু print-এর জায়গায় সিদ্ধান্ত।
+
+## ধাপে ধাপে dry run
+
+গাছটা এই (LeetCode 236-এরই ক্লাসিক উদাহরণ), target `p = 7`, `q = 8`:
+
+```text
+        3
+      /   \
+     5     1
+    / \   / \
+   6   2 0   8
+      / \
+     7   4
+```
+
+নিয়ম: কোনো node null হলে null ফেরত; node নিজেই p বা q হলে নিজেই ফেরত; নইলে দুই দিকে ডাকো — দুই দিকই non-null দিলে এই node-ই LCA, একদিক দিলে সেই দিকের উত্তর ওপরে ভাসে।
+
+| Call | বাম থেকে এলো | ডান থেকে এলো | Return | মন্তব্য |
+|------|--------------|---------------|--------|---------|
+| lca(6) | null | null | null | পাতা, কেউ নেই |
+| lca(7) | — | — | **7** | নিজেই target |
+| lca(4) | null | null | null | |
+| lca(2) | 7 | null | 7 | খবর বামে, ভাসাও |
+| lca(5) | null (6) | 7 (2) | 7 | |
+| lca(0) | null | null | null | |
+| lca(8) | — | — | **8** | নিজেই target |
+| lca(1) | null (0) | 8 | 8 | |
+| lca(3) | 7 | 8 | **3** | দুই দিকেই খবর — **junction এখানেই** |
+
+লক্ষ্য করো, lca(7)-এর পর 7-এর নিচে আর কেউ যায়নি — target পেলেই থামা। আর lca(5) পুরো বামপাশ ঘুরে "শুধু 7 পেলাম" বলল; মিলন হলো একদম root-এ, কারণ 8 ছিল ডানপাশে।
+
+## কোড: পুরো implementation
+
+```js
+function lca(root, p, q) {
+  if (root === null || root === p || root === q) return root;
+
+  const left = lca(root.left, p, q);    // বামপাশে কাকে পেলে?
+  const right = lca(root.right, p, q);  // ডানপাশে?
+
+  if (left && right) return root;       // দুই দিকে একজন করে — আমিই জনক
+  return left ?? right;                 // নইলে যে দিকে খবর, সেটাই ফেরত
+}
+
+// গাছ বানাই: node = { val, left, right }
+const n = (v, l = null, r = null) => ({ val: v, left: l, right: r });
+const tree = n(3, n(5, n(6), n(2, n(7), n(4))), n(1, n(0), n(8)));
+const find = (r, v) => !r ? null : (r.val === v ? r : find(r.left, v) ?? find(r.right, v));
+const N = v => find(tree, v);
+
+console.log(lca(tree, N(5), N(1)).val);  // 3 — দুই পাশে ভাগ হয়ে গেছে
+console.log(lca(tree, N(5), N(4)).val);  // 5 — p নিজেই q-এর ancestor
+console.log(lca(tree, N(7), N(8)).val);  // 3 — dry run-এর জোড়া
+console.log(lca(tree, N(2), N(4)).val);  // 2
+console.log(lca(tree, N(6), N(6)).val);  // 6 — নিজের সাথে নিজে
+console.log(lca(null, N(6), N(6)));      // null — খালি গাছ
+```
+
+## কোড ব্রেকডাউন, লাইনে লাইনে
+
+1. `root === null` → null: খালি জায়গায় কেউ থাকে না — recursion-এর নিরাপদ তলা।
+2. `root === p || root === q` → root: target পেলেই থামো। দুটো case একসাথে ঢাকা পড়ে: (ক) p-এর নিচেই q থাকলে p-ই LCA, আর নিচে যাওয়ার দরকার নেই; (খ) q অন্য শাখায় থাকলে এই root-টাই "খবর" হয়ে ওপরে ভাসবে।
+3. `const left = ...; const right = ...` : post-order — দুই সন্তানের উত্তর আগে, নিজের সিদ্ধান্ত পরে।
+4. `if (left && right) return root` : দুই দিক থেকে দুজনের খবর — এই node-ই প্রথম junction, অর্থাৎ সর্বনিম্ন common জনক।
+5. `return left ?? right` : দুজনই একদিকে হলে ওই দিকের উত্তরই ফাইনাল (হয় LCA সেখানে আগেই ধরা পড়েছে, নয়তো খবরটা ওপরে যাবে)। দুটোই null হলে null-ই ফেরে — এই subtree-তে কেউ নেই।
+
+মনে রাখো: তুলনা হচ্ছে **node reference** দিয়ে (`root === p`), value দিয়ে নয় — গাছে একই value দুইবার থাকলেও কাজ ঠিক থাকে।
+
+## ভ্যারিয়েন্ট
+
+**BST হলে সরাসরি shortcut:** [BST](./binary-search-tree.mdx)-এর ordering আছে বলে দুই দিক খোঁজার দরকারই নেই — দুজনই ছোট হলে বামে, দুজনই বড় হলে ডানে, আর যে node-এ পথ ভাগ হয়ে যায় (বা কেউ root-এর সমান), সে-ই LCA:
+
+```js
+function lcaBST(root, p, q) {
+  while (root) {
+    if (p.val < root.val && q.val < root.val) root = root.left;   // দুজনই বামে
+    else if (p.val > root.val && q.val > root.val) root = root.right; // দুজনই ডানে
+    else return root;                   // পথ এখানেই ভাগ — এটাই LCA
+  }
+  return null;
+}
+
+const bst = n(6, n(2, n(0), n(4, n(3), n(5))), n(8, n(7), n(9)));
+const fb = v => find(bst, v);
+console.log(lcaBST(bst, fb(0), fb(5)).val);  // 2
+console.log(lcaBST(bst, fb(3), fb(7)).val);  // 6 — পথ root-এই ভাগ
+console.log(lcaBST(bst, fb(7), fb(9)).val);  // 8
+```
+
+**Target-ই গাছে নেই?** মূল কোড ধরে নেয় p, q দুজনই আছে। নাও থাকতে পারলে শুধু non-null return দেখা মানে না — পাওয়া-পতাকা (found flags) রাখতে হয়, শেষে যাচাই করো (অনুশীলনে আছে)।
+
+**Parent pointer থাকলে:** প্রতিটা node জানে তার বাবা কে — তখন গাছ ঘোরাই লাগে না। দুজনের depth বের করো, গভীরটাকে সমান গভীরতায় তোলো, তারপর দুজন একসাথে এক ধাপ করে ওপরে ওঠো, যেখানে মিলবে সে-ই LCA। Linked list-এর intersection খোঁজার হুবহু আত্মীয়।
+
+## Complexity
+
+| দিক | সাধারণ গাছ | BST shortcut |
+|-----|-----------|---------------|
+| Time | O(n) — worst-এ পুরো গাছ একবার | O(h) — প্রতি ধাপে এক পাশ বাদ |
+| Space | O(h) — recursion stack | O(1) — শুধু loop |
+| Skew গাছে | stack O(n) পর্যন্ত যায় | O(n) — ordering থাকলেও গাছ বাঁচায় না |
+
+সাধারণ গাছে O(n) থেকে ভালো হওয়া যায় না — target দুটো যেকোনো পাতায় লুকিয়ে থাকতে পারে, সবাইকে দেখতেই হবে। BST-তে ordering-এর সুবাদে প্রতি ধাপে অর্ধেক (balanced হলে) বাদ পড়ে, সেই গল্প [BST](./binary-search-tree.mdx) আর [AVL](./avl-tree.mdx)-এ।
+
+## সাধারণ ভুল আর edge case
+
+**১. BST-এর shortcut সাধারণ গাছে চাপানো।**
+value দেখে "দুজনই ছোট, বামে যাই" — সাধারণ binary tree-তে কোনো ordering নেই, q ডানপাশেই থাকতে পারে। Ordering না থাকলে দুই দিকই খুঁজতে হবে, পুরো O(n)।
+
+**২. Target পেয়েও নিচে ঢুকে যাওয়া।**
+p পেয়েও তার subtree ঘুরতে গেলে হিসাব নষ্ট — p-এর নিচে q থাকলে উত্তর p-ই, এই ছাঁচে সেটা ফ্রি-তে ঢাকা। থামার জায়গাটা ভুললে ভুল জনক ওঠে।
+
+**৩. শুধু এক দিকের return দেখে সিদ্ধান্ত।**
+`if (left) return left` আগে লিখে ফেললে "দুই দিকেই পাওয়া" junction-টা হারিয়ে যায় — উত্তর হয়ে যায় নিচের কোনো target। আগে `left && right` চেক, তারপর propagate।
+
+**৪. Value দিয়ে তুলনা।**
+`root.val === p` লিখলে duplicate value-তে ভুল node মেলে। Interview-তে ধরে নাও reference দেওয়া (LeetCode-ও তাই দেয়); value দিতে বললে uniqueness জিজ্ঞেস করো।
+
+**৫. "Target আছেই" ধরে নেওয়া।**
+একটা node গাছে নেই, অথচ অন্যটা আছে — মূল কোড চুপচাপ ওই একটাকেই ফেরত দেবে, মনে হবে LCA পাওয়া গেছে। প্রশ্নে "দুজনই আছে" নিশ্চয়তা না থাকলে found-পতাকা লাগবে।
+
+## অনুশীলন
+
+- **সহজ ১:** উপরের গাছে হাতে lca(6, 4) চালাও — কোন call কী return করল, dry run-এর ছাঁচে লেখো। (শেষে উত্তর কোড দিয়ে মিলাও।)
+- **সহজ ২:** Lowest Common Ancestor of a BST (LeetCode 235) — loop-ভিত্তিক variant দিয়ে। হিন্ট: প্রতি ধাপে জিজ্ঞেস করো, দুজন কি একই পাশে?
+- **মাঝারি ১:** Lowest Common Ancestor of a Binary Tree (LeetCode 236) — মূল পাঁচ লাইন দিয়েই হয়। তারপর নিজের কথায় ব্যাখ্যা করো: কেন lca(5, 4) = 5, অর্থাৎ p নিজেই q-এর ancestor হলে কী ঘটে?
+- **মাঝারি ২:** LCA where a node may not exist (LeetCode 1644)। হিন্ট: দুটো পতাকা রাখো (pFound, qFound) — recursion চলাকালীন target পেলে পতাকা তোলো; শেষে দুটো পতাকাই ওঠা থাকলে তবেই return-এর মানে LCA।
+- **কঠিন:** প্রতিটা node-এ parent pointer দেওয়া আছে। O(h) সময়, O(1) বাড়তি জায়গায় LCA বের করো। হিন্ট: আগে দুজনের depth, গভীরটাকে তুলে আনো, তারপর কাঁধে কাঁধ মিলিয়ে ওঠো — কেন মিলন-বিন্দুটাই LCA, প্রমাণ করো।
+
+## সারসংক্ষেপ
+
+- LCA = দুটো node-এর সর্বনিম্ন common জনক — নিচের দিকে দুজনকেই পায় এমন সবচেয়ে গভীর node।
+- সাধারণ গাছে পাঁচ লাইনের post-order: null/target হলে নিজে ফেরত, দুই দিকে ডাকো, দুটোই non-null হলে তুমিই junction, নইলে খবর ভাসাও।
+- Target পেলেই থামা ভুল নয় — "p-এর নিচে q" case ওই লাইনেই ঢাকা।
+- সময় O(n), stack O(h)। [BST](./binary-search-tree.mdx)-তে ordering-এর জোরে O(h) loop-ই যথেষ্ট।
+- তুলনা reference দিয়ে, আর "target আদৌ আছে তো?" — প্রশ্ন না বললে ধরে নিও না।

@@ -1,4 +1,4 @@
 {
   "title": "Graph Data Structures",
-  "pages": ["index", "graph-terminology", "graph-representation", "bfs", "dfs", "connected-components", "cycle-detection", "topological-sort", "dijkstra", "bellman-ford", "a-star", "minimum-spanning-tree"]
+  "pages": ["index", "graph-terminology", "graph-representation", "bfs", "dfs", "connected-components", "cycle-detection", "topological-sort", "dijkstra", "bellman-ford", "floyd-warshall", "a-star", "minimum-spanning-tree"]
 }

@@ -307,4 +307,4 @@ Plain queue দিলে "কাছেরটা আগে" গ্যারান
 - Relaxation: u হয়ে v সস্তা হলে dist[v] নামাও, নতুন দাম heap-এ push করো।
 - Lazy deletion: পুরনো entry heap-এ পড়ে থাকে, pop-এর সময় stale check দিয়ে ফেলে দাও।
 - Time O((V + E) log V), space O(V + E)।
-- Negative weight দেখলেই থেমে যাও, পথ [Bellman-Ford](./bellman-ford.mdx)-এর দিকে।
+- Negative weight দেখলেই থেমে যাও, পথ [Bellman-Ford](./bellman-ford.mdx)-এর দিকে; আর সব জোড়ার দূরত্ব এক ঢিলে চাইলে [Floyd-Warshall](./floyd-warshall.mdx)।

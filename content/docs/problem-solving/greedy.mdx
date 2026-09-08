@@ -258,3 +258,4 @@ minCoins(5, [3, 4]) চালালে while-গুলো শেষে amount = 
 - প্রথম ধাপ প্রায় সবসময় sort; আর আসল সিদ্ধান্ত হলো **কোন key-এ**।
 - Activity selection O(n log n), coin change মোটামুটি O(amount): যেখানে greedy দাঁড়ায়, সেখানে DP-র চেয়ে অনেক সস্তা।
 - [1,3,4] দিয়ে 6: এই ছোট্ট counterexample-টা মাথায় রাখো। Greedy মানেই ঠিক, এমন নয়; ঠিক, তবেই greedy।
+- আরেকটা জায়গায় greedy নিখুঁত: cache eviction-এ ভবিষ্যৎ জানা থাকলে "সবচেয়ে দূরে যেটা লাগবে সেটাই নামাও" (LFD) প্রমাণিত optimal - [Online Algorithms](./online-algorithms.mdx)।

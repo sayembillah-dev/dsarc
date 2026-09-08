@@ -1,0 +1,147 @@
+---
+title: "String Matching ও KMP: text-এ pattern, পিছোনো ছাড়া"
+description: "Naive মিলানো প্রতি mismatch-ে text-এ ফিরে আসে, O(n·m)। KMP pattern-এর ভেতরের self-overlap আগে থেকে গুনে রাখে (LPS), ফলে text-এর pointer কখনো পিছায় না — O(n+m)। LPS-এর হাতে-গোনা dry run সহ।"
+---
+
+## কী শিখব
+
+- String matching-এর প্রশ্ন আর naive পদ্ধতি কোথায় নষ্ট করে
+- মূল insight: pattern-এর নিজের prefix-সuffix overlap — **LPS (Longest Proper Prefix which is also Suffix)**
+- Mismatch-ে pattern কতটা সরে, কেন text-এর pointer কখনো পিছায় না
+- LPS বানানো আর মূল search — দুটোই রৈখিক, মোট O(n + m)
+- কখন KMP, কখন built-in `indexOf`-ই যথেষ্ট
+
+## ধারণা
+
+বইয়ের একটা পাতায় "তারাবতী" শব্দটা আছে কিনা খুঁজছো। চোখে চোখে মেলাও: একটা অক্ষর মিলল, পরেরটা মিলল… মাঝপথে গলমিল — তখন কী করো? **Naive** পদ্ধতিতে পুরো এক ঘর সরে আবার প্রথম অক্ষর থেকে শুরু। text n অক্ষর, pattern m অক্ষর হলে worst case O(n·m) — "AAAA…AAB" গোছের input-এ প্রতিবার প্রায় পুরো pattern মিলে শেষে ব্যর্থ হয়।
+
+KMP (Knuth–Morris–Pratt) জিজ্ঞেস করে: mismatch-ের মুহূর্তে আমি তো **ইতিমধ্যে** জানি pattern-এর প্রথম কয়েকটা অক্ষর text-এর সঙ্গে মিলেছিল। সেই জানা অংশের ভেতর যদি এমন টুকরো থাকে যা pattern-এর শুরুর সঙ্গেও মেলে (prefix = suffix), তাহলে pattern এগিয়ে দেওয়া যায়, আর text-এ আদৌ ফিরতে হয় না। অর্থাৎ **দুটো কাজ আলাদা: pattern-এর নিজের পরীক্ষা আগে (LPS), তারপর text-এ একদিকের সাফার** — কখনো reverse gear নেই।
+
+## ধাপে ধাপে dry run
+
+Pattern: `"ABABC"`। প্রতি prefix-এর জন্য LPS গুনি — সবচেয়ে লম্বা proper prefix যা suffix-ও:
+
+| i | prefix | proper prefix…suffix মিল | lps[i] |
+|---|--------|--------------------------|--------|
+| 0 | `A` | একটা অক্ষরে proper prefix নেই | 0 |
+| 1 | `AB` | `A` ≠ `B` | 0 |
+| 2 | `ABA` | `A` = `A` | 1 |
+| 3 | `ABAB` | `AB` = `AB` | 2 |
+| 4 | `ABABC` | `ABC` ≠ `BAB`… কিছুই নয় | 0 |
+
+LPS = `[0, 0, 1, 2, 0]`। পড়ার নিয়ম: pattern-এর i-তে mismatch হলে j পিছিয়ে যায় `lps[j - 1]`-এ — অর্থাৎ "এতটুকু আগেই মিলে গেছে ধরে নাও"।
+
+এবার search: text `"ABABDABABC"`, pattern `"ABABC"`:
+
+| ধাপ | অবস্থা (i = text, j = pattern) | ঘটনা |
+|-----|-------------------------------|-------|
+| ১ | i:0–3, j:0–3 | `ABAB` মিলল |
+| ২ | i=4 (`D`) বনাম j=4 (`C`) | mismatch → j = lps[3] = **2** (আগের `AB` জানা আছে), i সরল না! |
+| ৩ | i=4 (`D`) বনাম j=2 (`A`) | mismatch → j = lps[1] = 0 |
+| ৪ | i=4 (`D`) বনাম j=0 (`A`) | mismatch, j = 0 → i বাড়ে: 5 |
+| ৫ | i:5–9, j:0–4 | `ABABC` পুরো মিলল → **উত্তর index 5** |
+
+লক্ষ্য করো ধাপ ২-৩-এ: text-এর pointer (i) এক ফোঁটাও পিছোয়নি — pattern-ই সরেছে। এইটাই পুরো জয়।
+
+## কোড: পুরো implementation
+
+```js
+// ধাপ ১: pattern-এর নিজের পরীক্ষা — LPS array
+function buildLPS(pat) {
+  const lps = new Array(pat.length).fill(0);
+  let len = 0;        // এই মুহূর্তে মেলা prefix-এর দৈর্ঘ্য
+  let i = 1;
+  while (i < pat.length) {
+    if (pat[i] === pat[len]) {
+      lps[i++] = ++len;             // মিল বাড়ল
+    } else if (len > 0) {
+      len = lps[len - 1];           // fallback: ছোট prefix-এ আশা খোঁজো
+    } else {
+      lps[i++] = 0;                 // কোনো overlap-ই নেই
+    }
+  }
+  return lps;
+}
+
+// ধাপ ২: text-এ একদিকের সাফার — i কখনো কমে না
+function kmpSearch(text, pat) {
+  if (pat.length === 0) return 0;   // খালি pattern সবসময়ই মেলে
+  const lps = buildLPS(pat);
+  let i = 0, j = 0;
+  while (i < text.length) {
+    if (text[i] === pat[j]) {
+      i++; j++;
+      if (j === pat.length) return i - j;   // পুরো pattern মিলে গেছে
+    } else if (j > 0) {
+      j = lps[j - 1];               // pattern সরে এলো, text অটল
+    } else {
+      i++;                          // এখানে আর কমানোর কিছু নেই
+    }
+  }
+  return -1;
+}
+
+console.log(buildLPS("ABABC"));              // [0, 0, 1, 2, 0]
+console.log(buildLPS("AAAA"));               // [0, 1, 2, 3] — সর্বাধিক self-overlap
+console.log(buildLPS("AABA"));               // [0, 1, 0, 1]
+console.log(kmpSearch("ABABDABABC", "ABABC")); // 5
+console.log(kmpSearch("ABDABC", "ABC"));       // 3
+console.log(kmpSearch("AAAAA", "AAAA"));       // 0 — overlapping মেলা
+console.log(kmpSearch("HELLO", "XYZ"));        // -1
+console.log(kmpSearch("ABC", ""));             // 0
+console.log(kmpSearch("", "A"));               // -1
+```
+
+সব মিল খুঁজতে চাইলে match-এর পর `return` না করে index জমিয়ে `j = lps[j - 1]` করো — তাহলে `"AAAAA"`-তে `"AAAA"` দুইবার (0 আর 1) পাওয়া যায়।
+
+## কোড ব্রেকডাউন, লাইনে লাইনে
+
+1. `lps[i]`-এর সংজ্ঞা: pattern[0..i]-এর সবচেয়ে লম্বা **proper** prefix যা suffix-ও — "proper" মানে পুরোটা নিজে ধরা যাবে না।
+2. `buildLPS`-এর `len = lps[len - 1]` : বড় overlap ভাঙলে সরাসরি ০-তে না গিয়ে ছোট overlap-এ নামো — এটাও KMP-এর নিয়ম, pattern-এর ওপর pattern-ই চলছে।
+3. `kmpSearch`-এ mismatch-ে `j = lps[j - 1]` : "আমি জানি pattern-এর প্রথম lps[j-1] অক্ষর এই মুহূর্তে text-এ মিলা আছে" — তাই সেখান থেকেই আবার শুরু, i অটল।
+4. `j === 0`-এ mismatch মানে এই অক্ষর দিয়ে কোনো মিল সম্ভব নয় — তখনই একমাত্র `i++`।
+5. `if (pat.length === 0) return 0` : খালি pattern-এর edge case আগেই সামলাও, নইলে `pat[0]` পড়তে গিয়ে বিপদ।
+
+## Complexity
+
+| ধাপ | সময় | কেন |
+|-----|------|-----|
+| buildLPS | O(m) | `i` বাড়ে আর `len` fallback-এ কমে — মোটামুটি দ্বিগুণের মধ্যে সীমাবদ্ধ |
+| search | O(n) | প্রতি ধাপে হয় `i` বাড়ে নয় `j` কমে; মোট `j`-কমা ≤ মোট `j`-বাড়া ≤ n |
+| **মোট** | **O(n + m)** | naive-এর O(n·m) থেকে রৈখিকে |
+| Space | O(m) | শুধু LPS array |
+
+Naive-এর সঙ্গে পার্থক্য worst case-এ চোখে পড়ে: text `"AAAA…A"` (n-টা), pattern `"AA…AB"` (m-টা) — naive প্রতি জায়গায় m-বার মেলায়, KMP প্রতিটা অক্ষর একবারের মতো দেখে। তবে বাস্তবে ছোট pattern-এ constant factor-এর জন্য built-in `indexOf` (যেটা ভেতরে অনেক অপ্টিমাইজড) যথেষ্ট — KMP-এর আসল জয় streaming text (যেখানে আগের অক্ষর আর ফিরে দেখা যায় না) আর overlap-ভিত্তিক প্রশ্নে।
+
+## সাধারণ ভুল আর edge case
+
+**১. Mismatch-ে text pointer পেছানো।**
+`i = i - j + 1` লিখে ফেললে এটা আর KMP নয়, naive-ই — আর streaming input-এ অসম্ভব। মন্ত্র: i কখনো কমে না, সরে pattern।
+
+**২. LPS-এর সংজ্ঞা গুলানো।**
+"Proper" শব্দটা বাদ পড়লে `lps[i] = i + 1` জাতীয় আত্ম-মিল ভেঙে দেয় fallback-কে — `j = lps[j - 1]`-এ infinite loop-ও হতে পারে। নিজের সঙ্গে নিজের পুরো মিল ধরা নেই।
+
+**৩. Fallback-এ সোজা শূন্যে নামা।**
+`len = 0` করলে ছোট overlap হারিয়ে যায় — `"AABAACAABAA"`-জাতীয় pattern-এ ভুল। সিঁড়ি দিয়ে নামো: `len = lps[len - 1]`।
+
+**৪. Overlapping match হারানো।**
+সব মিল দরকার হলে match-এর পর `j = lps[j - 1]` না করলে `"AAAAA"`-তে `"AAAA"` একবারই মেলে, দ্বিতীয়টা হারায়।
+
+**৫. খালি pattern / খালি text।**
+`""` খোঁজা সব text-এ index 0-এ মেলে (convention), খালি text-এ non-empty pattern কখনো নয়। দুটোই আগে চেক, নইলে `pat[j]` undefined-এর দিকে যায়।
+
+## অনুশীলন
+
+- **সহজ ১:** হাতে LPS বের করো: `"ABACABAB"` আর `"XYXYZXYX"`। কোনটার self-overlap বেশি, কেন?
+- **সহজ ২:** Implement strStr() (LeetCode 28) — হুবহু `kmpSearch`। জমা দেওয়ার আগে edge case মিলাও: pattern text-এর চেয়ে লম্বা হলে?
+- **মাঝারি ১:** Longest Happy Prefix (LeetCode 1392)। হিন্ট: উত্তরটা পুরো string-এর `lps[n - 1]` দৈর্ঘ্যের prefix — নতুন কিছু লিখতেই হবে না প্রায়।
+- **মাঝারি ২:** Repeated Substring Pattern (LeetCode 459)। হিন্ট: string যদি একই টুকরোর পুনরাবৃত্তি হয়, তাহলে `n - lps[n - 1]` দিয়ে n ভাগ যাবে — কেন, ভেবে দেখো।
+- **কঠিন:** Shortest Palindrome (LeetCode 214): সামনে সর্বনিম্ন কত অক্ষর যোগ করলে palindrome হয়। হিন্ট: `s + "#" + reverse(s)`-এর LPS বানাও; শেষ ঘরের মানই বলে দেয় s-এর সর্বোচ্চ পালিনড্রোমিক prefix কতটুকু।
+
+## সারসংক্ষেপ
+
+- String matching-এ naive পদ্ধতি প্রতি mismatch-ে পিছে আসে — worst case O(n·m)।
+- KMP-এর ট্রিক: pattern-এর self-overlap আগে থেকে গোনা (LPS), ফলে mismatch-ে pattern সরে, **text কখনো নয়**।
+- LPS বানানো O(m), search O(n) — মোট O(n + m), জায়গা O(m)।
+- `j = lps[j - 1]` এই fallback লাইনটাই দুটো লুপেই প্রাণ; সিঁড়ি দিয়ে নামো, সোজা শূন্যে নয়।
+- বাস্তবে ছোট কাজে `indexOf` যথেষ্ট; KMP-এর জাদু streaming আর overlap-প্রশ্নে (1392, 459, 214)।

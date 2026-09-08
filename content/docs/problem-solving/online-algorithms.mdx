@@ -1,0 +1,204 @@
+---
+title: Online Algorithms
+description: "ভবিষ্যৎ না জেনেই এখনই সিদ্ধান্ত - cache eviction (FIFO, LRU, LFD) দিয়ে online বনাম offline, আর online কতটা খারাপ হতে পারে তার competitive ratio-এর হিসাব।"
+---
+
+## কী শিখব
+
+- Online বনাম offline: ইনপুট টুকরো টুকরো আসে, সিদ্ধান্ত এখনই, ফিরে তাকানো নেই
+- Paging/cache সমস্যা: hit, miss, eviction - কম্পিউটারের সবচেয়ে বাস্তব online সমস্যা
+- স্ট্র্যাটেজিগুলো: FIFO, LRU, LFU, LIFO, আর ভবিষ্যৎ-জানা LFD (Belady)
+- Competitive ratio: online অ্যালগরিদমকে মাপার স্কেল - worst case-এ OPT-এর কত গুণ
+- LRU কেন marking ক্লাসের, কেন ratio k, আর LIFO/LFU-র ratio কেন নেই-ই
+
+## ধারণা
+
+পরীক্ষার প্রস্তুতি চলছে। পড়ার টেবিলে বই রাখার জায়গা মাত্র **৩টা**। প্রতিবার একটা বিষয়ের বই লাগছে - টেবিলে থাকলে হাতে-হাতে (hit), না থাকলে shelf থেকে আনতে হয় আর একটা পুরনো বই ফেরত পাঠাতে হয় (miss + eviction)। প্রশ্ন: **কোন বইটা নামাব?**
+
+ব্যাপারটা সহজ হতো যদি জানতে পারতে আজকের বাকি দিনে কোন বই কখন লাগবে। কিন্তু জানো না - ভবিষ্যৎ টুকরো টুকরো উন্মোচিত হচ্ছে, আর প্রতি miss-এ তৎক্ষণাৎ সিদ্ধান্ত নিতে হচ্ছে। এই "ভবিষ্যৎ অজানা" অবস্থায় চলা অ্যালগরিদমকেই বলে **online algorithm**। আর যাকে সব ইনপুট আগে থেকেই জানা, সে **offline** - ওকে পরে রেফারেন্স হিসেবে দাঁড় করাবো।
+
+টেবিল-বই-টা আসলে তোমার কম্পিউটারের হুবহু ছবি: cache (RAM, CPU cache, browser cache, Redis) ছোট, ডেটা অনেক। Cache eviction-ই পৃথিবীর সবচেয়ে বেশি চলা online সমস্যা।
+
+আজকের রিকোয়েস্ট ধারা (বইয়ের নম্বরই পেজ): `1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5`, জায়গা k = 3।
+
+## ধাপে ধাপে dry run
+
+আগে **LRU** (Least Recently Used) - যে বইটা সবচেয়ে আগে শেষবার ব্যবহার হয়েছিল, সেটাই নামবে। টেবিলের অবস্থা লিখছি পুরনো → নতুন ক্রমে:
+
+| ধাপ | রিকোয়েস্ট | ফল | বের হলো | টেবিল (পুরনো → নতুন) |
+|-----|-----------|-----|---------|----------------------|
+| 1 | 1 | miss | - | [1] |
+| 2 | 2 | miss | - | [1, 2] |
+| 3 | 3 | miss | - | [1, 2, 3] |
+| 4 | 4 | miss | 1 | [2, 3, 4] |
+| 5 | 1 | miss | 2 | [3, 4, 1] |
+| 6 | 2 | miss | 3 | [4, 1, 2] |
+| 7 | 5 | miss | 4 | [1, 2, 5] |
+| 8 | 1 | hit | - | [2, 5, 1] |
+| 9 | 2 | hit | - | [5, 1, 2] |
+| 10 | 3 | miss | 5 | [1, 2, 3] |
+| 11 | 4 | miss | 1 | [2, 3, 4] |
+| 12 | 5 | miss | 2 | [3, 4, 5] |
+
+LRU-র মোট miss: **১০**। একই ধারায় বাকি দুজন:
+
+| স্ট্র্যাটেজি | মোট miss | মন্তব্য |
+|-------------|----------|---------|
+| FIFO (আগে এসেছে, আগে যাবে) | 9 | hit-এ কোনো হিসাবই বদলায় না |
+| LRU | 10 | এই ধারায় FIFO-র কাছে হারল! |
+| LFD (ভবিষ্যৎ জানা offline) | 7 | যে বই আবার সবচেয়ে দূরে লাগবে, সেটাই নামায় |
+
+LFD-র খেলাটা দেখো: ধাপ 4-এ সে 1 বা 2 না নামিয়ে **3**-কে নামায়, কারণ 3 আবার লাগবে ধাপ 10-এ, অথচ 1 লাগবে ধাপ 5-এ। ভবিষ্যৎ দেখতে পাওয়ার পুরো সুবিধাটা নিচ্ছে - Belady প্রমাণ করেছেন এই "সবচেয়ে দূরের ব্যবহার" নামানোই optimal offline।
+
+দুটো শিক্ষা। এক: LRU সর্বজয়ী নয়, এই বিখ্যাত ধারাতেই FIFO-র কাছে হেরে গেছে। দুই: offline optimal আর সেরা online-এর ফারাকটাই আসল মাপকাঠি।
+
+## কোড
+
+```js
+// FIFO: যে আগে ঢুকেছে, সে আগে বের হবে; hit-এ কিছুই বদলায় না
+function simulateFIFO(k, requests) {
+  const cache = [];
+  let misses = 0;
+  for (const p of requests) {
+    if (cache.includes(p)) continue; // hit
+    misses++;
+    if (cache.length === k) cache.shift(); // সবচেয়ে পুরনোটা বের
+    cache.push(p);
+  }
+  return misses;
+}
+
+// LRU: Map-এর insertion order-ই recency - hit-এও delete+set করে নতুন করে দাও
+function simulateLRU(k, requests) {
+  const cache = new Map();
+  let misses = 0;
+  for (const p of requests) {
+    if (cache.has(p)) {
+      cache.delete(p); // হিটেও recency নবায়ন জরুরি
+      cache.set(p, true);
+      continue;
+    }
+    misses++;
+    if (cache.size === k) {
+      const oldest = cache.keys().next().value; // Map সবচেয়ে পুরনো key আগে দেয়
+      cache.delete(oldest);
+    }
+    cache.set(p, true);
+  }
+  return misses;
+}
+
+// LFD (Belady): যে পেজ আবার সবচেয়ে দূরে লাগবে (বা আরই লাগবে না), সেটাই বের হবে
+function simulateLFD(k, requests) {
+  const cache = new Set();
+  let misses = 0;
+  for (let t = 0; t < requests.length; t++) {
+    const p = requests[t];
+    if (cache.has(p)) continue;
+    misses++;
+    if (cache.size === k) {
+      let victim = null, farthest = -1;
+      for (const c of cache) {
+        const next = requests.indexOf(c, t + 1); // ভবিষ্যৎ দেখা লাগছে - তাই-ই offline
+        const d = next === -1 ? Infinity : next;
+        if (d > farthest) { farthest = d; victim = c; }
+      }
+      cache.delete(victim);
+    }
+    cache.add(p);
+  }
+  return misses;
+}
+
+const seq = [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5];
+console.assert(simulateFIFO(3, seq) === 9, "dry run FIFO");
+console.assert(simulateLRU(3, seq) === 10, "dry run LRU");
+console.assert(simulateLFD(3, seq) === 7, "dry run LFD");
+const big = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1];
+console.assert(simulateFIFO(3, big) === 15, "OS textbook FIFO");
+console.assert(simulateLRU(3, big) === 12, "OS textbook LRU");
+console.assert(simulateLFD(3, big) === 9, "OS textbook LFD");
+console.assert(simulateFIFO(3, big.slice(0, 13)) === 10, "অনুশীলনের sequence");
+console.log("সব assert পাস!");
+```
+
+## কোড ব্রেকডাউন, লাইনে লাইনে
+
+**simulateFIFO:**
+
+- একটা সাধারণ array-ই যথেষ্ট - `shift()` বের করে সবচেয়ে পুরনোটা, `push()` ঢোকায় নতুনটা।
+- hit-এ **কিছুই হয় না** - এটাই LRU-র সাথে মৌলিক পার্থক্য। FIFO-র জন্য বইটা সকালে একবার খুললে কিছুই বদলায় না, ঢোকার ক্রমই সব।
+
+**simulateLRU:**
+
+- JS-এর Map insertion order মনে রাখে - প্রথম key-টাই সবচেয়ে পুরনো। তাই eviction মানে `cache.keys().next().value`।
+- hit-এ `delete` তারপর আবার `set` - পেজটা সারির একদম শেষে (সবচেয়ে সাম্প্রতিক) চলে গেল। এই দুই লাইন ভুলে গেলে LRU আর LRU থাকে না, FIFO-সদৃশ কিছু হয়ে যায়।
+- এই Map-কৌশলটাই পরে LeetCode 146 (LRU Cache)-এ doubly-linked list-এর সাথে মিলিয়ে O(1) get/put বানাতে হবে।
+
+**simulateLFD:**
+
+- `requests.indexOf(c, t + 1)` - পেজটা ভবিষ্যতে কোথায় আবার লাগবে, সরাসরি খুঁজে দেখছে। এই লাইনের জন্য পুরো ভবিষ্যৎ array হাতে লাগে - তাই এটা online অ্যালগরিদম **নয়**, বরং সবার পারফরম্যান্স মাপার benchmark।
+- `next === -1` মানে আর কখনো লাগবে না - সেটাই প্রথম পছন্দের শিকার (Infinity দূরত্ব)।
+- প্রতি miss-এ lookahead-এ O(m), তাই মোট O(m²) পর্যন্ত যেতে পারে; বাস্তবে next-use টেবিল আগে বানিয়ে নিলে সস্তা হয়। কিন্তু পয়েন্ট গতি নয়, optimality।
+
+## ভ্যারিয়েন্ট
+
+- **LIFO (নতুনটাই বের হবে) আর LFU (কম-ব্যবহৃত বের হবে):** দুটোই কুপ্রস্তুত। দেখো: k = 2, ধারা `1, 2, 3, 2, 3, 2, 3, 2, 3, 2` - LIFO প্রতি রিকোয়েস্টে miss করে (10/10), অথচ LRU/LFD মাত্র 3। যেকোনো অপপ্রয়োজনক (adversary) তাদের এভাবে ধরিয়ে দিতে পারে - তাই এদের competitive ratio বলে কিছু নেই।
+- **Competitive ratio:** online অ্যালগরিদম A-কে বলে r-competitive যদি প্রতিটা ইনপুটে তার খরচ সর্বোচ্চ r × OPT + কোনো ধ্রুবক হয়। Paging-এ LRU আর FIFO উভয়েই k-competitive - worst case-এ optimal-এর k গুণের বেশি miss কখনো নয়। প্রমাণের মূল: phase-ভিত্তিক marking argument (কার্বন-কপি এক লাইনে: প্রতি phase-এ marking অ্যালগরিদম সর্বোচ্চ kটা miss, আর offline-কেও প্রতি নতুন phase-এ অন্তত একটা miss করতেই হয়)।
+- **Ski rental:** আরেকটা ক্লাসিক online সমস্যা। স্কি ভাড়া দিনপ্রতি 1, কিনতে d। কতদিন ট্রিপ চলবে জানো না। কৌশল: (d - 1) দিন ভাড়া, তারপর কিনে ফেলো - খরচ সর্বোচ্চ 2 × OPT। ভবিষ্যৎ না জানার "কর"-ই এটা।
+
+```js
+function skiTrip(days, d) {
+  const rent = Math.min(days, d - 1);      // ভাড়ার দিন
+  const bought = days > d - 1 ? d : 0;     // কিনে ফেললে কেনার দাম
+  return { online: rent + bought, optimal: Math.min(days, d) };
+}
+console.assert(skiTrip(10, 5).online === 9 && skiTrip(10, 5).optimal === 5, "ratio 9/5 = 1.8");
+console.assert(skiTrip(3, 5).online === 3 && skiTrip(3, 5).optimal === 3, "ছোট ট্রিপে নিখুঁত");
+```
+
+- **বাস্তব জগৎ:** CPU cache-এ LRU-র cheap আসন্নানুরূপ (clock/second-chance), Redis-এ LFU-ভ্যারিয়েন্ট, browser cache - সবই আজকের খেলার বাস্তব রূপ। LFD-র মতো ভবিষ্যৎ-জানা greedy-র আত্মীয়তা [Greedy](./greedy.mdx) পাতার exchange argument-এর সাথে দেখো।
+
+## Complexity
+
+| স্ট্র্যাটেজি | প্রতি রিকোয়েস্ট | কী জানা লাগে | Competitive ratio |
+|-------------|------------------|--------------|-------------------|
+| FIFO | O(1) | শুধু আগমনের ক্রম | k |
+| LRU | O(1) (Map) | শুধু অতীতের ক্রম | k |
+| LFU | O(1) গড়ে | শুধু ফ্রিকোয়েন্সি | নেই (adversary ধরিয়ে দেয়) |
+| LIFO | O(1) | শুধু সর্বশেষ | নেই |
+| LFD (offline) | O(m) lookahead | পুরো ভবিষ্যৎ | 1 - optimal |
+
+## সাধারণ ভুল আর edge case
+
+**১. LRU-তে hit-এ recency নবায়ন ভোলা।**
+Hit মানে পেজটা এইমাত্র ব্যবহৃত - এটাকে সারির শেষে না পাঠালে সে ক্ষতিকরভাবে "পুরনো" হয়ে থাকে আর পরের miss-এ অন্যায়ভাবে বেরিয়ে যায়। delete+set দুটোই লাগবে।
+
+**২. FIFO-কে LRU ভাবা (বা উল্টোটা)।**
+FIFO hit-এ চুপচাপ; LRU hit-এ ক্রম বদলায়। উপরের dry run-এ ধাপ 8-9 দেখো: LRU-র টেবিল hit-এও বদলেছে, FIFO-র বদলায় নি - পরের eviction-গুলোই তাই আলাদা।
+
+**৩. LFD-কে deploy করতে যাওয়া।**
+LFD ভবিষ্যৎ চায় - production cache-এ চালানোর উপায় নেই। ওর কাজ benchmark: নিজের LRU-র miss-গুলো LFD-র সাথে তুলনা করে দেখো কতটা দূরে আছো।
+
+**৪. "LRU সবসময় সেরা" ধারণা।**
+আজকের ধারাতেই LRU (10) FIFO (9)-র কাছে হেরে গেছে। Competitive ratio worst-case গ্যারান্টি দেয়, প্রতি ইনপুটে জয়ের নয়। বাস্তব workload-এ locality থাকে বলে LRU ভালো চলে - সেটা আলাদা কথা।
+
+**৫. Compulsory miss আর ছোট k-এর edge।**
+ক্যাশ খালি থাকলে প্রথমবারের আনা অবশ্যই miss - সেটা কারো দোষ নয়। k = 0 হলে প্রতি রিকোয়েস্টই miss; মোট আলাদা পেজ k-র কম হলে প্রথম চক্করের পর সব hit-ই হওয়ার কথা।
+
+## অনুশীলন
+
+- **সহজ ১:** হাতে FIFO সিমুলেট করো: k = 3, ধারা `7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2`। উত্তর মিলাও: miss **10** - hit মাত্র তিনটা (ধাপ 5, 12, 13), বাকি সব miss (কোডের assert-টাই প্রমাণ)।
+- **সহজ ২:** একই ধারায় LRU হাতে চালাও; তারপর পুরো ২০-লম্বা textbook ধারাটায় (কোডের `big`) তিন স্ট্র্যাটেজির ফল - FIFO 15, LRU 12, LFD 9 - কোড দিয়ে মিলাও।
+- **মাঝারি ১:** LRU Cache (LeetCode 146)। হিন্ট: O(1) get/put চাইলে doubly-linked list + Map; Map-এর delete+set কৌশলটা আজ শেখা।
+- **মাঝারি ২:** এমন একটা ধারা লেখো যেখানে LFU বাজেভাবে ফেল করে। হিন্ট: একটা পেজকে প্রথমে অনেকবার ব্যবহার করাও (ফ্রিকোয়েন্সি জমে যাক), তারপর সে আর কখনো না লাগলেও নতুন পেজগুলোকে বারবার বের হয়ে যেতে বাধ্য করো।
+- **কঠিন:** Ski rental-এ দেখাও কোনো deterministic কৌশলই 2-এর নিচে competitive হতে পারে না - adversary ঠিক তোমার কেনার পরদিনই ট্রিপ বন্ধ করে দেবে। তারপর randomized ভাবো: coin toss করলে ratio e/(e - 1) ≈ 1.58 পর্যন্ত নামে।
+
+## সারসংক্ষেপ
+
+- Online মানে ভবিষ্যৎ অজানা, সিদ্ধান্ত এখনই; offline সব জেনে - দুটোর ফারাকটাই competitive ratio।
+- Cache eviction-এ FIFO hit-এ চুপ, LRU hit-এ recency নবায় - Map-এর delete+set কৌশল।
+- LFD (Belady) ভবিষ্যৎ জেনে সবচেয়ে দূরেরটা নামায় - optimal, কিন্তু benchmark মাত্র।
+- LRU আর FIFO উভয়েই k-competitive; LIFO/LFU competitive-ই নয় - adversarial ধারাই প্রমাণ।
+- Ratio worst-case মাপে, বাস্তবের রাজা নয়: locality-র জগতে LRU দারুণ চলে, তাই সব জায়গায় সে-ই।
+- "ভবিষ্যৎ জানা থাকলে সেরা বাছাই" ভাবনাটা [Greedy](./greedy.mdx)-র exchange argument-এরই আত্মীয় - LFD তার জীবন্ত প্রমাণ।

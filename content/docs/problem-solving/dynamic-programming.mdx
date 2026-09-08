@@ -180,6 +180,8 @@ function knapsack(weights, values, capacity) {
 console.log(knapsack([1, 3, 4, 5], [1, 4, 5, 7], 7)); // 9
 ```
 
+এই সমস্যারই পুরো একটা পাতা আছে - greedy কেন এখানে ফেল করে, space O(capacity)-তে নামানোর descending-j কৌশল, আর unbounded ভ্যারিয়েন্ট: [0/1 Knapsack](./knapsack.mdx)।
+
 ## ভ্যারিয়েন্ট ৩: grid-এ unique paths
 
 m x n grid-এ উপরে-বাঁ কোণ থেকে নিচে-ডান কোণে, শুধু ডানে বা নিচে হাঁটা যায়। কোনো ঘরে আসা যায় হয় উপরের ঘর থেকে, নয় বাঁয়ের ঘর থেকে। তাই dp[i][j] = dp[i-1][j] + dp[i][j-1]:
@@ -257,7 +259,7 @@ memo-র key হিসেবে শুধু index রাখলাম, অথচ
 - **সহজ ১:** Climbing Stairs (LeetCode 70)। হিন্ট: এই পাতার dry run-টাই; ways(i) = ways(i-1) + ways(i-2), শুধু base case ঠিক করো।
 - **সহজ ২:** Min Cost Climbing Stairs (LeetCode 746)। হিন্ট: dp[i] = cost[i] + min(dp[i-1], dp[i-2]); শুরু 0 বা 1 যেকোনোটা থেকে হতে পারে।
 - **মাঝারি ১:** House Robber (LeetCode 198)। পাশাপাশি দুই বাড়ি লুটা যায় না। হিন্ট: প্রতি বাড়িতে দুটো পছন্দ, লুটলে dp[i-2] + এখনকার টাকা, না লুটলে dp[i-1]; দুটোর বড়টা নাও।
-- **মাঝারি ২:** Longest Increasing Subsequence (LeetCode 300)। হিন্ট: dp[i] = i-এ শেষ হওয়া সবচেয়ে লম্বা বাড়তি subsequence; আগের সব j < i যেখানে nums[j] < nums[i], তাদের dp-র সর্বোচ্চটার সাথে 1 যোগ।
+- **মাঝারি ২:** Longest Increasing Subsequence (LeetCode 300)। হিন্ট: dp[i] = i-এ শেষ হওয়া সবচেয়ে লম্বা বাড়তি subsequence; আগের সব j < i যেখানে nums[j] < nums[i], তাদের dp-র সর্বোচ্চটার সাথে 1 যোগ। বিস্তারিত: [LIS পাতা](./lis.mdx)।
 - **কঠিন:** Coin Change (LeetCode 322), নিজে লিখে, এই পাতার কোড না দেখে। হিন্ট: প্রতি amount-এর জন্য সব মুদ্রা চেষ্টা; বানানো না গেলে -1।
 
 ## সারসংক্ষেপ
