@@ -318,7 +318,7 @@ function soStack(step: number): Item[] {
 }
 
 export function StackOpsAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(SO_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(SO_TOTAL);
   const cursor = SO_CURSOR[step];
   const consoleLines =
     step >= 8
@@ -340,6 +340,8 @@ export function StackOpsAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={SO_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={<StackCol items={soStack(step)} prefix="so" height={190} />}
@@ -437,7 +439,7 @@ function qoState(step: number) {
 }
 
 export function QueueOpsAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(QO_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(QO_TOTAL);
   const cursor = QO_CURSOR[step];
   const { cells, front, back } = qoState(step);
   const consoleLines =
@@ -460,6 +462,8 @@ export function QueueOpsAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={QO_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -597,7 +601,7 @@ const SV_BUBBLES: Record<number, { line: number; expr: string }> = {
 };
 
 export function StackVsQueueAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(SV_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(SV_TOTAL);
   const cursor = SV_CURSOR[step];
   const { st, q, fs, fq } = svState(step);
   const bub = SV_BUBBLES[step];
@@ -617,6 +621,8 @@ export function StackVsQueueAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={SV_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -807,7 +813,7 @@ function TwoStackViz({ items, pouring }: { items: TsItem[]; pouring: boolean }) 
 }
 
 export function TwoStackQueueAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(TS_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(TS_TOTAL);
   const cursor = TS_CURSOR[step];
   const consoleLines =
     step >= 9 ? ['1', '2', '3'] : step >= 8 ? ['1', '2'] : step >= 6 ? ['1'] : [];
@@ -821,6 +827,8 @@ export function TwoStackQueueAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={TS_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={<TwoStackViz items={tsState(step)} pouring={step === 5} />}
@@ -1006,7 +1014,7 @@ function bpCaption(frame: BpFrame | null): ReactNode {
 }
 
 export function BalancedParenAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(BP_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(BP_TOTAL);
   const cur = step === 0 ? null : BP_PLAN[step - 1];
   const frame = cur ? BP_DATA[cur.c][cur.f] : null;
 
@@ -1056,6 +1064,8 @@ export function BalancedParenAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={bpCaption(frame)}
       consoleLines={consoleLines}
       viz={
@@ -1195,7 +1205,7 @@ function dqState(step: number) {
 }
 
 export function DequeOpsAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(DQ_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(DQ_TOTAL);
   const cursor = DQ_CURSOR[step];
   const { cells, front, back } = dqState(step);
   const consoleLines =
@@ -1218,6 +1228,8 @@ export function DequeOpsAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={DQ_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -1378,7 +1390,7 @@ function msState(step: number) {
 }
 
 export function MonotonicStackAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(MS_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(MS_TOTAL);
   const cursor = MS_CURSOR[step];
   const ms = msState(step);
   const bub = MS_BUBBLES[step];
@@ -1393,6 +1405,8 @@ export function MonotonicStackAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={MS_CAPTIONS[step]}
       consoleLines={step >= 12 ? ['[ 5, 5, 6, -1, 3, -1 ]'] : []}
       viz={
@@ -1580,7 +1594,7 @@ const PQ_BUBBLES: Record<number, { expr: string; res: boolean | null }> = {
 };
 
 export function PriorityQueueAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(PQ_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(PQ_TOTAL);
   const cursor = PQ_CURSOR[step];
   const { items, best } = pqState(step);
   const bub = PQ_BUBBLES[step];
@@ -1596,6 +1610,8 @@ export function PriorityQueueAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={PQ_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={

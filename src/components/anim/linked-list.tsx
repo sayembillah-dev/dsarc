@@ -411,7 +411,7 @@ const WI_CAPTIONS: ReactNode[] = [
 ];
 
 export function WhatIsLinkedListAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(WI_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(WI_TOTAL);
 
   const nodes: ChainNode[] = [];
   if (step >= 2)
@@ -466,6 +466,8 @@ export function WhatIsLinkedListAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={WI_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -573,7 +575,7 @@ const SG_CAPTIONS: ReactNode[] = [
 ];
 
 export function SinglyLinkedListAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(SG_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(SG_TOTAL);
 
   const toneOf = (key: string): NodeTone => {
     if (key === 'n10' && step === 2) return 'new';
@@ -657,6 +659,8 @@ export function SinglyLinkedListAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={SG_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -764,7 +768,7 @@ const DL_CAPTIONS: ReactNode[] = [
 ];
 
 export function DeletionAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(DL_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(DL_TOTAL);
 
   const nodes: ChainNode[] = [];
   if (step >= 2 && step <= 5) {
@@ -816,6 +820,8 @@ export function DeletionAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={DL_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -916,7 +922,7 @@ const DB_CAPTIONS: ReactNode[] = [
 ];
 
 export function DoublyLinkedListAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(DB_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(DB_TOTAL);
 
   const nodes: ChainNode[] = [];
   if (step >= 2) nodes.push({ key: 'n10', value: 10, tone: step === 2 ? 'new' : 'default' });
@@ -945,6 +951,8 @@ export function DoublyLinkedListAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={DB_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -1050,7 +1058,7 @@ const CR_CAPTIONS: ReactNode[] = [
 ];
 
 export function CircularLinkedListAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(CR_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(CR_TOTAL);
 
   const nodes: ChainNode[] = [];
   if (step >= 2)
@@ -1113,6 +1121,8 @@ export function CircularLinkedListAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={CR_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={
@@ -1288,7 +1298,7 @@ function AvViz({ step }: { step: number }) {
 }
 
 export function ArrayVsLinkedListAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(AV_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(AV_TOTAL);
   const consoleLines = step >= 8 ? ['3', '3'] : step >= 6 ? ['3'] : [];
   return (
     <Stage
@@ -1299,6 +1309,8 @@ export function ArrayVsLinkedListAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={AV_CAPTIONS[step]}
       consoleLines={consoleLines}
       viz={<AvViz step={step} />}

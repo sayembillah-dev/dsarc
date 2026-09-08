@@ -40,7 +40,7 @@ const FN_CAPTIONS: ReactNode[] = [
 ];
 
 export function FunctionAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(FN_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(FN_TOTAL);
   const b0 = step >= 2 && step < 4 ? { expr: 'a = 3, b = 4', res: null } : undefined;
   const b1 = step >= 3 ? { expr: '3 + 4 = 7', res: true } : undefined;
   const b3 =
@@ -58,6 +58,8 @@ export function FunctionAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={FN_CAPTIONS[step]}
       consoleLines={step >= 5 ? ['7'] : []}
       lines={FN_CODE.map((code, i) => (
@@ -214,7 +216,7 @@ function ArrayBlocks({ step }: { step: number }) {
 }
 
 export function ArrayOpsAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(AR_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(AR_TOTAL);
   return (
     <Stage
       title="array অপারেশন: ঘরে ঘরে"
@@ -224,6 +226,8 @@ export function ArrayOpsAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={AR_CAPTIONS[step]}
       consoleLines={[]}
       hideConsole
@@ -453,7 +457,7 @@ function OopViz({ step }: { step: number }) {
 }
 
 export function OopAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(OOP_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(OOP_TOTAL);
   return (
     <Stage
       title="class থেকে object"
@@ -463,6 +467,8 @@ export function OopAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={OOP_CAPTIONS[step]}
       consoleLines={step >= 13 ? ['আমি Rahim, roll 5'] : []}
       viz={<OopViz step={step} />}

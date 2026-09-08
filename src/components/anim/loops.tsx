@@ -68,7 +68,7 @@ function forBubble(step: number): { expr: string; res: boolean | null } | undefi
 }
 
 export function ForLoopAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(FOR_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(FOR_TOTAL);
   const consoleLines: string[] = [];
   if (step >= 3) consoleLines.push('i = 0');
   if (step >= 5) consoleLines.push('i = 1');
@@ -85,6 +85,8 @@ export function ForLoopAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={FOR_CAPTIONS[step]}
       consoleLines={consoleLines}
       lines={FOR_CODE.map((code, i) => (
@@ -174,7 +176,7 @@ function whileHalveBubble(step: number): { expr: string; res: boolean | null } |
 }
 
 export function WhileLoopAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(WHILE_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(WHILE_TOTAL);
   const consoleLines: string[] = [];
   if (step >= 4) consoleLines.push('4');
   if (step >= 7) consoleLines.push('2');
@@ -189,6 +191,8 @@ export function WhileLoopAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={WHILE_CAPTIONS[step]}
       consoleLines={consoleLines}
       lines={WHILE_CODE.map((code, i) => (

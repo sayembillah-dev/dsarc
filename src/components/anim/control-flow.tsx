@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Pause, Play, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react';
 
 const BASE_MS = 1150;
 
@@ -34,7 +34,15 @@ export function useStepPlayer(total: number) {
     setPlaying(false);
     setStep(0);
   };
-  return { step, playing, toggle, reset, done: step >= total };
+  const next = () => {
+    setPlaying(false);
+    setStep((s) => Math.min(s + 1, total));
+  };
+  const prev = () => {
+    setPlaying(false);
+    setStep((s) => Math.max(s - 1, 0));
+  };
+  return { step, playing, toggle, reset, next, prev, done: step >= total };
 }
 
 /* ------------------------------ atoms ------------------------------ */
@@ -177,6 +185,8 @@ export function Stage({
   done,
   onToggle,
   onReset,
+  onNext,
+  onPrev,
   caption,
   lines,
   consoleLines,
@@ -190,6 +200,8 @@ export function Stage({
   done: boolean;
   onToggle: () => void;
   onReset: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
   caption: ReactNode;
   lines: ReactNode;
   consoleLines: string[];
@@ -221,6 +233,18 @@ export function Stage({
               <RotateCcw className="size-4" />
             </motion.button>
           )}
+          {onPrev && (
+            <motion.button
+              type="button"
+              onClick={onPrev}
+              disabled={step <= 0}
+              aria-label="আগের ধাপ"
+              whileTap={{ scale: 0.92 }}
+              className="inline-flex size-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronLeft className="size-4" />
+            </motion.button>
+          )}
           <motion.button
             type="button"
             onClick={onToggle}
@@ -234,6 +258,18 @@ export function Stage({
               <Play className="size-4 translate-x-[1px]" />
             )}
           </motion.button>
+          {onNext && (
+            <motion.button
+              type="button"
+              onClick={onNext}
+              disabled={step >= total}
+              aria-label="পরের ধাপ"
+              whileTap={{ scale: 0.92 }}
+              className="inline-flex size-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronRight className="size-4" />
+            </motion.button>
+          )}
         </div>
       </div>
       <div className="min-h-6 px-5 pt-2 text-[13px] text-zinc-500">
@@ -307,7 +343,7 @@ const IF_CAPTIONS: ReactNode[] = [
 ];
 
 export function IfElseAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(IF_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(IF_TOTAL);
   const cursor = IF_CURSOR[step];
 
   const bubbles: Record<number, { expr: string; res: boolean | null }> = {};
@@ -323,6 +359,8 @@ export function IfElseAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={IF_CAPTIONS[step]}
       consoleLines={step >= 7 ? ['A গ্রেড'] : []}
       lines={IF_CODE.map((code, i) => (
@@ -387,7 +425,7 @@ const SW_CAPTIONS: ReactNode[] = [
 ];
 
 export function SwitchAnim() {
-  const { step, playing, toggle, reset, done } = useStepPlayer(SW_TOTAL);
+  const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(SW_TOTAL);
   const cursor = SW_CURSOR[step];
 
   const bubbles: Record<number, { expr: string; res: boolean | null }> = {};
@@ -403,6 +441,8 @@ export function SwitchAnim() {
       done={done}
       onToggle={toggle}
       onReset={reset}
+      onNext={next}
+      onPrev={prev}
       caption={SW_CAPTIONS[step]}
       consoleLines={step >= 8 ? ['সোমবার'] : []}
       lines={SW_CODE.map((code, i) => (
