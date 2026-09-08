@@ -15,7 +15,7 @@ description: "BFS-এর বড় ভাই। min-heap দিয়ে প্�
 
 ধরো, তুমি এক শহর থেকে আরেক শহরে যাবে, আর প্রতিটা রাস্তার দৈর্ঘ্য আলাদা। [BFS](./bfs.mdx) তোমাকে বলে দেবে কোন পথে **কম রাস্তা** পড়ে। কিন্তু ২টা লম্বা রাস্তা মিলে ১০০ কিমি হতে পারে, আবার ৫টা ছোট রাস্তা মিলে মাত্র ১২ কিমি। "কম edge" আর "কম খরচ" তখন আর এক জিনিস নয়। BFS-এর shortest path-এর গ্যারান্টিটা ছিল শুধু unweighted graph-এর জন্য, এই পাতায় আমরা সেই ফাঁকটাই পূরণ করব।
 
-Dijkstra-র আইডিয়াটা BFS-এরই বড় হয়ে ওঠা রূপ। BFS queue থেকে যাকে আগে পেয়েছে তাকে আগে process করে। Dijkstra বলে: দাঁড়াও, আগে নাও **এখন পর্যন্ত জানা সবচেয়ে কাছের** node-টাকে। ব্যাপারটা হলো, queue-র জায়গায় [min-heap](../heaps/minheap-class.mdx), অর্থাৎ একটা priority queue ([priority queue](../stacks-queues/priority-queue.mdx)-তে এর জগতটা দেখেছিলে)। কাছেরটাকে আগে নেওয়াটা একটা [greedy](../problem-solving/greedy.mdx) সিদ্ধান্ত: প্রতি ধাপে লোকালি সেরা পছন্দ। আর মজার ব্যাপার, সব edge-এর weight non-negative হলে এই greedy পছন্দটা কখনো ভুল হয় না।
+Dijkstra-র আইডিয়াটা BFS-এরই বড় হয়ে ওঠা রূপ। BFS queue থেকে যাকে আগে পেয়েছে তাকে আগে process করে। Dijkstra বলে: দাঁড়াও, আগে নাও **এখন পর্যন্ত জানা সবচেয়ে কাছের** node-টাকে। ব্যাপারটা হলো, queue-র জায়গায় [min-heap](../heaps/minheap-class.mdx), অর্থাৎ একটা priority queue ([priority queue](../queues/priority-queue.mdx)-তে এর জগতটা দেখেছিলে)। কাছেরটাকে আগে নেওয়াটা একটা [greedy](../problem-solving/greedy.mdx) সিদ্ধান্ত: প্রতি ধাপে লোকালি সেরা পছন্দ। আর মজার ব্যাপার, সব edge-এর weight non-negative হলে এই greedy পছন্দটা কখনো ভুল হয় না।
 
 কেন? সেটাই এই পাতার প্রাণ, এক লাইনে: **min-heap থেকে যে node-টা pop হলো, তার distance সেই মুহূর্তেই final।** যুক্তিটা এমন: তার চেয়ে কাছে আর কেউ নেই (heap-ই সে প্রমাণ), আর ঘুরপথে এলে পথে অন্তত একটা দূরত্ব যোগ হবেই, weight তো negative নয়, তাই পরে সস্তা হওয়ার উপায় নেই।
 
@@ -83,7 +83,7 @@ class Graph {
 }
 ```
 
-এবার একটা compact MinHeap। পুরো তত্ত্বটা [min-heap](../heaps/minheap-class.mdx)-এ আছে (ঢুকিয়ে উপরে ভাসানো: [bubble up](../heaps/heap-insert-bubble-up.mdx), সর্বনিম্ন বের করে নিচে ডোবানো: [extract min](../heaps/heap-extract-min.mdx); আরও ব্যবহার: [priority queue-এর অ্যাপ্লিকেশন](../heaps/priority-queue-applications.mdx))। এখানে শুধু দরকারি অংশটুকু, প্রতিটা element হলো [priority, value] জোড়া:
+এবার একটা compact MinHeap। পুরো তত্ত্বটা [min-heap](../heaps/minheap-class.mdx)-এ আছে (ঢুকিয়ে উপরে ভাসানো: [bubble up](../heaps/heap-insert-bubble-up.mdx), সর্বনিম্ন বের করে নিচে ডোবানো: [extract min](../heaps/heap-extract-min.mdx); আরও ব্যবহার: [priority queue-এর অ্যাপ্লিকেশন](../priority-queues/priority-queue-applications.mdx))। এখানে শুধু দরকারি অংশটুকু, প্রতিটা element হলো [priority, value] জোড়া:
 
 ```js
 class MinHeap {

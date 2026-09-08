@@ -138,7 +138,7 @@ console.log(q.dequeue()); // 2
 | ঢোকা | O(1) | O(1) | O(1) |
 | বের হওয়া | O(1) | O(1) | O(1), amortized |
 
-Two-stack queue-র dequeue-এর হিসাবটা সুন্দর। খারাপ সময়ে একটা dequeue O(n), যখন সবাই সরে। কিন্তু ভাবো প্রতি উপাদানের জীবন: একবার inbox-এ ঢোকে, সর্বোচ্চ একবার outbox-এ সরে, একবার বের হয়। মোট তিনবার ছোঁয়া, n উপাদানে 3n কাজ। তাই প্রতি dequeue-এ গড় খরচ constant: এটাই **amortized O(1)**, [Array Operations](../arrays-strings/array-operations.mdx)-এর সেই একই যুক্তি, অন্য রূপে।
+Two-stack queue-র dequeue-এর হিসাবটা সুন্দর। খারাপ সময়ে একটা dequeue O(n), যখন সবাই সরে। কিন্তু ভাবো প্রতি উপাদানের জীবন: একবার inbox-এ ঢোকে, সর্বোচ্চ একবার outbox-এ সরে, একবার বের হয়। মোট তিনবার ছোঁয়া, n উপাদানে 3n কাজ। তাই প্রতি dequeue-এ গড় খরচ constant: এটাই **amortized O(1)**, [Array Operations](../arrays/array-operations.mdx)-এর সেই একই যুক্তি, অন্য রূপে।
 
 ## সাধারণ ভুল আর edge case
 
@@ -172,3 +172,5 @@ Undo লাগলে queue, টাস্ক লাইন লাগলে stack: 
 - সাম্প্রতিক আগে লাগলে stack (undo, DFS), পুরনো আগে লাগলে queue (BFS, scheduling)।
 - দুই stack মিলে queue হয়: outbox খালি হলে তবেই সরানো, তাহলে amortized O(1)।
 - কাঠামো বাছার আগে নীতি বাছো; নীতি ভুল হলে কোনো implementation বাঁচাবে না।
+
+**পরের section:** [Hash Tables](../hash-tables/index.mdx), যেখানে লাইন-স্তূপের নিয়ম ছেড়ে নাম শুনলেই সরাসরি জিনিসটা হাতে পাওয়ার জাদু।

@@ -53,9 +53,9 @@ console.log(arr[2]); // 3
 
 ## কোড ব্রেকডাউন: লাইনে লাইনে
 
-1. `arr.unshift(1)` করলে array-এর ভেতরে সব উপাদান এক ঘর ডানে সরে যায়। [Array Operations পেজে](../arrays-strings/array-operations.mdx) এই shift-এর dry-run দেখেছ। n টা উপাদান থাকলে n টা সরানো, তাই O(n)।
+1. `arr.unshift(1)` করলে array-এর ভেতরে সব উপাদান এক ঘর ডানে সরে যায়। [Array Operations পেজে](../arrays/array-operations.mdx) এই shift-এর dry-run দেখেছ। n টা উপাদান থাকলে n টা সরানো, তাই O(n)।
 2. Linked list-এ `{ value: 1, next: head }` লিখলেই নতুন node পুরনো head-কে দেখাচ্ছে। আগের শৃঙ্খল একটুও নড়েনি। দুটো pointer বদল, তাই O(1)।
-3. `arr[2]` মানে সরাসরি `base_address + 2 × size` হিসাব করে লাফানো, O(1)। [Array Basics-এ](../arrays-strings/array-basics.mdx) এই address-এর হিসাবটা দেখেছ।
+3. `arr[2]` মানে সরাসরি `base_address + 2 × size` হিসাব করে লাফানো, O(1)। [Array Basics-এ](../arrays/array-basics.mdx) এই address-এর হিসাবটা দেখেছ।
 4. Linked list-এ তৃতীয়টা চাইলে `head.next.next` লিখতে হয়, মানে head থেকে দুই ধাপ হাঁটা। i-তমটা চাইলে i ধাপ, তাই worst case-এ O(n)।
 5. একই লিস্টে এখন দশ হাজার item ঢুকলে কী হবে ভাবো। Array-তে প্রতিবার unshift-এ পুরোটা সরবে। Linked list-এ প্রতিবার এক ধাপ। দশ হাজারবার এই কাজ করলে পার্থক্য চোখে পড়ার মতো।
 
@@ -118,4 +118,4 @@ Linked list-এর node গুলো **ছড়ানো**। একটা node
 - Array cache-friendly আর কম memory-তে চলে; linked list প্রতি node-এ বাড়তি pointer নেয় আর ছড়ানো থাকে।
 - Linked list শেখার আসল কারণ: pointer দিয়ে ভাবার ব্যায়াম, যেটা পরে Tree আর Graph-এ সরাসরি লাগবে।
 
-**পরের পেজ:** [Stacks & Queues](/docs/stacks-queues), যেখানে linked list-এর prepend/deleteFront দুটোই লাগবে, একটা নতুন কাঠামো বানাতে।
+**পরের section:** [Stacks](/docs/stacks), যেখানে linked list-এর prepend/deleteFront দুটোই লাগবে, একটা নতুন কাঠামো বানাতে।

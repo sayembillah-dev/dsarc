@@ -5,7 +5,7 @@ description: Heap দিয়ে priority queue-এর প্রতিশ্র
 
 ## কী শিখব
 
-- [Priority Queue](../stacks-queues/priority-queue.mdx)-এর প্রতিশ্রুতি heap দিয়ে কীভাবে পূরণ হলো
+- [Priority Queue](../queues/priority-queue.mdx)-এর প্রতিশ্রুতি heap দিয়ে কীভাবে পূরণ হলো
 - Top-K সমস্যার পুরো dry run: size-k heap-এর চালাকি
 - কেন পুরো sort-এর বদলে size-k heap: খরচের হিসাব
 - একই চালক আর কোথায় কোথায়: Dijkstra, median, scheduling
@@ -13,10 +13,10 @@ description: Heap দিয়ে priority queue-এর প্রতিশ্র
 
 ## ধারণা
 
-Section 06-এ priority queue বানিয়েছিলাম sort দিয়ে: প্রতি enqueue-তে O(n log n), মোটে খারাপ। তখন প্রতিশ্রুতি ছিল heap দিয়ে দুটো অপারেশনই O(log n) হবে। [MinHeap](./minheap-class.mdx) হাতে পেয়ে সেটা এবার সত্যি:
+Queues section-এ priority queue বানিয়েছিলাম sort দিয়ে: প্রতি enqueue-তে O(n log n), মোটে খারাপ। তখন প্রতিশ্রুতি ছিল heap দিয়ে দুটো অপারেশনই O(log n) হবে। [MinHeap](../heaps/minheap-class.mdx) হাতে পেয়ে সেটা এবার সত্যি:
 
 ```js
-const pq = new MinHeap();   // আগের পেজের ক্লাস
+const pq = new MinHeap();   // Heaps section-এর ক্লাস
 
 pq.enqueue = pq.push;       // নাম মিলিয়ে নিই
 pq.dequeue = pq.pop;
@@ -100,7 +100,7 @@ console.log(topK([3, 1, 5, 12, 2, 11], 3)); // [12, 11, 5]
 k = 0 হলে খালি ফল, k ≥ n হলে পুরোটাই ফল। দুটোই আগে চেক করো, নইলে অদ্ভুত ফল। Edge case আগে লেখার অভ্যাস, সব পেজে ফিরে ফিরে আসছে দেখো।
 
 **৪. Priority বদলে যাওয়া object ঢোকানো।**
-Heap-এ object ঢোকিয়ে পরে তার priority বদলালে heap জানে না, ভুল ক্রমে বের হয়। [Priority Queue](../stacks-queues/priority-queue.mdx)-এর পুরনো সতর্কতা: priority বদলালে নতুন করে ঢোকাও, আর পুরনোটা stale হিসেবে ফেলে দেওয়ার চুক্তি রাখো (lazy deletion, Dijkstra-তে লাগবে)।
+Heap-এ object ঢোকিয়ে পরে তার priority বদলালে heap জানে না, ভুল ক্রমে বের হয়। [Priority Queue](../queues/priority-queue.mdx)-এর পুরনো সতর্কতা: priority বদলালে নতুন করে ঢোকাও, আর পুরনোটা stale হিসেবে ফেলে দেওয়ার চুক্তি রাখো (lazy deletion, Dijkstra-তে লাগবে)।
 
 **৫. সবসময় heap, যখন একবারের কাজ।**
 একবারের k-তম খোঁজায় heap বানানো (O(n log k)) quickselect-এর গড়ে O(n)-এর কাছে হেরে যায়। Heap-এর দাম বারবারের খেলায়; একবারের জন্য হালকা অস্ত্র যথেষ্ট।
@@ -115,8 +115,10 @@ Heap-এ object ঢোকিয়ে পরে তার priority বদলা�
 
 ## সারসংক্ষেপ
 
-- Heap দিয়ে priority queue সত্যিই O(log n)/O(log n), section 06-এর প্রতিশ্রুতি পূর্ণ।
+- Heap দিয়ে priority queue সত্যিই O(log n)/O(log n), Queues section-এর প্রতিশ্রুতি পূর্ণ।
 - Top-K-এর চালাকি: সেরা k-টা রাখো size-k heap-এ, root হলো দলের খারাপতম, নতুন ভালো এলে সে বিদায়।
 - খরচ O(n log k), জায়গা O(k): পুরো sort-এর চেয়ে বিশাল জয় যখন k ছোট।
 - Dijkstra, median, merge-k, scheduling: "বারবার চরম মান" দেখলেই heap।
 - একবারের k-তমে quickselect হালকা; heap বারবারের খেলার অস্ত্র।
+
+**পরের section:** [Graph Data Structures](../graphs/index.mdx), যেখানে Dijkstra-র ভেতরে এই priority queue আর heap জুটির আসল জয়গান দেখবে।

@@ -119,7 +119,7 @@ function nextSmaller(arr) {
 - প্রতিটা index জীবনে ঠিক **একবার push** হয়: মোট n-বার।
 - প্রতিটা index সর্বোচ্চ **একবার pop** হয় (পপ হলে আর stack-এ ফেরে না): মোট সর্বোচ্চ n-বার।
 
-তাহলে while মিলিয়ে সারা প্রোগ্রামে সর্বোচ্চ n-বার pop, বাইরের loop n-বার, মোট কাজ প্রায় 2n, মানে **O(n)**। কোনো এক ধাপে while অনেকবার ঘুরতে পারে (ধাপ ৩-এ দুইবার ঘুরেছিল), কিন্তু সেই খরচ কারও না কারও জীবনের একমাত্র pop, আবার আসবে না। [Array Operations](../arrays-strings/array-operations.mdx)-এর amortized যুক্তির আরেকটা জয়গান এটা। Space O(n), খারাপ সময়ে (ক্রমশ কমতে থাকা array) সবাই stack-এ জমে থাকে।
+তাহলে while মিলিয়ে সারা প্রোগ্রামে সর্বোচ্চ n-বার pop, বাইরের loop n-বার, মোট কাজ প্রায় 2n, মানে **O(n)**। কোনো এক ধাপে while অনেকবার ঘুরতে পারে (ধাপ ৩-এ দুইবার ঘুরেছিল), কিন্তু সেই খরচ কারও না কারও জীবনের একমাত্র pop, আবার আসবে না। [Array Operations](../arrays/array-operations.mdx)-এর amortized যুক্তির আরেকটা জয়গান এটা। Space O(n), খারাপ সময়ে (ক্রমশ কমতে থাকা array) সবাই stack-এ জমে থাকে।
 
 ## কোথায় আরও লাগে এই কৌশল
 
@@ -128,7 +128,7 @@ function nextSmaller(arr) {
 - **Daily Temperatures** (LeetCode 739): কতদিন পর গরম, index-এর stack আর `i - j`।
 - **Stock Span:** কত দিন ধরে দাম আজকের চেয়ে কম ছিল।
 - **Largest Rectangle in Histogram** (LeetCode 84): প্রতি বারের জন্য বামে আর ডানে প্রথম ছোটটা খুঁজে আয়তন, monotonic stack ছাড়া কল্পনাই কঠিন।
-- **Sliding Window Maximum** (LeetCode 239): সেখানে একই ধারণার monotonic **deque** লাগে, [Deque](./deque.mdx)-এর অনুশীলনে আঘাত হেনেছিলে।
+- **Sliding Window Maximum** (LeetCode 239): সেখানে একই ধারণার monotonic **deque** লাগে, [Deque](../queues/deque.mdx)-এর অনুশীলনে আঘাত হেনেছিলে।
 
 ## সাধারণ ভুল আর edge case
 
@@ -162,3 +162,5 @@ function nextSmaller(arr) {
 - ভেতরে while থাকলেও O(n), কারণ প্রতিটা index জীবনে একবার push, সর্বোচ্চ একবার pop।
 - Stack-এ index রাখো, মান না: উত্তরের ঘরও পাবে, দূরত্বও পাবে।
 - Daily temperatures, stock span, histogram: এক কৌশল, একঝাঁক বিখ্যাত সমস্যা।
+
+**পরের section:** [Queues](../queues/index.mdx), stack-এর উল্টো পিঠ: যে আগে আসে, সে-ই আগে যায়।

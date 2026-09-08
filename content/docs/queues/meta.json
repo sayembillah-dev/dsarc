@@ -1,0 +1,4 @@
+{
+  "title": "Queues",
+  "pages": ["index", "queue-fifo", "deque", "priority-queue", "stack-vs-queue"]
+}

@@ -86,7 +86,7 @@ console.log(extractMin(h)); // 2: পরের সর্বনিম্ন, ন�
 
 ## কোড ব্রেকডাউন: লাইনে লাইনে
 
-1. `if (heap.length === 0) return undefined` : খালি heap-এ চেনা নিরাপত্তা, [Stack](../stacks-queues/stack-lifo.mdx)-এর pop-এর মতোই।
+1. `if (heap.length === 0) return undefined` : খালি heap-এ চেনা নিরাপত্তা, [Stack](../stacks/stack-lifo.mdx)-এর pop-এর মতোই।
 2. `const last = heap.pop()` : শেষ ঘর তোলা। একটাই উপাদান থাকলে `heap.length` শূন্য হয়ে যায়, তাই পরের `if` দরকার।
 3. `heap[0] = last` : শেষের লোক root-এ। এই মুহূর্তে নিয়ম প্রায় নিশ্চিতভাবে ভাঙা, তাই নিচের লুপ।
 4. `let smallest = i` : চ্যাম্পিয়ন-প্যাটার্ন আবার, তিনজনের মধ্যে সর্বনিম্ন খোঁজা (parent + দুই child)।
@@ -103,7 +103,7 @@ console.log(extractMin(h)); // 2: পরের সর্বনিম্ন, ন�
 | Bubble down | সর্বোচ্চ O(log n) | প্রতি swap এক স্তর নামে, height-টুকু |
 | মোট | **O(log n)** | |
 
-পরপর সবগুলো extract করলে? প্রতিটা O(log n), মোট n-টার জন্য O(n log n), আর বের হওয়া ক্রমটা হয় sorted। চেনা লাগছে? এটাই [Heap Sort](../sorting/heap-sort.mdx)-এর প্রাণ, section 09-এ ফিরে দেখেছিলে। একটা কাঠামো, দুই জগতের সেতু।
+পরপর সবগুলো extract করলে? প্রতিটা O(log n), মোট n-টার জন্য O(n log n), আর বের হওয়া ক্রমটা হয় sorted। চেনা লাগছে? এটাই [Heap Sort](../sorting/heap-sort.mdx)-এর প্রাণ, section 11-এ ফিরে দেখেছিলে। একটা কাঠামো, দুই জগতের সেতু।
 
 ## সাধারণ ভুল আর edge case
 

@@ -86,7 +86,7 @@ console.log(isPalindrome("madam"));  // true
 console.log(isPalindrome("hello"));  // false
 ```
 
-খেয়াল করো, এটা হুবহু [Traversal](./traversal.mdx)-এর reverse প্যাটার্ন, শুধু swap-এর জায়গায় তুলনা। প্যাটার্ন একবার শিখলে যে বারবার ফিরে আসে, এর চেয়ে ভালো উদাহরণ আর নেই।
+খেয়াল করো, এটা হুবহু [Traversal](../arrays/traversal.mdx)-এর reverse প্যাটার্ন, শুধু swap-এর জায়গায় তুলনা। প্যাটার্ন একবার শিখলে যে বারবার ফিরে আসে, এর চেয়ে ভালো উদাহরণ আর নেই।
 
 ## লুকানো ফাঁদ: লুপে `+` দিয়ে জোড়া
 
@@ -167,7 +167,7 @@ console.log(isAnagram("stackoverflow", "flowerovstack")); // true
 console.log(isAnagram("hello", "world"));                 // false
 ```
 
-দুটো কথা মাথায় রাখো। এক, এই ২৬-ঘরের সংস্করণ শুধু ছোট হাতের a–z ধরে; বড় হাত এলে আগে `toLowerCase()` করো, আর সব ধরনের অক্ষরের জন্য একই কায়দা `Map` দিয়ে চলে। দুই, আরেকটা রাস্তা আছে: দুটো string-কেই sort করে তুলনা, খরচ O(n log n)। Frequency-র রাস্তা O(n), তাই বড় ইনপুটে এটাই জেতে। সময় O(n), জায়গা O(1), কারণ ২৬ ঘর input-এর সাথে বাড়ে না।
+দুটো কথা মাথায় রাখো। এক, এই ২৬-ঘরের সংস্করণ শুধু ছোট হাতের a-z ধরে; বড় হাত এলে আগে `toLowerCase()` করো, আর সব ধরনের অক্ষরের জন্য একই কায়দা `Map` দিয়ে চলে। দুই, আরেকটা রাস্তা আছে: দুটো string-কেই sort করে তুলনা, খরচ O(n log n)। Frequency-র রাস্তা O(n), তাই বড় ইনপুটে এটাই জেতে। সময় O(n), জায়গা O(1), কারণ ২৬ ঘর input-এর সাথে বাড়ে না।
 
 ## কোড ব্রেকডাউন: isPalindrome, লাইনে লাইনে
 
@@ -229,3 +229,5 @@ JavaScript অক্ষর গোনে UTF-16 code unit দিয়ে। অ�
 - `charCodeAt(0) - 97` দিয়ে অক্ষর সরাসরি index হয়, frequency গোনার ভিত্তি।
 - Anagram চেকই frequency-র প্রথম বড় কাজ: একটার নামে ভরো, আরেকটা দিয়ে খালি করো, O(n)-এ শেষ।
 - Palindrome-এর two-pointer আসলে traversal-এর reverse প্যাটার্নই, নতুন কিছু না।
+
+**পরের section:** [Linked Lists](../linked-lists/index.mdx), যেখানে ঘরগুলো পাশাপাশি না থেকেও পরস্পরকে চেনে, pointer-এর সুতো ধরে।

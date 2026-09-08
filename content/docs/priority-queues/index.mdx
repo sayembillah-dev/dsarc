@@ -1,0 +1,18 @@
+---
+title: Priority Queues
+description: জরুরি উপাদান আগে বের হবে, এই ধারণার পুরো জগৎ। Heap-এর উপর দাঁড়িয়ে priority queue কীভাবে Top-K, Dijkstra আর streaming median-এর চাবি হয়।
+---
+
+গল্পটা দুই জায়গায় ছড়িয়ে ছিল, এবার জোড়া লাগবে। [Queues](/docs/queues) section-এ [Priority Queue](../queues/priority-queue.mdx)-র ধারণা পেয়েছিলে: FIFO না, জরুরি আগে। কিন্তু সেদিনের সরল বাস্তবায়ন দুটোই কোনো না কোনো পথে O(n)-এ ঠেকছিল, আর প্রতিশ্রুতি ছিল heap দিলে দুটো অপারেশনই O(log n) হবে। আগের section [Heaps](/docs/heaps)-এ সেই ইঞ্জিনটা নিজে গেড়ে ফেলেছ। এবার দেখো এই জুটি দিয়ে বাস্তবে কী কী সম্ভব।
+
+**Section Roadmap:** Heap-এর উপর priority queue-র চূড়ান্ত রূপ, আর এর সবচেয়ে বিখ্যাত প্রয়োগগুলো।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Priority Queue ও প্রয়োগ](./priority-queue-applications.mdx): Top-K-এর পুরো dry run, Dijkstra, heap sort, আর কখন heap নয়
+
+## সারাংশ
+
+Priority queue হলো ধারণা (জরুরি আগে), heap হলো তার দক্ষ বাস্তবায়ন: insert আর extract দুটোই O(log n)। Top-K-এর চালাকি size-k heap, Dijkstra-র ইঞ্জিন min-heap; "বারবার চরম মান তোলা" দেখলেই এই জুটি।
+
+**পরবর্তী:** [Graph Data Structures](/docs/graphs), যেখানে Dijkstra এসে এই priority queue-রই জয়গান গাইবে।

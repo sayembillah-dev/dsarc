@@ -1,0 +1,20 @@
+---
+title: Strings
+description: Array-এর সবচেয়ে কাছের আত্মীয় String। Immutability-র আসল দাম, split আর join-এর যাতায়াত, char code-এর হিসাব, আর palindrome-anagram-এর ক্লাসিক খেলা।
+---
+
+আগের section-এ Array শিখে এসেছ: পাশাপাশি সাজানো ঘর, index দিয়ে সরাসরি লাফানো। এবার ভাবো, ঘরগুলোতে সংখ্যা না বসে যদি বসে অক্ষর? তুমি বন্ধুকে যে মেসেজটা পাঠাও, ওটাই একটা string, একদল character পাশাপাশি বসে আছে। দেখতে array-এর মতোই, index আছে, length আছে; কিন্তু একটা ভারী নিয়ম আলাদা: JavaScript-এ string immutable, একবার বানালে ভেতরের কোনো character আর বদলানো যায় না।
+
+এই একটা নিয়ম পুরো খেলার ধরন বদলে দেয়, আর string-এর সমস্যায় স্ট্যান্ডার্ড কায়দা হয়ে ওঠে: array-তে ভাঙো, সেখানে array-এর সব কৌশল লাগাও, আবার জুড়ে দাও। এতটাই আত্মীয়, তবু নিয়মটা এতটাই গুরুত্বপূর্ণ যে string পেল নিজের একটা পুরো section।
+
+**Section Roadmap:** Array-এর কৌশল string-এ লাগানো, immutability-র খরচের হিসাব, আর palindrome-anagram ঘরানার ক্লাসিক সমস্যা।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Strings: character-দের array](./strings.mdx): immutability-র আসল দাম, split/join-এর যাতায়াত, char code-এর হিসাব, anagram আর palindrome-এর dry run
+
+## সারাংশ
+
+String হলো immutable character array: পড়া O(1), "বদলানো" মানে নতুন কপি, আর লুপে `s +=` মানে চুপচাপ O(n²)। খেলার কায়দা একটাই: `split("")` দিয়ে ভাঙো, array-এর কৌশল লাগাও, `join("")` দিয়ে জোড়ো। Frequency গোনা আর two-pointer, দুটোই আগের section থেকেই চেনা।
+
+**পরবর্তী:** [Linked Lists](/docs/linked-lists), যেখানে ঘরগুলো আর পাশাপাশি থাকে না; memory-তে ছড়িয়ে-ছিটিয়ে থেকে শুধু pointer-এর সুতোয় বাঁধা থাকে।

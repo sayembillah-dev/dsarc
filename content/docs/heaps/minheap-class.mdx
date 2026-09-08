@@ -133,7 +133,7 @@ const pq = new Heap((a, b) => a.priority - b.priority);
 pq.push({ task: "রিপোর্ট", priority: 2 });
 ```
 
-এই এক চালাকিতে class-টা এখন যেকোনো নিয়মের priority queue, [Priority Queue](../stacks-queues/priority-queue.mdx)-এর সেই প্রতিশ্রুতি এবার পুরো হলো।
+এই এক চালাকিতে class-টা এখন যেকোনো নিয়মের priority queue, [Priority Queue](../queues/priority-queue.mdx)-এর সেই প্রতিশ্রুতি এবার পুরো হলো।
 
 ## Complexity
 
@@ -177,3 +177,5 @@ Heap median দেয় না, k-তম দেয় না, শুধু চ�
 - Comparator parameter দিলে এক class-ই min/max/object-priority সব হয়।
 - pop-এর ক্রম: আগে root ধরো, পরে শেষটা সরাও, তারপর ডোবাও।
 - Heap চরম মানের কাঠামো; median/k-তম চাইলে আরও কৌশল লাগে, সেগুলো patterns-এ।
+
+**পরের section:** [Priority Queues](../priority-queues/index.mdx), যেখানে এই MinHeap class-টাই হয়ে উঠবে আসল priority queue, আর Top-K থেকে Dijkstra, সব খেলা দেখাবে।

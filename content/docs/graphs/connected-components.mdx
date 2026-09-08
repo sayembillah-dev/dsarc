@@ -151,7 +151,7 @@ console.log(sameComponent(comp, "A", "I")); // false
 
 ## ভ্যারিয়েন্ট ২: grid-এ island গোনা
 
-Grid-টা আসলে ভূতুরে graph: প্রতিটা land cell একটা node, চার দিকে চারটা edge, কিন্তু সেটা কোথাও লেখা নেই। (Grid নিয়ে basic কনফিউশন থাকলে আগে [2D Arrays](../arrays-strings/2d-arrays.mdx) দেখে এসো।) বাইরের loop-টা এখানে দুটো nested loop, আর visited set-এর বদলে অনেক সময় grid-টাকেই ডুবিয়ে দিয়ে দাগ দেওয়া হয়:
+Grid-টা আসলে ভূতুরে graph: প্রতিটা land cell একটা node, চার দিকে চারটা edge, কিন্তু সেটা কোথাও লেখা নেই। (Grid নিয়ে basic কনফিউশন থাকলে আগে [2D Arrays](../arrays/2d-arrays.mdx) দেখে এসো।) বাইরের loop-টা এখানে দুটো nested loop, আর visited set-এর বদলে অনেক সময় grid-টাকেই ডুবিয়ে দিয়ে দাগ দেওয়া হয়:
 
 ```js
 function numIslands(grid) {

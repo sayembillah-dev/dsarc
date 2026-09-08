@@ -15,7 +15,7 @@ description: Queue দিয়ে উপরের স্তর থেকে ন
 
 [DFS](./binary-tree-traversal.mdx) যেমন এক শাখা ধরে গভীরে নেমেই যায়, **level-order** ঠিক উল্টোটা: আগে root, তারপর ওর child-দের পুরো স্তর, তারপর তাদের child-দের স্তর, সবসময় বাম থেকে ডানে। ঠিক যেন গাছের উপর দিয়ে একটা স্ক্যান লাইন নিচে নামছে।
 
-নাম থেকেই বোঝা যাচ্ছে এটা আসলে কী: গাছের জগতে **BFS**। আর BFS মানে [Queue](../stacks-queues/queue-fifo.mdx), যে আগে ঢুকেছে সে আগে visit হবে। মনে করো সেই এক লাইনের ম্যাজিক: **stack মানে গভীরে (DFS), queue মানে পাশাপাশি (BFS)**।
+নাম থেকেই বোঝা যাচ্ছে এটা আসলে কী: গাছের জগতে **BFS**। আর BFS মানে [Queue](../queues/queue-fifo.mdx), যে আগে ঢুকেছে সে আগে visit হবে। মনে করো সেই এক লাইনের ম্যাজিক: **stack মানে গভীরে (DFS), queue মানে পাশাপাশি (BFS)**।
 
 ## পরীক্ষার গাছ
 
@@ -105,7 +105,7 @@ Level-order ছাঁচ একটু বদলালেই খুলে যা�
 
 - **Height বের করা:** প্রতি স্তরে একটা counter বাড়াও, যেতে যেতে।
 - **Zigzag traversal:** জোড় স্তরে `level` উল্টে দাও (বা deque দিয়ে)।
-- **স্তরভিত্তিক সর্বোচ্চ/যোগফল:** for-এর ভেতরে aggregate চালাও, [Traversal](../arrays-strings/traversal.mdx)-এর চ্যাম্পিয়ন প্যাটার্ন।
+- **স্তরভিত্তিক সর্বোচ্চ/যোগফল:** for-এর ভেতরে aggregate চালাও, [Traversal](../arrays/traversal.mdx)-এর চ্যাম্পিয়ন প্যাটার্ন।
 - **Right side view:** প্রতি স্তরের শেষ উপাদানটাই নাও।
 
 পরে [Graph BFS](../graphs/bfs.mdx)-এ গেলে দেখবে, একই কঙ্কাল, শুধু graph-এ visited-সেট যোগ হয়, কারণ সেখানে cycle থাকে।
@@ -116,7 +116,7 @@ Level-order ছাঁচ একটু বদলালেই খুলে যা�
 for চলতে চলতে queue-এ child ঢুকে length বাড়ে, স্তরের সীমা গুলে যায়, সব এক স্তরে গুলিয়ে যায়। `levelSize` আগে ধরো, পরে loop।
 
 **২. `shift()`-এর O(n) খরচ ভুলে যাওয়া।**
-[Queue](../stacks-queues/queue-fifo.mdx)-এর সেই পুরনো ফাঁদ: array-র `shift()` প্রতিবার সবাইকে সরায়। ছোট গাছে না বুঝলেও বড় গাছে BFS O(n²) হয়ে যায়। বাস্তবে pointer-ভিত্তিক queue নাও, বা index দিয়ে এগোও (`queue[i++]`), বাড়তি খরচ শূন্য।
+[Queue](../queues/queue-fifo.mdx)-এর সেই পুরনো ফাঁদ: array-র `shift()` প্রতিবার সবাইকে সরায়। ছোট গাছে না বুঝলেও বড় গাছে BFS O(n²) হয়ে যায়। বাস্তবে pointer-ভিত্তিক queue নাও, বা index দিয়ে এগোও (`queue[i++]`), বাড়তি খরচ শূন্য।
 
 **৩. null child চেক না করে push।**
 Null ঢুকে পরে `node.left` পড়তে গিয়ে TypeError। `if (node.left)` চেক দুই লাইনে, কিন্তু না করলে পুরো traversal ভেঙে যায়।

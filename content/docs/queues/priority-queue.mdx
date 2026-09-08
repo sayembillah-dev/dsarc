@@ -119,12 +119,12 @@ class PriorityQueue {
 |------------|---------|---------|----------------|
 | Sort-on-enqueue | O(n log n) | O(n) | খারাপ |
 | Scan-on-dequeue | O(1) | O(n) | খারাপ |
-| **Heap** (section 12) | **O(log n)** | **O(log n)** | **O(n log n)** |
+| **Heap** (section 14) | **O(log n)** | **O(log n)** | **O(n log n)** |
 
 ## কোড ব্রেকডাউন: scan-on-dequeue, লাইনে লাইনে
 
 1. `enqueue` শুধু `push` : ঢোকানোর সময় কোনো সাজানো নেই, এজন্যই O(1)। কাজটা পেছনে ঠেলে দিলাম, বের করার সময় দেখা যাবে।
-2. `let best = 0` : চ্যাম্পিয়ন প্যাটার্ন, [Traversal](../arrays-strings/traversal.mdx)-এর max/min খোঁজার হুবহু রূপ, এবার প্রতিযোগী হলো priority।
+2. `let best = 0` : চ্যাম্পিয়ন প্যাটার্ন, [Traversal](../arrays/traversal.mdx)-এর max/min খোঁজার হুবহু রূপ, এবার প্রতিযোগী হলো priority।
 3. `this.items[i].priority < this.items[best].priority` : ছোট priority জেতে, তাই `<`। Max-priority চাইলে এই এক চিহ্নটাই `>` হয়ে যায়, বাকি সব অটুট।
 4. `splice(best, 1)` : চ্যাম্পিয়নকে মাঝ থেকে কেটে আনা। `splice` ভেতরে সরায়, O(n), কিন্তু স্ক্যানটাই তো O(n), তাই বিল একই থাকে।
 5. `[top]` destructuring : `splice` array ফেরায়, প্রথমটাই আমাদের চাই।

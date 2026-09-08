@@ -1,0 +1,22 @@
+---
+title: Stacks
+description: থালার স্তূপের মতো LIFO কাঠামো, শেষে রাখাটাই আগে ওঠে। Undo, bracket matching আর monotonic stack-এর জাদু, সব এই এক নিয়ম থেকে।
+---
+
+ভাবো তো। ব্রাউজারের back button চাপলে শেষে দেখা পেজটাই আগে ফিরে আসে। Ctrl+Z চাপলে সবচেয়ে সাম্প্রতিক কাজটাই আগে আনডু হয়। কাকতাল না, দুটোর ভেতরেই একটা **Stack** কাজ করছে।
+
+Array বা Linked List-এ ডেটা যেকোনো জায়গা থেকে access করা যায়। Stack-এ ব্যাপারটা এমন না। এখানে ডেটা ঢোকানো-বের করার নির্দিষ্ট নিয়ম আছে: এক প্রান্তে ঢোকে, সেই প্রান্তেই বের হয়, আর শেষে ঢোকাটা আগে ওঠে। এই "নিয়ন্ত্রিত" নিয়মটাই undo, parsing, DFS-এর ভিত্তি।
+
+**Section Roadmap:** Stack (LIFO) কী ও কীভাবে বানায়, বাস্তব প্রয়োগে balanced parentheses, আর interview-প্রিয় monotonic stack।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Stack (LIFO)](./stack-lifo.mdx): থালার স্তূপের মতো, শেষে রাখাটাই আগে ওঠে
+2. [Balanced Parentheses](./balanced-parentheses.mdx): বাস্তব সমস্যায় stack-এর প্রয়োগ
+3. [Monotonic Stack](./monotonic-stack.mdx): সাজানো stack দিয়ে 'পরের বড়টা' এক পাসে
+
+## সারাংশ
+
+সহজ কথায়, Stack মানে LIFO: push আর pop দুটোই এক প্রান্তে, দুটোই O(1)। Undo, bracket matching, DFS, যেখানে "সবচেয়ে সাম্প্রতিকটা আগে" লাগে সেখানেই stack। আর monotonic stack দিয়ে "পরের বড়টা কে" ধরনের সমস্যা মাত্র এক পাসে, O(n)-এ।
+
+**পরবর্তী:** [Queues](/docs/queues), stack-এর ঠিক উল্টো পিঠ, যেখানে যে আগে আসে সে-ই আগে যায়।

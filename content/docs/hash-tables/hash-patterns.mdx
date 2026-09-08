@@ -32,7 +32,7 @@ description: frequency map, seen-set, complement lookup, prefix sum আর canon
 
 সমস্যাটা ধরো: একটা string দেওয়া আছে, বের করতে হবে প্রথম যে character-টা মাত্র একবার এসেছে (LeetCode 387-এর মতো)। যেমন "aabbcddce"-এ উত্তর 'e'। সোজা উপায় কী? প্রতিটা character-এর জন্য পুরো string ঘুরে গুনে দেখা, দুটো nested loop, O(n²)। আরেকটা উপায় মাথায় আসতে পারে: string-টা sort করে ফেলা, তাহলে সমান অক্ষর পাশাপাশি চলে আসে, গোনা সহজ। কিন্তু sort-ই O(n log n) (হিসাবটা [Sorting Comparison](../sorting/sorting-comparison.mdx)-এ), আর তার চেয়ে বড় কথা, sort করতেই মূল ক্রমটা হারিয়ে গেল। "কে সবার আগে এসেছিল" এই প্রশ্নের উত্তর তখন আর নেই। যখনই order আর uniqueness দুটোই দরকার, sort হেরে যায়, hash জিতে।
 
-Hash-এর প্ল্যান দুই pass-এর: প্রথম pass-এ শুধু গোনা, দ্বিতীয় pass-এ ক্রম ধরে এগিয়ে প্রথম যার count 1, সেই উত্তর। দ্বিতীয় pass-টা আসলে আরেকটা সাধা [traversal](../arrays-strings/traversal.mdx), তাই মোট খরচ O(n) + O(n) = O(n)। হাতে হাতে চালাই। Pass 1-এ "aabbcddce" গুনে গুনে map-টা দাঁড়ায়: a→2, b→2, c→2, d→2, e→1। এবার pass 2, ক্রম ধরে:
+Hash-এর প্ল্যান দুই pass-এর: প্রথম pass-এ শুধু গোনা, দ্বিতীয় pass-এ ক্রম ধরে এগিয়ে প্রথম যার count 1, সেই উত্তর। দ্বিতীয় pass-টা আসলে আরেকটা সাধা [traversal](../arrays/traversal.mdx), তাই মোট খরচ O(n) + O(n) = O(n)। হাতে হাতে চালাই। Pass 1-এ "aabbcddce" গুনে গুনে map-টা দাঁড়ায়: a→2, b→2, c→2, d→2, e→1। এবার pass 2, ক্রম ধরে:
 
 | ধাপ | i | char | count | থামছি? |
 |-----|---|------|-------|---------|
@@ -218,7 +218,7 @@ function anagramKey(w) {
 // groupAnagrams-এর ভেতরে শুধু key-এর লাইনটা বদলে anagramKey(w) দিলেই চলবে
 ```
 
-ছোট শব্দে sorted key-ই যথেষ্ট, পড়তেও সহজ। separator-টা কেন বাধ্যতম, সেটা ভুল ৩-এ দেখবে। আর string-এর অক্ষর নিয়ে এই ধরনের খেলা আগে [Strings](../arrays-strings/strings.mdx)-এও করেছি।
+ছোট শব্দে sorted key-ই যথেষ্ট, পড়তেও সহজ। separator-টা কেন বাধ্যতম, সেটা ভুল ৩-এ দেখবে। আর string-এর অক্ষর নিয়ে এই ধরনের খেলা আগে [Strings](../strings/strings.mdx)-এও করেছি।
 
 ## কোড ব্রেকডাউন: twoSum, লাইনে লাইনে
 

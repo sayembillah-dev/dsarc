@@ -1,0 +1,21 @@
+---
+title: Queues
+description: টিকিট লাইনের ন্যায়ে FIFO কাঠামো, যে আগে আসে সে আগে যায়। দক্ষ queue বানানো, দুই মুখের deque, priority queue-র ধারণা, আর stack-এর সঙ্গে মুখোমুখি তুলনা।
+---
+
+টিকিট কাউন্টারের লাইনে যে আগে দাঁড়িয়েছে, সে-ই আগে টিকিট পায়। আগের section-এ Stack দেখেছ, থালার স্তূপের মতো শেষেরটা আগে ওঠে। Queue হলো তার ঠিক উল্টো পিঠ: ঢোকে এক প্রান্তে, বের হয় অন্য প্রান্তে, আগেরটা আগে। এই FIFO নিয়মটাই printer queue, task scheduling, আর BFS-এর ইঞ্জিন।
+
+**Section Roadmap:** Queue (FIFO) ও এর দক্ষ বাস্তবায়ন, দুই মুখের deque, priority queue-র ধারণা, আর শেষে stack বনাম queue-র মুখোমুখি ফয়সালা।
+
+## এই Chapter-এ যা যা আছে
+
+1. [Queue (FIFO)](./queue-fifo.mdx): লাইনে দাঁড়ানোর মতো, যে আগে আসে সে আগে যায়
+2. [Deque](./deque.mdx): দুই প্রান্তেই যোগ-বাদ করা যায় এমন কাঠামো
+3. [Priority Queue](./priority-queue.mdx): লাইন ভেঙে যার priority বেশি, সে-ই আগে
+4. [Stack vs Queue](./stack-vs-queue.mdx): একই ডেটার দুই জগৎ, দুই নীতির ফয়সালা
+
+## সারাংশ
+
+সহজ কথায়, Queue মানে FIFO: enqueue আর dequeue, দক্ষ version-এ দুটোই O(1)। Deque হলো দুই মুখের queue, stack আর queue-র সাধারণ রূপ। আর priority queue-তে নিয়ম বদলে যায়: জরুরি আগে; তার দক্ষ ইঞ্জিন heap-এর গল্প আসছে [Heaps](/docs/heaps) আর [Priority Queues](/docs/priority-queues) section-এ।
+
+**পরবর্তী:** [Hash Tables](/docs/hash-tables), যেখানে আর কোনো লাইন-স্তূপের নিয়ম নেই; নাম শুনলেই চোখ বন্ধ করে জিনিসটা হাতে পাওয়ার জাদু।

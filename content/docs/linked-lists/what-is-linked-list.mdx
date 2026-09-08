@@ -21,7 +21,7 @@ Linked List-ও ঠিক এমন। এখানে প্রতিটা ঘ
  head
 ```
 
-ভাবো তো, [array-এ কী হতো](../arrays-strings/array-basics.mdx)? সব ঘর পাশাপাশি সাজানো, তাই `base_address + (i × element_size)` হিসাব করে সরাসরি যেকোনো ঘরে লাফানো যায়। Linked list-এ সেই ছক নেই। ঘরগুলো ছড়ানো, তাই "পঞ্চমটা কী?" জানতে চাইলে head থেকে একে একে হেঁটে যেতে হয়। এই একটা পার্থক্য থেকেই পরের সব সুবিধা-অসুবিধার হিসাব আসে।
+ভাবো তো, [array-এ কী হতো](../arrays/array-basics.mdx)? সব ঘর পাশাপাশি সাজানো, তাই `base_address + (i × element_size)` হিসাব করে সরাসরি যেকোনো ঘরে লাফানো যায়। Linked list-এ সেই ছক নেই। ঘরগুলো ছড়ানো, তাই "পঞ্চমটা কী?" জানতে চাইলে head থেকে একে একে হেঁটে যেতে হয়। এই একটা পার্থক্য থেকেই পরের সব সুবিধা-অসুবিধার হিসাব আসে।
 
 ## মেমরিতে আসলে কী ঘটে
 
@@ -126,4 +126,4 @@ while (current !== null) {
 - `head` হলো প্রথম node-এর ঠিকানা; এটা হারালে পুরো লিস্ট হারানো।
 - Traversal-এর ছক মুখস্থ রাখো: `let current = head; while (current !== null) { ...; current = current.next; }`
 
-**পরের পেজ:** [Singly Linked List: পুরো একটা class বানাই](./singly-linked-list.mdx), যেখানে এই আইডিয়ার উপর দাঁড় করে prepend, append, find সব বানাব। আর array-এর সাথে পার্থক্যের হিসাবটা আবার দেখতে চাইলে ফিরে যাও: [Array Basics](../arrays-strings/array-basics.mdx)।
+**পরের পেজ:** [Singly Linked List: পুরো একটা class বানাই](./singly-linked-list.mdx), যেখানে এই আইডিয়ার উপর দাঁড় করে prepend, append, find সব বানাব। আর array-এর সাথে পার্থক্যের হিসাবটা আবার দেখতে চাইলে ফিরে যাও: [Array Basics](../arrays/array-basics.mdx)।

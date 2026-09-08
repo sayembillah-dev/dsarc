@@ -267,7 +267,7 @@ quadratic-এ একই ব্লকে পড়েও লাফ আলাদ�
 
 **Worst case: O(n)।** কুৎসিত hash function সব key-কে একই slot-এ পাঠিয়ে দিলে একটাই chain, দৈর্ঘ্য n। তখন get মানে পুরো chain-এ linear search। ভালো hash function ([কীভাবে বানায়](./hash-function.mdx)) আর resize মিলে এই worst case-কে বিরল কাকতাল করে দেয়।
 
-**Rehash: একবারে O(n), কিন্তু amortized O(1)।** resize ঘটলে n-টা entry আবার বসে, সেটা সস্তা নয়। কিন্তু খেয়াল করো, table দ্বিগুণ হওয়ার পর পরের resize আসতে আসতে অন্তত আরও n/2-টা insert হবে। মানে সেই মহাঙ্গর খরচটা অনেকগুলো সস্তা insert-এর ওপর ভাগ হয়ে যায়। হুবহু এই যুক্তিতেই dynamic array-র push amortized O(1) হয়, দেখো [Array Operations](../arrays-strings/array-operations.mdx)।
+**Rehash: একবারে O(n), কিন্তু amortized O(1)।** resize ঘটলে n-টা entry আবার বসে, সেটা সস্তা নয়। কিন্তু খেয়াল করো, table দ্বিগুণ হওয়ার পর পরের resize আসতে আসতে অন্তত আরও n/2-টা insert হবে। মানে সেই মহাঙ্গর খরচটা অনেকগুলো সস্তা insert-এর ওপর ভাগ হয়ে যায়। হুবহু এই যুক্তিতেই dynamic array-র push amortized O(1) হয়, দেখো [Array Operations](../arrays/array-operations.mdx)।
 
 **Space: O(n + capacity)।** n-টা entry-র জায়গা, সাথে capacity-র খালি ঘরগুলো। load factor সীমাবদ্ধ থাকায় capacity-ও n-এর constant গুণিতক, তাই মোটকথা O(n)।
 

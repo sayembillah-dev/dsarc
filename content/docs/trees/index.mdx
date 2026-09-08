@@ -3,7 +3,7 @@ title: Tree Data Structures
 description: root, leaf, traversal, BST, AVL, B-Tree, LCA — শাখা-প্রশাখাওয়ালা কাঠামোর সবকিছু একসাথে।
 ---
 
-এতক্ষণ যা পড়লে, array, linked list, stack, queue, সব এক লাইনে সাজানো রৈখিক (linear) কাঠামো। এবার একটু শাখা-প্রশাখা করি। **Tree**-র কথা বলছি, যেটা ছাড়া file system, DOM, database index, decision-making, কিছুই চলে না। আর section 08-এর recursion এখানে দারুণ কাজে লাগবে।
+এতক্ষণ যা পড়লে, array, linked list, stack, queue, সব এক লাইনে সাজানো রৈখিক (linear) কাঠামো। এবার একটু শাখা-প্রশাখা করি। **Tree**-র কথা বলছি, যেটা ছাড়া file system, DOM, database index, decision-making, কিছুই চলে না। আর section 10-এর recursion এখানে দারুণ কাজে লাগবে।
 
 **Section Roadmap:** আগে পরিভাষা, তারপর traversal (Pre/In/Post আর Level-Order), এরপর BST, তারপর নিজে ভারসাম্য রাখা AVL, শেষে database-এর B-Tree পরিচিতি, BFS/DFS-এর সারসংক্ষেপ, আর সব শেখা মিলিয়ে একটা ক্লাসিক প্রয়োগ: LCA।
 
@@ -22,4 +22,4 @@ description: root, leaf, traversal, BST, AVL, B-Tree, LCA — শাখা-প�
 
 tree মানে শ্রেণিবদ্ধ কাঠামো (root/leaf/height)। DFS-এর তিন রূপ: pre/in/post (recursion বা stack), আর in-order BST-তে sorted ক্রম দেয়। BFS মানে level-order, চলে queue দিয়ে। BST গড়ে O(log n), কিন্তু skew হলে O(n); AVL rotation দিয়ে সবসময় O(log n) রাখে। B-Tree-তে এক node-এ অনেক key, database আর disk-এর জন্য। আর LCA দেখায় post-order recursion কীভাবে দুই শাখার খবর মিলিয়ে সিদ্ধান্ত নেয় — BST-তে ordering থাকলে সেটা O(h) loop-এ নেমে আসে। শেষ কথা: stack মানে DFS, queue মানে BFS।
 
-**পরবর্তী:** [Heaps & Priority Queues](/docs/heaps)।
+**পরবর্তী:** [Heaps](/docs/heaps)।

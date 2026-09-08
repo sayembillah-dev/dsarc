@@ -1,4 +1,0 @@
-{
-  "title": "Stacks & Queues",
-  "pages": ["index", "stack-lifo", "balanced-parentheses", "monotonic-stack", "queue-fifo", "deque", "priority-queue", "stack-vs-queue"]
-}

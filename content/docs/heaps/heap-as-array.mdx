@@ -76,7 +76,7 @@ console.log(child(heap, leftChild(2))); // undefined: 2-এর child নেই
 ## কেন এই ম্যাপিং এত দামি
 
 - **Pointer শূন্য:** node-এ তিনটা field (value, left, right) বাঁচল, শুধু মানটাই রইল। মেমরি কম, কোড সরল।
-- **Cache-বান্ধব:** array-এ উপাদান memory-তে পাশাপাশি ([Array Basics](../arrays-strings/array-basics.mdx)-এর contiguous কথা মনে আছে?)। নিচে নামার পথে ঘরগুলো কাছাকাছি থাকে, pointer-গাছের ছড়ানো ঘরের চেয়ে cache-এ ভালো খেলে।
+- **Cache-বান্ধব:** array-এ উপাদান memory-তে পাশাপাশি ([Array Basics](../arrays/array-basics.mdx)-এর contiguous কথা মনে আছে?)। নিচে নামার পথে ঘরগুলো কাছাকাছি থাকে, pointer-গাছের ছড়ানো ঘরের চেয়ে cache-এ ভালো খেলে।
 - **Complete হওয়াই শর্ত:** ফাঁকা থাকলে নম্বর লাফ দেয়, সূত্র ভেঙে যায়। তাই heap-এর insert/extract এমনভাবে লেখা হয় যাতে আকৃতি complete-ই থাকে, পরের দুই পেজে সেটাই দেখবে।
 
 ## 1-based রেওয়াজ: আরেক সূত্র-সেট
