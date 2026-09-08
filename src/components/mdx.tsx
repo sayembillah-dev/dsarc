@@ -12,6 +12,15 @@ import {
   WhatIsLinkedListAnim,
 } from './anim/linked-list';
 import {
+  AvlRotationAnim,
+  BfsDfsTreeAnim,
+  BstInsertAnim,
+  BstSearchAnim,
+  LevelOrderAnim,
+  TreeAnatomyAnim,
+  TreeTraversalAnim,
+} from './anim/tree-flow';
+import {
   BalancedParenAnim,
   DequeOpsAnim,
   MonotonicStackAnim,
@@ -46,6 +55,13 @@ export function getMDXComponents(components?: MDXComponents) {
     DequeOpsAnim,
     MonotonicStackAnim,
     PriorityQueueAnim,
+    TreeAnatomyAnim,
+    TreeTraversalAnim,
+    LevelOrderAnim,
+    BstSearchAnim,
+    BstInsertAnim,
+    AvlRotationAnim,
+    BfsDfsTreeAnim,
     ...components,
   } satisfies MDXComponents;
 }
