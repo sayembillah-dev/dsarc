@@ -17,28 +17,32 @@ description: Queue দিয়ে উপরের স্তর থেকে ন
 
 নাম থেকেই বোঝা যাচ্ছে এটা আসলে কী: গাছের জগতে **BFS**। আর BFS মানে [Queue](../queues/queue-fifo.mdx), যে আগে ঢুকেছে সে আগে visit হবে। মনে করো সেই এক লাইনের ম্যাজিক: **stack মানে গভীরে (DFS), queue মানে পাশাপাশি (BFS)**।
 
+বাস্তবে কোথায় লাগে? এক, tree-কে array-তে গুঁজে রাখা — binary heap হুবহু level-order ক্রমে array-তে সংরক্ষিত থাকে, [Heap as Array](../heaps/heap-as-array.mdx)-এ গিয়ে সেটাই দেখবে। দুই, "সবচেয়ে কম গভীরে ম্যাচ কোথায়" ধরনের খোঁজ — BFS সবসময় root-এর কাছের উত্তরটা আগে পায়।
+
 ## পরীক্ষার গাছ
 
+আগের পেজের সেই ফোল্ডার-গাছটাই আবার:
+
 ```text
-        1          ← level 0
-       / \
-      2   3        ← level 1
-     / \
-    4   5          ← level 2
+        dsarc/          ← level 0
+        /     \
+     src/      content/  ← level 1
+     /   \
+  app/   components/     ← level 2
 ```
 
 ## Dry run: queue-এর অবস্থা ধাপে ধাপে
 
 | ধাপ | বের হলো | তার child ঢুকল | queue (বামে front) | স্তর শেষে result |
 |-----|---------|------------------|--------------------|--------------------|
-| শুরু | - | root ঢুকল | `[1]` | `[]` |
-| 1 | 1 | 2, 3 | `[2, 3]` | `[[1]]` |
-| 2 | 2 | 4, 5 | `[3, 4, 5]` | - |
-| 3 | 3 | - | `[4, 5]` | `[[1], [2, 3]]` |
-| 4 | 4 | - | `[5]` | - |
-| 5 | 5 | - | `[]` | `[[1], [2, 3], [4, 5]]` |
+| শুরু | - | root ঢুকল | `[dsarc]` | `[]` |
+| 1 | dsarc | src, content | `[src, content]` | `[[dsarc]]` |
+| 2 | src | app, components | `[content, app, components]` | - |
+| 3 | content | - | `[app, components]` | `[[dsarc], [src, content]]` |
+| 4 | app | - | `[components]` | - |
+| 5 | components | - | `[]` | `[[dsarc], [src, content], [app, components]]` |
 
-দুটো জিনিস চোখে পড়ো। এক, কে বের হচ্ছে আর কে ঢুকছে, তারা দুই স্তরের: ধাপ ২-তে 2 বের হচ্ছে, কিন্তু ঢুকছে 4 আর 5, পরের স্তরের। দুই, queue সবসময় **সামনে থেকে খালি, পেছনে ভরে**, FIFO ঠিকঠাক চলছে।
+দুটো জিনিস চোখে পড়ো। এক, কে বের হচ্ছে আর কে ঢুকছে, তারা দুই স্তরের: ধাপ ২-তে src বের হচ্ছে, কিন্তু ঢুকছে app আর components, পরের স্তরের। দুই, queue সবসময় **সামনে থেকে খালি, পেছনে ভরে**, FIFO ঠিকঠাক চলছে।
 
 Queue-টা সত্যিই কীভাবে ভরে আর খালি হয়, চালিয়ে দেখো:
 
@@ -46,7 +50,7 @@ Queue-টা সত্যিই কীভাবে ভরে আর খালি
 
 ## সমস্যা: স্তর আলাদা করবে কীভাবে?
 
-শুধু ঘোরা হলে ক্রম `1, 2, 3, 4, 5`, ঠিকই। কিন্তু সমস্যাগুলো চায় স্তরভিত্তিক উত্তর: "প্রতি স্তরে কে কে", "কোন স্তরে সর্বোচ্চ যোগফল", "গাছের height কত"। Queue-তে তো সব গুলিয়ে আছে, বলবে কীভাবে 2 আর 3 আলাদা স্তরের?
+শুধু ঘোরা হলে ক্রম `dsarc, src, content, app, components`, ঠিকই। কিন্তু সমস্যাগুলো চায় স্তরভিত্তিক উত্তর: "প্রতি স্তরে কে কে", "কোন স্তরে সর্বোচ্চ যোগফল", "গাছের height কত"। Queue-তে তো সব গুলিয়ে আছে, বলবে কীভাবে src আর app আলাদা স্তরের?
 
 চালাকি: **প্রতি স্তর শুরুর আগে queue-এর তৎকালীন আকার মনে রাখো**। ওই সংখ্যকটাই এই স্তরের, বাকিগুলো পরের স্তরের, যতই ঢুকুক।
 
@@ -78,11 +82,11 @@ function levelOrder(root) {
 }
 
 // গাছ: উপরেরটাই
-const r = new TreeNode(1);
-r.left = new TreeNode(2);  r.right = new TreeNode(3);
-r.left.left = new TreeNode(4);  r.left.right = new TreeNode(5);
+const r = new TreeNode("dsarc");
+r.left = new TreeNode("src");  r.right = new TreeNode("content");
+r.left.left = new TreeNode("app");  r.left.right = new TreeNode("components");
 
-console.log(levelOrder(r)); // [[1], [2, 3], [4, 5]]
+console.log(levelOrder(r)); // [["dsarc"], ["src", "content"], ["app", "components"]]
 ```
 
 ## কোড ব্রেকডাউন: লাইনে লাইনে
@@ -133,7 +137,7 @@ Level-order recursion দিয়ে লেখা যায় (depth দিয
 
 ## অনুশীলন
 
-- **সহজ ১:** এই গাছে level-order লিখো আর queue-এর dry run বানাও: root 10, বামে 5 (বামে 2), ডানে 20 (ডানে 25)।
+- **সহজ ১:** এই গাছে level-order লিখো আর queue-এর dry run বানাও: root `api`, বামে `routes` (বামে `users.ts`), ডানে `db` (ডানে `migrations`)।
 - **সহজ ২:** Height বের করো level-order দিয়ে, recursion ছাড়া। (হিন্ট: প্রতি স্তর শেষে counter।)
 - **মাঝারি ১:** Zigzag level-order লেখো: বিজোড় স্তর বাম থেকে ডানে, জোড় স্তর উল্টো। (হিন্ট: `levelSize` জানাই আছে; জোড় স্তরে `level.reverse()` দিলেই হয়, অথবা দিক-ভেরিয়েবল দিয়ে push-এর দিক পাল্টাও।)
 - **মাঝারি ২:** প্রতি স্তরের গড় বের করো (LeetCode 637)। কোন লাইনে কী যোগ হলো, মূল ছাঁচ থেকে পার্থক্য এক লাইনে।

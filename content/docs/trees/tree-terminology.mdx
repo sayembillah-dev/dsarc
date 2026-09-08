@@ -13,36 +13,36 @@ description: ফোল্ডারের মতো শ্রেণিবদ্�
 
 ## ধারণা
 
-তোমার ফোনের ফোল্ডারের কথা ভাবো। একটা ফোল্ডারের ভিতরে আবার ফোল্ডার, তার ভিতরে ফাইল। উপর থেকে নিচে, একটা শ্রেণিবদ্ধ বিন্যাস। কোম্পানির অর্গানogramও এমন: CEO, তার নিচে ম্যানেজার, তাদের নিচে কর্মী। **Tree** হুবহু এমনই কাঠামো, শুধু আঁকা হয় উল্টো গাছের মতো: **root** উপরে, **leaf** নিচে।
+তোমার VS Code-এর Explorer sidebar-টাই আসলে একটা tree: প্রজেক্টের মূল ফোল্ডার, তার ভেতরে ফোল্ডার, তাদের ভেতরে আবার ফোল্ডার আর ফাইল। টার্মিনালে `tree` কমান্ড চালালেই একই ছবি ছাপে। ব্রাউজারের DOM-ও এমনই: `html`-এর ভেতরে `body`, তার ভেতরে `div`। **Tree** হুবহু এই শ্রেণিবদ্ধ কাঠামোটাই, শুধু আঁকা হয় উল্টো গাছের মতো: **root** উপরে, **leaf** নিচে।
 
 দুটো শর্ত ছাড়া tree হয় না: এক, **কোনো cycle নেই** (কেউ নিজের পূর্বপুরুষের সন্তান হতে পারে না); দুই, সব node **সংযুক্ত**। n-টা node-এর tree-তে edge থাকে ঠিক **n - 1** টা, কারণ root ছাড়া প্রত্যেকের ঠিক একটা করে parent আছে। এই ছোট্ট গোনাটা পরে অনেক যুক্তিতে ফিরে আসবে।
 
 ## একটা গাছে সব পরিভাষা
 
 ```text
-            A                 ← root (depth 0)
-          /   \
-         B     C              ← depth 1
-        / \     \
-       D   E     F            ← depth 2
-      /       \
-     G         H              ← leaf-গুলো: G, E, H (depth 3)
+             dsarc/                          ← root (depth 0)
+           /        \
+       src/          content/                ← depth 1
+      /    \               \
+   app/    lib/            docs/             ← depth 2
+   /                         \
+page.tsx                   trees.mdx         ← leaf-গুলো: page.tsx, lib/, trees.mdx (depth 3)
 ```
 
 এই একটা গাছ ধরে সব সংজ্ঞা বসাই:
 
 | পরিভাষা | মানে | এই গাছে |
 |----------|------|----------|
-| Root | সবার উপরের node, যার parent নেই | A |
-| Parent / Child | সরাসরি উপরে / নিচে | B-এর child D, E |
-| Sibling | একই parent-এর child | D আর E |
-| Leaf | যার child নেই | G, E... না, E-এর child নেই, আর H | 
+| Root | সবার উপরের node, যার parent নেই | dsarc/ |
+| Parent / Child | সরাসরি উপরে / নিচে | src/-এর child app, lib |
+| Sibling | একই parent-এর child | app আর lib |
+| Leaf | যার child নেই | page.tsx, lib/, trees.mdx |
 | Edge | দুই node-এর সংযোগ | মোট ৭টা (8 node - 1) |
-| Depth (node-এর) | root থেকে কত edge নিচে | G-এর depth 3 |
+| Depth (node-এর) | root থেকে কত edge নিচে | page.tsx-এর depth 3 |
 | Height (tree-এর) | root থেকে সবচেয়ে গভীর leaf-এর দূরত্ব | 3 |
-| Height (node-এর) | ওই node থেকে নিচে leaf পর্যন্ত | B-এর height 2 |
-| Subtree | একটা node + তার নিচের সবাই | B, D, E, G মিলে B-এর subtree |
-| Ancestor / Descendant | উপরের সারি / নিচের সারি | G-এর ancestor: D, B, A |
+| Height (node-এর) | ওই node থেকে নিচে leaf পর্যন্ত | src/-এর height 2 |
+| Subtree | একটা node + তার নিচের সবাই | src, app, lib, page.tsx মিলে src/-এর subtree |
+| Ancestor / Descendant | উপরের সারি / নিচের সারি | page.tsx-এর ancestor: app, src, dsarc |
 
 টেবিলের সংজ্ঞাগুলো গাছের উপর ধাপে ধাপে বসিয়ে দেখো:
 
@@ -66,13 +66,13 @@ DSA-এর সবচেয়ে চেনা রূপ হলো **binary tree*
 একটা প্রশ্ন এখনই এসে যায়: ফোল্ডারের মতো tree-তে তো child-এর সংখ্যার বাড়াতেই পারে, সেখানে representation কী? Child-দের array রাখা একটা উপায়, কিন্তু চমৎকার আরেকটা কৌশল আছে: **প্রতি node-এ ঠিক দুটো pointer — প্রথম সন্তান (`firstChild`) আর পরের ভাই (`nextSibling`)।** এতে যেকোনো n-ary tree বসে যায় binary-সদৃশ কাঠামোয়:
 
 ```text
-সাধারণ চোখে:              firstChild / nextSibling-এ:
-        A                        A
-      / | \                      |
-     B  C  D                     B → C → D
+সাধারণ চোখে:                  firstChild / nextSibling-এ:
+        dsarc/                       dsarc/
+       /   |   \                       |
+   src/ content/ public/            src/ → content/ → public/
 ```
 
-A-এর firstChild হলো B; B-এর nextSibling C, C-এর nextSibling D। অর্থাৎ সন্তানদের দল হয়ে গেল একটা linked list, যার মাথা parent-এর কাছে। কারও সব child চাইলে firstChild-এ নেমে nextSibling ধরে হেঁটে যাও। ব্রাউজারের DOM-ও ভেতরে এমনই সাজানো।
+dsarc-এর firstChild হলো src; src-এর nextSibling content, content-এর nextSibling public। অর্থাৎ সন্তানদের দল হয়ে গেল একটা linked list, যার মাথা parent-এর কাছে। কারও সব child চাইলে firstChild-এ নেমে nextSibling ধরে হেঁটে যাও। ব্রাউজারের DOM-ও ভেতরে এমনই সাজানো।
 
 ```js
 function folder(name, children = []) {
@@ -91,13 +91,13 @@ function printTree(node, depth = 0) {
   }
 }
 
-const root = folder("A", [folder("B"), folder("C", [folder("E")]), folder("D")]);
+const root = folder("dsarc", [folder("src"), folder("content", [folder("docs")]), folder("public")]);
 printTree(root);
-// A
-//   B
-//   C
-//     E
-//   D
+// dsarc
+//   src
+//   content
+//     docs
+//   public
 ```
 
 এই কাঠামো কেন কার্যকর? বেশিরভাগ বাস্তব tree অগভীর: child অনেক, level কম; sibling-হাঁটা তাই সস্তা। চাইলে প্রতি node-এ parent-এর দিকে back pointer-ও রাখা যায়, যাতে গাছে উপরে ওঠা যায়, তবে সেটা maintain করা ঝামেলার — প্রতিটা insert/delete-এ দুই দিক ঠিক রাখতে হয়।
@@ -113,23 +113,23 @@ class TreeNode {
   }
 }
 
-// উপরের গাছের B অংশটা বানাই:
-const b = new TreeNode("B");
-b.left = new TreeNode("D");
-b.right = new TreeNode("E");
-b.left.left = new TreeNode("G");
+// উপরের গাছের src অংশটা বানাই:
+const src = new TreeNode("src");
+src.left = new TreeNode("app");
+src.right = new TreeNode("lib");
+src.left.left = new TreeNode("page.tsx");
 
-console.log(b.value);            // "B"
-console.log(b.left.value);       // "D"
-console.log(b.left.left.value);  // "G"
-console.log(b.right.left);       // null: E-এর বাম child নেই
+console.log(src.value);            // "src"
+console.log(src.left.value);       // "app"
+console.log(src.left.left.value);  // "page.tsx"
+console.log(src.right.left);       // null: lib-এর বাম child নেই
 ```
 
 ## কোড ব্রেকডাউন: লাইনে লাইনে
 
 1. `this.left = null` : child না থাকার চিহ্ন `null`। খালি রেখা আর `null` দেওয়া এক কথা, কিন্তু পরে traversal-এ `if (!node) return` এই `null` ধরেই থামে।
-2. `b.left = new TreeNode("D")` : লিংক বানানো মানে reference বসানো। [Linked List](../linked-lists/singly-linked-list.mdx)-এর `next`-এর মতোই, শুধু এখানে দুই দিক।
-3. `b.left.left` : চেইন করে গভীরে যাওয়া। এই ডট-চেইনই path, আর path-এর দৈর্ঘ্যই depth।
+2. `src.left = new TreeNode("app")` : লিংক বানানো মানে reference বসানো। [Linked List](../linked-lists/singly-linked-list.mdx)-এর `next`-এর মতোই, শুধু এখানে দুই দিক।
+3. `src.left.left` : চেইন করে গভীরে যাওয়া। এই ডট-চেইনই path, আর path-এর দৈর্ঘ্যই depth — `src/app/page.tsx` লিখতে যেমন পথ লাগে, তেমনই।
 
 ## Complexity আর গোনার নিয়ম
 
@@ -151,17 +151,17 @@ console.log(b.right.left);       // null: E-এর বাম child নেই
 Root-ই leaf, height 0 (edge গোনা হলে)। "Height 1" বলে ফেলা মানে অর্ধেক হিসাব এক সরে যাওয়া। শূন্য-node-এর tree-এর height -1 ধরা হয় কোথাও কোথাও, এই ভিত্তিতেই recursion-এর base case লেখা হয়।
 
 **৩. Leaf চেনার ভুল।**
-Leaf মানে childless, গভীরতম না। উপরের গাছে E-এর depth 2, তবু সে leaf। শুধু নিচের সারির দিকে তাকালে মিস হবে।
+Leaf মানে childless, গভীরতম না। উপরের গাছে lib/-এর depth 2, তবু সে leaf। শুধু নিচের সারির দিকে তাকালে মিস হবে।
 
 **৪. Cycle থাকা গ্রাফকে tree ভাবা।**
 A → B → C → A হলে সেটা tree না, graph। Tree-র গ্যারান্টি (n-1 edge, একই পথ) সব ভেঙে যায়। এই পার্থক্য [Graph](../graphs/graph-terminology.mdx)-এ গিয়ে কাজে লাগবে।
 
 **৫. `null` child চেক না করে ডট চাপানো।**
-`b.right.left.value` লিখলে TypeError, কারণ `b.right.left` হলো null। প্রতি ডট-এর আগে ভাবো: এখানে null হতে পারে কিনা। Tree-র অর্ধেক bug এই এক জায়গা থেকে।
+`src.right.left.value` লিখলে TypeError, কারণ `src.right.left` হলো null। প্রতি ডট-এর আগে ভাবো: এখানে null হতে পারে কিনা। Tree-র অর্ধেক bug এই এক জায়গা থেকে।
 
 ## অনুশীলন
 
-- **সহজ ১:** উপরের গাছে F-এর depth, height, ancestors আর subtree-এর node-সংখ্যা লিখো।
+- **সহজ ১:** উপরের গাছে docs/-এর depth, height, ancestors আর subtree-এর node-সংখ্যা লিখো।
 - **সহজ ২:** ১৫টা node-এর complete binary tree-এর height কত? ২⁴ - 1 হিসাব দেখে মিলাও।
 - **মাঝারি ১:** প্রমাণ করো (কথায়): কেন tree-তে দুই node-এর মাঝে ঠিক একটাই পথ থাকে। (হিন্ট: দুটো পথ থাকলে cycle বানে, আর cycle মানে tree না।)
 - **মাঝারি ২:** নিজে হাতে একটা ternary tree node লেখো (তিনটা child), তারপর ভাবো: array দিয়ে child রাখলে কী সুবিধা-অসুবিধা? General tree-তে সেটাই রেওয়াজ, কেন?

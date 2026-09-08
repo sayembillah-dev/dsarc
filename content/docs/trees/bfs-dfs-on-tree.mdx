@@ -20,14 +20,18 @@ description: Stack দিলে গভীরে, queue দিলে স্তর
 
 গোপন কথা হলো, আসলে traversal-এর ক্রম ঠিক করে দেয় **কাঠামোটা**: কোনটা আগে বের হবে, stack (LIFO) না queue (FIFO), সেই এক সিদ্ধান্তেই দুই জগৎ। এই পেজে সেটা প্রমাণ করি iterative DFS লিখে।
 
+বাস্তব চিত্রটা ভাবো: প্রজেক্টে `config.json` কোথায়, খুঁজতে হবে। `grep -r` যেভাবে কাজ করে — এক ফোল্ডারে ঢুকে তার পুরো তল্লাশি (subfolder-সহ) শেষ করে তবে পাশের ফোল্ডারে যায় — সেটা DFS। আর "আগে সব সরাসরি subfolder দেখি, না পেলে এক লেভেল নিচে নামি" — সেটা BFS, যেটা কাছের ফাইলটা আগে পায়।
+
 ## পরীক্ষার গাছ
 
+আগের পেজগুলোর সেই ফোল্ডার-গাছটাই:
+
 ```text
-        1
-       / \
-      2   3
-     / \
-    4   5
+        dsarc/
+        /     \
+     src/      content/
+     /   \
+  app/   components/
 ```
 
 ## Dry run: iterative DFS (pre-order)
@@ -36,14 +40,14 @@ description: Stack দিলে গভীরে, queue দিলে স্তর
 
 | ধাপ | pop (visit) | push | stack (ডানে top) | output |
 |-----|-------------|------|--------------------|--------|
-| শুরু | - | 1 | `[1]` | `[]` |
-| 1 | 1 | 3, তারপর 2 | `[3, 2]` | `[1]` |
-| 2 | 2 | 5, তারপর 4 | `[3, 5, 4]` | `[1, 2]` |
-| 3 | 4 | - | `[3, 5]` | `[1, 2, 4]` |
-| 4 | 5 | - | `[3]` | `[1, 2, 4, 5]` |
-| 5 | 3 | - | `[]` | `[1, 2, 4, 5, 3]` |
+| শুরু | - | dsarc | `[dsarc]` | `[]` |
+| 1 | dsarc | content, তারপর src | `[content, src]` | `[dsarc]` |
+| 2 | src | components, তারপর app | `[content, components, app]` | `[dsarc, src]` |
+| 3 | app | - | `[content, components]` | `[dsarc, src, app]` |
+| 4 | components | - | `[content]` | `[dsarc, src, app, components]` |
+| 5 | content | - | `[]` | `[dsarc, src, app, components, content]` |
 
-ফল `[1, 2, 4, 5, 3]`, হুবহু recursive pre-order। ধাপ ১-এ ডান (3) আগে ঢুকেছিল বলে বাম (2) আগে বের হলো, LIFO-র খেলা। এই push-এর উল্টো ক্রমটাই সবচেয়ে পিছলা জায়গা।
+ফল `[dsarc, src, app, components, content]`, হুবহু recursive pre-order। ধাপ ১-এ ডান (content) আগে ঢুকেছিল বলে বাম (src) আগে বের হলো, LIFO-র খেলা। এই push-এর উল্টো ক্রমটাই সবচেয়ে পিছলা জায়গা।
 
 একই গাছে দুটো কৌশল পাশাপাশি চালিয়ে তুলনাটা নিজে করো:
 
@@ -69,7 +73,7 @@ function dfsIterative(root) {
   return out;
 }
 
-console.log(dfsIterative(r)); // [1, 2, 4, 5, 3]
+console.log(dfsIterative(r)); // ["dsarc", "src", "app", "components", "content"]
 ```
 
 আর BFS-এর কোড? [Level-Order](./level-order-traversal.mdx)-এর সেই queue-ওয়ালা কোডটাই, এক অক্ষর বদল নয়। stack-এর জায়গায় queue, pop-এর জায়গায় shift, push-এর জায়গায় push, ক্রম বদলে যায় নিজে থেকেই। এই হুবহু-এক কোডের সাক্ষ্য দিয়েই বোঝো: traversal আসলে কাঠামোর ছায়া।
@@ -96,8 +100,8 @@ Space-এর হিসাব দুটোতেই O(h), কারণ মনে 
 
 ## কোন প্রশ্নে কোনটা
 
-- **DFS স্বাভাবিক:** পথ খোঁজা (root থেকে leaf), subtree-র হিসাব (sum, count), গাছের গঠনগত প্রশ্ন, topological-স্বাদের কাজ।
-- **BFS স্বাভাবিক:** "সবচেয়ে কাছের" প্রশ্ন (shortest path, unweighted), স্তরভিত্তিক প্রশ্ন (height, স্তরের যোগফল), "কত ধাপে" ঘরানার।
+- **DFS স্বাভাবিক:** পথ খোঁজা (root থেকে leaf), subtree-র হিসাব (ফোল্ডারের মোট size, ফাইল-সংখ্যা), গভীরে তল্লাশি (`grep -r`), গাছের গঠনগত প্রশ্ন, topological-স্বাদের কাজ।
+- **BFS স্বাভাবিক:** "সবচেয়ে কাছের" প্রশ্ন (সবচেয়ে কম গভীরের ম্যাচ, unweighted shortest path), স্তরভিত্তিক প্রশ্ন (height, স্তরের যোগফল), "কত ধাপে" ঘরানার।
 
 আর graph-এ গেলে? একই দুই কঙ্কাল, শুধু একটা `visited` set যোগ হবে, কারণ graph-এ cycle থাকে, একই node-এ আবার ঘুরে আসা যায়। Tree-তে cycle নেই বলে আমরা এ যাবত চেক করিনি। [Graphs](../graphs/bfs.mdx)-এ সেই পূর্ণ রূপ।
 
@@ -120,7 +124,7 @@ Graph-এ cycle থাকে, visited ছাড়া চালালে A → B
 
 ## অনুশীলন
 
-- **সহজ ১:** পরীক্ষার গাছে iterative DFS-এর dry run নিজে করো (টেবিল: pop, push, stack, output)। কোন ধাপে 3 stack-এর একদম তলায় পড়ে রইল, কেন?
+- **সহজ ১:** পরীক্ষার গাছে iterative DFS-এর dry run নিজে করো (টেবিল: pop, push, stack, output)। কোন ধাপে content stack-এর একদম তলায় পড়ে রইল, কেন?
 - **সহজ ২:** একই গাছে BFS-এর queue-এর টেবিল বানাও। দুই টেবিল পাশাপাশি রেখে বলো, কোন মুহূর্তে দুটোর ভাগ্য আলাদা হলো।
 - **মাঝারি ১:** Iterative DFS দিয়ে pre-order-এর বদলে **in-order** লেখো। (হিন্ট: সোজা push-pop দিয়ে হয় না; node-কে দুই ধরনের কাজে ভাগ করো: "ঘোরা বাকি" আর "visit করা", stack-এ দুটোই রাখো। এই কৌশলটা অনেক জায়গায় লাগে।)
 - **মাঝারি ২:** দুইটা গাছ বানাও: একটা লম্বা হেলানো, একটা পূর্ণ। দুটোতেই DFS আর BFS চালিয়ে সর্বোচ্চ stack/queue-আকার লিখো। তুলনাটা টেবিলের সঙ্গে মিলাও।

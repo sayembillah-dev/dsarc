@@ -41,6 +41,7 @@ const BADGE_TONES: Record<BadgeTone, string> = {
 
 type TreeNodeData = {
   label: string;
+  sub?: string;
   tone?: NodeTone;
   badge?: string;
   badgeTone?: BadgeTone;
@@ -52,7 +53,7 @@ type TreeFlowNode = Node<TreeNodeData, 'treeNode'>;
 function TreeNodeView({ data }: NodeProps<TreeFlowNode>) {
   const tone = data.tone ?? 'default';
   return (
-    <div className="relative size-11">
+    <div className="relative w-fit min-w-11">
       <Handle
         type="target"
         position={Position.Top}
@@ -63,9 +64,14 @@ function TreeNodeView({ data }: NodeProps<TreeFlowNode>) {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-        className={`absolute inset-0 flex items-center justify-center rounded-full border-2 font-mono text-sm font-semibold transition-colors duration-300 ${NODE_TONES[tone]}`}
+        className={`relative flex h-11 min-w-11 flex-col items-center justify-center rounded-full border-2 px-3 py-1 font-mono text-sm font-semibold transition-colors duration-300 ${NODE_TONES[tone]}`}
       >
-        {data.label}
+        <span className="leading-none">{data.label}</span>
+        {data.sub && (
+          <span className="mt-0.5 text-[9px] font-medium uppercase leading-none tracking-wide opacity-60">
+            {data.sub}
+          </span>
+        )}
         <AnimatePresence>
           {data.order != null && (
             <motion.span
@@ -104,13 +110,18 @@ const nodeTypes = { treeNode: TreeNodeView };
 /*  layout + edge helpers                                              */
 /* ================================================================== */
 
-type TreeSpec = { id: string; label: string; left?: string; right?: string };
+type TreeSpec = { id: string; label: string; sub?: string; left?: string; right?: string };
 
 const X_GAP = 58;
 const Y_GAP = 76;
 
 /** tidy binary-tree layout: x from in-order index, y from depth */
-function layoutBinaryTree(spec: TreeSpec[]): { nodes: TreeFlowNode[]; links: [string, string][] } {
+function layoutBinaryTree(
+  spec: TreeSpec[],
+  gaps: { x?: number; y?: number } = {},
+): { nodes: TreeFlowNode[]; links: [string, string][] } {
+  const xGap = gaps.x ?? X_GAP;
+  const yGap = gaps.y ?? Y_GAP;
   const byId = new Map(spec.map((s) => [s.id, s]));
   const childIds = new Set(
     spec.flatMap((s) => [s.left, s.right].filter((x): x is string => Boolean(x))),
@@ -138,8 +149,8 @@ function layoutBinaryTree(spec: TreeSpec[]): { nodes: TreeFlowNode[]; links: [st
   const nodes: TreeFlowNode[] = spec.map((s) => ({
     id: s.id,
     type: 'treeNode',
-    position: { x: (xIdx.get(s.id) ?? 0) * X_GAP, y: (depth.get(s.id) ?? 0) * Y_GAP },
-    data: { label: s.label },
+    position: { x: (xIdx.get(s.id) ?? 0) * xGap, y: (depth.get(s.id) ?? 0) * yGap },
+    data: { label: s.label, sub: s.sub },
   }));
   return { nodes, links };
 }
@@ -315,7 +326,7 @@ function ChipRow({ label, chips }: { label: string; chips: string[] }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
               transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-              className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white font-mono text-xs font-semibold text-zinc-700 shadow-sm"
+              className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white px-2 font-mono text-xs font-semibold text-zinc-700 shadow-sm"
             >
               {c}
             </motion.span>
@@ -373,66 +384,74 @@ function ModeTabs({
 /*  shared demo trees                                                  */
 /* ================================================================== */
 
-/** 1(2(4,5), 3) — the tree used by the traversal / level-order / bfs-dfs pages */
-const FIVE_TREE = layoutBinaryTree([
-  { id: '1', label: '1', left: '2', right: '3' },
-  { id: '2', label: '2', left: '4', right: '5' },
-  { id: '3', label: '3' },
-  { id: '4', label: '4' },
-  { id: '5', label: '5' },
-]);
-const FIVE_PARENT: Record<string, string | null> = {
-  '1': null,
-  '2': '1',
-  '3': '1',
-  '4': '2',
-  '5': '2',
+/** dsarc(src(app, components), content) — this repo's folder tree, used by the traversal / level-order / bfs-dfs pages */
+const REPO_TREE = layoutBinaryTree(
+  [
+    { id: 'dsarc', label: 'dsarc', left: 'src', right: 'content' },
+    { id: 'src', label: 'src', left: 'app', right: 'components' },
+    { id: 'content', label: 'content' },
+    { id: 'app', label: 'app' },
+    { id: 'components', label: 'components' },
+  ],
+  { x: 118, y: 78 },
+);
+const REPO_PARENT: Record<string, string | null> = {
+  dsarc: null,
+  src: 'dsarc',
+  content: 'dsarc',
+  app: 'src',
+  components: 'src',
 };
-const FIVE_EDGES = applyEdgeTones(FIVE_TREE.links, {});
+const REPO_EDGES = applyEdgeTones(REPO_TREE.links, {});
 
 /* ================================================================== */
 /*  1. tree-terminology: anatomy of one tree                           */
 /* ================================================================== */
 
-const ANATOMY = layoutBinaryTree([
-  { id: 'A', label: 'A', left: 'B', right: 'C' },
-  { id: 'B', label: 'B', left: 'D', right: 'E' },
-  { id: 'C', label: 'C', right: 'F' },
-  { id: 'D', label: 'D', left: 'G' },
-  { id: 'E', label: 'E' },
-  { id: 'F', label: 'F', left: 'H' },
-  { id: 'G', label: 'G' },
-  { id: 'H', label: 'H' },
-]);
+const ANATOMY = layoutBinaryTree(
+  [
+    { id: 'dsarc', label: 'dsarc/', left: 'src', right: 'content' },
+    { id: 'src', label: 'src/', left: 'app', right: 'lib' },
+    { id: 'content', label: 'content/', right: 'docs' },
+    { id: 'app', label: 'app/', left: 'page.tsx' },
+    { id: 'lib', label: 'lib/' },
+    { id: 'docs', label: 'docs/', left: 'trees.mdx' },
+    { id: 'page.tsx', label: 'page.tsx' },
+    { id: 'trees.mdx', label: 'trees.mdx' },
+  ],
+  { x: 118, y: 84 },
+);
 
 const ANATOMY_LINES = [
-  'A                ← root',
-  'B   C            ← depth 1',
-  'D   E   F        ← depth 2',
-  'G       H        ← leaves · depth 3',
+  'dsarc/                        ← root',
+  'src/   content/               ← depth 1',
+  'app/  lib/     docs/          ← depth 2',
+  'page.tsx       trees.mdx      ← leaves · depth 3',
 ];
 const ANATOMY_CURSOR = [-1, 0, 1, 3, -1, 0, 1, -1];
 const ANATOMY_TOTAL = 7;
 
 const ANATOMY_CAPTIONS: ReactNode[] = [
   <>
-    এই একটা গাছ দিয়েই আমরা tree-এর পুরো পরিভাষা শিখব। পরের ধাপে চাপো — প্রতি ধাপে একটা
-    করে ধারণা গাছের ওপর রং করে দেখিয়ে দেব, আর এখানে তার সহজ ব্যাখ্যা থাকবে।
+    এই ছোট্ট প্রজেক্ট-ফোল্ডারটা দিয়েই আমরা tree-এর পুরো পরিভাষা শিখব — কারণ যেকোনো
+    রিপোজিটরির ফোল্ডার-কাঠামোই আসলে একটা tree। পরের ধাপে চাপো — প্রতি ধাপে একটা করে
+    ধারণা গাছের ওপর রং করে দেখিয়ে দেব, আর এখানে তার সহজ ব্যাখ্যা থাকবে।
   </>,
   <>
-    সবার উপরের <C t="A" /> হলো <b>root</b> (শিকড়)। root-ই একমাত্র node যার কোনো parent
-    নেই — বাকি সবার ঠিক একটা করে parent আছে। গাছের যেকোনো node-এ যাওয়ার পথ শুরু হয় এই
-    root থেকেই।
+    সবার উপরের <C t="dsarc/" /> হলো <b>root</b> (শিকড়) — প্রজেক্টের মূল ফোল্ডার। root-ই
+    একমাত্র node যার কোনো parent নেই — বাকি সবার ঠিক একটা করে parent আছে। গাছের যেকোনো
+    node-এ যাওয়ার পথ শুরু হয় এই root থেকেই।
   </>,
   <>
-    <C t="A" />-এর সরাসরি নিচে জুড়ে আছে <C t="B" /> আর <C t="C" /> — ওরা A-এর <b>child</b>,
-    আর A ওদের <b>parent</b>। একই parent-এর child-রা, যেমন B আর C, পরস্পরের{' '}
-    <b>sibling</b>। নীল লাইন দুটো দেখাচ্ছে কার সাথে কার parent-child সম্পর্ক।
+    <C t="dsarc/" />-এর সরাসরি ভেতরে আছে <C t="src/" /> আর <C t="content/" /> — ওরা
+    dsarc-এর <b>child</b>, আর dsarc ওদের <b>parent</b>। একই parent-এর child-রা, যেমন src
+    আর content, পরস্পরের <b>sibling</b>। নীল লাইন দুটো দেখাচ্ছে কার সাথে কার parent-child
+    সম্পর্ক।
   </>,
   <>
-    <C t="G" />, <C t="E" />, <C t="H" /> — এই তিনটার নিচে আর কেউ নেই। যেসব node-এর কোনো
-    child নেই, তাদের বলে <b>leaf</b> (পাতা)। root থেকে নামা যেকোনো পথ শেষ হয় কোনো না
-    কোনো leaf-এ গিয়েই।
+    <C t="page.tsx" />, <C t="lib/" />, <C t="trees.mdx" /> — এই তিনটার নিচে আর কিছু নেই।
+    যেসব node-এর কোনো child নেই, তাদের বলে <b>leaf</b> (পাতা)। ফাইল স্বভাবতই leaf —
+    ফাইলের ভেতরে তো আর ফোল্ডার থাকে না।
   </>,
   <>
     প্রতিটা node-এর নিচের চিপটা দেখাচ্ছে ওর <b>depth</b>: root থেকে ওখানে আসতে কয়টা edge
@@ -440,13 +459,14 @@ const ANATOMY_CAPTIONS: ReactNode[] = [
     পরের স্তরে 2, একেবারে নিচে 3।
   </>,
   <>
-    নীল করে দেখানো হলো গাছের সবচেয়ে লম্বা পথ: <C t="A → B → D → G" /> — মোট ৩টা edge।
-    এই সবচেয়ে লম্বা পথের edge-সংখ্যাই tree-এর <b>height</b>। তাই এই গাছের height = 3।
+    নীল করে দেখানো হলো গাছের সবচেয়ে গভীর পথ: <C t="dsarc → src → app → page.tsx" /> —
+    মোট ৩টা edge। এই সবচেয়ে লম্বা পথের edge-সংখ্যাই tree-এর <b>height</b>, তাই height =
+    3। Editor-এ এই ফাইলটা খুলতেও তোমাকে ঠিক ৩টা ফোল্ডার ঢুকতে হয়।
   </>,
   <>
-    হলুদ করা অংশটা দেখো: শুধু <C t="B" /> আর তার নিচের সবাই (D, E, G)। এই টুকরো নিজেই
-    একটা পূর্ণ গাছ, যার root হলো B — একেই বলে B-এর <b>subtree</b>। আসলে প্রতিটা node-ই তার
-    নিচের অংশ নিয়ে একটা subtree-এর root।
+    হলুদ করা অংশটা দেখো: শুধু <C t="src/" /> আর তার ভেতরের সবাই (app, lib, page.tsx)। এই
+    টুকরো নিজেই একটা পূর্ণ গাছ, যার root হলো src — একেই বলে src-এর <b>subtree</b>। আসলে
+    প্রতিটা ফোল্ডারই তার ভেতরের অংশ নিয়ে একটা subtree-এর root।
   </>,
   <>
     সবুজ লাইনগুলো গুনে দেখো: node ৮টা, edge ৭টা। এটা কাকতাল নয় — root ছাড়া প্রতিটা
@@ -456,53 +476,62 @@ const ANATOMY_CAPTIONS: ReactNode[] = [
 ];
 
 function anatomyNodes(step: number): TreeFlowNode[] {
-  if (step === 1) return applyNodeState(ANATOMY.nodes, { A: { tone: 'walk', badge: 'depth 0', badgeTone: 'sky' } });
+  if (step === 1)
+    return applyNodeState(ANATOMY.nodes, {
+      dsarc: { tone: 'walk', badge: 'depth 0', badgeTone: 'sky' },
+    });
   if (step === 2)
     return applyNodeState(ANATOMY.nodes, {
-      A: { tone: 'visited' },
-      B: { tone: 'walk', badge: 'depth 1', badgeTone: 'sky' },
-      C: { tone: 'walk', badge: 'depth 1', badgeTone: 'sky' },
+      dsarc: { tone: 'visited' },
+      src: { tone: 'walk', badge: 'depth 1', badgeTone: 'sky' },
+      content: { tone: 'walk', badge: 'depth 1', badgeTone: 'sky' },
     });
   if (step === 3)
     return applyNodeState(ANATOMY.nodes, {
-      G: { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
-      E: { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
-      H: { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
+      'page.tsx': { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
+      lib: { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
+      'trees.mdx': { tone: 'visited', badge: 'leaf', badgeTone: 'emerald' },
     });
   if (step === 4)
     return applyNodeState(ANATOMY.nodes, {
-      A: { badge: 'd0' },
-      B: { badge: 'd1' },
-      C: { badge: 'd1' },
-      D: { badge: 'd2' },
-      E: { badge: 'd2' },
-      F: { badge: 'd2' },
-      G: { badge: 'd3' },
-      H: { badge: 'd3' },
+      dsarc: { badge: 'd0' },
+      src: { badge: 'd1' },
+      content: { badge: 'd1' },
+      app: { badge: 'd2' },
+      lib: { badge: 'd2' },
+      docs: { badge: 'd2' },
+      'page.tsx': { badge: 'd3' },
+      'trees.mdx': { badge: 'd3' },
     });
   if (step === 5)
     return applyNodeState(ANATOMY.nodes, {
-      A: { tone: 'walk' },
-      B: { tone: 'walk' },
-      D: { tone: 'walk' },
-      G: { tone: 'walk', badge: 'height 3', badgeTone: 'sky' },
+      dsarc: { tone: 'walk' },
+      src: { tone: 'walk' },
+      app: { tone: 'walk' },
+      'page.tsx': { tone: 'walk', badge: 'height 3', badgeTone: 'sky' },
     });
   if (step === 6)
     return applyNodeState(ANATOMY.nodes, {
-      B: { tone: 'warm' },
-      D: { tone: 'warm' },
-      E: { tone: 'warm' },
-      G: { tone: 'warm' },
+      src: { tone: 'warm' },
+      app: { tone: 'warm' },
+      lib: { tone: 'warm' },
+      'page.tsx': { tone: 'warm' },
     });
   return ANATOMY.nodes;
 }
 
 function anatomyEdges(step: number): Edge[] {
-  if (step === 2) return applyEdgeTones(ANATOMY.links, { 'A-B': 'walk', 'A-C': 'walk' });
+  if (step === 2)
+    return applyEdgeTones(ANATOMY.links, { 'dsarc-src': 'walk', 'dsarc-content': 'walk' });
   if (step === 5)
-    return applyEdgeTones(ANATOMY.links, { 'A-B': 'walk', 'B-D': 'walk', 'D-G': 'walk' });
+    return applyEdgeTones(ANATOMY.links, {
+      'dsarc-src': 'walk',
+      'src-app': 'walk',
+      'app-page.tsx': 'walk',
+    });
   if (step === 7) return applyEdgeTones(ANATOMY.links, {
-    'A-B': 'ok', 'A-C': 'ok', 'B-D': 'ok', 'B-E': 'ok', 'C-F': 'ok', 'D-G': 'ok', 'F-H': 'ok',
+    'dsarc-src': 'ok', 'dsarc-content': 'ok', 'src-app': 'ok', 'src-lib': 'ok',
+    'content-docs': 'ok', 'app-page.tsx': 'ok', 'docs-trees.mdx': 'ok',
   });
   return applyEdgeTones(ANATOMY.links, {});
 }
@@ -511,7 +540,7 @@ export function TreeAnatomyAnim() {
   const { step, playing, toggle, reset, next, prev, done } = useStepPlayer(ANATOMY_TOTAL);
   return (
     <Stage
-      title="এক গাছে সব পরিভাষা"
+      title="একটা প্রজেক্ট ফোল্ডারে সব পরিভাষা"
       step={step}
       total={ANATOMY_TOTAL}
       playing={playing}
@@ -538,9 +567,9 @@ export function TreeAnatomyAnim() {
 type TravMode = 'pre' | 'in' | 'post';
 
 const TRAV_ORDER: Record<TravMode, string[]> = {
-  pre: ['1', '2', '4', '5', '3'],
-  in: ['4', '2', '5', '1', '3'],
-  post: ['4', '5', '2', '3', '1'],
+  pre: ['dsarc', 'src', 'app', 'components', 'content'],
+  in: ['app', 'src', 'components', 'dsarc', 'content'],
+  post: ['app', 'components', 'src', 'content', 'dsarc'],
 };
 const TRAV_VISIT_LINE: Record<TravMode, number> = { pre: 2, in: 3, post: 4 };
 const TRAV_TOTAL = 5;
@@ -564,24 +593,26 @@ const TRAV_CAPTIONS: Record<TravMode, ReactNode[]> = {
       কততম visit। উপরের তিনটা চিপ বদলে তিন রকম ক্রমই দেখে নিতে পারো।
     </>,
     <>
-      শুরু root 1 দিয়ে। Pre-order-এ node-এ পৌঁছামাত্রই সেটি visit হয় — তাই 1-ই প্রথম।
-      এবার নামা হবে ওর বাম দিকে।
+      শুরু root dsarc দিয়ে। Pre-order-এ node-এ পৌঁছামাত্রই সেটি visit হয় — তাই dsarc-ই
+      প্রথম। এবার নামা হবে ওর বাম দিকে, src-এ।
     </>,
     <>
-      বামে নেমে 2-তে। নিয়ম একই: পৌঁছামাত্র 2 visit হলো (২য়), তারপর আবার ওর বামে নামা
-      হবে।
+      বামে নেমে src-এ। নিয়ম একই: পৌঁছামাত্র src visit হলো (২য়), তারপর আবার ওর বামে নামা
+      হবে — app-এ।
     </>,
     <>
-      4-এর কোনো child নেই, তাই ও পৌঁছেই visit (৩য়) — এখানে আর করার কিছু নেই। এবার ফিরে
-      যাব parent 2-এর কাছে, কারণ ওর ডান দিক এখনো দেখা হয়নি।
+      app-এর কোনো child নেই, তাই ও পৌঁছেই visit (৩য়) — এখানে আর করার কিছু নেই। এবার ফিরে
+      যাব parent src-এর কাছে, কারণ ওর ডান দিক (components) এখনো দেখা হয়নি।
     </>,
     <>
-      2-এর ডান child 5 visit হলো (৪র্থ)। এর মানে 2-এর নিচের পুরো অংশ — 4, 2, 5 — দেখা
-      শেষ।
+      src-এর ডান child components visit হলো (৪র্থ)। এর মানে src-এর নিচের পুরো অংশ — app,
+      src, components — দেখা শেষ।
     </>,
     <>
-      সবশেষে root-এর ডান দিকের 3। চূড়ান্ত ক্রম: <C t="1, 2, 4, 5, 3" />। লক্ষ্য করো —
-      প্রতিটা node-ই তার নিচের অংশের সবার আগে এসেছে; এটাই pre-order-এর চেনা ছাপ।
+      সবশেষে root-এর ডান দিকের content। চূড়ান্ত ক্রম:{' '}
+      <C t="dsarc, src, app, components, content" />। লক্ষ্য করো — প্রতিটা ফোল্ডারই তার
+      ভেতরের সবার আগে এসেছে। কোনো প্রজেক্ট কপি করার সময়ও parent ফোল্ডার আগে বানাতে হয়,
+      তারপর ভেতরেরগুলো — এটাই pre-order-এর চেনা ছাপ।
     </>,
   ],
   in: [
@@ -592,45 +623,48 @@ const TRAV_CAPTIONS: Record<TravMode, ReactNode[]> = {
       দেখো কে কততমে এলো।
     </>,
     <>
-      Root 1-এ এসেও visit করা যাচ্ছে না — নিয়ম বলে আগে বামে নামতে হবে। 2-তেও একই অবস্থা।
-      একেবারে বামে গিয়ে leaf 4 পেলাম: ওর বামে কিছু নেই, তাই 4-ই প্রথম visit।
+      Root dsarc-এ এসেও visit করা যাচ্ছে না — নিয়ম বলে আগে বামে নামতে হবে। src-এও একই
+      অবস্থা। একেবারে বামে গিয়ে app পেলাম: ওর বামে কিছু নেই, তাই app-ই প্রথম visit।
     </>,
     <>
-      4-এর ডানেও কিছু নেই, তাই ফিরে এলাম parent 2-তে। 2-এর বাম দিক শেষ — এবার 2 নিজে
-      visit হলো (২য়)।
+      app-এর ডানেও কিছু নেই, তাই ফিরে এলাম parent src-এ। src-এর বাম দিক শেষ — এবার src
+      নিজে visit হলো (২য়)।
     </>,
     <>
-      এবার 2-এর ডান দিক: 5। ওরও child নেই, তাই পৌঁছেই visit (৩য়)। এর সাথে 2-এর নিচের
-      পুরো অংশ শেষ: 4, 2, 5।
+      এবার src-এর ডান দিক: components। ওরও child নেই, তাই পৌঁছেই visit (৩য়)। এর সাথে
+      src-এর নিচের পুরো অংশ শেষ: app, src, components।
     </>,
     <>
-      পুরো বাম দিক শেষ, তাই এবার root 1 নিজে visit হলো (৪র্থ)। In-order-এ root বসে ঠিক
+      পুরো বাম দিক শেষ, তাই এবার root dsarc নিজে visit হলো (৪র্থ)। In-order-এ root বসে ঠিক
       মাঝখানে — বামের সবাই তার আগে, ডানের সবাই তার পরে।
     </>,
     <>
-      শেষে ডান দিকের 3। চূড়ান্ত ক্রম: <C t="4, 2, 5, 1, 3" />। গাছটা যদি BST হতো, এই
-      ক্রমেই ছোট থেকে বড় সাজানো মান পেতে — BST অধ্যায়ে এটা আবার কাজে লাগবে।
+      শেষে ডান দিকের content। চূড়ান্ত ক্রম: <C t="app, src, components, dsarc, content" />
+      । গাছটা যদি BST হতো, এই ক্রমেই ছোট থেকে বড় সাজানো মান পেতে — BST অধ্যায়ে এটা আবার
+      কাজে লাগবে।
     </>,
   ],
   post: [
     <>
       <b>Post-order</b>-এর নিয়ম: আগে বামের সবাই, তারপর ডানের সবাই, সবশেষে node নিজে (
-      <C t="L → R → N" />)। অর্থাৎ দুই child-এর কাজ শেষ না হলে parent visit হয় না। height
-      বের করা বা পুরো tree delete — যে কাজে child-এর তথ্য আগে চাই, সেখানেই এই ক্রম লাগে।
+      <C t="L → R → N" />)। অর্থাৎ দুই child-এর কাজ শেষ না হলে parent visit হয় না।{' '}
+      <C t="du" /> দিয়ে ফোল্ডারের মোট size বের করা বা <C t="rm -rf" /> দিয়ে পুরো ফোল্ডার
+      মোছা — যে কাজে child-দের কাজ আগে শেষ চাই, সেখানেই এই ক্রম লাগে।
     </>,
     <>
-      Root 1 থেকে নামা শুরু, কিন্তু ওর visit অনেক পরে — আগে বামে। একই কারণে 2-ও অপেক্ষায়।
-      গভীরতম বামের leaf 4-এর কোনো child নেই, তাই 4-ই প্রথম visit।
+      Root dsarc থেকে নামা শুরু, কিন্তু ওর visit অনেক পরে — আগে বামে। একই কারণে src-ও
+      অপেক্ষায়। গভীরতম বামের app-এর কোনো child নেই, তাই app-ই প্রথম visit।
     </>,
-    <>ফিরে এসে এবার 2-এর ডান দিক: leaf 5 visit হলো (২য়)।</>,
+    <>ফিরে এসে এবার src-এর ডান দিক: components visit হলো (২য়)।</>,
     <>
-      2-এর দুই child-ই শেষ — এখনই 2 visit হলো (৩য়)। খেয়াল করো: দুই child-এর ঠিক পরেই
-      parent এলো, এটাই post-order।
+      src-এর দুই child-ই শেষ — এখনই src visit হলো (৩য়)। খেয়াল করো: দুই child-এর ঠিক
+      পরেই parent এলো, এটাই post-order।
     </>,
-    <>এবার root-এর ডান দিক: leaf 3 visit হলো (৪র্থ)।</>,
+    <>এবার root-এর ডান দিক: content visit হলো (৪র্থ)।</>,
     <>
-      বামও শেষ, ডানও শেষ — সবার শেষে root 1। চূড়ান্ত ক্রম: <C t="4, 5, 2, 3, 1" />।
-      প্রতিটা parent-ই তার child-দের পরে এসেছে — তাই পুরো গাছ মুছতে হলে এই ক্রমেই মোছা
+      বামও শেষ, ডানও শেষ — সবার শেষে root dsarc। চূড়ান্ত ক্রম:{' '}
+      <C t="app, components, src, content, dsarc" />। প্রতিটা parent-ই তার child-দের পরে
+      এসেছে — তাই ফোল্ডার মোছার সময়ও ভেতরের জিনিসগুলো আগে মুছে শেষে ফোল্ডারটা মোছা
       নিরাপদ।
     </>,
   ],
@@ -648,8 +682,8 @@ export function TreeTraversalAnim() {
     states[id] = { tone: 'visited', order: i + 1 };
   });
   if (current) states[current] = { tone: 'walk', order: step };
-  const nodes = applyNodeState(FIVE_TREE.nodes, states);
-  const edges = applyEdgeTones(FIVE_TREE.links, current ? pathEdgeTones(FIVE_PARENT, current) : {});
+  const nodes = applyNodeState(REPO_TREE.nodes, states);
+  const edges = applyEdgeTones(REPO_TREE.links, current ? pathEdgeTones(REPO_PARENT, current) : {});
 
   const code = travCode(mode);
   const visitLine = TRAV_VISIT_LINE[mode];
@@ -703,8 +737,15 @@ export function TreeTraversalAnim() {
 /*  3. level-order-traversal: BFS with a live queue                    */
 /* ================================================================== */
 
-const LO_ORDER = ['1', '2', '3', '4', '5'];
-const LO_QUEUE: string[][] = [['1'], ['2', '3'], ['3', '4', '5'], ['4', '5'], ['5'], []];
+const LO_ORDER = ['dsarc', 'src', 'content', 'app', 'components'];
+const LO_QUEUE: string[][] = [
+  ['dsarc'],
+  ['src', 'content'],
+  ['content', 'app', 'components'],
+  ['app', 'components'],
+  ['components'],
+  [],
+];
 const LO_CURSOR = [2, 5, 5, 5, 5, 5];
 const LO_TOTAL = 5;
 
@@ -723,31 +764,33 @@ const LO_CODE = [
 
 const LO_CAPTIONS: ReactNode[] = [
   <>
-    Level-order মানে স্তর বাই স্তর visit: আগে root, তারপর ওর child-রা, তারপর তাদের
+    Level-order মানে স্তর বাই স্তর visit: আগে root ফোল্ডার, তারপর ওর child-রা, তারপর তাদের
     child-রা। এই ক্রম রাখার হাতিয়ার হলো <b>queue</b>, যেটা নিচে লাইভ দেখা যাবে। নিয়ম
     সহজ: সামনে থেকে <C t="shift()" /> করে একটা বের করো, তার child-গুলো <C t="push()" />{' '}
-    করে পেছনে জমা দাও। শুরুতে queue-তে শুধু root: <C t="[1]" />।
+    করে পেছনে জমা দাও। শুরুতে queue-তে শুধু root: <C t="[dsarc]" />।
   </>,
   <>
-    1 queue থেকে বের হয়ে visit হলো (১ম)। বের হওয়ামাত্র ওর child 2 আর 3 পেছনে দাঁড়াল —
-    queue এখন <C t="[2, 3]" />। লক্ষ্য করো: স্তর 0 শেষ হওয়ামাত্র স্তর 1 queue-তে প্রস্তুত।
+    dsarc queue থেকে বের হয়ে visit হলো (১ম)। বের হওয়ামাত্র ওর child src আর content
+    পেছনে দাঁড়াল — queue এখন <C t="[src, content]" />। লক্ষ্য করো: স্তর 0 শেষ হওয়ামাত্র
+    স্তর 1 queue-তে প্রস্তুত।
   </>,
   <>
-    এবার সামনের 2 বের হলো (২য় visit), আর ওর child 4, 5 ঢুকল পেছনে — queue{' '}
-    <C t="[3, 4, 5]" />। দেখো, বের হচ্ছে এক স্তরের node, ঢুকছে পরের স্তরের — এভাবেই
-    স্তরগুলো কখনো মিশে যায় না।
+    এবার সামনের src বের হলো (২য় visit), আর ওর child app, components ঢুকল পেছনে — queue{' '}
+    <C t="[content, app, components]" />। দেখো, বের হচ্ছে এক স্তরের node, ঢুকছে পরের
+    স্তরের — এভাবেই স্তরগুলো কখনো মিশে যায় না।
   </>,
   <>
-    3 বের হলো (৩য় visit)। ওর কোনো child নেই, তাই নতুন কিছু ঢুকল না — queue{' '}
-    <C t="[4, 5]" />। এর সাথে স্তর 1-ও পুরো শেষ, result-এ <C t="[2, 3]" />।
+    content বের হলো (৩য় visit)। ওর কোনো child নেই, তাই নতুন কিছু ঢুকল না — queue{' '}
+    <C t="[app, components]" />। এর সাথে স্তর 1-ও পুরো শেষ, result-এ{' '}
+    <C t="[src, content]" />।
   </>,
   <>
-    4 বের হলো (৪র্থ visit)। queue-তে এখন শুধু 5।
+    app বের হলো (৪র্থ visit)। queue-তে এখন শুধু components।
   </>,
   <>
-    শেষে 5 বের হলো, queue খালি — traversal শেষ। ক্রম <C t="1 → 2 → 3 → 4 → 5" />, হুবহু
-    স্তর বাই স্তর। এই নিখুঁত ক্রমের কারণ queue-এর FIFO নিয়ম: যে আগে ঢুকেছে, সে আগেই
-    বেরিয়েছে।
+    শেষে components বের হলো, queue খালি — traversal শেষ। ক্রম{' '}
+    <C t="dsarc → src → content → app → components" />, হুবহু স্তর বাই স্তর। এই নিখুঁত
+    ক্রমের কারণ queue-এর FIFO নিয়ম: যে আগে ঢুকেছে, সে আগেই বেরিয়েছে।
   </>,
 ];
 
@@ -761,10 +804,16 @@ export function LevelOrderAnim() {
     states[id] = { tone: 'visited', order: i + 1 };
   });
   if (current) states[current] = { tone: 'walk', order: step };
-  const nodes = applyNodeState(FIVE_TREE.nodes, states);
+  const nodes = applyNodeState(REPO_TREE.nodes, states);
 
   const consoleLines =
-    step >= 5 ? ['[1]', '[2, 3]', '[4, 5]'] : step >= 3 ? ['[1]', '[2, 3]'] : step >= 1 ? ['[1]'] : [];
+    step >= 5
+      ? ['[dsarc]', '[src, content]', '[app, components]']
+      : step >= 3
+        ? ['[dsarc]', '[src, content]']
+        : step >= 1
+          ? ['[dsarc]']
+          : [];
 
   return (
     <Stage
@@ -781,7 +830,7 @@ export function LevelOrderAnim() {
       consoleLines={consoleLines}
       viz={
         <div className="flex flex-col gap-2.5">
-          <TreeFlow nodes={nodes} edges={FIVE_EDGES} height={250} />
+          <TreeFlow nodes={nodes} edges={REPO_EDGES} height={250} />
           <ChipRow label="queue" chips={LO_QUEUE[step]} />
         </div>
       }
@@ -800,41 +849,45 @@ export function LevelOrderAnim() {
 }
 
 /* ================================================================== */
-/*  4 + 5. binary-search-tree: search(7) and insert(5)                 */
+/*  4 + 5. binary-search-tree: search(5432) and insert(2375)           */
 /* ================================================================== */
 
-const BST_TREE = layoutBinaryTree([
-  { id: '8', label: '8', left: '3', right: '10' },
-  { id: '3', label: '3', left: '1', right: '6' },
-  { id: '10', label: '10', right: '14' },
-  { id: '1', label: '1' },
-  { id: '6', label: '6', left: '4', right: '7' },
-  { id: '14', label: '14' },
-  { id: '4', label: '4' },
-  { id: '7', label: '7' },
-]);
+/* open ports on a server, kept sorted in a BST: 6379(80(22, 3000(443, 5432)), 8080(·, 27017)) */
+const BST_TREE = layoutBinaryTree(
+  [
+    { id: '6379', label: '6379', sub: 'redis', left: '80', right: '8080' },
+    { id: '80', label: '80', sub: 'http', left: '22', right: '3000' },
+    { id: '8080', label: '8080', sub: 'proxy', right: '27017' },
+    { id: '22', label: '22', sub: 'ssh' },
+    { id: '3000', label: '3000', sub: 'dev', left: '443', right: '5432' },
+    { id: '27017', label: '27017', sub: 'mongo' },
+    { id: '443', label: '443', sub: 'https' },
+    { id: '5432', label: '5432', sub: 'postgres' },
+  ],
+  { x: 106, y: 96 },
+);
 const BST_PARENT: Record<string, string | null> = {
-  '8': null,
-  '3': '8',
-  '10': '8',
-  '1': '3',
-  '6': '3',
-  '4': '6',
-  '7': '6',
-  '14': '10',
-  '5': '4',
+  '6379': null,
+  '80': '6379',
+  '8080': '6379',
+  '22': '80',
+  '3000': '80',
+  '443': '3000',
+  '5432': '3000',
+  '27017': '8080',
+  '2375': '443',
 };
 
-/* ---- search(7) ---- */
+/* ---- search(5432) ---- */
 
-const BSTS_PATH = ['8', '3', '6', '7'];
+const BSTS_PATH = ['6379', '80', '3000', '5432'];
 const BSTS_CURSOR = [-1, 3, 3, 3, 2];
 const BSTS_BUBBLES: ({ expr: string; res: boolean } | undefined)[] = [
   undefined,
-  { expr: '7 < 8', res: true },
-  { expr: '7 < 3', res: false },
-  { expr: '7 < 6', res: false },
-  { expr: '7 === 7', res: true },
+  { expr: '5432 < 6379', res: true },
+  { expr: '5432 < 80', res: false },
+  { expr: '5432 < 3000', res: false },
+  { expr: '5432 === 5432', res: true },
 ];
 const BSTS_TOTAL = 4;
 
@@ -849,25 +902,28 @@ const BSTS_CODE = [
 
 const BSTS_CAPTIONS: ReactNode[] = [
   <>
-    এই গাছে <b>7</b> খুঁজব। BST-এর নিয়ম: প্রতিটা node-এর বামের সবাই ওর চেয়ে ছোট, ডানের
-    সবাই বড়। তাই প্রতি node-এ একটাই প্রশ্ন — 7 ওর চেয়ে ছোট না বড়? উত্তরমতো একদিকে
-    নামব, আর অন্যদিকের পুরো subtree না দেখেই বাদ দেব। <b>নীল ঘের</b> দেখাবে এখন কোথায়
-    দাঁড়িয়ে আছি।
+    সার্ভারে কোন কোন port খোলা আছে, সেগুলো এই BST-তে সাজানো — প্রতিটা node-এ port নম্বর,
+    নিচের ছোট্ট লেখায় সার্ভিসের নাম। এবার চেক করব <b>5432</b> (PostgreSQL) খোলা আছে
+    কিনা। BST-এর নিয়ম: প্রতিটা node-এর বামের সবাই ওর চেয়ে ছোট, ডানের সবাই বড়। তাই প্রতি
+    node-এ একটাই প্রশ্ন — 5432 ওর চেয়ে ছোট না বড়? উত্তরমতো একদিকে নামব, অন্যদিকের পুরো
+    subtree না দেখেই বাদ দেব। <b>নীল ঘের</b> দেখাবে এখন কোথায় দাঁড়িয়ে আছি।
   </>,
   <>
-    Root 8-এ তুলনা: <C t="7 < 8" /> — ছোট, তাই বামে নামলাম। এখানেই জাদু: ডানের 10 আর 14
-    আর কখনোই দেখা হবে না, কারণ 8-এর চেয়ে বড় সব মান ওই দিকে — 7 সেখানে থাকাই অসম্ভব।
+    Root 6379 (Redis)-এ তুলনা: <C t="5432 < 6379" /> — ছোট, তাই বামে নামলাম। এখানেই জাদু:
+    ডানের 8080 আর 27017 আর কখনোই দেখা হবে না — 6379-এর চেয়ে বড় সব port ওই দিকে, 5432
+    সেখানে থাকাই অসম্ভব।
   </>,
   <>
-    3-এ তুলনা: <C t="7 > 3" /> — বড়, তাই ডানে। একই যুক্তিতে বামের 1-ও চিরদিনের জন্য বাদ।
+    80 (HTTP)-এ তুলনা: <C t="5432 > 80" /> — বড়, তাই ডানে। একই যুক্তিতে বামের 22 (SSH)-ও
+    চিরদিনের জন্য বাদ।
   </>,
   <>
-    6-এ তুলনা: <C t="7 > 6" /> — আবার ডানে নামলাম।
+    3000 (dev server)-এ তুলনা: <C t="5432 > 3000" /> — আবার ডানে নামলাম।
   </>,
   <>
-    <C t="7 === 7" /> — <b>পেয়ে গেছি!</b> গাছে node ছিল 9টা, অথচ দেখা লাগল মাত্র 4টায়।
-    প্রতি ধাপে অর্ধেকটা গাছ বাদ পড়ে যায় বলেই BST-এর search এত দ্রুত — হুবহু binary
-    search-এর মতো।
+    <C t="5432 === 5432" /> — <b>পেয়ে গেছি!</b> PostgreSQL-এর port খোলা আছে। গাছে node
+    ছিল ৮টা, অথচ দেখা লাগল মাত্র ৪টায়। প্রতি ধাপে অর্ধেকটা গাছ বাদ পড়ে যায় বলেই BST-এর
+    search এত দ্রুত — হুবহু binary search-এর মতো।
   </>,
 ];
 
@@ -888,7 +944,7 @@ export function BstSearchAnim() {
 
   return (
     <Stage
-      title="BST-এ search(7)"
+      title="BST-এ search(5432)"
       step={step}
       total={BSTS_TOTAL}
       playing={playing}
@@ -902,7 +958,7 @@ export function BstSearchAnim() {
       hideConsole
       viz={
         <div className="flex flex-col gap-2.5">
-          <VizLabel t="লক্ষ্য: 7" />
+          <VizLabel t="লক্ষ্য: 5432 (postgres)" />
           <TreeFlow nodes={nodes} edges={edges} height={310} />
         </div>
       }
@@ -920,28 +976,31 @@ export function BstSearchAnim() {
   );
 }
 
-/* ---- insert(5) ---- */
+/* ---- insert(2375) ---- */
 
-const BSTI_FINAL = layoutBinaryTree([
-  { id: '8', label: '8', left: '3', right: '10' },
-  { id: '3', label: '3', left: '1', right: '6' },
-  { id: '10', label: '10', right: '14' },
-  { id: '1', label: '1' },
-  { id: '6', label: '6', left: '4', right: '7' },
-  { id: '14', label: '14' },
-  { id: '4', label: '4', right: '5' },
-  { id: '7', label: '7' },
-  { id: '5', label: '5' },
-]);
+const BSTI_FINAL = layoutBinaryTree(
+  [
+    { id: '6379', label: '6379', sub: 'redis', left: '80', right: '8080' },
+    { id: '80', label: '80', sub: 'http', left: '22', right: '3000' },
+    { id: '8080', label: '8080', sub: 'proxy', right: '27017' },
+    { id: '22', label: '22', sub: 'ssh' },
+    { id: '3000', label: '3000', sub: 'dev', left: '443', right: '5432' },
+    { id: '27017', label: '27017', sub: 'mongo' },
+    { id: '443', label: '443', sub: 'https', right: '2375' },
+    { id: '5432', label: '5432', sub: 'postgres' },
+    { id: '2375', label: '2375', sub: 'docker' },
+  ],
+  { x: 106, y: 96 },
+);
 
-const BSTI_PATH = ['8', '3', '6', '4'];
+const BSTI_PATH = ['6379', '80', '3000', '443'];
 const BSTI_CURSOR = [-1, 2, 3, 2, 3, 1, 1];
 const BSTI_BUBBLES: ({ expr: string; res: boolean } | undefined)[] = [
   undefined,
-  { expr: '5 < 8', res: true },
-  { expr: '5 < 3', res: false },
-  { expr: '5 < 6', res: true },
-  { expr: '5 < 4', res: false },
+  { expr: '2375 < 6379', res: true },
+  { expr: '2375 < 80', res: false },
+  { expr: '2375 < 3000', res: true },
+  { expr: '2375 < 443', res: false },
   undefined,
   undefined,
 ];
@@ -958,30 +1017,30 @@ const BSTI_CODE = [
 
 const BSTI_CAPTIONS: ReactNode[] = [
   <>
-    এই BST-তে নতুন মান <b>5</b> ঢোকাব। কৌশল সহজ: search-এর মতো তুলনা করে নামতে থাকো;
-    যেখানে ফাঁকা জায়গা (<C t="null" />) পাবে, সেখানেই নতুন node বসে যাবে।{' '}
-    <b>নীল ঘের</b> দেখাবে এখন কোন node-এর সাথে তুলনা হচ্ছে।
+    এবার Docker daemon চালু হলো — port <b>2375</b> BST-তে ঢোকাতে হবে। কৌশল সহজ:
+    search-এর মতো তুলনা করে নামতে থাকো; যেখানে ফাঁকা জায়গা (<C t="null" />) পাবে,
+    সেখানেই নতুন node বসে যাবে। <b>নীল ঘের</b> দেখাবে এখন কোন node-এর সাথে তুলনা হচ্ছে।
   </>,
   <>
-    Root 8-এ তুলনা: <C t="5 < 8" /> — ছোট, তাই বামে নামলাম।
+    Root 6379-এ তুলনা: <C t="2375 < 6379" /> — ছোট, তাই বামে নামলাম।
   </>,
   <>
-    3-এ: <C t="5 > 3" /> — বড়, তাই ডানে।
+    80-এ: <C t="2375 > 80" /> — বড়, তাই ডানে।
   </>,
   <>
-    6-এ: <C t="5 < 6" /> — ছোট, তাই বামে; পৌঁছে গেলাম 4-এর কাছে।
+    3000-এ: <C t="2375 < 3000" /> — ছোট, তাই বামে; পৌঁছে গেলাম 443 (HTTPS)-এর কাছে।
   </>,
   <>
-    4-এ: <C t="5 > 4" /> — বড়, তাই ডানে যেতে চাই…
+    443-এ: <C t="2375 > 443" /> — বড়, তাই ডানে যেতে চাই…
   </>,
   <>
-    …কিন্তু 4-এর ডানে কিছু নেই, <C t="null" />! ড্যাশ করা ফাঁকা গোলটাই 5-এর ভবিষ্যৎ জায়গা।
-    খেয়াল করো — অন্য কোনো node-কে একচুলও সরাতে হয়নি।
+    …কিন্তু 443-এর ডানে কিছু নেই, <C t="null" />! ড্যাশ করা ফাঁকা গোলটাই 2375-এর ভবিষ্যৎ
+    জায়গা। খেয়াল করো — অন্য কোনো node-কে একচুলও সরাতে হয়নি।
   </>,
   <>
-    সেই জায়গাতেই <C t="new TreeNode(5)" /> বসে গেল, আর গাছ নিজেকে নতুন আকারে সাজিয়ে নিল।
-    পুরো insert-এ বদলাল মাত্র একটা pointer (4-এর right) — তাই খরচ <C t="O(h)" />, অর্থাৎ
-    গাছের height সমান ধাপ।
+    সেই জায়গাতেই <C t="new TreeNode(2375)" /> বসে গেল, আর গাছ নিজেকে নতুন আকারে সাজিয়ে
+    নিল। পুরো insert-এ বদলাল মাত্র একটা pointer (443-এর right) — তাই খরচ <C t="O(h)" />,
+    অর্থাৎ গাছের height সমান ধাপ।
   </>,
 ];
 
@@ -995,17 +1054,17 @@ export function BstInsertAnim() {
     if (!placed) {
       const base = applyNodeState(BST_TREE.nodes, bstiStates(walked, current));
       if (step === 5) {
-        const spot = BSTI_FINAL.nodes.find((n) => n.id === '5') as TreeFlowNode;
+        const spot = BSTI_FINAL.nodes.find((n) => n.id === '2375') as TreeFlowNode;
         return [
           ...base,
-          { ...spot, id: 'g5', data: { label: '5', tone: 'ghost' as NodeTone } },
+          { ...spot, id: 'g2375', data: { label: '2375', sub: 'docker', tone: 'ghost' as NodeTone } },
         ];
       }
       return base;
     }
     return applyNodeState(BSTI_FINAL.nodes, {
       ...bstiStates(walked, null),
-      '5': { tone: 'new', badge: 'বসল!', badgeTone: 'emerald' },
+      '2375': { tone: 'new', badge: 'বসল!', badgeTone: 'emerald' },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, placed]);
@@ -1016,17 +1075,17 @@ export function BstInsertAnim() {
     if (!placed) {
       const base = applyEdgeTones(
         BST_TREE.links,
-        current ? pathEdgeTones(BST_PARENT, current) : step === 5 ? pathEdgeTones(BST_PARENT, '4') : {},
+        current ? pathEdgeTones(BST_PARENT, current) : step === 5 ? pathEdgeTones(BST_PARENT, '443') : {},
       );
-      return step === 5 ? [...base, mkEdge('4', 'g5', 'ghost')] : base;
+      return step === 5 ? [...base, mkEdge('443', 'g2375', 'ghost')] : base;
     }
-    return applyEdgeTones(BSTI_FINAL.links, { ...pathEdgeTones(BST_PARENT, '4'), '4-5': 'ok' });
+    return applyEdgeTones(BSTI_FINAL.links, { ...pathEdgeTones(BST_PARENT, '443'), '443-2375': 'ok' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, placed]);
 
   return (
     <Stage
-      title="BST-এ insert(5)"
+      title="BST-এ insert(2375)"
       step={step}
       total={BSTI_TOTAL}
       playing={playing}
@@ -1040,7 +1099,7 @@ export function BstInsertAnim() {
       hideConsole
       viz={
         <div className="flex flex-col gap-2.5">
-          <VizLabel t="ঢুকছে: 5" />
+          <VizLabel t="ঢুকছে: 2375 (docker)" />
           <TreeFlow nodes={nodes} edges={edges} height={350} refitDep={placed || step === 5} />
         </div>
       }
@@ -1071,19 +1130,25 @@ function bstiStates(
 }
 
 /* ================================================================== */
-/*  6. avl-tree: 1,2,3 insert → RR break → left rotation               */
+/*  6. avl-tree: services boot in sorted order (22,80,443) → RR break  */
 /* ================================================================== */
 
-const AVL_CHAIN = layoutBinaryTree([
-  { id: '1', label: '1', right: '2' },
-  { id: '2', label: '2', right: '3' },
-  { id: '3', label: '3' },
-]);
-const AVL_FIXED = layoutBinaryTree([
-  { id: '2', label: '2', left: '1', right: '3' },
-  { id: '1', label: '1' },
-  { id: '3', label: '3' },
-]);
+const AVL_CHAIN = layoutBinaryTree(
+  [
+    { id: '22', label: '22', sub: 'ssh', right: '80' },
+    { id: '80', label: '80', sub: 'http', right: '443' },
+    { id: '443', label: '443', sub: 'https' },
+  ],
+  { x: 106, y: 96 },
+);
+const AVL_FIXED = layoutBinaryTree(
+  [
+    { id: '80', label: '80', sub: 'http', left: '22', right: '443' },
+    { id: '22', label: '22', sub: 'ssh' },
+    { id: '443', label: '443', sub: 'https' },
+  ],
+  { x: 106, y: 96 },
+);
 
 const AVL_CURSOR = [-1, -1, -1, -1, 1, 3, 5];
 const AVL_TOTAL = 6;
@@ -1100,31 +1165,34 @@ const AVL_CODE = [
 
 const AVL_CAPTIONS: ReactNode[] = [
   <>
-    একে একে 1, 2, 3 insert করি, আর দেখি AVL কীভাবে নিজে থেকেই ভারসাম্য ঠিক করে। প্রতিটা
-    node-এর নিচের চিপে <b>bf</b> = balance factor, অর্থাৎ বাম দিক আর ডান দিকের height-এর
-    পার্থক্য। bf যদি কখনো 2 বা −2 ছোঁয়, AVL সঙ্গে সঙ্গে গাছ ঘুরিয়ে (rotation) ঠিক করে দেয়।
+    সার্ভার বুট হলে সার্ভিসগুলো একে একে উঠে আসে: আগে SSH (22), তারপর HTTP (80), তারপর
+    HTTPS (443) — মানে port-গুলো sorted ক্রমেই insert হচ্ছে। একে একে insert করি, আর দেখি
+    AVL কীভাবে নিজে থেকেই ভারসাম্য ঠিক করে। প্রতিটা node-এর নিচের চিপে <b>bf</b> =
+    balance factor, অর্থাৎ বাম দিক আর ডান দিকের height-এর পার্থক্য। bf যদি কখনো 2 বা −2
+    ছোঁয়, AVL সঙ্গে সঙ্গে গাছ ঘুরিয়ে (rotation) ঠিক করে দেয়।
   </>,
   <>
-    <C t="insert(1)" />: গাছে এটাই প্রথম node, root হয়ে বসল। ভারসাম্য নিয়ে এখন ভাবার
-    কিছু নেই।
+    <C t="insert(22)" />: গাছে এটাই প্রথম node — SSH root হয়ে বসল। ভারসাম্য নিয়ে এখন
+    ভাবার কিছু নেই।
   </>,
   <>
-    <C t="insert(2)" />: 2 &gt; 1, তাই 1-এর ডানে বসল। এখন 1-এর <C t="bf = −1" />, মানে ডান
-    দিক এক ধাপ লম্বা। bf যতক্ষণ −1, 0 বা +1-এর মধ্যে, গাছ balanced ধরা হয় — এখনো সব ঠিক।
+    <C t="insert(80)" />: 80 &gt; 22, তাই 22-এর ডানে বসল। এখন 22-এর <C t="bf = −1" />,
+    মানে ডান দিক এক ধাপ লম্বা। bf যতক্ষণ −1, 0 বা +1-এর মধ্যে, গাছ balanced ধরা হয় —
+    এখনো সব ঠিক।
   </>,
   <>
-    <C t="insert(3)" />: আবারও ডানে! এবার 1-এর <C t="bf = −2" /> — সীমা ছাড়াল, তাই node-টা
-    লাল হয়ে সতর্ক করছে। এই ভাঙনের নাম <b>RR case</b> (ডানে-ডানে ভারী), আর এর ফিক্স একটাই:{' '}
-    <b>left rotation</b>।
+    <C t="insert(443)" />: আবারও ডানে! এবার 22-এর <C t="bf = −2" /> — সীমা ছাড়াল, তাই
+    node-টা লাল হয়ে সতর্ক করছে। এই ভাঙনের নাম <b>RR case</b> (ডানে-ডানে ভারী), আর এর
+    ফিক্স একটাই: <b>left rotation</b>।
   </>,
   <>
-    Rotation শুরু। pivot হিসেবে নেওয়া হলো <C t="x = 2" /> (নীল ঘের): 2 উঠে নতুন root হবে,
-    আর 1 নেমে যাবে ওর বামে। 1–2-এর কাটা লাল লাইনটা দেখাচ্ছে কোন সংযোগটা আলগা হয়ে নতুন করে
-    বাঁধবে।
+    Rotation শুরু। pivot হিসেবে নেওয়া হলো <C t="x = 80" /> (নীল ঘের): 80 উঠে নতুন root
+    হবে, আর 22 নেমে যাবে ওর বামে। 22–80-এর কাটা লাল লাইনটা দেখাচ্ছে কোন সংযোগটা আলগা হয়ে
+    নতুন করে বাঁধবে।
   </>,
   <>
-    Rotation শেষ: 2 উপরে উঠে root, আর 1 বসে গেল ওর বামে (কোডের <C t="x.left = y" /> লাইনটা)।
-    খেয়াল করো, BST নিয়ম কিন্তু অক্ষত আছে — এখনো <C t="1 < 2 < 3" />।
+    Rotation শেষ: 80 উপরে উঠে root, আর 22 বসে গেল ওর বামে (কোডের <C t="x.left = y" />{' '}
+    লাইনটা)। খেয়াল করো, BST নিয়ম কিন্তু অক্ষত আছে — এখনো <C t="22 < 80 < 443" />।
   </>,
   <>
     ফলাফল: তিনটা node-এরই bf এখন <C t="0" />, আর গাছের height কমে 3 থেকে 2-তে। মাত্র একটা
@@ -1136,41 +1204,41 @@ const AVL_CAPTIONS: ReactNode[] = [
 function avlNodes(step: number): TreeFlowNode[] {
   if (step <= 3) {
     const chain: Record<number, Record<string, Partial<TreeNodeData>>> = {
-      1: { '1': { tone: 'new' } },
-      2: { '1': { badge: 'bf −1' }, '2': { tone: 'new' } },
+      1: { '22': { tone: 'new' } },
+      2: { '22': { badge: 'bf −1' }, '80': { tone: 'new' } },
       3: {
-        '1': { tone: 'alarm', badge: 'bf −2', badgeTone: 'rose' },
-        '2': { badge: 'bf −1' },
-        '3': { tone: 'new' },
+        '22': { tone: 'alarm', badge: 'bf −2', badgeTone: 'rose' },
+        '80': { badge: 'bf −1' },
+        '443': { tone: 'new' },
       },
     };
     const shown = new Set([
-      ...(step >= 1 ? ['1'] : []),
-      ...(step >= 2 ? ['2'] : []),
-      ...(step >= 3 ? ['3'] : []),
+      ...(step >= 1 ? ['22'] : []),
+      ...(step >= 2 ? ['80'] : []),
+      ...(step >= 3 ? ['443'] : []),
     ]);
     const states = chain[step] ?? {};
     return applyNodeState(AVL_CHAIN.nodes, states).filter((n) => shown.has(n.id));
   }
   if (step === 4)
     return applyNodeState(AVL_CHAIN.nodes, {
-      '1': { tone: 'alarm', badge: 'bf −2', badgeTone: 'rose' },
-      '2': { tone: 'walk', badge: 'pivot', badgeTone: 'sky' },
-      '3': {},
+      '22': { tone: 'alarm', badge: 'bf −2', badgeTone: 'rose' },
+      '80': { tone: 'walk', badge: 'pivot', badgeTone: 'sky' },
+      '443': {},
     });
   if (step === 5) return AVL_FIXED.nodes;
   return applyNodeState(AVL_FIXED.nodes, {
-    '1': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
-    '2': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
-    '3': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
+    '22': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
+    '80': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
+    '443': { tone: 'visited', badge: 'bf 0', badgeTone: 'emerald' },
   });
 }
 
 function avlEdges(step: number): Edge[] {
   if (step <= 1) return [];
   if (step <= 3) return applyEdgeTones(AVL_CHAIN.links.slice(0, step - 1), {});
-  if (step === 4) return applyEdgeTones(AVL_CHAIN.links, { '1-2': 'cut' });
-  return applyEdgeTones(AVL_FIXED.links, { '2-1': 'ok', '2-3': 'ok' });
+  if (step === 4) return applyEdgeTones(AVL_CHAIN.links, { '22-80': 'cut' });
+  return applyEdgeTones(AVL_FIXED.links, { '80-22': 'ok', '80-443': 'ok' });
 }
 
 export function AvlRotationAnim() {
@@ -1181,7 +1249,7 @@ export function AvlRotationAnim() {
 
   return (
     <Stage
-      title="AVL: 1, 2, 3 insert আর left rotation"
+      title="AVL: 22, 80, 443 insert আর left rotation"
       step={step}
       total={AVL_TOTAL}
       playing={playing}
@@ -1205,10 +1273,24 @@ export function AvlRotationAnim() {
 /*  7. bfs-dfs-on-tree: same tree, stack vs queue, side by side        */
 /* ================================================================== */
 
-const DFS_ORDER = ['1', '2', '4', '5', '3'];
-const BFS_ORDER = ['1', '2', '3', '4', '5'];
-const DFS_STACK: string[][] = [['1'], ['3', '2'], ['3', '5', '4'], ['3', '5'], ['3'], []];
-const BFS_QUEUE: string[][] = [['1'], ['2', '3'], ['3', '4', '5'], ['4', '5'], ['5'], []];
+const DFS_ORDER = ['dsarc', 'src', 'app', 'components', 'content'];
+const BFS_ORDER = ['dsarc', 'src', 'content', 'app', 'components'];
+const DFS_STACK: string[][] = [
+  ['dsarc'],
+  ['content', 'src'],
+  ['content', 'components', 'app'],
+  ['content', 'components'],
+  ['content'],
+  [],
+];
+const BFS_QUEUE: string[][] = [
+  ['dsarc'],
+  ['src', 'content'],
+  ['content', 'app', 'components'],
+  ['app', 'components'],
+  ['components'],
+  [],
+];
 const CMP_TOTAL = 5;
 
 const CMP_LINES = [
@@ -1221,33 +1303,35 @@ const CMP_LINES = [
 
 const CMP_CAPTIONS: ReactNode[] = [
   <>
-    একই গাছের ওপর পাশাপাশি দৌড়াবে দুই কৌশল: বামে <b>DFS</b> (আগে গভীরে), ডানে <b>BFS</b>{' '}
-    (আগে পাশে)। পার্থক্য আসে তাদের হাতিয়ার থেকে — DFS-এর <b>stack</b>-এ শেষে ঢুকা আগে বের
-    হয় (LIFO), BFS-এর <b>queue</b>-তে আগে ঢুকা আগে বের হয় (FIFO)। নিচে দুটোর stack আর
-    queue লাইভ দেখা যাবে। প্লে চাপো!
+    ধরো তুমি প্রজেক্টে একটা ফাইল খুঁজছ। একই ফোল্ডার-গাছের ওপর পাশাপাশি দৌড়াবে দুই
+    কৌশল: বামে <b>DFS</b> (আগে গভীরে — <C t="grep -r" /> যেমন এক ফোল্ডারের তল্লাশি শেষ
+    করে তবে পরেরটায় যায়), ডানে <b>BFS</b> (আগে পাশে — সব সরাসরি subfolder আগে, তারপর এক
+    লেভেল নিচে)। পার্থক্য আসে তাদের হাতিয়ার থেকে — DFS-এর <b>stack</b>-এ শেষে ঢুকা আগে
+    বের হয় (LIFO), BFS-এর <b>queue</b>-তে আগে ঢুকা আগে বের হয় (FIFO)। নিচে দুটোর stack
+    আর queue লাইভ দেখা যাবে। প্লে চাপো!
   </>,
   <>
-    দুটোই root 1 দিয়ে শুরু করল। এবার child জমা দেওয়ার পালা: DFS ডান child (3) আগে push
-    করে, তাই বাম child 2 stack-এর top-এ উঠে এসেছে — stack-এ পরে ঢুকলেই top। আর BFS বাম
-    থেকে ডানে ঢুকিয়েছে, তাই queue-র সামনে 2, পেছনে 3।
+    দুটোই root dsarc দিয়ে শুরু করল। এবার child জমা দেওয়ার পালা: DFS ডান child (content)
+    আগে push করে, তাই বাম child src stack-এর top-এ উঠে এসেছে — stack-এ পরে ঢুকলেই top। আর
+    BFS বাম থেকে ডানে ঢুকিয়েছে, তাই queue-র সামনে src, পেছনে content।
   </>,
   <>
-    দুটোই 2 visit করল, কিন্তু এখন থেকে পথ আলাদা। DFS-এর stack-এ 2-এর child-রা উপরে উঠে
-    গেছে — top-এ এখন গভীরের 4। আর BFS-এর queue-র সামনে এখনো সেই পুরনো 3, কারণ ও আগে
-    ঢুকেছিল।
+    দুটোই src visit করল, কিন্তু এখন থেকে পথ আলাদা। DFS-এর stack-এ src-এর child-রা উপরে
+    উঠে গেছে — top-এ এখন গভীরের app। আর BFS-এর queue-র সামনে এখনো সেই পুরনো content,
+    কারণ ও আগে ঢুকেছিল।
   </>,
   <>
-    তাই DFS ঝাঁপ দিল একেবারে গভীরের 4-এ, আর BFS নিল পাশের 3-কে — BFS-এর কাছে পুরো স্তর 1
-    শেষ করা আগে।
+    তাই DFS ঝাঁপ দিল একেবারে গভীরের app-এ, আর BFS নিল পাশের content-কে — BFS-এর কাছে পুরো
+    স্তর 1 শেষ করা আগে।
   </>,
   <>
-    DFS এগিয়ে 5-এ, BFS এসে 4-এ। দুটোরই আর একটা করে node বাকি, কিন্তু ক্রম এতক্ষণে পুরো
-    ভিন্ন হয়ে গেছে।
+    DFS এগিয়ে components-এ, BFS এসে app-এ। দুটোরই আর একটা করে node বাকি, কিন্তু ক্রম
+    এতক্ষণে পুরো ভিন্ন হয়ে গেছে।
   </>,
   <>
-    শেষ ধাপ: DFS সবশেষে নিল 3-কে — ডান subtree-টা সে পুরোটা শেষের দিকে ঠেলে দিয়েছিল; আর
-    BFS-এর শেষে 5। নিচের কনসোলে দুটোর পুরো ক্রম মিলিয়ে দেখো: একই গাছ, একই node-গুলো —
-    শুধু stack আর queue-র ফারাকে ক্রম বদলে গেল।
+    শেষ ধাপ: DFS সবশেষে নিল content-কে — ডান subtree-টা সে পুরোটা শেষের দিকে ঠেলে
+    দিয়েছিল; আর BFS-এর শেষে components। নিচের কনসোলে দুটোর পুরো ক্রম মিলিয়ে দেখো: একই
+    গাছ, একই node-গুলো — শুধু stack আর queue-র ফারাকে ক্রম বদলে গেল।
   </>,
 ];
 
@@ -1257,7 +1341,7 @@ function cmpNodes(order: string[], step: number): TreeFlowNode[] {
     states[id] = { tone: 'visited', order: i + 1 };
   });
   if (step >= 1) states[order[step - 1]] = { tone: 'walk', order: step };
-  return applyNodeState(FIVE_TREE.nodes, states);
+  return applyNodeState(REPO_TREE.nodes, states);
 }
 
 export function BfsDfsTreeAnim() {
@@ -1287,12 +1371,12 @@ export function BfsDfsTreeAnim() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <VizLabel t="DFS — stack (LIFO)" />
-            <TreeFlow nodes={cmpNodes(DFS_ORDER, step)} edges={FIVE_EDGES} height={205} />
+            <TreeFlow nodes={cmpNodes(DFS_ORDER, step)} edges={REPO_EDGES} height={205} />
             <ChipRow label="stack" chips={DFS_STACK[step]} />
           </div>
           <div className="flex flex-col gap-2">
             <VizLabel t="BFS — queue (FIFO)" />
-            <TreeFlow nodes={cmpNodes(BFS_ORDER, step)} edges={FIVE_EDGES} height={205} />
+            <TreeFlow nodes={cmpNodes(BFS_ORDER, step)} edges={REPO_EDGES} height={205} />
             <ChipRow label="queue" chips={BFS_QUEUE[step]} />
           </div>
         </div>
