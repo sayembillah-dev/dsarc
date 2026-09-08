@@ -57,6 +57,47 @@ description: ফোল্ডারের মতো শ্রেণিবদ্�
 
 DSA-এর সবচেয়ে চেনা রূপ হলো **binary tree**, প্রতি node-এর সর্বোচ্চ দুই child: `left` আর `right`। ফোল্ডার-গাছে child-এর সংখ্যার সীমা নেই, binary tree-তে আছে, আর এই সীমাটাই পরে [BST](./binary-search-tree.mdx)-এর নিয়ম আর heap-এর গণিত সম্ভব করে।
 
+## n-ary tree-কে binary-র ভাষায়: first-child, next-sibling
+
+একটা প্রশ্ন এখনই এসে যায়: ফোল্ডারের মতো tree-তে তো child-এর সংখ্যার বাড়াতেই পারে, সেখানে representation কী? Child-দের array রাখা একটা উপায়, কিন্তু চমৎকার আরেকটা কৌশল আছে: **প্রতি node-এ ঠিক দুটো pointer — প্রথম সন্তান (`firstChild`) আর পরের ভাই (`nextSibling`)।** এতে যেকোনো n-ary tree বসে যায় binary-সদৃশ কাঠামোয়:
+
+```text
+সাধারণ চোখে:              firstChild / nextSibling-এ:
+        A                        A
+      / | \                      |
+     B  C  D                     B → C → D
+```
+
+A-এর firstChild হলো B; B-এর nextSibling C, C-এর nextSibling D। অর্থাৎ সন্তানদের দল হয়ে গেল একটা linked list, যার মাথা parent-এর কাছে। কারও সব child চাইলে firstChild-এ নেমে nextSibling ধরে হেঁটে যাও। ব্রাউজারের DOM-ও ভেতরে এমনই সাজানো।
+
+```js
+function folder(name, children = []) {
+  const node = { name, firstChild: null, nextSibling: null };
+  for (let i = 0; i < children.length - 1; i++) {
+    children[i].nextSibling = children[i + 1]; // সন্তানদের list-এ জোড়ো
+  }
+  node.firstChild = children[0] || null;
+  return node;
+}
+
+function printTree(node, depth = 0) {
+  for (let cur = node; cur; cur = cur.nextSibling) {
+    console.log("  ".repeat(depth) + cur.name);
+    if (cur.firstChild) printTree(cur.firstChild, depth + 1);
+  }
+}
+
+const root = folder("A", [folder("B"), folder("C", [folder("E")]), folder("D")]);
+printTree(root);
+// A
+//   B
+//   C
+//     E
+//   D
+```
+
+এই কাঠামো কেন কার্যকর? বেশিরভাগ বাস্তব tree অগভীর: child অনেক, level কম; sibling-হাঁটা তাই সস্তা। চাইলে প্রতি node-এ parent-এর দিকে back pointer-ও রাখা যায়, যাতে গাছে উপরে ওঠা যায়, তবে সেটা maintain করা ঝামেলার — প্রতিটা insert/delete-এ দুই দিক ঠিক রাখতে হয়।
+
 ## কোড: node বানানো
 
 ```js

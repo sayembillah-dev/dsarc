@@ -10,6 +10,8 @@ description: overlapping subproblem-এর ফল জমিয়ে রেখ�
 - একই কাজ দুই দিক থেকে: top-down memoization আর bottom-up tabulation
 - হাতে হাতে dry run: fib(6)-এর memo table আর climbing stairs-এর 1D dp ভরা
 - চারটা classic সমস্যা: fib, stairs, coin change, knapsack; আর space O(1)-এ নামানোর কৌশল
+- Weighted job scheduling: activity selection-এর DP সংস্করণ, যেখানে greedy থেমে যায়
+- Matrix exponentiation: fib-কেও O(log n)-এ নামানো যায়, যখন n মিলিয়ন ছাড়িয়ে যায়
 
 ## ধারণা
 
@@ -199,6 +201,75 @@ function uniquePaths(m, n) {
 console.log(uniquePaths(3, 3)); // 6
 ```
 
+## ভ্যারিয়েন্ট ৪: weighted job scheduling - greedy যেখানে থেমে যায়
+
+[Activity selection](./greedy.mdx) পড়ে এসেছো: শেষ-সময়ে sort করে greedily নিলেই সর্বোচ্চ সংখ্যক কাজ। কিন্তু ওখানে প্রতিটা কাজের "দাম" ছিল সমান - একটা। এবার প্রতিটা কাজের আলাদা মজুরি (weight) ধরো। এখন "আগে শেষ হয় এমনটা নাও" নিয়ম ভেঙে যায়: যে কাজটা আগে শেষ হয় তার মজুরি ১ টাকা, পরেরটার ১০০ টাকা হলে? Greedy এখানে হারে, জেতে DP।
+
+পদ্ধতি: কাজগুলো শেষ-সময়ে sort করো। প্রতি কাজ j-এর জন্য খুঁজে বের করো p(j) = j-এর আগে সবচেয়ে শেষ দিকের কোন কাজটা j-এর সাথে overlap করে না। তারপর dp[j] = প্রথম j-টা কাজের মধ্যে সর্বোচ্চ উপার্জন, আর দুটো পছন্দ:
+
+```js
+function weightedJobSchedule(jobs) {
+  const sorted = [...jobs].sort((a, b) => a.end - b.end);
+  const n = sorted.length;
+  // p[j] = j-এর আগের দিকে সবচেয়ে শেষের non-conflicting কাজের index, না থাকলে -1
+  const p = new Array(n).fill(-1);
+  for (let j = 0; j < n; j++) {
+    for (let i = j - 1; i >= 0; i--) {
+      if (sorted[i].end <= sorted[j].start) { p[j] = i; break; }
+    }
+  }
+  const dp = new Array(n).fill(0);
+  for (let j = 0; j < n; j++) {
+    const take = sorted[j].weight + (p[j] >= 0 ? dp[p[j]] : 0); // j নিলে
+    const skip = j > 0 ? dp[j - 1] : 0;                         // j বাদ
+    dp[j] = Math.max(take, skip);
+  }
+  return n ? dp[n - 1] : 0;
+}
+
+console.log(weightedJobSchedule([
+  { start: 1, end: 3, weight: 50 },
+  { start: 3, end: 5, weight: 20 },
+  { start: 6, end: 19, weight: 100 },
+  { start: 2, end: 100, weight: 120 },
+])); // 170: প্রথম তিনটা মিলে, দীর্ঘ 120-ওলা কাজটা হারে
+```
+
+লক্ষ করো, dp-এর দুই পছন্দ (নেব / বাদ) হুবহু knapsack-এর মতো, শুধু conflict-টা capacity নয়, সময়ের overlap। p(j) এখানে পেছন থেকে linear খুঁজেছি, প্রতি কাজে O(n); sorted শেষ-সময়ের উপর [Binary Search](../searching/binary-search.mdx) চালালে সেটাও O(log n) হয়, মোট তখন O(n log n)।
+
+## ভ্যারিয়েন্ট ৫: fib আবার, এবার matrix দিয়ে - O(log n)
+
+সাক্ষাৎকারে প্রশ্ন: fib(n) বের করো, যেখানে n = 10⁹ পর্যন্ত হতে পারে, উত্তর কোনো mod-এ চাই (যেমন 10⁹ + 7)। এই পাতার DP? O(n) মানে বিলিয়ন ধাপ - টাক মারার আগেই সময় শেষ। দরকার লগারিদমিক কিছু।
+
+জাদুর ম্যাট্রিক্সটা এই: [[1, 1], [1, 0]]-এর n-তম power নাও, পেয়ে যাবে [[F(n+1), F(n)], [F(n), F(n-1)]]। আর matrix-এর power বের করা যায় binary exponentiation দিয়ে, ঠিক যেভাবে সংখ্যার power বের করো: বেস বর্গ করো, exponent অর্ধেক করো, বিজোড় পেলে উত্তরে গুণ করো:
+
+```js
+function matMul(A, B, mod) {
+  return [
+    [(A[0][0] * B[0][0] + A[0][1] * B[1][0]) % mod,
+     (A[0][0] * B[0][1] + A[0][1] * B[1][1]) % mod],
+    [(A[1][0] * B[0][0] + A[1][1] * B[1][0]) % mod,
+     (A[1][0] * B[0][1] + A[1][1] * B[1][1]) % mod],
+  ];
+}
+
+function fibMod(n, mod) {
+  let result = [[1, 0], [0, 1]];   // identity matrix
+  let base = [[1, 1], [1, 0]];     // fib-এর জাদুর ম্যাট্রিক্স
+  while (n > 0) {
+    if (n % 2 === 1) result = matMul(result, base, mod);
+    base = matMul(base, base, mod);
+    n = Math.floor(n / 2);
+  }
+  return result[0][1];             // power-টা [[F(n+1), F(n)], [F(n), F(n-1)]]
+}
+
+console.log(fibMod(10, 999983));            // 55
+console.log(fibMod(1_000_000_000, 999983)); // 640251, এক নিমেষে
+```
+
+n = 10⁹-এও loop ঘোরে মাত্র ~30 বার। মনে রাখার সূত্র: **যে recurrence লিনিয়ার আর fixed-depth, সেটাই matrix power-এ ঢোকে, আর matrix power মানে O(log n)**। শুধু সাবধানতা: mod বড় হলে (যেমন 10¹⁸-এর কাছাকাছি) গুণফল 2⁵³ ছাড়িয়ে যেতে পারে, তখন BigInt। এখানকার মতো ছয়-সাত অঙ্কের mod-এ mod² এখনো নিরাপদ।
+
 ## কোড ব্রেকডাউন: লাইনে লাইনে
 
 আগে fibMemo, কোন লাইন কেন আছে:
@@ -269,3 +340,5 @@ memo-র key হিসেবে শুধু index রাখলাম, অথচ
 - Complexity-র সূত্র: state সংখ্যা গুণ প্রতি state-এর কাজ। state গোনা গেলেই complexity জানা।
 - "সর্বনিম্ন / সর্বোচ্চ / কয়টি উপায়" দেখলে DP-র কথা ভাবো; greedy ভাঙলে DP-তে এসো।
 - প্রায়ই পুরো টেবিল লাগে না, শেষ কয়টা ঘরই যথেষ্ট, space তখন O(n) থেকে O(1)-এ নেমে যায়।
+- Greedy ভাঙলেই DP জেতে: weighted job scheduling-এ activity selection-এর নিয়ম আর চলে না, dp[j] = max(নেব, বাদ)-এ ঠিক হয়ে যায়।
+- লিনিয়ার recurrence + বিশাল n + mod দেখলে matrix exponentiation: fib-ও তখন O(log n)।

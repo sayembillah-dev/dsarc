@@ -10,6 +10,7 @@ description: String কেন array-এর আত্মীয়, immutability-�
 - লুপে `+` দিয়ে string জোড়া কেন O(n²) পর্যন্ত যায়, আর পাল্টা কী
 - `split` / `join` দিয়ে array-র সব কৌশল string-এ লাগানো
 - `charCodeAt` দিয়ে অক্ষর নিয়ে অংক করা
+- Anagram চেক: frequency array-র প্রথম আসল কাজ
 - Palindrome চেকের পুরো dry run, two-pointer দিয়ে
 
 ## ধারণা
@@ -130,6 +131,44 @@ console.log(freq[11]); // 2: 'l' দুইবার
 
 এই `charCodeAt(0) - 97` কৌশলটা পরে [Hash Tables](../hash-tables/hash-table-intro.mdx) আর anagram ঘরানার সমস্যায় বারবার কাজে লাগবে।
 
+## প্যাটার্ন: anagram চেক, frequency দিয়ে
+
+দুটো string **anagram** যদি একই অক্ষরগুলো ভিন্ন ক্রমে থাকে: `"listen"` আর `"silent"`। Interview-তে এটা প্রিয়, কারণ এখানেই `charCodeAt` frequency-র প্রথম আসল ব্যবহার ফুটে ওঠে।
+
+কায়দা: প্রথম string-এর প্রতি অক্ষরের ঘরে +1 করে ভাণ্ডার ভরো, দ্বিতীয়টার প্রতি অক্ষর দিয়ে −1 করে খালি করো। শেষে সব ঘর শূন্যে ফিরলে দুটোর ভাণ্ডার একই ছিল। `"listen"` দিয়ে ভরা, `"silent"` দিয়ে খালি:
+
+| দ্বিতীয় string-এর অক্ষর | ঘর | কমানোর পর মান |
+|---|---|---|
+| s | s | 0 |
+| i | i | 0 |
+| l | l | 0 |
+| e | e | 0 |
+| n | n | 0 |
+| t | t | 0 |
+
+```js
+function isAnagram(a, b) {
+  if (a.length !== b.length) return false; // দৈর্ঘ্য আলাদা মানেই না
+
+  const freq = Array(26).fill(0);
+  for (const ch of a) {
+    freq[ch.charCodeAt(0) - 97]++;   // প্রথমটার ভাণ্ডার ভরো
+  }
+  for (const ch of b) {
+    const i = ch.charCodeAt(0) - 97;
+    freq[i]--;                       // দ্বিতীয়টা খালি করো
+    if (freq[i] < 0) return false;   // b-তে এই অক্ষর বেশি, আর দেখা দরকার নেই
+  }
+  return true; // দৈর্ঘ্য সমান, কেউ ঋণাত্মকও হয়নি: সব শূন্যে ফিরেছে
+}
+
+console.log(isAnagram("listen", "silent"));               // true
+console.log(isAnagram("stackoverflow", "flowerovstack")); // true
+console.log(isAnagram("hello", "world"));                 // false
+```
+
+দুটো কথা মাথায় রাখো। এক, এই ২৬-ঘরের সংস্করণ শুধু ছোট হাতের a–z ধরে; বড় হাত এলে আগে `toLowerCase()` করো, আর সব ধরনের অক্ষরের জন্য একই কায়দা `Map` দিয়ে চলে। দুই, আরেকটা রাস্তা আছে: দুটো string-কেই sort করে তুলনা, খরচ O(n log n)। Frequency-র রাস্তা O(n), তাই বড় ইনপুটে এটাই জেতে। সময় O(n), জায়গা O(1), কারণ ২৬ ঘর input-এর সাথে বাড়ে না।
+
 ## কোড ব্রেকডাউন: isPalindrome, লাইনে লাইনে
 
 1. `let left = 0` আর `let right = s.length - 1` : দুই প্রান্তে দুই প্রহরী।
@@ -179,7 +218,7 @@ JavaScript অক্ষর গোনে UTF-16 code unit দিয়ে। অ�
 - **সহজ ১:** একটা string-এ কতগুলো vowel আছে গুনো। (হিন্ট: `for..of` দিয়ে ঘোরো, `"aeiou".includes(ch)` দিয়ে চেক করো।)
 - **সহজ ২:** বাক্যের প্রতিটা শব্দ উল্টে দাও, শব্দের ক্রম ঠিক রেখে: `"ami tomake bhalobashi"` → `"ima ekamot ihsabolahb"`। (হিন্ট: আগে space দিয়ে ভাঙো, প্রতি শব্দ উল্টাও, আবার জোড়ো।)
 - **মাঝারি ১:** `isPalindrome`-কে বাড়িয়ে দাও যাতে space, কমা, বড়-ছোট হাত উপেক্ষা করে: `"A man, a plan, a canal: Panama"` true আসবে। (হিন্ট: আগে শুধু অক্ষর রেখে সব ছোট হাতের করো, তারপর পুরানো কোড।)
-- **মাঝারি ২:** দুটো string anagram কিনা চেক করো (একই অক্ষর, ভিন্ন ক্রম: `"listen"` আর `"silent"`)। (হিন্ট: `charCodeAt(0) - 97` দিয়ে ২৬ ঘরের frequency array, দুটো string-এর জন্য বানিয়ে তুলনা। আরেক রাস্তা: দুটোকেই sort করা।)
+- **মাঝারি ২:** উপরের anagram-কোড না দেখে নিজে frequency-পদ্ধতিটা লেখো, তারপর মিলাও। এরপর ভাবো: দুটো string-ই sort করে তুলনা করলে complexity কী দাঁড়ায়, আর frequency-র রাস্তা কেন জেতে?
 - **কঠিন:** Run-length encoding লেখো: `"aaabbbbcaaa"` → `"a3b4c1a3"`। (হিন্ট: এক pointer দিয়ে চলো, একই অক্ষর যতক্ষণ, গুনতে থাকো; বদলালে ফলাফলে push করো। ফলাফল কোথায় জমাচ্ছ, মনে আছে তো?)
 
 ## সারসংক্ষেপ
@@ -188,4 +227,5 @@ JavaScript অক্ষর গোনে UTF-16 code unit দিয়ে। অ�
 - খেলার কায়দা: `split("")` দিয়ে ভাঙো, array-র কৌশল লাগাও, `join("")` দিয়ে জোড়ো।
 - লুপে `s +=` চৌকো খরচ, array-তে জমিয়ে শেষে `join` করো।
 - `charCodeAt(0) - 97` দিয়ে অক্ষর সরাসরি index হয়, frequency গোনার ভিত্তি।
+- Anagram চেকই frequency-র প্রথম বড় কাজ: একটার নামে ভরো, আরেকটা দিয়ে খালি করো, O(n)-এ শেষ।
 - Palindrome-এর two-pointer আসলে traversal-এর reverse প্যাটার্নই, নতুন কিছু না।

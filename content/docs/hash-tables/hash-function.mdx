@@ -116,6 +116,30 @@ console.log(keys.map(k => k % 7));  // [2, 4, 6, 1, 3]  ছড়িয়ে �
 
 নিয়মটা সহজ: m এমন নাও যাতে key-দের pattern-এর সাথে তার বড় common factor না থাকে। Prime সংখ্যা সাধারণত নিরাপদ পছন্দ, কারণ prime-এর সাথে input-এর pattern মিলে যাওয়ার সুযোগ কম।
 
+কথায় না, সংখ্যায় দেখো। Key ধরো 10, 20, 30, ..., 1000 — অর্থাৎ 10-এর গুণিতক, এমন pattern-ওয়ালা key বাস্তবে প্রায়ই আসে (ID, টাইমস্ট্যাম্প, মাপজোখ)। তিন রকম hash-এর ওপর ছাড়লে:
+
+```js
+const keys = [];
+for (let k = 1; k <= 100; k++) keys.push(k * 10);
+
+function collisionCount(m, hashFn) {
+  const slots = new Set();
+  for (const x of keys) slots.add(hashFn(x, m));
+  return keys.length - slots.size; // যত key পড়েছে, তার চেয়ে কম slot = যত collision
+}
+
+const A = 0.6180339887; // Knuth-এর প্রিয় ধ্রুবক: (√5 - 1) / 2
+const division = (x, m) => x % m;
+const multiplication = (x, m) => Math.floor(m * ((x * A) % 1)); // xA-এর ভগ্নাংশ নিয়ে scale
+
+console.log(collisionCount(100, division));       // 90! মাত্র 10-টা slot-এ সবাই
+console.log(collisionCount(101, division));       // 0: prime পুরোটা ছড়িয়ে দিল
+console.log(collisionCount(100, multiplication)); // 37: m খারাপ হলেও মোটামুটি ছড়ালো
+console.log(collisionCount(101, multiplication)); // 36
+```
+
+দ্বিতীয় পদ্ধতিটার নাম **multiplication method**: key-কে 0 আর 1-এর মাঝের একটা অমূলদ-কাছাকাছি ধ্রুবক A দিয়ে গুণ করে ভগ্নাংশটা নাও (`% 1` মানে দশমিকের পরের অংশ), তারপর m দিয়ে scale করে floor। ছবিটা বলছে স্পষ্ট কথা: division method pattern-ওয়ালা key-র সামনে composite m নিয়ে হাস্যকরভাবে হেরে যায় (90 collision!), prime বাঁচায়; আর multiplication method m-এর পছন্দের প্রতি প্রায় অন্ধ, তাই m-এর ওপর নিয়ন্ত্রণ না থাকলে সেটাই নিরাপদ।
+
 ## ভ্যারিয়েন্ট ২: জোড়া (pair) বা coordinate-এর hash
 
 Grid-এর cell (x, y) বা coordinate-key লাগলে? একই ×31 কৌশল, এবার দুই ধাপে:

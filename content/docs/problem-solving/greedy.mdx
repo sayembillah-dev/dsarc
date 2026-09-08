@@ -10,6 +10,9 @@ description: "প্রতি ধাপে locally সেরা সিদ্ধ�
 - Activity selection-এ একটা পুরো dry run: sort থেকে pick/skip টেবিল
 - Coin change-এ greedy কখন নিখুঁত, কখন চুপিচুপি ভুল উত্তর দেয়
 - Fractional বনাম 0/1 knapsack: একটাতে greedy জেতে, আরেকটায় হারে
+- Huffman coding: সবচেয়ে বিরল দুটোকে আগে জোড়া লাগানো greedy, আর সেটাই optimal
+- Vertex cover: NP-hard সমস্যায় greedy approximation - নিখুঁত নয়, কিন্তু দ্বিগুণের বেশি কখনোই নয়, প্রমাণসহ
+- Minimizing lateness: তিনটা plausible key-এর দুটোই ফেল করে - জেতে earliest deadline first, inversion-বদলের প্রমাণে
 
 ## ধারণা
 
@@ -192,6 +195,97 @@ function canCompleteCircuit(gas, cost) {
 
 প্রমাণের মূল পয়েন্ট: যদি start থেকে i-এর মাঝের কেউ শুরু হতে পারত, তাহলে ওখান থেকে শুরু করে tank শূন্যের বদলে positive জমা নিয়ে এগোত, অথচ আমরা ওই পথ দিয়েই এসে i-তে আটকেছি। তাই ওরাও আটকত। একটা pass-ই উত্তর, O(n)।
 
+## ভ্যারিয়েন্ট ৪: huffman coding - বিরল দুটো আগে জোড়া খাবে
+
+টেক্সট ফাইল চাপাতে (compress) চাও। ASCII-তে প্রতি অক্ষর 8 bit, কিন্তু বাংলা বা ইংরেজি গদ্যে সব অক্ষর সমানবার আসে না - 'e' বা 'অ' বারবার আসে, 'z' বা 'ৎ' কদাচিৎ। বুদ্ধির খেলা: **বেশি আসা অক্ষরকে ছোট code, কম আসাকে লম্বা code** দাও। মোর্স কোড ঠিক এটাই করেছে ('e' মানে একটা ডট)। কিন্তু কাকে কত লম্বা code দিলে মোট খরচ সর্বনিম্ন হবে?
+
+Huffman-এর greedy নিয়ম: প্রতি ধাপে **সবচেয়ে বিরল দুটো node-কে জোড়া দাও**, তাদের জমা frequency-র নতুন node বানাও, আবার line-এ পাঠাও। শেষ পর্যন্ত একটা binary tree পাবে; tree-তে যত গভীর, code তত লম্বা। Greedy choice-এর যুক্তি চেনা - exchange argument: সবচেয়ে বিরল দুটো অক্ষরকে tree-র সবচেয়ে গভীরে বসাতেই হবে; নইলে তাদের গভীরতম দুটোর সাথে অদলবদল করলেই খরচ কমে, মানে আগেরটা optimal ছিলই না।
+
+```js
+function huffmanCost(freq) {
+  const pq = [...freq];
+  let total = 0;
+  while (pq.length > 1) {
+    pq.sort((a, b) => a - b);    // naive min-খোঁজা; আসল implementation-এ heap
+    const x = pq.shift();        // সবচেয়ে বিরল
+    const y = pq.shift();        // দ্বিতীয় বিরল
+    total += x + y;              // এই জোড়া মেলানোর খরচ
+    pq.push(x + y);              // মেলানো node আবার line-এ
+  }
+  return total;                  // মোট bit-খরচ (সব internal node-এর যোগফল)
+}
+
+console.log(huffmanCost([45, 13, 12, 16, 9, 5])); // 224
+console.log(huffmanCost([1, 1, 1, 1]));           // 8
+```
+
+প্রথম উদাহরণটা বিখ্যাত: 6 অক্ষরের fixed-length code-এ প্রতি অক্ষরে 3 bit লাগত (ceil(log2 6) = 3), মোট (45+13+12+16+9+5) × 3 = 300 bit। Huffman-এ 224 - প্রায় 25% সাশ্রয়, আর কোনো prefix code এর চেয়ে ভালো দিতে পারে না, এটা প্রমাণিত। এই naive সংস্করণে প্রতি ধাপে sort করায় সময় মোটামুটি O(n² log n); আসল implementation-এ [MinHeap](../heaps/minheap-class.mdx) ব্যবহার করলে প্রতি extraction O(log n), মোট **O(n log n)**।
+
+## ভ্যারিয়েন্ট ৫: vertex cover - নিখুঁত নয়, কিন্তু প্রমাণিত কাছাকাছি
+
+শহরের প্রতিটা ক্রসিং-এ ক্যামেরা বসাতে হবে, এমনভাবে যেন **প্রতিটা রাস্তার অন্তত এক প্রান্তে** ক্যামেরা থাকে। Graph-এর ভাষায়: এমন সর্বনিম্ন vertex-সেট বের করো যাতে প্রতিটা edge-এর অন্তত একটা প্রান্ত সেটে থাকে - এটাই **minimum vertex cover**। খারাপ খবর: সমস্যাটা NP-hard, নিখুঁত উত্তরের কোনো polynomial algorithm জানা নেই। সুখবর: নিখুঁত ছেড়ে দিলে greedy দারুণ approximation দেয়।
+
+একটা চটজলদি greedy মাথায় আসে: সবচেয়ে বেশি degree-র vertex নাও, ওর edge-গুলো ঢাকা ফেলো, repeat। সহজ ঠিকই, কিন্তু এই নিয়মের কোনো approximation guarantee নেই - কুটবুদ্ধির graph বানালে optimal-এর অনেক গুণ খারাপ দিতে পারে (algorithm-বইগুলোতেও এই degree-ভিত্তিক পদ্ধতি আছে, কিন্তু bound-এর প্রমাণ নেই)। তাই আমরা অন্য রাস্তায় যাব, যেখানে প্রমাণ আছে:
+
+**Maximal matching খুঁজে, matching-এর প্রতি edge-এর দুই প্রান্তই cover-এ নাও।**
+
+```js
+function vertexCover2Approx(n, edges) {
+  const inCover = new Array(n).fill(false);
+  const cover = [];
+  for (const [u, v] of edges) {
+    if (inCover[u] || inCover[v]) continue; // edge-টা তাহলে already ঢাকা
+    inCover[u] = inCover[v] = true;         // দুই প্রান্তই cover-এ
+    cover.push(u, v);
+  }
+  return cover;
+}
+
+// ত্রিভুজ-আকৃতির graph: 3 vertex, তিন জোড়াই edge
+console.log(vertexCover2Approx(3, [[0, 1], [1, 2], [0, 2]])); // [0, 1] - optimal-ও 2
+```
+
+কেন এটা ঠিকঠাক cover? নেওয়া প্রতিটা edge-এর প্রান্তদ্বয় cover-এ, আর যে edge বাদ পড়েছে তার অন্তত এক প্রান্ত তো cover-এই ছিল বলেই বাদ পড়েছে। সব edge ঢাকা। আর কেন 2-approximation? যে edge-গুলো আমরা নিয়েছি, কোনোটার প্রান্ত আরেকটার সাথে মেলে না (matching!)। Optimal cover-কেও ওই প্রতিটা edge-এর **অন্তত একটা** প্রান্ত নিতেই হবে, তাই OPT ≥ matching-এর size। আমরা নিয়েছি ঠিক 2 × matching। মানে **cover ≤ 2 × OPT** - optimal-এর দ্বিগুণের বেশি খারাপ কখনোই নয়। সময় O(V + E), code দেখলেই বোঝা যাচ্ছে।
+
+NP-hard সমস্যার সামনে greedy-র এই ভূমিকাটা মনে রাখো: exact উত্তর নয়, **বাউন্ডসহ** কাছাকাছি উত্তর। [TSP](./tsp.mdx)-এ MST-ভিত্তিক approximation দেখেছো, একই দর্শন।
+
+## ভ্যারিয়েন্ট ৬: lateness কমানো - তিনটা key, দুটোই ফেল
+
+তুমি একটা প্রিন্টশপ চালাও: একটাই মেশিন, একবারে একটাই অর্ডার। প্রতিটা অর্ডারের দুটো সংখ্যা আছে - **কতক্ষণ লাগবে** (time) আর **কখন ডেলিভারির কথা** (due)। কোনো অর্ডার দেরি হলে লজ্জার পরিমাণ = শেষ-সময় − due (আগে হলে ক্ষতি নেই)। লক্ষ্য: **সর্বোচ্চ দেরিটা** সবচেয়ে কম করা।
+
+কোন key-এ sort করবে? তিনটা স্বাভাবিক প্রার্থী:
+
+| Key | নিয়ম | ফলাফল |
+|-----|-------|--------|
+| Shortest processing time | ছোট কাজ আগে | ফেল |
+| Smallest slack (due − time) | যার ফাঁক সবচেয়ে কম | ফেল |
+| **Earliest deadline first** | যার due আগে | **optimal** |
+
+প্রথমটার পাল্টা উদাহরণ: কাজ A (time 1, due 10), কাজ B (time 5, due 5)। ছোট-কাজ-আগে খেলে A শেষ হয় 1-এ, B শেষ হয় 6-এ - B-এর দেরি 1। কিন্তু deadline-আগে খেলে B শেষ 5-এ (দেরি 0), A শেষ 6-এ (দেরি 0) - সর্বোচ্চ দেরি 0! দ্বিতীয়টারও পাল্টা উদাহরণ আছে: A (time 1, due 3, slack 2), B (time 5, due 5, slack 0): slack-আগে খেলে সর্বোচ্চ দেরি 3, deadline-আগে খেলে মাত্র 1।
+
+```js
+function minMaxLateness(jobs) {
+  const sorted = [...jobs].sort((a, b) => a.due - b.due); // earliest deadline first
+  let t = 0, worst = 0;
+  for (const job of sorted) {
+    t += job.time;                 // এই কাজ শেষ হওয়ার সময়
+    const late = t - job.due;      // আগে শেষ হলে negative
+    if (late > worst) worst = late;
+  }
+  return worst;
+}
+
+const shop = [
+  { time: 2, due: 4 }, { time: 3, due: 7 }, { time: 1, due: 9 },
+  { time: 4, due: 13 }, { time: 3, due: 8 }, { time: 2, due: 17 },
+  { time: 3, due: 9 }, { time: 5, due: 11 }, { time: 2, due: 22 },
+  { time: 1, due: 25 },
+];
+console.log(minMaxLateness(shop)); // 8 - দশ অর্ডারের queue-তে সর্বোচ্চ দেরি 8 ঘণ্টা
+```
+
+কেন optimal? আবার exchange argument, এবার একটু জমকালো। যে schedule-এ কোনো জোড়া কাজ i, j আছে যেখানে due(i) > due(j) অথচ i বসেছে আগে, সেটা **inversion**। পাশাপাশি inversion-জোড়ার জায়গা বদলে দাও: ব্লকটা মোট যতক্ষণেরই ছিল, তাই বাকি সবার শেষ-সময় অপরিবর্তিত; j এখন আগে শেষ হয়, তার দেরি বাড়ার প্রশ্নই নেই; আর i-এর নতুন দেরি = ব্লক-শেষ − due(i), যা ব্লক-শেষ − due(j) = j-এর **পুরনো** দেরির চেয়ে বড় নয় (কারণ due(i) > due(j))। মানে প্রতি বদলে inversion কমে একটা, কিন্তু সর্বোচ্চ দেরি বাড়ে না। এবার ধরো optimal schedule-গুলোর মধ্যে inversion সবচেয়ে কম যার, সেটা S*; তার যদি inversion থাকত, বদলে দিয়ে দেরি না বাড়িয়ে inversion কমানো যেত - S*-এর সংজ্ঞারই contradiction। সুতরাং inversion-হীন schedule, অর্থাৎ earliest deadline first, optimal। (ছোট একটা বিষয়: সেরা schedule-এ ফাঁকা সময় থাকে না - gap ঢোকালে সবাই আগে শেষ হত; তাই back-to-back চালানোই যথেষ্ট।) সময় Θ(n log n), sort-ই সব খরচ। মজার ব্যাপার: মেশিন একটার বদলে অনেকটা হলে সমস্যাটা সঙ্গে সঙ্গে NP-hard হয়ে যায় - বাস্তব factory scheduling সেই জগতের।
+
 ## কোড ব্রেকডাউন: দুটো মূল ফাংশন, লাইনে লাইনে
 
 আগে `activitySelection`:
@@ -258,4 +352,7 @@ minCoins(5, [3, 4]) চালালে while-গুলো শেষে amount = 
 - প্রথম ধাপ প্রায় সবসময় sort; আর আসল সিদ্ধান্ত হলো **কোন key-এ**।
 - Activity selection O(n log n), coin change মোটামুটি O(amount): যেখানে greedy দাঁড়ায়, সেখানে DP-র চেয়ে অনেক সস্তা।
 - [1,3,4] দিয়ে 6: এই ছোট্ট counterexample-টা মাথায় রাখো। Greedy মানেই ঠিক, এমন নয়; ঠিক, তবেই greedy।
+- Huffman coding-এ greedy নিয়ম "বিরল দুটো আগে জোড়া"; heap দিলে O(n log n), আর কোনো prefix code এর চেয়ে ভালো হতে পারে না।
+- Vertex cover NP-hard: exact নয়, maximal-matching greedy দেয় 2-approximation - প্রমাণ এক লাইনের, matching-এর প্রতি edge-এ OPT-কেও অন্তত এক প্রান্ত নিতেই হবে।
+- Lateness কমাতে key বাছাই দুইবার ব্যর্থ হয় (ছোট কাজ, ছোট slack) - জেতে earliest deadline first; প্রমাণ: পাশাপাশি inversion বদলালে দেরি বাড়ে না, inversion কমে।
 - আরেকটা জায়গায় greedy নিখুঁত: cache eviction-এ ভবিষ্যৎ জানা থাকলে "সবচেয়ে দূরে যেটা লাগবে সেটাই নামাও" (LFD) প্রমাণিত optimal - [Online Algorithms](./online-algorithms.mdx)।

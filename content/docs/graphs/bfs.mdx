@@ -220,6 +220,45 @@ console.log(levels(g, "A"));
 
 আরেকটা ভ্যারিয়েন্ট প্রায়ই কাজে লাগে: **multi-source BFS**। ধরো grid-এ একসাথে অনেক জায়গা থেকে আগুন ছড়াচ্ছে, কোন ঘরে কখন আগুন পৌঁছাবে? শুরুতেই সব source-কে একসাথে queue-তে ঢুকিয়ে দাও, বাকি সব আগের মতোই। নিচের অনুশীলনে এর ব্যবহার পাবে।
 
+## ভ্যারিয়েন্ট ৪: grid-এ BFS — maze-এর সংক্ষিপ্ততম পথ
+
+BFS-এর একটা বিশাল প্রয়োগ এখনও বাকি: **2D grid**। ধরো একটা maze, যেখানে 0 মানে চলা যায়, 1 মানে দেয়াল; শুরু আর গন্তব্য দুটো ঘর দেওয়া, বের করতে হবে সর্বনিম্ন কয় চালে পৌঁছানো যায়। কৌশল: প্রতিটা ঘরই একটা node, প্রতিবেশী ঘরগুলোই edge — graph আলাদা করে বানানোরই দরকার নেই, grid নিজেই graph। আর প্রতিবেশী বের করার জন্য থাকে **direction array** (এই ছাঁচটা [2D Arrays](../arrays-strings/2d-arrays.mdx)-এর neighbors প্যাটার্নই):
+
+```js
+function mazeBFS(grid, start, goal) {
+  const rows = grid.length, cols = grid[0].length;
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];      // নিচ, উপর, ডান, বাম
+  const dist = Array.from({ length: rows }, () => Array(cols).fill(-1));
+
+  const q = [start];
+  dist[start[0]][start[1]] = 0;
+
+  for (let head = 0; head < q.length; head++) {          // index দিয়ে queue, shift() নয়
+    const [r, c] = q[head];
+    if (r === goal[0] && c === goal[1]) return dist[r][c]; // গন্তব্য ছুঁলেই থামো
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue; // গ্রিডের বাইরে
+      if (grid[nr][nc] === 1 || dist[nr][nc] !== -1) continue;    // দেয়াল বা আগে দেখা
+      dist[nr][nc] = dist[r][c] + 1;
+      q.push([nr, nc]);
+    }
+  }
+  return dist[goal[0]][goal[1]]; // কখনোই পৌঁছানো না গেলে -1
+}
+
+const maze = [
+  [0, 0, 0, 0],
+  [1, 1, 0, 1],
+  [0, 0, 0, 0],
+  [0, 1, 1, 0],
+];
+console.log(mazeBFS(maze, [0, 0], [3, 3])); // 6
+console.log(mazeBFS(maze, [0, 0], [1, 3])); // -1: দেয়াল-ঘেরা, পৌঁছানোই যায় না
+```
+
+দুটো জিনিস লক্ষ করো। এক, গন্তব্যে পৌঁছানো মাত্রই ফেরত — BFS স্তরে স্তরে এগোয়, তাই প্রথম যেদিন গন্তব্যে ঢুকল, সেই দূরত্বই সংক্ষিপ্ততম; পুরো grid ঘোরার দরকার নেই। দুই, `dist` array-টাই এখানে visited-এর কাজও করছে: -1 মানে "এখনো আসিনি"। দাবার বোর্ডে **ঘোড়ার চাল** বা কর্ণে চালা চাইলে শুধু `dirs` array-টা বদলাও (ঘোড়ার জন্য আটটা লাফের জোড়া), বাকি কোড অটুট। সময় O(rows × cols), কারণ প্রতি ঘর সর্বোচ্চ একবার queue-তে ঢোকে। মনে রাখো, এই গ্যারান্টি শুধু unweighted grid-এ; প্রতি চালের দাম আলাদা হলে সেটা [Dijkstra](./dijkstra.mdx)-র জগৎ।
+
 ## কোড ব্রেকডাউন: মূল bfs, লাইনে লাইনে
 
 মূল `bfs` ফাংশনটা আবার দেখি, কোন লাইন কেন আছে:

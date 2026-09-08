@@ -10,6 +10,7 @@ description: "বড় সমস্যাকে একই ধরনের ছ�
 - Binary search কেন D&C-এর সবচেয়ে চিকন রূপ
 - T(n) = 2T(n/2) + O(n) থেকে tree-level যুক্তি দিয়ে O(n log n) বের করা
 - Iterative বনাম recursive বাস্তবায়ন, আর কোন সমস্যায় D&C লাগে আর কোথায় লাগে না
+- FFT: জোড়-বিজোড় ভাগের একই চিন্তায় polynomial গুণন O(n²) থেকে O(n log n)
 
 ## ধারণা
 
@@ -203,6 +204,60 @@ function partition(arr, low, high) {
 
 এই partition-টাই পরে [Quick Sort](../sorting/quick-sort.mdx)-এর ইঞ্জিন, আর [Kth Element](./kth-element.mdx)-এ quickselect হিসেবেও কাজ করে।
 
+### ভ্যারিয়েন্ট ৪: polynomial গুণন, এক নিমেষে - FFT
+
+দুটো polynomial গুণ করতে বলা হলো: (1 + 2x) × (3 + 4x) = 3 + 10x + 8x²। স্কুলের পদ্ধতিতে প্রতি coefficient প্রতিটার সাথে গুণ হয় - n-ঘাত দুটোর জন্য O(n²)। কিন্তু coefficient-গুলোকে জোড় আর বিজোড় ঘাতে ভাগ করলেই ছবি বদলায় - চেনা গন্ধ, তাই না? **Fast Fourier Transform (FFT)** ঠিক এই D&C চিন্তায় polynomial গুণন নামিয়ে আনে **O(n log n)**-এ। ধারণাটা তিন ধাপের: দুটো polynomial-কে বিশেষ কয়টা বিন্দুতে (n-তম roots of unity) evaluate করো (Divide + Conquer), বিন্দুভিত্তিক মান গুণ করো (এক লাইন!), তারপর উত্তরটা আবার coefficient-এ ফিরিয়ে আনো (Combine):
+
+```js
+function fft(a, invert) {
+  const n = a.length;
+  if (n === 1) return;
+  const even = [], odd = [];
+  for (let i = 0; i < n / 2; i++) {
+    even.push(a[2 * i]);        // জোড় ঘাতের coefficient-গুলো
+    odd.push(a[2 * i + 1]);     // বিজোড় ঘাতের coefficient-গুলো
+  }
+  fft(even, invert);
+  fft(odd, invert);
+  const ang = (2 * Math.PI / n) * (invert ? -1 : 1);
+  const wn = [Math.cos(ang), Math.sin(ang)];  // জটিল ঘূর্ণন-একক
+  let wr = 1, wi = 0;                         // w = 1 দিয়ে শুরু
+  for (let i = 0; i < n / 2; i++) {
+    const ur = even[i][0], ui = even[i][1];
+    // odd[i] * w (জটিল গুণ)
+    const vr = odd[i][0] * wr - odd[i][1] * wi;
+    const vi = odd[i][0] * wi + odd[i][1] * wr;
+    a[i]         = [ur + vr, ui + vi];  // butterfly: যোগ পাশ
+    a[i + n / 2] = [ur - vr, ui - vi];  // butterfly: বিয়োগ পাশ
+    const nwr = wr * wn[0] - wi * wn[1];
+    wi = wr * wn[1] + wi * wn[0];
+    wr = nwr;                           // w এক ধাপ ঘুরলো
+  }
+}
+
+function polyMultiply(A, B) {
+  let n = 1;
+  while (n < A.length + B.length - 1) n *= 2;  // দুই-এর power-এ প্যাড
+  const fa = Array.from({ length: n }, (_, i) => [A[i] || 0, 0]);
+  const fb = Array.from({ length: n }, (_, i) => [B[i] || 0, 0]);
+  fft(fa, false);
+  fft(fb, false);
+  for (let i = 0; i < n; i++) {
+    // বিন্দুভিত্তিক জটিল গুণ
+    fa[i] = [fa[i][0] * fb[i][0] - fa[i][1] * fb[i][1],
+             fa[i][0] * fb[i][1] + fa[i][1] * fb[i][0]];
+  }
+  fft(fa, true);
+  return fa.slice(0, A.length + B.length - 1)
+           .map(([re]) => Math.round(re / n) || 0);  // || 0: -0 আটকাতে
+}
+
+console.log(polyMultiply([1, 2], [3, 4]));    // [3, 10, 8]
+console.log(polyMultiply([1, 0, 1], [1, 1])); // [1, 1, 1, 1]
+```
+
+Recursion-টা merge sort-এর আত্মীয়: প্রতি level-এ n কাজ (butterfly জোড়া), level log n-টা, মোট O(n log n)। জটিল সংখ্যাগুলো [real, imag] জোড়া আকারে রাখা, আর শেষে divide-by-n আর rounding-এ coefficient ফিরে আসে (শেষের `|| 0`-টা ছোট্ট ফাঁদ ঢেকে রাখে: rounding মাঝে মাঝে -0 বানায়, যা 0-এর সমান হলেও test-এ ধরা খায়)। কোথায় লাগে? অডিও আর image প্রসেসিং, বিশাল পূর্ণসংখ্যার গুণ, signal filtering - যেখানেই convolution, পেছনে FFT। O(n²) থেকে O(n log n): n এক লাখ পেরোলেই ব্যবধান হাজার গুণ ছাড়িয়ে যায়।
+
 ## কোড ব্রেকডাউন
 
 মূল ফাইলের গুরুত্বপূর্ণ line-গুলো আবার দেখি:
@@ -272,3 +327,4 @@ Binary search unsorted array-তে চালালে ভাগ করাটা
 - T(n) = 2T(n/2) + O(n) মানে প্রতি level-এ n কাজ, log n-টা level, মোট O(n log n); T(n) = T(n/2) + O(1) মানে O(log n)
 - Precondition মানা জরুরি: binary search চায় sorted input, প্রতিটা recursion চায় সঠিক base case
 - সাব-সমস্যায় overlap দেখলেই থামো: সেটা D&C না, Dynamic Programming-এর জমি
+- FFT দেখালো D&C-এর শিখর: জোড়-বিজোড় ভাগে polynomial গুণন O(n²) থেকে O(n log n) - অডিও-সিগন্যাল প্রসেসিংয়ের প্রাণ

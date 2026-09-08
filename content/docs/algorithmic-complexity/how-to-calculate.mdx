@@ -193,6 +193,27 @@ function linearSearch(arr, target) {
 
 রিপোর্ট করার সময় আমরা worst case-টাই বলি: O(n)। গড়ের (n + 1) / 2-ও আসলে একই হারে বাড়ে, কিন্তু "গড়ে ভালো" এই ভরসায় সিস্টেম বানানো যায় না। কোনটা upper bound, কোনটা tight, এই ভাষাগুলো পরের পাতা [Asymptotic Notation](./asymptotic-notation.mdx)-এ পরিষ্কার হবে।
 
+## ভ্যারিয়েন্ট ৪: অর্ধেক কাজ, তবু একই class
+
+Duplicate খোঁজার প্রথম লেখায় প্রতি জোড়া আসলে দুইবার তুলনা হচ্ছে: (i, j) আবার (j, i)। ভেতরের লুপটা i + 1 থেকে শুরু করলে এই ডাবল গোনা বন্ধ হয়:
+
+```js
+function countComparisons(n, optimized) {
+  let ops = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = optimized ? i + 1 : 0; j < n; j++) {
+      if (i !== j) ops++; // প্রতিটা তুলনা একবার গোনা
+    }
+  }
+  return ops;
+}
+
+console.log(countComparisons(100, false)); // 9900 = 100 × 99
+console.log(countComparisons(100, true));  // 4950 = 100 × 99 / 2
+```
+
+কাজ কমল হুবহু অর্ধেকে: n(n - 1) থেকে n(n - 1) / 2। কিন্তু Big-O-র চোখে? দুটোই O(n²)। কারণ ২ দিয়ে ভাগ মানে শুধু ধ্রুবক ছাঁটাই; class বদলাতে হলে এমন কিছু দিয়ে ভাগ করতে হবে যা n-এর সাথে বাড়তে থাকে। যেমন একই সমস্যা Set দিয়ে করলে কাজ নেমে আসে O(n)-এ, [Problem-Solving Mindset](../intro-to-dsa/problem-solving-mindset.mdx)-এর Set-কৌশল মনে করো। সেটাই আসল class-লাফ। মন্ত্রটা তাহলে: ধ্রুবক-ছাঁটাই পুরস্কার পায়, কিন্তু class বদলায় না।
+
 ## কোড ব্রেকডাউন: counter যন্ত্রটা
 
 1. প্রতিটা ফাংশনে `ops` নামে counter রাখা; আমরা ফলাফল নয়, **কতবার** dominant কাজ হলো সেটা গুনছি।

@@ -11,6 +11,7 @@ description: "দুই স্ট্রিং-এর সবচেয়ে ল�
 - দুই-কেসের recurrence: মিললে diagonal + 1, না মিললে max(উপরে, বাঁয়ে)
 - শুধু দৈর্ঘ্য নয়, আসল subsequence-টা বের করা: টেবিলে উল্টো হাঁটা
 - কোথায় কাজে লাগে: git diff, DNA তুলনা, plagiarism check
+- ভাই-সমস্যা longest common substring: টানা মিল চাইলে recurrence-এর এক লাইনই বদলে যায়
 
 ## ধারণা
 
@@ -125,6 +126,34 @@ console.log("সব assert পাস!");
 - **LIS-এর সাথে সম্পর্ক:** একটা sequence (সব উপাদান distinct) আর তার sorted অনুলিপির LCS-ই হলো সেই sequence-এর Longest Increasing Subsequence। পরের পাতায় LIS-এর সরাসরি 1D DP দেখবে।
 - **বাস্তবের diff টুল:** git আসলে Myers algorithm ব্যবহার করে, আরও অপ্টিমাইজড - কিন্তু ভিত্তির ধারণা এই LCS-ই।
 
+## ভাই-সমস্যা: longest common substring, টানা মিল
+
+এই পাতার শুরুতেই বলেছিলাম, subsequence আর substring আলাদা। তাহলে প্রশ্ন করতেই পারো: **টানা** মিলের সবচেয়ে লম্বাটা চাইলে? সেটাই longest common substring। চমকের ব্যাপার হলো, টেবিল সেই একই, recurrence-এ বদল মাত্র এক লাইনে: **না মিললেই শূন্য**। টানা মিল ভেঙে গেলে আগের জমা ধরে রাখার যুক্তি নেই, নতুন করে শুরু। আর উত্তরটা dp[m][n]-এ নেই, কারণ মিলটা মাঝখানের যেকোনো জায়গায় শেষ হতে পারে - পুরো টেবিলের **সর্বোচ্চ ঘরটাই** উত্তর:
+
+```js
+function lcSubstring(s1, s2) {
+  const m = s1.length, n = s2.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  let best = 0;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;   // টানা মিল আরেক ঘর বাড়লো
+        if (dp[i][j] > best) best = dp[i][j];
+      }
+      // না মিললে ঘরটা 0-তেই থাকে: টানা মিল এখানেই ভাঙে
+    }
+  }
+  return best;
+}
+
+console.log(lcSubstring("abcdef", "zbcdf")); // 3, "bcd"
+console.log(lcSubstring("abcde", "ace"));    // 1 - subsequence হলে 3 হতো!
+console.log(lcSubstring("", "abc"));         // 0
+```
+
+দ্বিতীয় উদাহরণটা দেখো: subsequence হিসেবে "ace" পুরোটাই common (দৈর্ঘ্য 3), কিন্তু টানা চাইলে উত্তর মাত্র 1। এই এক জোড়া উদাহরণেই দুই সমস্যার পার্থক্য গেঁথে যাওয়ার কথা। Complexity একই: time O(m·n), space O(m·n); দুই-সারির কৌশল এখানেও চলে, শুধু best-টা আলাদা ট্র্যাক করতেই হবে, কারণ উত্তর শেষ ঘরে নেই।
+
 ## Complexity
 
 | বাস্তবায়ন | Time | Space |
@@ -169,4 +198,5 @@ m আর n দুই স্ট্রিং-এর দৈর্ঘ্য। ম�
 - এক স্ট্রিং-এর ভেতরে আরেকটা **হুবহু** আছে কি না জানতে [KMP](../searching/string-matching.mdx); আর দুটোর মিল **কতটুকু** মাপতে এই LCS।
 - টেবিল-ভিত্তিক DP-র আরেক classic দেখো: [0/1 Knapsack](./knapsack.mdx) - স্টেট-চিন্তা হুবহু এই পাতার মতো।
 - একই "ক্রম ঠিক" চিন্তার এক-স্ট্রিং সংস্করণ: [LIS](./lis.mdx) - sorted অনুলিপির সাথে LCS করলেও ওটা পাওয়া যায়।
+- টানা মিল চাইলে একই টেবিল, এক লাইনের বদল: না মিললেই শূন্য, আর উত্তর dp[m][n] নয়, টেবিলের সর্বোচ্চ ঘর - এটাই longest common substring।
 - মিল নয়, **পার্থক্য** মাপতে [Edit Distance](./edit-distance.mdx) - replace নিষিদ্ধ করলে এই পাতার LCS-ই যথেষ্ট (m + n - 2 × LCS)।

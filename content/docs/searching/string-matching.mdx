@@ -10,6 +10,7 @@ description: "Naive মিলানো প্রতি mismatch-ে text-এ ফ
 - Mismatch-ে pattern কতটা সরে, কেন text-এর pointer কখনো পিছায় না
 - LPS বানানো আর মূল search — দুটোই রৈখিক, মোট O(n + m)
 - কখন KMP, কখন built-in `indexOf`-ই যথেষ্ট
+- ভ্যারিয়েন্ট: Rabin-Karp — rolling hash দিয়ে আগে সংখ্যা মেলানো, পরে অক্ষর
 
 ## ধারণা
 
@@ -113,6 +114,46 @@ console.log(kmpSearch("", "A"));               // -1
 
 Naive-এর সঙ্গে পার্থক্য worst case-এ চোখে পড়ে: text `"AAAA…A"` (n-টা), pattern `"AA…AB"` (m-টা) — naive প্রতি জায়গায় m-বার মেলায়, KMP প্রতিটা অক্ষর একবারের মতো দেখে। তবে বাস্তবে ছোট pattern-এ constant factor-এর জন্য built-in `indexOf` (যেটা ভেতরে অনেক অপ্টিমাইজড) যথেষ্ট — KMP-এর আসল জয় streaming text (যেখানে আগের অক্ষর আর ফিরে দেখা যায় না) আর overlap-ভিত্তিক প্রশ্নে।
 
+## ভ্যারিয়েন্ট: Rabin-Karp, hash দিয়ে খোঁজা
+
+KMP মিল এড়িয়ে যায় prefix-স্মৃতি দিয়ে; Rabin-Karp আসে একেবারে অন্য দরজায়: **আগে সংখ্যা মেলাও, মিললে তবেই অক্ষর মেলাও।** pattern-এর একটা hash বের করো, তারপর text-এর ওপর m-ঘরের জানলা ঘুরাও; প্রতি ধাপে জানলার hash আগেরটা থেকে O(1)-এ হালানো যায় — বামের অক্ষর বাদ, ডানের নতুন অক্ষর ঢুকল। এটাকে বলে **rolling hash**।
+
+একটা কথা গায়ে মাখো: **hash মিললেই মিল নয়।** ভিন্ন string-এর hash এক হতে পারে (collision), তাই hash মিললে অক্ষরে অক্ষরে যাচাই বাধ্যতামূলক। আর mod-এর জন্য মৌলিক সংখ্যা নিলে collision কমে, তাই নিচে q = 101:
+
+```js
+function rabinKarp(text, pat) {
+  const d = 256, q = 101;           // বর্ণমালা-আকার আর একটা মৌলিক
+  const n = text.length, m = pat.length;
+  if (m === 0 || m > n) return -1;
+
+  let h = 1, pHash = 0, tHash = 0;
+  for (let i = 0; i < m - 1; i++) h = (h * d) % q;    // h = d^(m-1) % q
+  for (let i = 0; i < m; i++) {                        // শুরুর দুই hash
+    pHash = (d * pHash + pat.charCodeAt(i)) % q;
+    tHash = (d * tHash + text.charCodeAt(i)) % q;
+  }
+
+  for (let i = 0; i <= n - m; i++) {
+    if (pHash === tHash) {                             // hash মিললে যাচাই
+      let j = 0;
+      while (j < m && text[i + j] === pat[j]) j++;
+      if (j === m) return i;
+    }
+    if (i < n - m) {                                   // জানলা এক ঘর সরাও
+      tHash = (d * (tHash - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
+      if (tHash < 0) tHash += q;                       // mod কখনো ঋণাত্মক নয়
+    }
+  }
+  return -1;
+}
+
+console.log(rabinKarp("abcbcglx", "bcgl")); // 3
+console.log(rabinKarp("AAAA", "AA"));       // 0: overlap-ও ধরে
+console.log(rabinKarp("abcdef", "gh"));     // -1
+```
+
+rolling-এর সূত্রটা পড়ে নাও: `tHash - text[i] * h` মানে বামের অক্ষরটা তার উচ্চস্থান থেকে সরে গেল, `d * (...)` মানে বাকিদের ঘর এক করে বামে, আর `+ text[i + m]` মানে নতুন অক্ষর শেষে ঢুকল। সবকিছু mod q-তে, তাই সংখ্যা ছোটই থাকে। গড়ে খরচ O(n + m); কিন্তু worst case-এ প্রতি জানলায় মিথ্যে hash-মিল লাগলে O(n·m) পর্যন্ত যায়, তাই KMP-র গ্যারান্টি এখানে নেই। তবু একই text-এ অনেকগুলো pattern একসাথে খোঁজা (সব pattern-এর hash একটা Set-এ রেখে এক পাস) বা document similarity-র মতো কাজে Rabin-Karp দারুণ জনপ্রিয়।
+
 ## সাধারণ ভুল আর edge case
 
 **১. Mismatch-ে text pointer পেছানো।**
@@ -145,3 +186,4 @@ Naive-এর সঙ্গে পার্থক্য worst case-এ চোখ�
 - LPS বানানো O(m), search O(n) — মোট O(n + m), জায়গা O(m)।
 - `j = lps[j - 1]` এই fallback লাইনটাই দুটো লুপেই প্রাণ; সিঁড়ি দিয়ে নামো, সোজা শূন্যে নয়।
 - বাস্তবে ছোট কাজে `indexOf` যথেষ্ট; KMP-এর জাদু streaming আর overlap-প্রশ্নে (1392, 459, 214)।
+- Rabin-Karp অন্য দরজা: rolling hash দিয়ে আগে সংখ্যা মেলাও; hash মিললেও অক্ষরে যাচাই করতেই হবে, কারণ collision বাস্তব।

@@ -101,6 +101,21 @@ function postOrder(node, out = []) {
 - **In-order:** [BST](./binary-search-tree.mdx)-তে এটা **sorted ক্রম** দেয়। এক লাইনে BST-র পরিচয়পত্র।
 - **Post-order:** গাছ **মুছে ফেলা** (child-গুলো আগে মোছো, তারপর নিজে), subtree-র হিসাব (আগে নিচের ফল, তারপর নিজের)।
 
+## ভ্যারিয়েন্ট: দুটো গাছ একেবারে একই কিনা
+
+দুটো binary tree ঠিক তখনই একই, যখন গঠনও এক, প্রতি ঘরের মানও এক। recursion-এর ছাঁচ মিলে যায় সোজাসুজি: দুটোই খালি হলে একই; একটা খালি আরেকটা নয়, বা মান মিলল না — আলাদা; নইলে বাম জোড়া আর ডান জোড়া, দুই দিকেই একই চাই:
+
+```js
+function sameTree(p, q) {
+  if (p === null && q === null) return true;   // দুজনেই শেষ, এ পর্যন্ত সব মিলেছে
+  if (p === null || q === null) return false;  // একটা শেষ, আরেকটা নয়: গঠন আলাদা
+  if (p.value !== q.value) return false;       // মান মিলল না
+  return sameTree(p.left, q.left) && sameTree(p.right, q.right);
+}
+```
+
+লক্ষ করো, এটা আসলে দুটো গাছের ওপর **যুগল pre-order**: দুজনের root একসাথে দেখা, তারপর দুই ডানায় একই ক্রমে নামা। সময় O(n), প্রতি জোড়া node ঠিক একবার; জায়গা O(h), call stack। এটাই LeetCode 100 (Same Tree)।
+
 ## Complexity
 
 | দিক | খরচ | কেন |
