@@ -272,21 +272,33 @@ export function Stage({
           )}
         </div>
       </div>
-      <div className="min-h-6 px-5 pt-2 text-[13px] text-zinc-500">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={step}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-            className="block"
-          >
-            {caption}
-          </motion.span>
-        </AnimatePresence>
+      <div className="flex flex-col gap-3 px-3 pb-1 pt-3 lg:flex-row lg:items-stretch">
+        <ol className="min-w-0 flex-1 overflow-x-auto">{lines}</ol>
+        <aside className="mx-2 shrink-0 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 lg:mx-0 lg:mr-2 lg:flex lg:w-72 lg:flex-col xl:w-80">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+              ব্যাখ্যা
+            </span>
+            <span className="font-mono text-[11px] tabular-nums text-zinc-400">
+              {step} / {total}
+            </span>
+          </div>
+          <div className="mt-2 text-sm leading-relaxed text-zinc-700">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={step}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18 }}
+                className="block"
+              >
+                {caption}
+              </motion.span>
+            </AnimatePresence>
+          </div>
+        </aside>
       </div>
-      <ol className="px-3 pb-1 pt-2">{lines}</ol>
       {viz && <div className={`px-5 pt-1 ${hideConsole ? 'pb-5' : 'pb-2'}`}>{viz}</div>}
       {!hideConsole && (
         <div className="px-5 pb-5 pt-2">
