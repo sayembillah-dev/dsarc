@@ -1261,7 +1261,7 @@ export function AvlRotationAnim() {
       caption={AVL_CAPTIONS[step]}
       consoleLines={[]}
       hideConsole
-      viz={<TreeFlow nodes={nodes} edges={edges} height={260} />}
+      viz={<TreeFlow nodes={nodes} edges={edges} height={260} refitDep={step} />}
       lines={AVL_CODE.map((c, i) => (
         <Line key={i} n={i + 1} code={c} cursorId="avl-cursor" active={AVL_CURSOR[step] === i} />
       ))}
